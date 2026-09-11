@@ -11,8 +11,10 @@
     "build": "npm run build -w @throttlelk/types -w @throttlelk/validation -w @throttlelk/api -w @throttlelk/web",
     "lint": "npm run lint -w @throttlelk/web -w @throttlelk/api",
     "test": "npm run test -w @throttlelk/api -w @throttlelk/validation",
-    "smoke:api": "powershell -File scripts/smoke-api.ps1"
-  },  "engines": {
+    "smoke:api": "powershell -File scripts/smoke-api.ps1",
+    "docker:prod": "docker compose -f infrastructure/docker/docker-compose.prod.yml --env-file .env up --build"
+  },
+  "engines": {
     "node": ">=22"
   }
 }

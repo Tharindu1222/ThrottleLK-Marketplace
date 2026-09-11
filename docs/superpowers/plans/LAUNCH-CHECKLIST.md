@@ -11,6 +11,7 @@
 - [ ] Change bootstrap admin password after first login
 - [ ] Cloudflare in front of web + API (TLS; images via R2 public URL / CDN)
 - [ ] CI green on `main`
+- [ ] Deploy with `npm run docker:prod` (or your host) using filled `.env`
 - [ ] Run `powershell -File scripts/smoke-api.ps1` against staging/prod API
 - [ ] Manual smoke: register, sell + photos, admin approve, browse, contact, favourite, notifications, forgot password
 
@@ -26,10 +27,21 @@
 
 - [x] Demo seed (~24 active listings) when inventory empty (`SEED_DEMO=false` to disable; prod needs `SEED_DEMO=true`)
 - [ ] Scale inventory toward ~100–500 quality listings (real photos on R2)
-- [ ] Monitor errors (Sentry or Cloudflare)
+- [x] Optional Sentry (`SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`)
+- [x] `/health` reports database status
 - [ ] On-call for moderation queue first 2 weeks
 
 ## Demo accounts (local)
 
 - Admin: `admin@throttlelk.lk` / `ChangeMeAdmin1!`
 - Demo seller (when seeded): `demo@throttlelk.lk` / `DemoSeller1!`
+
+## Deploy
+
+```bash
+# Local Postgres only
+docker compose -f infrastructure/docker/docker-compose.yml up -d
+
+# Full stack (API + web + Postgres)
+npm run docker:prod
+```

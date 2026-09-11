@@ -13,6 +13,7 @@ function Assert-Ok($name, $cond) {
 
 $health = Invoke-RestMethod "$api/health"
 Assert-Ok 'health' ($health.success -eq $true)
+Assert-Ok 'health-db' ($health.data.database -eq 'up' -or $health.data.database -eq 'skipped')
 
 $brands = Invoke-RestMethod "$api/api/v1/brands"
 Assert-Ok 'brands' ($brands.data.Count -gt 0)
