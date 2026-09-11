@@ -114,6 +114,23 @@ export const rejectDealerSchema = z.object({
   reason: z.string().min(5).max(1000),
 });
 
+export const dealerStatusSchema = z.enum([
+  'pending',
+  'active',
+  'rejected',
+  'suspended',
+]);
+
+export const adminCreateDealerSchema = createDealerSchema.extend({
+  ownerUserId: z.string().uuid(),
+  status: dealerStatusSchema.optional().default('pending'),
+});
+
+export const adminUpdateDealerSchema = createDealerSchema.partial().extend({
+  ownerUserId: z.string().uuid().optional(),
+  status: dealerStatusSchema.optional(),
+});
+
 export const savedSearchQuerySchema = z.object({
   q: z.string().max(200).optional(),
   brandId: z.string().uuid().optional(),
@@ -176,6 +193,35 @@ export const adminUpdateUserStatusSchema = z.object({
   status: z.enum(['active', 'suspended']),
 });
 
+export const userRoleNameSchema = z.enum(['buyer', 'seller', 'dealer', 'admin']);
+
+export const adminCreateUserSchema = registerSchema.extend({
+  roles: z.array(userRoleNameSchema).min(1),
+  status: z.enum(['active', 'suspended']).optional().default('active'),
+});
+
+export const adminUpdateUserSchema = z.object({
+  firstName: z.string().min(1).max(80).optional(),
+  lastName: z.string().min(1).max(80).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().min(9).max(20).optional().nullable(),
+  password: z.string().min(8).max(128).optional(),
+  roles: z.array(userRoleNameSchema).min(1).optional(),
+  status: z.enum(['active', 'suspended']).optional(),
+});
+
+export const adminCreateListingSchema = createListingSchema.extend({
+  sellerId: z.string().uuid(),
+  status: listingStatusSchema.optional().default('draft'),
+});
+
+export const adminUpdateListingSchema = createListingSchema
+  .partial()
+  .extend({
+    sellerId: z.string().uuid().optional(),
+    status: listingStatusSchema.optional(),
+  });
+
 export const updateProfileSchema = z
   .object({
     firstName: z.string().min(1).max(80).optional(),
@@ -210,6 +256,8 @@ export type SendConversationMessageInput = z.infer<
 >;
 export type AdminResolveReportInput = z.infer<typeof adminResolveReportSchema>;
 export type RejectDealerInput = z.infer<typeof rejectDealerSchema>;
+export type AdminCreateDealerInput = z.infer<typeof adminCreateDealerSchema>;
+export type AdminUpdateDealerInput = z.infer<typeof adminUpdateDealerSchema>;
 export type CreateSavedSearchInput = z.infer<typeof createSavedSearchSchema>;
 export type UpdateSavedSearchInput = z.infer<typeof updateSavedSearchSchema>;
 export type CreateReportInput = z.infer<typeof createReportSchema>;
@@ -220,4 +268,8 @@ export type AdminCreateCityInput = z.infer<typeof adminCreateCitySchema>;
 export type AdminUpdateUserStatusInput = z.infer<
   typeof adminUpdateUserStatusSchema
 >;
+export type AdminCreateUserInput = z.infer<typeof adminCreateUserSchema>;
+export type AdminUpdateUserInput = z.infer<typeof adminUpdateUserSchema>;
+export type AdminCreateListingInput = z.infer<typeof adminCreateListingSchema>;
+export type AdminUpdateListingInput = z.infer<typeof adminUpdateListingSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

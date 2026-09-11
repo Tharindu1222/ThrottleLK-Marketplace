@@ -354,6 +354,169 @@ export class ListingsService {
     });
   }
 
+  async listAllAdmin(filters?: { status?: string; q?: string }) {
+    const qb = this.listings
+      .createQueryBuilder('l')
+      .leftJoinAndSelect('l.brand', 'brand')
+      .leftJoinAndSelect('l.model', 'model')
+      .leftJoinAndSelect('l.district', 'district')
+      .leftJoinAndSelect('l.city', 'city')
+      .leftJoinAndSelect('l.seller', 'seller')
+      .leftJoinAndSelect('l.images', 'images')
+      .orderBy('l.updatedAt', 'DESC')
+      .take(200);
+
+    if (filters?.status) {
+      qb.andWhere('l.status = :status', { status: filters.status });
+    }
+    if (filters?.q?.trim()) {
+      const q = `%${filters.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(l.title) LIKE :q OR LOWER(l.slug) LIKE :q OR LOWER(seller.email) LIKE :q)',
+        { q },
+      );
+    }
+
+    const rows = await qb.getMany();
+    return rows.map((row) => this.withCover(row));
+  }
+
+  async adminGet(id: string) {
+    const listing = await this.listings.findOne({
+      where: { id },
+      relations: ['brand', 'model', 'district', 'city', 'seller', 'images', 'category'],
+    });
+    if (!listing) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
+      });
+    }
+    return this.withCover(listing);
+  }
+
+  async adminCreate(input: {
+    sellerId: string;
+    status?: ListingStatus;
+  } & CreateListingInput): Promise<Listing> {
+    const seller = await this.usersService.findByIdOrThrow(input.sellerId);
+    if (input.dealerId) {
+      await this.dealersService.assertOwnedActiveDealer(
+        seller.id,
+        input.dealerId,
+      );
+    }
+    const baseSlug = slugify(input.title) || 'listing';
+    const slug = `${baseSlug}-${Date.now().toString(36)}`;
+    const status = (input.status ?? 'draft') as ListingStatus;
+    const listing = this.listings.create({
+      sellerId: seller.id,
+      dealerId: input.dealerId ?? null,
+      brandId: input.brandId,
+      modelId: input.modelId,
+      categoryId: input.categoryId,
+      districtId: input.districtId,
+      cityId: input.cityId,
+      title: input.title,
+      slug,
+      description: input.description,
+      priceLkr: input.priceLkr,
+      negotiable: input.negotiable ?? true,
+      manufactureYear: input.manufactureYear,
+      registrationYear: input.registrationYear ?? null,
+      engineCc: input.engineCc ?? null,
+      mileage: input.mileage ?? null,
+      fuelType: input.fuelType,
+      transmission: input.transmission,
+      condition: input.condition,
+      colour: input.colour ?? null,
+      phone: input.phone ?? seller.phone,
+      whatsapp: input.whatsapp ?? null,
+      status,
+      publishedAt: status === 'active' ? new Date() : null,
+    });
+    return this.listings.save(listing);
+  }
+
+  async adminUpdate(
+    id: string,
+    input: UpdateListingInput & {
+      sellerId?: string;
+      status?: ListingStatus;
+    },
+  ): Promise<Listing> {
+    const listing = await this.getById(id);
+    const {
+      sellerId,
+      status,
+      dealerId,
+      brandId,
+      modelId,
+      categoryId,
+      districtId,
+      cityId,
+      title,
+      description,
+      priceLkr,
+      negotiable,
+      manufactureYear,
+      registrationYear,
+      engineCc,
+      mileage,
+      fuelType,
+      transmission,
+      condition,
+      colour,
+      phone,
+      whatsapp,
+    } = input;
+
+    if (sellerId) listing.sellerId = sellerId;
+    if (dealerId !== undefined) listing.dealerId = dealerId ?? null;
+    if (brandId) listing.brandId = brandId;
+    if (modelId) listing.modelId = modelId;
+    if (categoryId) listing.categoryId = categoryId;
+    if (districtId) listing.districtId = districtId;
+    if (cityId) listing.cityId = cityId;
+    if (title) listing.title = title;
+    if (description) listing.description = description;
+    if (priceLkr != null) listing.priceLkr = priceLkr;
+    if (negotiable != null) listing.negotiable = negotiable;
+    if (manufactureYear != null) listing.manufactureYear = manufactureYear;
+    if (registrationYear !== undefined) {
+      listing.registrationYear = registrationYear ?? null;
+    }
+    if (engineCc !== undefined) listing.engineCc = engineCc ?? null;
+    if (mileage !== undefined) listing.mileage = mileage ?? null;
+    if (fuelType) listing.fuelType = fuelType;
+    if (transmission) listing.transmission = transmission;
+    if (condition) listing.condition = condition;
+    if (colour !== undefined) listing.colour = colour ?? null;
+    if (phone !== undefined) listing.phone = phone ?? null;
+    if (whatsapp !== undefined) listing.whatsapp = whatsapp ?? null;
+
+    if (status) {
+      listing.status = status;
+      if (status === 'active' && !listing.publishedAt) {
+        listing.publishedAt = new Date();
+      }
+      if (status === 'sold' && !listing.soldAt) {
+        listing.soldAt = new Date();
+      }
+      if (status !== 'rejected') {
+        listing.rejectionReason = null;
+      }
+    }
+
+    return this.listings.save(listing);
+  }
+
+  async adminDelete(id: string): Promise<{ id: string; deleted: true }> {
+    const listing = await this.getById(id);
+    await this.listings.softRemove(listing);
+    return { id, deleted: true };
+  }
+
   async approve(id: string): Promise<Listing> {
     const listing = await this.getById(id);
     if (listing.status !== 'pending_review') {

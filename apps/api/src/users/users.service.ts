@@ -8,9 +8,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { In, Repository } from 'typeorm';
 import type {
+  AdminCreateUserInput,
+  AdminUpdateUserInput,
   RegisterInput,
   UpdateProfileInput,
 } from '@throttlelk/validation';
+import { Listing } from '../listings/listing.entity';
 import { Role } from './role.entity';
 import { User } from './user.entity';
 
@@ -19,6 +22,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Role) private readonly roles: Repository<Role>,
+    @InjectRepository(Listing) private readonly listings: Repository<Listing>,
   ) {}
 
   async ensureRoles(): Promise<void> {
@@ -52,6 +56,72 @@ export class UsersService {
       roles,
     });
     return this.users.save(user);
+  }
+
+  async adminCreate(input: AdminCreateUserInput) {
+    const user = await this.createUser(input, input.roles);
+    if (input.status && input.status !== 'active') {
+      user.status = input.status;
+      await this.users.save(user);
+    }
+    return this.toPublic(await this.findByIdOrThrow(user.id));
+  }
+
+  async adminUpdate(userId: string, input: AdminUpdateUserInput) {
+    const user = await this.findByIdOrThrow(userId);
+
+    if (input.email && input.email.toLowerCase() !== user.email) {
+      const email = input.email.toLowerCase();
+      const existing = await this.users.findOne({ where: { email } });
+      if (existing && existing.id !== user.id) {
+        throw new ConflictException({
+          success: false,
+          error: { code: 'EMAIL_EXISTS', message: 'Email already registered' },
+        });
+      }
+      user.email = email;
+    }
+
+    if (input.firstName) user.firstName = input.firstName;
+    if (input.lastName) user.lastName = input.lastName;
+    if (input.phone !== undefined) user.phone = input.phone;
+    if (input.status) user.status = input.status;
+    if (input.password) {
+      user.passwordHash = await bcrypt.hash(input.password, 10);
+    }
+    if (input.roles) {
+      const roles = await this.roles.find({ where: { name: In(input.roles) } });
+      if (roles.length !== input.roles.length) {
+        throw new BadRequestException({
+          success: false,
+          error: {
+            code: 'INVALID_ROLES',
+            message: 'One or more roles are invalid',
+          },
+        });
+      }
+      user.roles = roles;
+    }
+
+    return this.toPublic(await this.users.save(user));
+  }
+
+  async adminDelete(userId: string) {
+    const user = await this.findByIdOrThrow(userId);
+    const listingCount = await this.listings.count({
+      where: { sellerId: userId },
+    });
+    if (listingCount > 0) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'USER_HAS_LISTINGS',
+          message: `Cannot delete user with ${listingCount} listing(s). Suspend the account instead.`,
+        },
+      });
+    }
+    await this.users.remove(user);
+    return { id: userId, deleted: true as const };
   }
 
   findByEmail(email: string): Promise<User | null> {

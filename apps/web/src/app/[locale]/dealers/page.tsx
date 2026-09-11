@@ -5,7 +5,15 @@ import { apiGet } from '@/lib/api';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
 
-type Dealer = { id: string; name: string; slug: string; address: string | null };
+type Dealer = {
+  id: string;
+  name: string;
+  slug: string;
+  address: string | null;
+  coverImageUrl: string | null;
+  city?: { name: string } | null;
+  district?: { name: string } | null;
+};
 
 export async function generateMetadata({
   params,
@@ -52,20 +60,42 @@ export default async function DealersIndexPage({
         {dealers.length === 0 ? (
           <p className="text-muted">No approved dealers yet.</p>
         ) : (
-          dealers.map((dealer) => (
-            <Link
-              key={dealer.id}
-              href={`/${locale}/dealers/${dealer.slug}`}
-              className="border border-white/10 bg-surface/40 p-5 hover:border-accent/40"
-            >
-              <h2 className="font-[family-name:var(--font-display)] text-2xl">
-                {dealer.name}
-              </h2>
-              {dealer.address ? (
-                <p className="mt-2 text-sm text-muted">{dealer.address}</p>
-              ) : null}
-            </Link>
-          ))
+          dealers.map((dealer) => {
+            const location = [dealer.city?.name, dealer.district?.name]
+              .filter(Boolean)
+              .join(', ');
+            return (
+              <Link
+                key={dealer.id}
+                href={`/${locale}/dealers/${dealer.slug}`}
+                className="overflow-hidden border border-white/10 bg-surface/40 hover:border-accent/40"
+              >
+                {dealer.coverImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={dealer.coverImageUrl}
+                    alt={dealer.name}
+                    className="aspect-[16/10] w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-[16/10] items-center justify-center bg-background/50 text-sm text-muted">
+                    No photo
+                  </div>
+                )}
+                <div className="p-5">
+                  <h2 className="font-[family-name:var(--font-display)] text-2xl">
+                    {dealer.name}
+                  </h2>
+                  {location ? (
+                    <p className="mt-2 text-sm text-muted">{location}</p>
+                  ) : null}
+                  {dealer.address ? (
+                    <p className="mt-1 text-sm text-muted">{dealer.address}</p>
+                  ) : null}
+                </div>
+              </Link>
+            );
+          })
         )}
       </div>
     </main>

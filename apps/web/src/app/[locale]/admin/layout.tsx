@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
-import { LocaleChrome } from '@/components/locale-chrome';
+import { AdminLayoutClient } from '@/components/admin/admin-layout-client';
 import { isLocale, type Locale } from '@/lib/i18n';
 
-export default async function LocaleLayout({
+export default async function AdminLayout({
   children,
   params,
 }: {
@@ -13,5 +13,5 @@ export default async function LocaleLayout({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
 
-  return <LocaleChrome locale={locale}>{children}</LocaleChrome>;
+  return <AdminLayoutClient locale={locale}>{children}</AdminLayoutClient>;
 }

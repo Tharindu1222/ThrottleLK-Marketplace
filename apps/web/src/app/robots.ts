@@ -12,7 +12,14 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/en/admin', '/si/admin', '/en/account', '/si/account'],
+      disallow: [
+        '/en/admin',
+        '/si/admin',
+        '/en/admin/',
+        '/si/admin/',
+        '/en/account',
+        '/si/account',
+      ],
     },
     sitemap: absoluteUrl('/sitemap.xml'),
   };

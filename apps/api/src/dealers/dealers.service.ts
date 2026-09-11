@@ -5,9 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { CreateDealerInput } from '@throttlelk/validation';
+import type {
+  AdminCreateDealerInput,
+  AdminUpdateDealerInput,
+  CreateDealerInput,
+} from '@throttlelk/validation';
 import { Repository } from 'typeorm';
 import { slugify } from '../common/slugify';
+import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
@@ -17,6 +22,7 @@ import { Dealer } from './dealer.entity';
 export class DealersService {
   constructor(
     @InjectRepository(Dealer) private readonly dealers: Repository<Dealer>,
+    @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     private readonly usersService: UsersService,
     private readonly notifications: NotificationsService,
   ) {}
@@ -71,21 +77,163 @@ export class DealersService {
   }
 
   listActive() {
-    return this.dealers.find({
-      where: { status: 'active' },
-      order: { name: 'ASC' },
-    });
+    return this.dealers
+      .find({
+        where: { status: 'active' },
+        relations: ['images', 'district', 'city'],
+        order: { name: 'ASC' },
+      })
+      .then((rows) => rows.map((row) => this.withCover(row)));
   }
 
-  async getPublicBySlug(slug: string): Promise<Dealer> {
-    const dealer = await this.dealers.findOne({ where: { slug, status: 'active' } });
+  async listAllAdmin(filters?: { status?: string; q?: string }) {
+    const qb = this.dealers
+      .createQueryBuilder('d')
+      .leftJoinAndSelect('d.owner', 'owner')
+      .leftJoinAndSelect('d.district', 'district')
+      .leftJoinAndSelect('d.city', 'city')
+      .leftJoinAndSelect('d.images', 'images')
+      .orderBy('d.updatedAt', 'DESC')
+      .addOrderBy('images.sortOrder', 'ASC')
+      .take(200);
+
+    if (filters?.status) {
+      qb.andWhere('d.status = :status', { status: filters.status });
+    }
+    if (filters?.q?.trim()) {
+      const q = `%${filters.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(d.name) LIKE :q OR LOWER(d.slug) LIKE :q OR LOWER(d.phone) LIKE :q OR LOWER(owner.email) LIKE :q)',
+        { q },
+      );
+    }
+
+    const rows = await qb.getMany();
+    return rows.map((row) => this.withCover(row));
+  }
+
+  async adminGet(id: string) {
+    const dealer = await this.dealers.findOne({
+      where: { id },
+      relations: ['owner', 'district', 'city', 'images'],
+    });
     if (!dealer) {
       throw new NotFoundException({
         success: false,
         error: { code: 'DEALER_NOT_FOUND', message: 'Dealer not found' },
       });
     }
-    return dealer;
+    return this.withCover(dealer);
+  }
+
+  async adminCreate(input: AdminCreateDealerInput): Promise<Dealer> {
+    const owner = await this.usersService.findByIdOrThrow(input.ownerUserId);
+    const base = slugify(input.name) || 'dealer';
+    const slug = `${base}-${Date.now().toString(36)}`;
+    const status = input.status ?? 'pending';
+    const dealer = this.dealers.create({
+      ownerUserId: owner.id,
+      name: input.name,
+      slug,
+      description: input.description ?? null,
+      phone: input.phone,
+      whatsapp: input.whatsapp ?? null,
+      email: input.email ?? null,
+      website: input.website ?? null,
+      address: input.address ?? null,
+      districtId: input.districtId,
+      cityId: input.cityId,
+      status,
+      verifiedAt: status === 'active' ? new Date() : null,
+    });
+    const saved = await this.dealers.save(dealer);
+    if (status === 'active') {
+      await this.usersService.addRole(owner, 'dealer');
+    }
+    return this.adminGet(saved.id);
+  }
+
+  async adminUpdate(id: string, input: AdminUpdateDealerInput): Promise<Dealer> {
+    const dealer = await this.getById(id);
+    const prevStatus = dealer.status;
+
+    if (input.ownerUserId) {
+      await this.usersService.findByIdOrThrow(input.ownerUserId);
+      dealer.ownerUserId = input.ownerUserId;
+    }
+    if (input.name) {
+      dealer.name = input.name;
+    }
+    if (input.description !== undefined) {
+      dealer.description = input.description ?? null;
+    }
+    if (input.phone) dealer.phone = input.phone;
+    if (input.whatsapp !== undefined) dealer.whatsapp = input.whatsapp ?? null;
+    if (input.email !== undefined) dealer.email = input.email ?? null;
+    if (input.website !== undefined) dealer.website = input.website ?? null;
+    if (input.address !== undefined) dealer.address = input.address ?? null;
+    if (input.districtId) dealer.districtId = input.districtId;
+    if (input.cityId) dealer.cityId = input.cityId;
+
+    if (input.status) {
+      dealer.status = input.status;
+      if (input.status === 'active' && !dealer.verifiedAt) {
+        dealer.verifiedAt = new Date();
+      }
+    }
+
+    const saved = await this.dealers.save(dealer);
+
+    if (input.status === 'active' && prevStatus !== 'active') {
+      const owner = await this.usersService.findByIdOrThrow(saved.ownerUserId);
+      await this.usersService.addRole(owner, 'dealer');
+    }
+
+    return this.adminGet(saved.id);
+  }
+
+  async adminDelete(id: string) {
+    const dealer = await this.getById(id);
+    const listingCount = await this.listings.count({
+      where: { dealerId: id },
+    });
+    if (listingCount > 0) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'DEALER_HAS_LISTINGS',
+          message: `Cannot delete dealer with ${listingCount} listing(s). Suspend instead.`,
+        },
+      });
+    }
+    await this.dealers.remove(dealer);
+    return { id, deleted: true as const };
+  }
+
+  async getPublicBySlug(slug: string) {
+    const dealer = await this.dealers.findOne({
+      where: { slug, status: 'active' },
+      relations: ['images', 'district', 'city'],
+    });
+    if (!dealer) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'DEALER_NOT_FOUND', message: 'Dealer not found' },
+      });
+    }
+    return this.withCover(dealer);
+  }
+
+  private withCover(dealer: Dealer) {
+    const images = [...(dealer.images ?? [])].sort(
+      (a, b) => a.sortOrder - b.sortOrder,
+    );
+    const cover = images[0] ?? null;
+    return {
+      ...dealer,
+      images,
+      coverImageUrl: cover?.imageUrl ?? null,
+    };
   }
 
   async approve(id: string): Promise<Dealer> {

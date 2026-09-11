@@ -1,19 +1,45 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   adminCreateBrandSchema,
   adminCreateCitySchema,
   adminCreateDistrictSchema,
+  adminCreateDealerSchema,
+  adminCreateListingSchema,
   adminCreateModelSchema,
+  adminCreateUserSchema,
   adminResolveReportSchema,
+  adminUpdateDealerSchema,
+  adminUpdateListingSchema,
+  adminUpdateUserSchema,
   adminUpdateUserStatusSchema,
   rejectDealerSchema,
   rejectListingSchema,
   type AdminCreateBrandInput,
   type AdminCreateCityInput,
   type AdminCreateDistrictInput,
+  type AdminCreateDealerInput,
+  type AdminCreateListingInput,
   type AdminCreateModelInput,
+  type AdminCreateUserInput,
   type AdminResolveReportInput,
+  type AdminUpdateDealerInput,
+  type AdminUpdateListingInput,
+  type AdminUpdateUserInput,
   type AdminUpdateUserStatusInput,
   type RejectDealerInput,
 } from '@throttlelk/validation';
@@ -21,6 +47,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
+import { DealerImagesService } from '../dealers/dealer-images.service';
 import { DealersService } from '../dealers/dealers.service';
 import { ListingsService } from '../listings/listings.service';
 import { ReportsService } from '../reports/reports.service';
@@ -35,6 +62,7 @@ export class AdminController {
   constructor(
     private readonly listingsService: ListingsService,
     private readonly dealersService: DealersService,
+    private readonly dealerImagesService: DealerImagesService,
     private readonly reportsService: ReportsService,
     private readonly taxonomy: TaxonomyService,
     private readonly users: UsersService,
@@ -46,6 +74,17 @@ export class AdminController {
     return { success: true, data: await this.admin.dashboard() };
   }
 
+  @Get('listings')
+  async allListings(
+    @Query('status') status?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingsService.listAllAdmin({ status, q }),
+    };
+  }
+
   @Get('listings/pending')
   async pendingListings(): Promise<ApiSuccess<unknown>> {
     return {
@@ -54,11 +93,136 @@ export class AdminController {
     };
   }
 
+  @Get('listings/:id')
+  async getListing(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingsService.adminGet(id),
+    };
+  }
+
+  @Post('listings')
+  async createListing(
+    @Body(new ZodValidationPipe(adminCreateListingSchema))
+    body: AdminCreateListingInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingsService.adminCreate(body),
+    };
+  }
+
+  @Patch('listings/:id')
+  async updateListing(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminUpdateListingSchema))
+    body: AdminUpdateListingInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingsService.adminUpdate(id, body),
+    };
+  }
+
+  @Delete('listings/:id')
+  async deleteListing(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingsService.adminDelete(id),
+    };
+  }
+
+  @Get('dealers')
+  async allDealers(
+    @Query('status') status?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.listAllAdmin({ status, q }),
+    };
+  }
+
   @Get('dealers/pending')
   async pendingDealers(): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
       data: await this.dealersService.listPending(),
+    };
+  }
+
+  @Get('dealers/:id')
+  async getDealer(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.adminGet(id),
+    };
+  }
+
+  @Post('dealers')
+  async createDealer(
+    @Body(new ZodValidationPipe(adminCreateDealerSchema))
+    body: AdminCreateDealerInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.adminCreate(body),
+    };
+  }
+
+  @Patch('dealers/:id')
+  async updateDealer(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminUpdateDealerSchema))
+    body: AdminUpdateDealerInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.adminUpdate(id, body),
+    };
+  }
+
+  @Delete('dealers/:id')
+  async deleteDealer(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.adminDelete(id),
+    };
+  }
+
+  @Get('dealers/:id/images')
+  async listDealerImages(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealerImagesService.listForDealer(id),
+    };
+  }
+
+  @Post('dealers/:id/images')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadDealerImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealerImagesService.uploadAsAdmin(id, file),
+    };
+  }
+
+  @Delete('dealers/:id/images/:imageId')
+  async deleteDealerImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealerImagesService.removeAsAdmin(id, imageId),
     };
   }
 
@@ -85,6 +249,45 @@ export class AdminController {
   @Get('users')
   async usersList(): Promise<ApiSuccess<unknown>> {
     return { success: true, data: await this.users.listUsers() };
+  }
+
+  @Get('users/:id')
+  async getUser(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: this.users.toPublic(await this.users.findByIdOrThrow(id)),
+    };
+  }
+
+  @Post('users')
+  async createUser(
+    @Body(new ZodValidationPipe(adminCreateUserSchema))
+    body: AdminCreateUserInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.users.adminCreate(body),
+    };
+  }
+
+  @Patch('users/:id')
+  async updateUser(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminUpdateUserSchema))
+    body: AdminUpdateUserInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.users.adminUpdate(id, body),
+    };
+  }
+
+  @Delete('users/:id')
+  async deleteUser(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.users.adminDelete(id),
+    };
   }
 
   @Patch('users/:id/status')

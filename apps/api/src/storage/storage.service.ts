@@ -34,6 +34,7 @@ export class StorageService {
         region: 'auto',
         endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
         credentials: { accessKeyId, secretAccessKey },
+        forcePathStyle: true,
       });
       this.bucket = bucket;
       this.publicUrl = publicUrl.replace(/\/$/, '');
@@ -72,20 +73,53 @@ export class StorageService {
     };
   }
 
+  private rethrowR2(err: unknown, action: 'upload' | 'delete'): never {
+    const code =
+      err && typeof err === 'object' && 'Code' in err
+        ? String((err as { Code?: string }).Code)
+        : err && typeof err === 'object' && 'name' in err
+          ? String((err as { name?: string }).name)
+          : 'UNKNOWN';
+    this.logger.error(`R2 ${action} failed (${code})`, err);
+
+    if (code === 'AccessDenied' || code === 'InvalidAccessKeyId') {
+      throw new ServiceUnavailableException({
+        success: false,
+        error: {
+          code: 'R2_ACCESS_DENIED',
+          message:
+            'Cloudflare R2 denied the request. Create an R2 API token with Object Read & Write on this bucket, then update R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET in .env and restart the API.',
+        },
+      });
+    }
+
+    throw new ServiceUnavailableException({
+      success: false,
+      error: {
+        code: 'R2_ERROR',
+        message: `Image storage ${action} failed (${code}). Check R2 credentials and bucket name.`,
+      },
+    });
+  }
+
   async putObject(
     storageKey: string,
     buffer: Buffer,
     contentType: string,
   ): Promise<StoredObject> {
     const { client, bucket, publicUrl } = this.requireR2();
-    await client.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: storageKey,
-        Body: buffer,
-        ContentType: contentType,
-      }),
-    );
+    try {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: storageKey,
+          Body: buffer,
+          ContentType: contentType,
+        }),
+      );
+    } catch (err) {
+      this.rethrowR2(err, 'upload');
+    }
     return {
       storageKey,
       publicUrl: `${publicUrl}/${storageKey}`,
@@ -94,11 +128,15 @@ export class StorageService {
 
   async deleteObject(storageKey: string): Promise<void> {
     const { client, bucket } = this.requireR2();
-    await client.send(
-      new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: storageKey,
-      }),
-    );
+    try {
+      await client.send(
+        new DeleteObjectCommand({
+          Bucket: bucket,
+          Key: storageKey,
+        }),
+      );
+    } catch (err) {
+      this.rethrowR2(err, 'delete');
+    }
   }
 }

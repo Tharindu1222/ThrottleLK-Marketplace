@@ -27,3 +27,95 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100vh;
 }
+
+/* Admin-only skin (dark navy + purple) — does not affect marketplace */
+.admin-app {
+  --admin-bg: #0f1219;
+  --admin-bg-elevated: #151a24;
+  --admin-surface: #1a2030;
+  --admin-surface-2: #222a3d;
+  --admin-border: rgba(255, 255, 255, 0.08);
+  --admin-border-strong: rgba(255, 255, 255, 0.12);
+  --admin-text: #f3f4f6;
+  --admin-muted: #94a3b8;
+  --admin-faint: #64748b;
+  --admin-accent: #7c5cfc;
+  --admin-accent-2: #a78bfa;
+  --admin-accent-soft: rgba(124, 92, 252, 0.18);
+  --admin-danger: #f43f5e;
+  --admin-success: #22c55e;
+  --admin-warning: #f59e0b;
+  --admin-info: #38bdf8;
+  --admin-pink: #ec4899;
+
+  background:
+    radial-gradient(ellipse 70% 40% at 10% 0%, rgba(124, 92, 252, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 90% 10%, rgba(236, 72, 153, 0.06) 0%, transparent 45%),
+    var(--admin-bg);
+  color: var(--admin-text);
+  min-height: 100vh;
+}
+
+.admin-app input,
+.admin-app select,
+.admin-app textarea,
+.admin-app button {
+  font-family: inherit;
+}
+
+.admin-card {
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.admin-btn-primary {
+  border-radius: 0.75rem;
+  background: var(--admin-accent);
+  color: #fff;
+  font-weight: 500;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-btn-primary:hover {
+  background: #6d4ef0;
+  box-shadow: 0 0 20px rgba(124, 92, 252, 0.35);
+}
+
+.admin-btn-ghost {
+  border-radius: 0.75rem;
+  border: 1px solid var(--admin-border-strong);
+  background: transparent;
+  color: var(--admin-muted);
+}
+
+.admin-btn-ghost:hover {
+  background: var(--admin-surface-2);
+  color: var(--admin-text);
+}
+
+.admin-field {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--admin-border-strong);
+  background: var(--admin-bg-elevated);
+  color: var(--admin-text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.admin-field:focus {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-accent-soft);
+}
+
+.admin-field::placeholder {
+  color: var(--admin-faint);
+}
+
+.admin-app select.admin-field option {
+  background: var(--admin-bg-elevated);
+  color: var(--admin-text);
+}

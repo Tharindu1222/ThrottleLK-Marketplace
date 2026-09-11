@@ -4,12 +4,14 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { District } from '../taxonomy/district.entity';
 import { City } from '../taxonomy/city.entity';
+import { DealerImage } from './dealer-image.entity';
 
 @Entity('dealers')
 export class Dealer {
@@ -72,4 +74,7 @@ export class Dealer {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
+
+  @OneToMany(() => DealerImage, (image) => image.dealer)
+  images!: DealerImage[];
 }
