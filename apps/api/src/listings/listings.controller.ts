@@ -44,21 +44,31 @@ export class ListingsController {
   async list(
     @Query('brandId') brandId?: string,
     @Query('modelId') modelId?: string,
+    @Query('categoryId') categoryId?: string,
     @Query('districtId') districtId?: string,
     @Query('dealerId') dealerId?: string,
     @Query('sellerId') sellerId?: string,
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
+    @Query('minYear') minYear?: string,
+    @Query('maxYear') maxYear?: string,
+    @Query('condition') condition?: string,
+    @Query('sort') sort?: string,
     @Query('q') q?: string,
   ): Promise<ApiSuccess<unknown>> {
     const data = await this.listingsService.listPublic({
       brandId,
       modelId,
+      categoryId,
       districtId,
       dealerId,
       sellerId,
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      minYear: minYear ? Number(minYear) : undefined,
+      maxYear: maxYear ? Number(maxYear) : undefined,
+      condition,
+      sort,
       q,
     });
     return { success: true, data };

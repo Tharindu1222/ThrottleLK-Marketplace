@@ -109,6 +109,24 @@ export class DealersService {
     return dealer;
   }
 
+  async reject(id: string, reason: string): Promise<Dealer> {
+    const dealer = await this.getById(id);
+    if (dealer.status !== 'pending') {
+      throw new BadRequestException({
+        success: false,
+        error: { code: 'INVALID_STATUS', message: 'Dealer is not pending' },
+      });
+    }
+    dealer.status = 'rejected';
+    await this.dealers.save(dealer);
+    void this.notifications.dealerRejected(dealer.ownerUserId, {
+      id: dealer.id,
+      name: dealer.name,
+      reason,
+    });
+    return dealer;
+  }
+
   async assertOwnedActiveDealer(ownerUserId: string, dealerId: string) {
     const dealer = await this.getById(dealerId);
     if (dealer.ownerUserId !== ownerUserId) {

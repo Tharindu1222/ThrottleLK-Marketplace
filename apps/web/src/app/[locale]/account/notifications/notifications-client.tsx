@@ -13,7 +13,7 @@ type Notification = {
   message: string;
   readAt: string | null;
   createdAt: string;
-  dataJson?: { slug?: string } | null;
+  dataJson?: { slug?: string; conversationId?: string } | null;
 };
 
 export function NotificationsClient({ locale }: { locale: Locale }) {
@@ -88,7 +88,15 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
               {n.title}
             </p>
             <p className="mt-1 text-sm text-muted">{n.message}</p>
-            {n.dataJson?.slug ? (
+            {n.dataJson?.conversationId ? (
+              <Link
+                href={`/${locale}/account/messages/${n.dataJson.conversationId}`}
+                className="mt-2 inline-block text-sm text-accent underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Open conversation
+              </Link>
+            ) : n.dataJson?.slug ? (
               <Link
                 href={`/${locale}/bikes/${n.dataJson.slug}`}
                 className="mt-2 inline-block text-sm text-accent underline"

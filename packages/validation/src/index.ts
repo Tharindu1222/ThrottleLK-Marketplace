@@ -86,13 +86,46 @@ export const contactListingSchema = z.object({
   message: z.string().min(10).max(2000),
 });
 
+export const listingSortSchema = z.enum([
+  'newest',
+  'oldest',
+  'price_asc',
+  'price_desc',
+  'mileage_asc',
+  'mileage_desc',
+  'year_desc',
+  'year_asc',
+]);
+
+export const startConversationSchema = z.object({
+  listingId: z.string().uuid(),
+  message: z.string().min(1).max(2000),
+});
+
+export const sendConversationMessageSchema = z.object({
+  message: z.string().min(1).max(2000),
+});
+
+export const adminResolveReportSchema = z.object({
+  status: z.enum(['actioned', 'dismissed']),
+});
+
+export const rejectDealerSchema = z.object({
+  reason: z.string().min(5).max(1000),
+});
+
 export const savedSearchQuerySchema = z.object({
   q: z.string().max(200).optional(),
   brandId: z.string().uuid().optional(),
   modelId: z.string().uuid().optional(),
+  categoryId: z.string().uuid().optional(),
   districtId: z.string().uuid().optional(),
   minPrice: z.number().int().nonnegative().optional(),
   maxPrice: z.number().int().positive().optional(),
+  minYear: z.number().int().min(1970).max(2100).optional(),
+  maxYear: z.number().int().min(1970).max(2100).optional(),
+  condition: z.enum(['new', 'used', 'reconditioned']).optional(),
+  sort: listingSortSchema.optional(),
 });
 
 export const createSavedSearchSchema = z.object({
@@ -170,6 +203,13 @@ export type CreateListingInput = z.infer<typeof createListingSchema>;
 export type UpdateListingInput = z.infer<typeof updateListingSchema>;
 export type CreateDealerInput = z.infer<typeof createDealerSchema>;
 export type ContactListingInput = z.infer<typeof contactListingSchema>;
+export type ListingSort = z.infer<typeof listingSortSchema>;
+export type StartConversationInput = z.infer<typeof startConversationSchema>;
+export type SendConversationMessageInput = z.infer<
+  typeof sendConversationMessageSchema
+>;
+export type AdminResolveReportInput = z.infer<typeof adminResolveReportSchema>;
+export type RejectDealerInput = z.infer<typeof rejectDealerSchema>;
 export type CreateSavedSearchInput = z.infer<typeof createSavedSearchSchema>;
 export type UpdateSavedSearchInput = z.infer<typeof updateSavedSearchSchema>;
 export type CreateReportInput = z.infer<typeof createReportSchema>;

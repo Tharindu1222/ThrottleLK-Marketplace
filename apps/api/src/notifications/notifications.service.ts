@@ -122,6 +122,42 @@ export class NotificationsService {
     });
   }
 
+  async dealerRejected(
+    ownerUserId: string,
+    dealer: { id: string; name: string; reason: string },
+  ) {
+    return this.notifyUser({
+      userId: ownerUserId,
+      type: 'dealer_rejected',
+      title: 'Dealer application rejected',
+      message: `"${dealer.name}" was rejected: ${dealer.reason}`,
+      data: { dealerId: dealer.id, reason: dealer.reason },
+      emailSubject: 'ThrottleLK dealer application rejected',
+      emailHtml: `<p>Your dealer application <strong>${dealer.name}</strong> was rejected.</p><p>Reason: ${dealer.reason}</p>`,
+    });
+  }
+
+  async newMessage(
+    userId: string,
+    input: {
+      conversationId: string;
+      listingTitle: string;
+      preview: string;
+      fromBuyer: boolean;
+    },
+  ) {
+    const who = input.fromBuyer ? 'buyer' : 'seller';
+    return this.notifyUser({
+      userId,
+      type: 'new_message',
+      title: `New message from ${who}`,
+      message: `${input.listingTitle}: ${input.preview.slice(0, 120)}`,
+      data: { conversationId: input.conversationId },
+      emailSubject: `New ThrottleLK message — ${input.listingTitle}`,
+      emailHtml: `<p>You have a new message about <strong>${input.listingTitle}</strong>.</p><p>${input.preview}</p>`,
+    });
+  }
+
   async priceDrop(
     userId: string,
     listing: { id: string; title: string; slug: string },

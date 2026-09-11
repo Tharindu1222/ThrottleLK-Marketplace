@@ -14,9 +14,15 @@ export function SaveSearchButton({
   filters: {
     q?: string;
     brandId?: string;
+    modelId?: string;
+    categoryId?: string;
     districtId?: string;
     minPrice?: string;
     maxPrice?: string;
+    minYear?: string;
+    maxYear?: string;
+    condition?: string;
+    sort?: string;
   };
 }) {
   const [status, setStatus] = useState<string | null>(null);
@@ -27,9 +33,14 @@ export function SaveSearchButton({
       Boolean(
         filters.q ||
           filters.brandId ||
+          filters.modelId ||
+          filters.categoryId ||
           filters.districtId ||
           filters.minPrice ||
-          filters.maxPrice,
+          filters.maxPrice ||
+          filters.minYear ||
+          filters.maxYear ||
+          filters.condition,
       ),
     [filters],
   );
@@ -49,6 +60,7 @@ export function SaveSearchButton({
     const nameParts = [
       filters.q,
       filters.brandId ? 'brand' : null,
+      filters.modelId ? 'model' : null,
       filters.districtId ? 'district' : null,
       filters.minPrice || filters.maxPrice ? 'price' : null,
     ].filter(Boolean);
@@ -60,9 +72,15 @@ export function SaveSearchButton({
           query: {
             q: filters.q || undefined,
             brandId: filters.brandId || undefined,
+            modelId: filters.modelId || undefined,
+            categoryId: filters.categoryId || undefined,
             districtId: filters.districtId || undefined,
             minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
             maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+            minYear: filters.minYear ? Number(filters.minYear) : undefined,
+            maxYear: filters.maxYear ? Number(filters.maxYear) : undefined,
+            condition: filters.condition || undefined,
+            sort: filters.sort || undefined,
           },
           notificationsEnabled: false,
         },

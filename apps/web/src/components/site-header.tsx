@@ -57,6 +57,12 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 {t(locale, 'notifications')}
               </Link>
               <Link
+                href={`/${locale}/account/messages`}
+                className="hover:text-foreground"
+              >
+                {t(locale, 'messages')}
+              </Link>
+              <Link
                 href={`/${locale}/account/favourites`}
                 className="hover:text-foreground"
               >

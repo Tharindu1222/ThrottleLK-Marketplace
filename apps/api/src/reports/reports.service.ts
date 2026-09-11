@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { CreateReportInput } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
@@ -38,5 +42,26 @@ export class ReportsService {
       order: { createdAt: 'ASC' },
       take: 100,
     });
+  }
+
+  async setStatus(id: string, status: 'actioned' | 'dismissed') {
+    const report = await this.reports.findOne({ where: { id } });
+    if (!report) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'REPORT_NOT_FOUND', message: 'Report not found' },
+      });
+    }
+    if (report.status !== 'open') {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'REPORT_NOT_OPEN',
+          message: 'Report is not open',
+        },
+      });
+    }
+    report.status = status;
+    return this.reports.save(report);
   }
 }

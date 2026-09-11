@@ -204,20 +204,27 @@ export class ListingsService {
   async listPublic(filters: {
     brandId?: string;
     modelId?: string;
+    categoryId?: string;
     districtId?: string;
     dealerId?: string;
     sellerId?: string;
     minPrice?: number;
     maxPrice?: number;
+    minYear?: number;
+    maxYear?: number;
+    condition?: string;
     q?: string;
+    sort?: string;
   }) {
     const qb = this.listings
       .createQueryBuilder('l')
-      .where('l.status = :status', { status: 'active' })
-      .orderBy('l.published_at', 'DESC', 'NULLS LAST');
+      .where('l.status = :status', { status: 'active' });
 
     if (filters.brandId) qb.andWhere('l.brand_id = :brandId', { brandId: filters.brandId });
     if (filters.modelId) qb.andWhere('l.model_id = :modelId', { modelId: filters.modelId });
+    if (filters.categoryId) {
+      qb.andWhere('l.category_id = :categoryId', { categoryId: filters.categoryId });
+    }
     if (filters.districtId) {
       qb.andWhere('l.district_id = :districtId', { districtId: filters.districtId });
     }
@@ -233,10 +240,47 @@ export class ListingsService {
     if (filters.maxPrice != null) {
       qb.andWhere('l.price_lkr <= :maxPrice', { maxPrice: filters.maxPrice });
     }
+    if (filters.minYear != null) {
+      qb.andWhere('l.manufacture_year >= :minYear', { minYear: filters.minYear });
+    }
+    if (filters.maxYear != null) {
+      qb.andWhere('l.manufacture_year <= :maxYear', { maxYear: filters.maxYear });
+    }
+    if (filters.condition) {
+      qb.andWhere('l.condition = :condition', { condition: filters.condition });
+    }
     if (filters.q) {
       qb.andWhere('(l.title ILIKE :q OR l.description ILIKE :q)', {
         q: `%${filters.q}%`,
       });
+    }
+
+    switch (filters.sort) {
+      case 'oldest':
+        qb.orderBy('l.published_at', 'ASC', 'NULLS LAST');
+        break;
+      case 'price_asc':
+        qb.orderBy('l.price_lkr', 'ASC');
+        break;
+      case 'price_desc':
+        qb.orderBy('l.price_lkr', 'DESC');
+        break;
+      case 'mileage_asc':
+        qb.orderBy('l.mileage', 'ASC', 'NULLS LAST');
+        break;
+      case 'mileage_desc':
+        qb.orderBy('l.mileage', 'DESC', 'NULLS LAST');
+        break;
+      case 'year_asc':
+        qb.orderBy('l.manufacture_year', 'ASC');
+        break;
+      case 'year_desc':
+        qb.orderBy('l.manufacture_year', 'DESC');
+        break;
+      case 'newest':
+      default:
+        qb.orderBy('l.published_at', 'DESC', 'NULLS LAST');
+        break;
     }
 
     const rows = await qb.take(50).getMany();

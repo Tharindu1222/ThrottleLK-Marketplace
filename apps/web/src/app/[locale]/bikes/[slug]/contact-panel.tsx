@@ -11,6 +11,7 @@ type ListingContact = {
   phone: string | null;
   whatsapp: string | null;
   contactHidden?: boolean;
+  seller?: { id: string; displayName: string } | null;
 };
 
 export function ContactPanel({
@@ -24,6 +25,7 @@ export function ContactPanel({
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     const access = getAccessToken();
@@ -37,21 +39,28 @@ export function ContactPanel({
   }, [initial.id]);
 
   const showPhone = Boolean(token) && listing.contactHidden === false;
+  const seller = listing.seller ?? initial.seller;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!token) {
+      window.location.href = `/${locale}/login`;
+      return;
+    }
     setError(null);
     setStatus(null);
     const form = new FormData(e.currentTarget);
     try {
-      await apiSend(`/api/v1/listings/${listing.id}/contact`, {
+      const result = await apiSend<{
+        conversationId: string;
+      }>(`/api/v1/conversations`, {
+        token,
         body: {
-          buyerName: String(form.get('buyerName') ?? ''),
-          buyerPhone: String(form.get('buyerPhone') ?? ''),
-          buyerEmail: String(form.get('buyerEmail') || '') || undefined,
+          listingId: listing.id,
           message: String(form.get('message') ?? ''),
         },
       });
+      setConversationId(result.conversationId);
       setStatus(t(locale, 'inquirySent'));
       e.currentTarget.reset();
     } catch (err) {
@@ -64,6 +73,18 @@ export function ContactPanel({
       <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">
         {t(locale, 'contactSeller')}
       </h2>
+
+      {seller ? (
+        <p className="mt-3 text-sm">
+          <span className="text-muted">{t(locale, 'seller')}: </span>
+          <Link
+            href={`/${locale}/sellers/${seller.id}`}
+            className="text-accent underline"
+          >
+            {seller.displayName}
+          </Link>
+        </p>
+      ) : null}
 
       {showPhone ? (
         <div className="mt-4 flex flex-wrap gap-3">
@@ -95,41 +116,42 @@ export function ContactPanel({
         </p>
       )}
 
-      <form onSubmit={onSubmit} className="mt-6 grid gap-3">
-        <input
-          name="buyerName"
-          required
-          placeholder={t(locale, 'yourName')}
-          className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-        />
-        <input
-          name="buyerPhone"
-          required
-          placeholder={t(locale, 'phone')}
-          className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-        />
-        <input
-          name="buyerEmail"
-          type="email"
-          placeholder={t(locale, 'email')}
-          className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-        />
-        <textarea
-          name="message"
-          required
-          rows={4}
-          placeholder={t(locale, 'message')}
-          className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-        />
-        <button
-          type="submit"
-          className="bg-foreground px-4 py-2 font-[family-name:var(--font-display)] tracking-wide text-background"
-        >
-          {t(locale, 'sendMessage')}
-        </button>
-        {status ? <p className="text-sm text-accent">{status}</p> : null}
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      </form>
+      {token ? (
+        <form onSubmit={onSubmit} className="mt-6 grid gap-3">
+          <p className="text-sm text-muted">{t(locale, 'messageSellerHint')}</p>
+          <textarea
+            name="message"
+            required
+            rows={4}
+            minLength={1}
+            placeholder={t(locale, 'message')}
+            className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
+          />
+          <button
+            type="submit"
+            className="bg-foreground px-4 py-2 font-[family-name:var(--font-display)] tracking-wide text-background"
+          >
+            {t(locale, 'sendMessage')}
+          </button>
+          {conversationId ? (
+            <Link
+              href={`/${locale}/account/messages/${conversationId}`}
+              className="text-sm text-accent underline"
+            >
+              {t(locale, 'openConversation')}
+            </Link>
+          ) : null}
+          {status ? <p className="text-sm text-accent">{status}</p> : null}
+          {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        </form>
+      ) : (
+        <p className="mt-6 text-sm text-muted">
+          {t(locale, 'loginToMessage')}{' '}
+          <Link href={`/${locale}/login`} className="text-accent underline">
+            {t(locale, 'login')}
+          </Link>
+        </p>
+      )}
     </aside>
   );
 }

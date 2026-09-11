@@ -57,7 +57,9 @@ export function AdminQueue({ locale }: { locale: Locale }) {
   const [reports, setReports] = useState<Report[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
+  const [dealerRejectId, setDealerRejectId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+  const [dealerReason, setDealerReason] = useState('');
 
   async function load(access: string) {
     const [dashboard, listings, pendingDealers, userRows, brandRows, districtRows, openReports] =
@@ -272,34 +274,85 @@ export function AdminQueue({ locale }: { locale: Locale }) {
                 dealers.map((dealer) => (
                   <div
                     key={dealer.id}
-                    className="flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-surface/40 p-4"
+                    className="border border-white/10 bg-surface/40 p-4"
                   >
-                    <div>
-                      <h3 className="font-[family-name:var(--font-display)] text-xl">
-                        {dealer.name}
-                      </h3>
-                      <p className="text-sm text-muted">{dealer.phone}</p>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-[family-name:var(--font-display)] text-xl">
+                          {dealer.name}
+                        </h3>
+                        <p className="text-sm text-muted">{dealer.phone}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="bg-accent px-3 py-1.5 text-sm text-background"
+                          onClick={() => {
+                            void apiSend(
+                              `/api/v1/admin/dealers/${dealer.id}/approve`,
+                              { token },
+                            )
+                              .then(() => load(token))
+                              .catch((err) =>
+                                setError(
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'Dealer approve failed',
+                                ),
+                              );
+                          }}
+                        >
+                          Approve dealer
+                        </button>
+                        <button
+                          type="button"
+                          className="border border-white/20 px-3 py-1.5 text-sm"
+                          onClick={() => {
+                            setDealerRejectId(dealer.id);
+                            setDealerReason('');
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      className="bg-accent px-3 py-1.5 text-sm text-background"
-                      onClick={() => {
-                        void apiSend(
-                          `/api/v1/admin/dealers/${dealer.id}/approve`,
-                          { token },
-                        )
-                          .then(() => load(token))
-                          .catch((err) =>
-                            setError(
-                              err instanceof Error
-                                ? err.message
-                                : 'Dealer approve failed',
-                            ),
-                          );
-                      }}
-                    >
-                      Approve dealer
-                    </button>
+                    {dealerRejectId === dealer.id ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <input
+                          value={dealerReason}
+                          onChange={(e) => setDealerReason(e.target.value)}
+                          placeholder="Rejection reason"
+                          className="min-w-[240px] flex-1 bg-background px-3 py-2 text-sm ring-1 ring-white/10"
+                        />
+                        <button
+                          type="button"
+                          className="bg-foreground px-3 py-2 text-sm text-background"
+                          onClick={() => {
+                            if (dealerReason.trim().length < 5) {
+                              setError('Reason must be at least 5 characters');
+                              return;
+                            }
+                            void apiSend(
+                              `/api/v1/admin/dealers/${dealer.id}/reject`,
+                              { token, body: { reason: dealerReason } },
+                            )
+                              .then(() => {
+                                setDealerRejectId(null);
+                                return load(token);
+                              })
+                              .catch((err) =>
+                                setError(
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'Dealer reject failed',
+                                ),
+                              );
+                          }}
+                        >
+                          Confirm reject
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ))
               )}
@@ -537,6 +590,48 @@ export function AdminQueue({ locale }: { locale: Locale }) {
                 <p className="mt-2 text-xs text-muted">
                   Listing {report.listingId}
                 </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="bg-accent px-3 py-1.5 text-sm text-background"
+                    onClick={() => {
+                      void apiSend(
+                        `/api/v1/admin/reports/${report.id}/resolve`,
+                        { token, body: { status: 'actioned' } },
+                      )
+                        .then(() => load(token))
+                        .catch((err) =>
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Resolve failed',
+                          ),
+                        );
+                    }}
+                  >
+                    Mark actioned
+                  </button>
+                  <button
+                    type="button"
+                    className="border border-white/20 px-3 py-1.5 text-sm"
+                    onClick={() => {
+                      void apiSend(
+                        `/api/v1/admin/reports/${report.id}/resolve`,
+                        { token, body: { status: 'dismissed' } },
+                      )
+                        .then(() => load(token))
+                        .catch((err) =>
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : 'Dismiss failed',
+                          ),
+                        );
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
             ))
           )}

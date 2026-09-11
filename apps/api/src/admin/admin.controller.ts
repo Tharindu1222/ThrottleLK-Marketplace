@@ -5,13 +5,17 @@ import {
   adminCreateCitySchema,
   adminCreateDistrictSchema,
   adminCreateModelSchema,
+  adminResolveReportSchema,
   adminUpdateUserStatusSchema,
+  rejectDealerSchema,
   rejectListingSchema,
   type AdminCreateBrandInput,
   type AdminCreateCityInput,
   type AdminCreateDistrictInput,
   type AdminCreateModelInput,
+  type AdminResolveReportInput,
   type AdminUpdateUserStatusInput,
+  type RejectDealerInput,
 } from '@throttlelk/validation';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -63,6 +67,18 @@ export class AdminController {
     return {
       success: true,
       data: await this.reportsService.listOpen(),
+    };
+  }
+
+  @Post('reports/:id/resolve')
+  async resolveReport(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminResolveReportSchema))
+    body: AdminResolveReportInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.reportsService.setStatus(id, body.status),
     };
   }
 
@@ -160,6 +176,17 @@ export class AdminController {
     return {
       success: true,
       data: await this.dealersService.approve(id),
+    };
+  }
+
+  @Post('dealers/:id/reject')
+  async rejectDealer(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(rejectDealerSchema)) body: RejectDealerInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.reject(id, body.reason),
     };
   }
 }

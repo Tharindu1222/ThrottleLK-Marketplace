@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { config as loadEnv } from 'dotenv';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
+import { ConversationsModule } from './conversations/conversations.module';
 import { DealersModule } from './dealers/dealers.module';
 import { FavouritesModule } from './favourites/favourites.module';
 import { HealthModule } from './health/health.module';
@@ -66,6 +67,7 @@ const skipDb = process.env.SKIP_DB === 'true';
     FavouritesModule,
     SavedSearchesModule,
     ReportsModule,
+    ConversationsModule,
     NotificationsModule,
     StorageModule,
     AdminModule,
