@@ -11,3 +11,173 @@ export const listingStatusSchema = z.enum([
 ]);
 
 export const localeSchema = z.enum(['en', 'si']);
+
+export const registerSchema = z.object({
+  firstName: z.string().min(1).max(80),
+  lastName: z.string().min(1).max(80),
+  email: z.string().email(),
+  phone: z.string().min(9).max(20).optional(),
+  password: z.string().min(8).max(128),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(20).max(200),
+  password: z.string().min(8).max(128),
+});
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(20).max(200),
+});
+
+export const createListingSchema = z.object({
+  brandId: z.string().uuid(),
+  modelId: z.string().uuid(),
+  categoryId: z.string().uuid(),
+  districtId: z.string().uuid(),
+  cityId: z.string().uuid(),
+  title: z.string().min(5).max(160),
+  description: z.string().min(20).max(10000),
+  priceLkr: z.number().int().positive(),
+  negotiable: z.boolean().default(true),
+  manufactureYear: z.number().int().min(1970).max(2100),
+  registrationYear: z.number().int().min(1970).max(2100).optional(),
+  engineCc: z.number().int().positive().optional(),
+  mileage: z.number().int().nonnegative().optional(),
+  fuelType: z.enum(['petrol', 'diesel', 'electric', 'hybrid', 'other']),
+  transmission: z.enum(['manual', 'automatic', 'semi_automatic', 'other']),
+  condition: z.enum(['new', 'used', 'reconditioned']),
+  colour: z.string().max(60).optional(),
+  phone: z.string().min(9).max(20).optional(),
+  whatsapp: z.string().min(9).max(20).optional(),
+  dealerId: z.string().uuid().optional(),
+});
+
+export const updateListingSchema = createListingSchema.partial();
+
+export const rejectListingSchema = z.object({
+  reason: z.string().min(5).max(1000),
+});
+
+export const createDealerSchema = z.object({
+  name: z.string().min(2).max(120),
+  description: z.string().max(5000).optional(),
+  phone: z.string().min(9).max(20),
+  whatsapp: z.string().min(9).max(20).optional(),
+  email: z.string().email().optional(),
+  website: z.string().url().optional(),
+  address: z.string().max(300).optional(),
+  districtId: z.string().uuid(),
+  cityId: z.string().uuid(),
+});
+
+export const contactListingSchema = z.object({
+  buyerName: z.string().min(2).max(120),
+  buyerPhone: z.string().min(9).max(20),
+  buyerEmail: z.string().email().optional(),
+  message: z.string().min(10).max(2000),
+});
+
+export const savedSearchQuerySchema = z.object({
+  q: z.string().max(200).optional(),
+  brandId: z.string().uuid().optional(),
+  modelId: z.string().uuid().optional(),
+  districtId: z.string().uuid().optional(),
+  minPrice: z.number().int().nonnegative().optional(),
+  maxPrice: z.number().int().positive().optional(),
+});
+
+export const createSavedSearchSchema = z.object({
+  name: z.string().min(2).max(120),
+  query: savedSearchQuerySchema,
+  notificationsEnabled: z.boolean().optional().default(false),
+});
+
+export const updateSavedSearchSchema = z.object({
+  name: z.string().min(2).max(120).optional(),
+  query: savedSearchQuerySchema.optional(),
+  notificationsEnabled: z.boolean().optional(),
+});
+
+export const createReportSchema = z.object({
+  listingId: z.string().uuid(),
+  reason: z.enum([
+    'spam',
+    'fraud',
+    'wrong_info',
+    'inappropriate',
+    'duplicate',
+    'other',
+  ]),
+  description: z.string().min(10).max(2000),
+});
+
+export const adminCreateBrandSchema = z.object({
+  name: z.string().min(1).max(80),
+});
+
+export const adminCreateModelSchema = z.object({
+  brandId: z.string().uuid(),
+  name: z.string().min(1).max(120),
+  categoryId: z.string().uuid().optional(),
+});
+
+export const adminCreateDistrictSchema = z.object({
+  name: z.string().min(1).max(80),
+});
+
+export const adminCreateCitySchema = z.object({
+  districtId: z.string().uuid(),
+  name: z.string().min(1).max(80),
+});
+
+export const adminUpdateUserStatusSchema = z.object({
+  status: z.enum(['active', 'suspended']),
+});
+
+export const updateProfileSchema = z
+  .object({
+    firstName: z.string().min(1).max(80).optional(),
+    lastName: z.string().min(1).max(80).optional(),
+    phone: z.string().min(9).max(20).optional().nullable(),
+    currentPassword: z.string().min(8).max(128).optional(),
+    newPassword: z.string().min(8).max(128).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.newPassword && !data.currentPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'currentPassword is required to set a new password',
+        path: ['currentPassword'],
+      });
+    }
+  });
+
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type CreateListingInput = z.infer<typeof createListingSchema>;
+export type UpdateListingInput = z.infer<typeof updateListingSchema>;
+export type CreateDealerInput = z.infer<typeof createDealerSchema>;
+export type ContactListingInput = z.infer<typeof contactListingSchema>;
+export type CreateSavedSearchInput = z.infer<typeof createSavedSearchSchema>;
+export type UpdateSavedSearchInput = z.infer<typeof updateSavedSearchSchema>;
+export type CreateReportInput = z.infer<typeof createReportSchema>;
+export type AdminCreateBrandInput = z.infer<typeof adminCreateBrandSchema>;
+export type AdminCreateModelInput = z.infer<typeof adminCreateModelSchema>;
+export type AdminCreateDistrictInput = z.infer<typeof adminCreateDistrictSchema>;
+export type AdminCreateCityInput = z.infer<typeof adminCreateCitySchema>;
+export type AdminUpdateUserStatusInput = z.infer<
+  typeof adminUpdateUserStatusSchema
+>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

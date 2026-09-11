@@ -10,9 +10,9 @@
     "dev:api": "npm run start:dev -w @throttlelk/api",
     "build": "npm run build -w @throttlelk/types -w @throttlelk/validation -w @throttlelk/api -w @throttlelk/web",
     "lint": "npm run lint -w @throttlelk/web -w @throttlelk/api",
-    "test": "npm run test -w @throttlelk/api -w @throttlelk/validation"
-  },
-  "engines": {
+    "test": "npm run test -w @throttlelk/api -w @throttlelk/validation",
+    "smoke:api": "powershell -File scripts/smoke-api.ps1"
+  },  "engines": {
     "node": ">=22"
   }
 }

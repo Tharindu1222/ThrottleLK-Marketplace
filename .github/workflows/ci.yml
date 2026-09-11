@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @throttlelk/types
+      - run: npm run build -w @throttlelk/validation
+      - run: npm run test -w @throttlelk/validation
+      - run: npm run build -w @throttlelk/api
+      - run: npm run test -w @throttlelk/api
+      - name: Build web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        run: npm run build -w @throttlelk/web

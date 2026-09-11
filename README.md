@@ -20,9 +20,15 @@ docker compose -f infrastructure/docker/docker-compose.yml up -d
 ## Develop
 
 ```powershell
-npm run dev:api   # http://localhost:3001/health
+npm run dev:api   # http://localhost:3001/health  +  /api/v1/*
 npm run dev:web   # http://localhost:3000/en
 ```
+
+### Useful API paths
+
+- `POST /api/v1/auth/register` · `POST /api/v1/auth/login`
+- `GET /api/v1/brands` · `GET /api/v1/listings`
+- `POST /api/v1/listings` (Bearer) → submit → admin approve
 
 ## Docs
 

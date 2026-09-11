@@ -15,7 +15,10 @@ const sans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'ThrottleLK',
+  title: {
+    default: 'ThrottleLK',
+    template: '%s | ThrottleLK',
+  },
   description: 'Motorcycle and scooter marketplace for Sri Lanka',
 };
 
