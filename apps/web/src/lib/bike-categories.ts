@@ -17,7 +17,7 @@ export const bikeCategories: BikeCategory[] = [
     description: 'Easy • Practical • City Ready',
     examples: 'Dio · RayZR · Ntorq',
     image: '/images/categories/scooters.svg',
-    taxonomySlugs: ['scooter'],
+    taxonomySlugs: ['scooters', 'scooter'],
   },
   {
     name: 'Street Bikes',
@@ -25,7 +25,7 @@ export const bikeCategories: BikeCategory[] = [
     description: 'Everyday • Stylish • Versatile',
     examples: 'Hornet · FZ · Duke · Gixxer',
     image: '/images/categories/street-bikes.svg',
-    taxonomySlugs: ['commuter', 'sports'],
+    taxonomySlugs: ['street-bikes', 'commuter', 'sports'],
   },
   {
     name: 'High Capacity Bikes',
@@ -33,7 +33,7 @@ export const bikeCategories: BikeCategory[] = [
     description: 'Power • Performance • Premium',
     examples: 'CBR · Ninja · R1 · R6 · GSX-R',
     image: '/images/categories/high-capacity-bikes.svg',
-    taxonomySlugs: ['sports'],
+    taxonomySlugs: ['high-capacity-bikes', 'sports'],
   },
   {
     name: 'Trail Bikes',
@@ -41,7 +41,7 @@ export const bikeCategories: BikeCategory[] = [
     description: 'Road • Dirt • Adventure',
     examples: 'CRF · KLX · WR · XR',
     image: '/images/categories/trail-bikes.svg',
-    taxonomySlugs: ['adventure', 'dual-sport'],
+    taxonomySlugs: ['trail-bikes', 'adventure', 'dual-sport'],
   },
   {
     name: 'Classic Bikes',
@@ -49,7 +49,7 @@ export const bikeCategories: BikeCategory[] = [
     description: 'Timeless • Iconic • Heritage',
     examples: 'Royal Enfield · CB Series · Vintage',
     image: '/images/categories/classic-bikes.svg',
-    taxonomySlugs: ['cruiser'],
+    taxonomySlugs: ['classic-bikes', 'cruiser'],
   },
   {
     name: 'Electric Bikes',
@@ -57,9 +57,16 @@ export const bikeCategories: BikeCategory[] = [
     description: 'Clean • Quiet • Future Ready',
     examples: 'Electric motorbikes & scooters',
     image: '/images/categories/electric-bikes.svg',
-    taxonomySlugs: ['electric'],
+    taxonomySlugs: ['electric-bikes', 'electric'],
   },
 ];
+
+/** Exactly the 6 homepage / sell-form public categories */
+export const PUBLIC_CATEGORY_SLUGS = bikeCategories.map((c) => c.slug);
+
+export function isPublicCategorySlug(slug: string) {
+  return PUBLIC_CATEGORY_SLUGS.includes(slug);
+}
 
 export function categoryHref(locale: Locale, slug: string) {
   return `/${locale}/bikes/${slug}`;

@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "seed:bike-catalog": "npm run seed:bike-catalog -w @throttlelk/api",
     "dev:web": "npm run dev -w @throttlelk/web",
     "dev:api": "npm run start:dev -w @throttlelk/api",
     "build": "npm run build -w @throttlelk/types -w @throttlelk/validation -w @throttlelk/api -w @throttlelk/web",

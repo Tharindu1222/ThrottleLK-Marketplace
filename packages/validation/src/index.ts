@@ -50,7 +50,7 @@ export const createListingSchema = z.object({
   negotiable: z.boolean().default(true),
   manufactureYear: z.number().int().min(1970).max(2100),
   registrationYear: z.number().int().min(1970).max(2100).optional(),
-  engineCc: z.number().int().positive(),
+  engineCc: z.number().int().positive().optional(),
   mileage: z.number().int().nonnegative(),
   fuelType: z.enum(['petrol', 'diesel', 'electric', 'hybrid', 'other']),
   transmission: z.enum(['manual', 'automatic', 'semi_automatic', 'other']),

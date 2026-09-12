@@ -19,11 +19,18 @@ export class Brand {
   @Column({ unique: true, length: 100 })
   slug!: string;
 
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  aliases!: string[];
+
   @Column({ name: 'logo_url', type: 'varchar', nullable: true })
   logoUrl!: string | null;
 
+  /** active | inactive */
   @Column({ default: 'active' })
   status!: string;
+
+  @Column({ name: 'sort_order', type: 'int', default: 0 })
+  sortOrder!: number;
 
   @OneToMany(() => BikeModel, (model) => model.brand)
   models!: BikeModel[];

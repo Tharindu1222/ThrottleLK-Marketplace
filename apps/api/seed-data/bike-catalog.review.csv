@@ -1,0 +1,972 @@
+﻿brand,brand_slug,model,model_slug,default_category,default_engine_cc,fuel_type,model_status,market_origins,status
+Aprilia,aprilia,RS 125,rs-125,High Capacity Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,RS 150,rs-150,High Capacity Bikes,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,RS 250,rs-250,High Capacity Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,RS 457,rs-457,High Capacity Bikes,457,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,RS 660,rs-660,High Capacity Bikes,660,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,RSV4,rsv4,High Capacity Bikes,1100,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,RX 125,rx-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,SR 125,sr-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,SR 150,sr-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,SR 160,sr-160,Street Bikes,160,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,SX 125,sx-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,SXR 125,sxr-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,SXR 160,sxr-160,Trail Bikes,160,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,Tuono 125,tuono-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,Tuono 457,tuono-457,Street Bikes,457,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,Tuono 660,tuono-660,High Capacity Bikes,660,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Aprilia,aprilia,Tuono V4,tuono-v4,High Capacity Bikes,1100,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ather,ather,450S,450s,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ather,ather,450X,450x,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ather,ather,Rizta,rizta,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Avenger 150,avenger-150,Classic Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Avenger 160,avenger-160,Classic Bikes,160,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Avenger 180,avenger-180,Classic Bikes,180,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Avenger 220,avenger-220,Classic Bikes,220,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Avenger 220 Cruise,avenger-220-cruise,Classic Bikes,220,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Avenger 220 Street,avenger-220-street,Classic Bikes,220,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Boxer,boxer,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Boxer CT,boxer-ct,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Caliber,caliber,Commuter,115,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,CT100,ct100,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,CT100 ES,ct100-es,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,CT110,ct110,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,CT110X,ct110x,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,CT125X,ct125x,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Discover 100,discover-100,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Discover 110,discover-110,Commuter,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Discover 125,discover-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Discover 125 Disc,discover-125-disc,Classic Bikes,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Discover 135,discover-135,Commuter,135,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Discover 150,discover-150,Commuter,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Dominar 250,dominar-250,High Capacity Bikes,250,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Dominar 400,dominar-400,High Capacity Bikes,400,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Freedom 125,freedom-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Platina 100,platina-100,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Platina 110,platina-110,Commuter,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar 125,pulsar-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar 135 LS,pulsar-135-ls,Street Bikes,135,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar 150,pulsar-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar 180,pulsar-180,Street Bikes,180,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar 200,pulsar-200,Street Bikes,200,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar 220F,pulsar-220f,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar N125,pulsar-n125,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar N150,pulsar-n150,Street Bikes,50,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar N160,pulsar-n160,Street Bikes,60,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar N250,pulsar-n250,Street Bikes,50,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar NS125,pulsar-ns125,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar NS160,pulsar-ns160,Street Bikes,60,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar NS200,pulsar-ns200,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar NS400Z,pulsar-ns400z,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,Pulsar RS200,pulsar-rs200,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,V12,v12,Classic Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,V15,v15,Classic Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,XCD 125,xcd-125,Commuter,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Bajaj,bajaj,XCD 135,xcd-135,Commuter,135,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Benda,benda,Chinchilla 300,chinchilla-300,Street Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benda,benda,LFC700,lfc700,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benda,benda,Napoleon Bob 500,napoleon-bob-500,Street Bikes,500,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,302R,302r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,502C,502c,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,752S,752s,Street Bikes,75,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,Imperiale 400,imperiale-400,Classic Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,Leoncino 250,leoncino-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,Leoncino 500,leoncino-500,Classic Bikes,500,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,Leoncino 500 Trail,leoncino-500-trail,Trail Bikes,500,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TNT 25,tnt-25,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TNT 250,tnt-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TNT 300,tnt-300,Street Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TNT 302S,tnt-302s,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TNT 600GT,tnt-600gt,Street Bikes,60,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TNT 600i,tnt-600i,Street Bikes,60,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TRK 251,trk-251,Trail Bikes,251,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TRK 502,trk-502,Trail Bikes,502,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Benelli,benelli,TRK 502X,trk-502x,Trail Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 125,rr-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 200,rr-200,Trail Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 250,rr-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 300,rr-300,Trail Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 350,rr-350,Trail Bikes,350,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 390,rr-390,Trail Bikes,390,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 430,rr-430,Trail Bikes,430,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Beta,beta,RR 480,rr-480,Trail Bikes,480,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,C 400 GT,c-400-gt,Street Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,CE 02,ce-02,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,CE 04,ce-04,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 450 GS,f-450-gs,Trail Bikes,450,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 750 GS,f-750-gs,Trail Bikes,750,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 800 GS,f-800-gs,Trail Bikes,800,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 850 GS,f-850-gs,Trail Bikes,850,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 900 GS,f-900-gs,Trail Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 900 GS Adventure,f-900-gs-adventure,Trail Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 900 R,f-900-r,Street Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,F 900 XR,f-900-xr,Trail Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,G 310 GS,g-310-gs,Trail Bikes,310,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,G 310 R,g-310-r,Street Bikes,310,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,G 310 RR,g-310-rr,High Capacity Bikes,310,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,K 1600 B,k-1600-b,Street Bikes,1600,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,K 1600 GT,k-1600-gt,Street Bikes,1600,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,K 1600 GTL,k-1600-gtl,Street Bikes,1600,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,M 1000 R,m-1000-r,High Capacity Bikes,1000,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,M 1000 RR,m-1000-rr,High Capacity Bikes,1000,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,M 1000 XR,m-1000-xr,Trail Bikes,1000,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,R 12,r-12,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,R 12 nineT,r-12-ninet,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,R 1250 GS,r-1250-gs,Trail Bikes,1250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,R 1250 GS Adventure,r-1250-gs-adventure,Trail Bikes,1250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,R 1300 GS,r-1300-gs,Trail Bikes,1300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,R 1300 GS Adventure,r-1300-gs-adventure,Trail Bikes,1300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,R nineT,r-ninet,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,S 1000 R,s-1000-r,High Capacity Bikes,1000,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,S 1000 RR,s-1000-rr,High Capacity Bikes,1000,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+BMW Motorrad,bmw-motorrad,S 1000 XR,s-1000-xr,Trail Bikes,1000,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,1000MT-X,1000mt-x,Street Bikes,100,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,1250TR-G,1250tr-g,Street Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,125AURA,125aura,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,125NK,125nk,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,150AURA,150aura,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,150NK,150nk,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,150SC,150sc,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,150SR,150sr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,250CL-C,250cl-c,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,250NK,250nk,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,250SR,250sr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,300CL-X,300cl-x,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,300NK,300nk,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,300SR,300sr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,400NK,400nk,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,450CL-C,450cl-c,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,450MT,450mt,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,450NK,450nk,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,450SR,450sr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,450SR-S,450sr-s,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,500SR,500sr,High Capacity Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,500SR VOOM,500sr-voom,High Capacity Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,550CL-C,550cl-c,Classic Bikes,55,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,650MT,650mt,Street Bikes,65,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,650NK,650nk,Street Bikes,65,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,675NK,675nk,Street Bikes,67,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,675SR-R,675sr-r,High Capacity Bikes,67,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,700CL-X,700cl-x,Classic Bikes,70,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,700MT,700mt,Street Bikes,70,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,750SR-S,750sr-s,High Capacity Bikes,75,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,800MT,800mt,Street Bikes,80,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,800MT Explore,800mt-explore,Street Bikes,80,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,800MT-X,800mt-x,Street Bikes,80,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,800NK,800nk,Street Bikes,80,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,Papio,papio,Street Bikes,126,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+CFMOTO,cfmoto,Papio XO,papio-xo,Classic Bikes,126,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Diavel,diavel,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Diavel V4,diavel-v4,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Hypermotard 698,hypermotard-698,Trail Bikes,698,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Hypermotard 950,hypermotard-950,Trail Bikes,950,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Monster,monster,Street Bikes,937,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Monster 1200,monster-1200,Classic Bikes,1200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Monster 696,monster-696,Street Bikes,696,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Monster 797,monster-797,Street Bikes,797,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Monster 821,monster-821,Street Bikes,821,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Monster 937,monster-937,Street Bikes,937,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Multistrada V2,multistrada-v2,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Multistrada V4,multistrada-v4,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Panigale V2,panigale-v2,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Panigale V4,panigale-v4,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Scrambler Full Throttle,scrambler-full-throttle,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Scrambler Icon,scrambler-icon,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Scrambler Nightshift,scrambler-nightshift,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Streetfighter V2,streetfighter-v2,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,Streetfighter V4,streetfighter-v4,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ducati,ducati,XDiavel,xdiavel,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+GasGas,gasgas,EC 250,ec-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+GasGas,gasgas,EC 300,ec-300,Trail Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+GasGas,gasgas,ES 700,es-700,Trail Bikes,700,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+GasGas,gasgas,MC 125,mc-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+GasGas,gasgas,MC 250,mc-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+GasGas,gasgas,MC 450F,mc-450f,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+GasGas,gasgas,SM 700,sm-700,Street Bikes,700,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Breakout,breakout,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Fat Bob,fat-bob,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Fat Boy,fat-boy,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Forty-Eight,forty-eight,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Iron 883,iron-883,Classic Bikes,883,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Low Rider,low-rider,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Nightster,nightster,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Pan America 1250,pan-america-1250,Trail Bikes,1250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Sportster S,sportster-s,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Street 500,street-500,Street Bikes,500,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Street 750,street-750,Street Bikes,750,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Street Bob,street-bob,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,Street Rod 750,street-rod-750,Street Bikes,750,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,X440,x440,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Harley-Davidson,harley-davidson,X440 T,x440-t,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hero,hero,Achiever 150,achiever-150,Electric Bikes,150,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,CBZ,cbz,Street Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,CBZ Xtreme,cbz-xtreme,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,CD Dawn,cd-dawn,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,CD Deluxe,cd-deluxe,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Destini 125,destini-125,Scooters,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Duet,duet,Scooters,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Glamour,glamour,Commuter,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Glamour X,glamour-x,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Glamour XTEC,glamour-xtec,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,HF Dawn,hf-dawn,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,HF Deluxe,hf-deluxe,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,HF100,hf100,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Hunk,hunk,Street Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Hunk 150,hunk-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Hunk 160R,hunk-160r,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Hunk 160R 4V,hunk-160r-4v,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Impulse 150,impulse-150,Trail Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Karizma,karizma,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Karizma R,karizma-r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Karizma XMR,karizma-xmr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Karizma ZMR,karizma-zmr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Maestro,maestro,Scooters,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Maestro Edge,maestro-edge,Scooters,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Passion,passion,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Passion Plus,passion-plus,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Passion Pro,passion-pro,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Passion XPro,passion-xpro,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Pleasure,pleasure,Scooters,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Pleasure+,pleasure,Scooters,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Splendor,splendor,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Splendor iSmart,splendor-ismart,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Splendor NXG,splendor-nxg,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Splendor+,splendor,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Splendor+ XTEC,splendor-xtec,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Super Splendor,super-splendor,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Super Splendor XTEC,super-splendor-xtec,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xoom 110,xoom-110,Scooters,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xoom 125,xoom-125,Scooters,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xoom 160,xoom-160,Scooters,160,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,XPulse 200,xpulse-200,Trail Bikes,200,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,XPulse 200 4V,xpulse-200-4v,Trail Bikes,200,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,XPulse 210,xpulse-210,Trail Bikes,210,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xtreme,xtreme,Trail Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xtreme 125R,xtreme-125r,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xtreme 160R,xtreme-160r,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xtreme 160R 4V,xtreme-160r-4v,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xtreme 200S,xtreme-200s,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xtreme 250R,xtreme-250r,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Hero,hero,Xtreme Sports,xtreme-sports,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Honda,honda,Activa,activa,Scooters,110,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Activa 110,activa-110,Scooters,110,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Activa 125,activa-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,ADV 150,adv-150,Scooters,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,ADV 160,adv-160,Scooters,160,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,AX-1 250,ax-1-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB1000 Hornet,cb1000-hornet,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB1000R,cb1000r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB125,cb125,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB125 Hornet,cb125-hornet,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB1300 Super Four,cb1300-super-four,Street Bikes,300,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB150,cb150,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB150R,cb150r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB175,cb175,Street Bikes,75,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB200,cb200,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB200X,cb200x,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB223,cb223,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB250,cb250,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB250 Hornet,cb250-hornet,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB250F,cb250f,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB250R,cb250r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB300R,cb300r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB350,cb350,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB350C,cb350c,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB350RS,cb350rs,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB400 Super Bol d'Or,cb400-super-bol-d-or,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB400 Super Four,cb400-super-four,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB500F,cb500f,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB500X,cb500x,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB650F,cb650f,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB650R,cb650r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CB750 Hornet,cb750-hornet,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR1000RR,cbr1000rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR1000RR-R Fireblade,cbr1000rr-r-fireblade,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR125R,cbr125r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR150R,cbr150r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR250R,cbr250r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR250RR,cbr250rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR300R,cbr300r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR400R,cbr400r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR400RR,cbr400rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR500R,cbr500r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR600F,cbr600f,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR600RR,cbr600rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR650F,cbr650f,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR650R,cbr650r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR900RR,cbr900rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR929RR,cbr929rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CBR954RR,cbr954rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CD 100,cd-100,Commuter,100,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CD 50,cd-50,Commuter,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CD 70,cd-70,Commuter,70,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CD 90,cd-90,Commuter,90,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CD125T,cd125t,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CG 125,cg-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Click 125,click-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Click 150,click-150,Scooters,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF1000L Africa Twin,crf1000l-africa-twin,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF1100L Africa Twin,crf1100l-africa-twin,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF150L,crf150l,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF150R,crf150r,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF230,crf230,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF250L,crf250l,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF250M,crf250m,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF250R,crf250r,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF250RX,crf250rx,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF300 Rally,crf300-rally,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF300L,crf300l,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF450L,crf450l,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF450R,crf450r,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRF450RX,crf450rx,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRM125,crm125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,CRM250,crm250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Dio 110,dio-110,Scooters,110,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Dio 125,dio-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Dio 50,dio-50,Scooters,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Dream,dream,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Dream Neo,dream-neo,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Dream Yuga,dream-yuga,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Forza 250,forza-250,Scooters,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Forza 300,forza-300,Scooters,300,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Forza 350,forza-350,Scooters,350,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,GB350,gb350,Classic Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Grazia,grazia,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,H'ness CB350,h-ness-cb350,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,HAWK 11,hawk-11,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Hornet 160R,hornet-160r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Hornet 2.0,hornet-2-0,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Jade 250,jade-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Lead,lead,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Livo,livo,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Magna 250,magna-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Magna 750,magna-750,Classic Bikes,750,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Navi,navi,Scooters,110,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,NX200,nx200,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,PCX 125,pcx-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,PCX 150,pcx-150,Scooters,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,PCX 160,pcx-160,Scooters,160,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Rebel 1100,rebel-1100,Classic Bikes,1100,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Rebel 250,rebel-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Rebel 300,rebel-300,Classic Bikes,300,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Rebel 500,rebel-500,Classic Bikes,500,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Shadow 400,shadow-400,Classic Bikes,400,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Shadow 600,shadow-600,Classic Bikes,600,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Shadow 750,shadow-750,Classic Bikes,750,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Shine 100,shine-100,Commuter,100,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Shine 125,shine-125,Commuter,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,SP 125,sp-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,SP 160,sp-160,Street Bikes,160,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Transalp 400,transalp-400,Trail Bikes,400,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Transalp 600,transalp-600,Trail Bikes,600,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Trigger,trigger,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Unicorn,unicorn,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Vario 125,vario-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Vario 150,vario-150,Scooters,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Vario 160,vario-160,Scooters,160,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,X-Blade,x-blade,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XL125,xl125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XL185,xl185,Trail Bikes,85,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XL200,xl200,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XL250 Degree,xl250-degree,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XL750 Transalp,xl750-transalp,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR100,xr100,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR125,xr125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR150L,xr150l,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR200,xr200,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR250,xr250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR250 Baja,xr250-baja,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR400,xr400,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR600,xr600,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,XR650,xr650,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Honda,honda,Zoomer / Ruckus,zoomer-ruckus,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Husqvarna,husqvarna,701 Enduro,701-enduro,Trail Bikes,701,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,701 Supermoto,701-supermoto,Trail Bikes,701,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Norden 901,norden-901,Trail Bikes,901,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Svartpilen 125,svartpilen-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Svartpilen 200,svartpilen-200,Classic Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Svartpilen 250,svartpilen-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Svartpilen 401,svartpilen-401,Classic Bikes,401,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Vitpilen 125,vitpilen-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Vitpilen 250,vitpilen-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Husqvarna,husqvarna,Vitpilen 401,vitpilen-401,Classic Bikes,401,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hyosung,hyosung,GT125,gt125,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hyosung,hyosung,GT250,gt250,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hyosung,hyosung,GT250R,gt250r,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hyosung,hyosung,GT650,gt650,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hyosung,hyosung,GT650R,gt650r,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hyosung,hyosung,GV250 Aquila,gv250-aquila,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Hyosung,hyosung,GV650 Aquila,gv650-aquila,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Indian Motorcycle,indian-motorcycle,Chief,chief,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Indian Motorcycle,indian-motorcycle,Chief Bobber,chief-bobber,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Indian Motorcycle,indian-motorcycle,Chieftain,chieftain,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Indian Motorcycle,indian-motorcycle,FTR,ftr,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Indian Motorcycle,indian-motorcycle,Roadmaster,roadmaster,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Indian Motorcycle,indian-motorcycle,Scout,scout,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Indian Motorcycle,indian-motorcycle,Scout Bobber,scout-bobber,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Jawa,jawa,Jawa,jawa,Classic Bikes,300,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Jawa,jawa,Jawa 350,jawa-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Jawa,jawa,Jawa 42,jawa-42,Classic Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Jawa,jawa,Jawa 42 Bobber,jawa-42-bobber,Classic Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Jawa,jawa,Jawa 42 FJ,jawa-42-fj,Classic Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Jawa,jawa,Jawa Perak,jawa-perak,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+KAMAX,kamax,ADV250,adv250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,AG200,ag200,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Cub CT125,cub-ct125,Commuter,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Cub EV,cub-ev,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Cub Pro 125,cub-pro-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Cub Pro 50,cub-pro-50,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Cub Pro K110,cub-pro-k110,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Cub S 150,cub-s-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Cub X 150,cub-x-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,E-Trekker,e-trekker,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Glock 2016,glock-2016,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,K16,k16,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,K20,k20,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,K23,k23,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,K23 MT300,k23-mt300,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,K65,k65,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,K85,k85,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,M1,m1,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Millionaire,millionaire,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,PISTOL 2013,pistol-2013,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,RIFLE 2019,rifle-2019,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Roroship,roroship,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,T-WAY,t-way,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,T1,t1,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,XP125,xp125,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KAMAX,kamax,Z1,z1,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Kawasaki,kawasaki,Balius 250,balius-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,D-Tracker 125,d-tracker-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,D-Tracker 150,d-tracker-150,Trail Bikes,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,D-Tracker 250,d-tracker-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,D-Tracker X,d-tracker-x,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Eliminator 250,eliminator-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Eliminator 400,eliminator-400,Classic Bikes,400,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Eliminator 450,eliminator-450,Classic Bikes,450,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ER-5,er-5,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ER-6F,er-6f,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ER-6N,er-6n,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Estrella 250,estrella-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KDX125,kdx125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KDX200,kdx200,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KDX220,kdx220,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KDX250,kdx250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLE250,kle250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLE400,kle400,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLE500,kle500,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX110,klx110,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX125,klx125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX140,klx140,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX150,klx150,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX230,klx230,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX230 S,klx230-s,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX250,klx250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX300,klx300,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KLX450R,klx450r,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KX125,kx125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KX250,kx250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KX250F,kx250f,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KX450,kx450,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KX65,kx65,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,KX85,kx85,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 1000,ninja-1000,High Capacity Bikes,1000,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 1000SX,ninja-1000sx,High Capacity Bikes,100,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 125,ninja-125,High Capacity Bikes,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 250,ninja-250,High Capacity Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 250R,ninja-250r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 250SL,ninja-250sl,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 300,ninja-300,High Capacity Bikes,300,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 400,ninja-400,High Capacity Bikes,400,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 500,ninja-500,High Capacity Bikes,500,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja 650,ninja-650,High Capacity Bikes,650,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja H2,ninja-h2,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Ninja H2 SX,ninja-h2-sx,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Versys 1000,versys-1000,Trail Bikes,1000,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Versys 1100,versys-1100,Trail Bikes,1100,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Versys 650,versys-650,Trail Bikes,650,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Versys-X 250,versys-x-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Versys-X 300,versys-x-300,Trail Bikes,300,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Vulcan 900,vulcan-900,Classic Bikes,900,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Vulcan S,vulcan-s,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,W175,w175,Classic Bikes,75,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,W250,w250,Classic Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,W400,w400,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,W650,w650,Classic Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,W800,w800,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z1000,z1000,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z1100,z1100,Street Bikes,100,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z125,z125,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z250,z250,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z300,z300,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z400,z400,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z500,z500,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z650,z650,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z650RS,z650rs,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z750,z750,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z800,z800,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z900,z900,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Z900RS,z900rs,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Zephyr 400,zephyr-400,Classic Bikes,400,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,Zephyr 750,zephyr-750,Classic Bikes,750,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZRX1100,zrx1100,Trail Bikes,100,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZRX1200,zrx1200,Trail Bikes,200,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZRX400,zrx400,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZX-10R,zx-10r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZX-10RR,zx-10rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZX-14R,zx-14r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZX-4R,zx-4r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZX-4RR,zx-4rr,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Kawasaki,kawasaki,ZX-6R,zx-6r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Keeway,keeway,Hypevolt-R,hypevolt-r,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,K-Light 250V,k-light-250v,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,K300 N,k300-n,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,K300 R,k300-r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,Sixties 300i,sixties-300i,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,SR125,sr125,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,SR250,sr250,Classic Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,V302C,v302c,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Keeway,keeway,Vieste 300,vieste-300,Scooters,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,390 Enduro R,390-enduro-r,Trail Bikes,390,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,390 SMC R,390-smc-r,Trail Bikes,390,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,450 EXC,450-exc,Trail Bikes,450,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,450 SMR,450-smr,Street Bikes,450,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,500 EXC,500-exc,Trail Bikes,500,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,690 Enduro R,690-enduro-r,Trail Bikes,690,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,690 SMC R,690-smc-r,Trail Bikes,690,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Adventure 1050,adventure-1050,Trail Bikes,1050,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Adventure 1190,adventure-1190,Trail Bikes,1190,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Adventure 250,adventure-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Adventure 390,adventure-390,Trail Bikes,390,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Adventure 790,adventure-790,Trail Bikes,790,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Adventure 890,adventure-890,Trail Bikes,890,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 125,duke-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 200,duke-200,Street Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 250,duke-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 390,duke-390,Street Bikes,390,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 690,duke-690,Street Bikes,690,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 790,duke-790,Street Bikes,790,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 890,duke-890,Street Bikes,890,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Duke 990,duke-990,Street Bikes,990,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,RC 125,rc-125,High Capacity Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,RC 200,rc-200,High Capacity Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,RC 250,rc-250,High Capacity Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,RC 390,rc-390,High Capacity Bikes,390,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Super Adventure 1290,super-adventure-1290,Trail Bikes,1290,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Super Duke 1290,super-duke-1290,High Capacity Bikes,1290,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+KTM,ktm,Super Duke 1390,super-duke-1390,High Capacity Bikes,1390,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Kymco,kymco,Agility 125,agility-125,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Kymco,kymco,AK 550,ak-550,Scooters,550,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Kymco,kymco,Downtown 350,downtown-350,Scooters,350,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Kymco,kymco,Like 125,like-125,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Kymco,kymco,Like 150,like-150,Scooters,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Kymco,kymco,X-Town 300,x-town-300,Scooters,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Lifan,lifan,KP 200,kp-200,Street Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Lifan,lifan,KP Mini 150,kp-mini-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Lifan,lifan,KPR 150,kpr-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Lifan,lifan,KPR 200,kpr-200,Street Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Lifan,lifan,KPT 200,kpt-200,Street Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Loncin,loncin,Voge 300DS,voge-300ds,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Loncin,loncin,Voge 300R,voge-300r,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Loncin,loncin,Voge 500DS,voge-500ds,Trail Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Loncin,loncin,Voge 525DSX,voge-525dsx,Trail Bikes,52,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Loncin,loncin,Voge 650DSX,voge-650dsx,Trail Bikes,65,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Moto Guzzi,moto-guzzi,Stelvio,stelvio,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Moto Guzzi,moto-guzzi,V100 Mandello,v100-mandello,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Moto Guzzi,moto-guzzi,V7,v7,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Moto Guzzi,moto-guzzi,V85 TT,v85-tt,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+MV Agusta,mv-agusta,Brutale 800,brutale-800,High Capacity Bikes,800,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+MV Agusta,mv-agusta,Dragster 800,dragster-800,Trail Bikes,800,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+MV Agusta,mv-agusta,F3 800,f3-800,High Capacity Bikes,800,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+MV Agusta,mv-agusta,Superveloce,superveloce,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+MV Agusta,mv-agusta,Turismo Veloce,turismo-veloce,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+NIU,niu,MQi,mqi,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+NIU,niu,NQi,nqi,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+NIU,niu,RQi,rqi,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+NIU,niu,UQi,uqi,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Ola Electric,ola-electric,Roadster,roadster,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ola Electric,ola-electric,Roadster X,roadster-x,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ola Electric,ola-electric,S1 Pro,s1-pro,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ola Electric,ola-electric,S1 X,s1-x,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Piaggio,piaggio,Beverly,beverly,Electric Bikes,400,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Piaggio,piaggio,Liberty,liberty,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Piaggio,piaggio,Medley,medley,Scooters,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Piaggio,piaggio,MP3,mp3,Scooters,500,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,ATR 175,atr-175,Scooters,175,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,ATR 200,atr-200,Scooters,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,LTR 125,ltr-125,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,LTR 175,ltr-175,Scooters,175,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 1051,srk-1051,High Capacity Bikes,1051,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 125,srk-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 125 R,srk-125-r,High Capacity Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 125 S,srk-125-s,Street Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 250,srk-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 250 RS,srk-250-rs,High Capacity Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 300,srk-300,Street Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 300 R,srk-300-r,High Capacity Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 400,srk-400,Street Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 550,srk-550,High Capacity Bikes,550,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 600,srk-600,High Capacity Bikes,600,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 600 RS,srk-600-rs,High Capacity Bikes,600,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 700,srk-700,High Capacity Bikes,700,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 800,srk-800,High Capacity Bikes,800,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRK 921,srk-921,High Capacity Bikes,921,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 125,srt-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 250,srt-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 400,srt-400,Trail Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 500,srt-500,Trail Bikes,500,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 550,srt-550,Trail Bikes,550,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 600,srt-600,Trail Bikes,600,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 700,srt-700,Trail Bikes,700,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 800,srt-800,Trail Bikes,800,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRT 900,srt-900,Trail Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRV 125,srv-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRV 200,srv-200,Classic Bikes,200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRV 250,srv-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRV 300,srv-300,Classic Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+QJMotor,qjmotor,SRV 600,srv-600,Classic Bikes,600,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Revolt,revolt,RV1,rv1,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Revolt,revolt,RV400,rv400,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Bear 650,bear-650,Classic Bikes,650,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Bullet 350,bullet-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Bullet 500,bullet-500,Classic Bikes,500,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Bullet 650,bullet-650,Classic Bikes,650,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Classic 350,classic-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Classic 500,classic-500,Classic Bikes,500,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Classic 650,classic-650,Classic Bikes,650,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Continental GT 535,continental-gt-535,Classic Bikes,535,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Continental GT 650,continental-gt-650,Classic Bikes,650,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Electra 350,electra-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Electra 500,electra-500,Classic Bikes,500,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Goan Classic 350,goan-classic-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Guerrilla 450,guerrilla-450,Street Bikes,450,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Himalayan 411,himalayan-411,Trail Bikes,411,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Himalayan 440,himalayan-440,Trail Bikes,440,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Himalayan 450,himalayan-450,Trail Bikes,450,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Hunter 350,hunter-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Interceptor 650,interceptor-650,Classic Bikes,650,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Machismo 350,machismo-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Machismo 500,machismo-500,Classic Bikes,500,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Meteor 350,meteor-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Scram 411,scram-411,Trail Bikes,411,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Scram 440,scram-440,Trail Bikes,440,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Shotgun 650,shotgun-650,Classic Bikes,650,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Super Meteor 650,super-meteor-650,Classic Bikes,650,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Thunderbird 350,thunderbird-350,Classic Bikes,350,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Thunderbird 500,thunderbird-500,Classic Bikes,500,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Royal Enfield,royal-enfield,Thunderbird X,thunderbird-x,Classic Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Sherco,sherco,SE 125,se-125,Street Bikes,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Sherco,sherco,SE 250,se-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Sherco,sherco,SE 300,se-300,Street Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Sherco,sherco,SEF 250,sef-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Sherco,sherco,SEF 300,sef-300,Street Bikes,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Sherco,sherco,SEF 450,sef-450,Street Bikes,450,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Suzuki,suzuki,Access 125,access-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Address,address,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Avenis,avenis,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Bandit 1200,bandit-1200,Street Bikes,1200,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Bandit 250,bandit-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Bandit 400,bandit-400,Street Bikes,400,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Bandit 600,bandit-600,Street Bikes,600,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Bandit 650,bandit-650,Street Bikes,650,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Burgman Street,burgman-street,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Burgman Street EX,burgman-street-ex,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Djebel 125,djebel-125,Trail Bikes,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Djebel 200,djebel-200,Trail Bikes,200,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Djebel 250,djebel-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR-Z125,dr-z125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR-Z250,dr-z250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR-Z400,dr-z400,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR125,dr125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR200,dr200,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR250,dr250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR350,dr350,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,DR650,dr650,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,e-Access,e-access,Electric Bikes,,Electric,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,EN125,en125,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Gixxer,gixxer,Street Bikes,155,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Gixxer 150,gixxer-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Gixxer 250,gixxer-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Gixxer SF,gixxer-sf,Street Bikes,155,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Gixxer SF 150,gixxer-sf-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Gixxer SF 250,gixxer-sf-250,Street Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GN125,gn125,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GN250,gn250,Classic Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GS125,gs125,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GS150R,gs150r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R1000,gsx-r1000,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R1000R,gsx-r1000r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R125,gsx-r125,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R150,gsx-r150,High Capacity Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R250,gsx-r250,High Capacity Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R400,gsx-r400,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R600,gsx-r600,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-R750,gsx-r750,High Capacity Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-S1000,gsx-s1000,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-S125,gsx-s125,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-S150,gsx-s150,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-S250,gsx-s250,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,GSX-S750,gsx-s750,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Hayabusa / GSX1300R,hayabusa-gsx1300r,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Intruder 150,intruder-150,Classic Bikes,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Intruder 250,intruder-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Intruder 800,intruder-800,Classic Bikes,800,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Katana 1000,katana-1000,Classic Bikes,1000,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Katana 250,katana-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Katana 400,katana-400,Classic Bikes,400,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Katana 750,katana-750,Classic Bikes,750,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Let's,let-s,Street Bikes,113,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,RM-Z250,rm-z250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,RM-Z450,rm-z450,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,RM125,rm125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,RM250,rm250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,ST250,st250,Classic Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,SV400,sv400,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,SV650,sv650,Street Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,TL1000,tl1000,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,V-Strom 1000,v-strom-1000,Trail Bikes,1000,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,V-Strom 1050,v-strom-1050,Trail Bikes,1050,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,V-Strom 250,v-strom-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,V-Strom 650,v-strom-650,Trail Bikes,650,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,V-Strom 800,v-strom-800,Trail Bikes,800,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,V-Strom 800DE,v-strom-800de,Trail Bikes,80,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,V-Strom SX,v-strom-sx,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,VanVan 125,vanvan-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,VanVan 200,vanvan-200,Classic Bikes,200,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Suzuki,suzuki,Volty 250,volty-250,Classic Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+SYM,sym,Cruisym 300,cruisym-300,Scooters,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+SYM,sym,Jet 14,jet-14,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+SYM,sym,Jet X,jet-x,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+SYM,sym,Maxsym 400,maxsym-400,Scooters,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+SYM,sym,Symphony 125,symphony-125,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Bonneville Bobber,bonneville-bobber,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Bonneville Speedmaster,bonneville-speedmaster,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Bonneville T100,bonneville-t100,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Bonneville T120,bonneville-t120,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Daytona 660,daytona-660,High Capacity Bikes,660,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Rocket 3,rocket-3,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Scrambler 1200,scrambler-1200,Trail Bikes,1200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Scrambler 400 X,scrambler-400-x,Trail Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Scrambler 400 XC,scrambler-400-xc,Trail Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Scrambler 900,scrambler-900,Trail Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Speed 400,speed-400,Street Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Speed T4,speed-t4,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Speed Triple 1200,speed-triple-1200,High Capacity Bikes,1200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Speed Twin 1200,speed-twin-1200,Trail Bikes,1200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Speed Twin 900,speed-twin-900,Trail Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Street Triple 765,street-triple-765,High Capacity Bikes,765,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Thruxton 400,thruxton-400,Trail Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Tiger 1200,tiger-1200,Trail Bikes,1200,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Tiger 900,tiger-900,Trail Bikes,900,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Tiger Sport 660,tiger-sport-660,Trail Bikes,660,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Tiger Sport 800,tiger-sport-800,Trail Bikes,800,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Tracker 400,tracker-400,Street Bikes,400,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Triumph,triumph,Trident 660,trident-660,Street Bikes,660,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+TVS,tvs,Apache RR 310,apache-rr-310,Trail Bikes,310,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Apache RTR 150,apache-rtr-150,Street Bikes,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Apache RTR 160,apache-rtr-160,Street Bikes,160,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Apache RTR 160 4V,apache-rtr-160-4v,Street Bikes,160,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Apache RTR 180,apache-rtr-180,Street Bikes,180,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Apache RTR 200 4V,apache-rtr-200-4v,Street Bikes,200,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Apache RTR 310,apache-rtr-310,High Capacity Bikes,310,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Apache RTX,apache-rtx,Street Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Centra,centra,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Flame,flame,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,iQube,iqube,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Jive,jive,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Jupiter,jupiter,Scooters,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Jupiter 110,jupiter-110,Scooters,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Jupiter 125,jupiter-125,Scooters,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Max 100,max-100,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Max R,max-r,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,NTORQ 125,ntorq-125,Scooters,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,NTORQ 150,ntorq-150,Scooters,150,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Orbiter,orbiter,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Phoenix 125,phoenix-125,Commuter,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Radeon,radeon,Commuter,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Raider 125,raider-125,Classic Bikes,125,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Ronin,ronin,Classic Bikes,225,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Scooty,scooty,Scooters,90,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Scooty Pep,scooty-pep,Scooters,90,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Scooty Pep+,scooty-pep,Scooters,90,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Scooty Streak,scooty-streak,Scooters,90,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Scooty Zest / Zest 110,scooty-zest-zest-110,Scooters,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Sport,sport,Commuter,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Star,star,Commuter,100,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Star City,star-city,Commuter,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Star City+,star-city,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,TVS X,tvs-x,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Victor,victor,Commuter,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,Wego,wego,Scooters,110,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,XL100,xl100,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,XL100 Heavy Duty,xl100-heavy-duty,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+TVS,tvs,XL50,xl50,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ultraviolette,ultraviolette,F77,f77,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ultraviolette,ultraviolette,F77 Mach 2,f77-mach-2,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Ultraviolette,ultraviolette,F99,f99,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Vespa,vespa,946,946,Street Bikes,946,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,Elegante,elegante,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,GTS,gts,Scooters,300,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,Primavera,primavera,Scooters,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,Sprint,sprint,Scooters,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,SXL 125,sxl-125,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,SXL 150,sxl-150,Scooters,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,VXL 125,vxl-125,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,VXL 150,vxl-150,Scooters,150,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Vespa,vespa,ZX 125,zx-125,Scooters,125,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+VIDA,vida,V1 Plus,v1-plus,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+VIDA,vida,V1 Pro,v1-pro,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+VIDA,vida,VX2,vx2,Electric Bikes,,Electric,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+VMoto / Super Soco,vmoto-super-soco,CPx,cpx,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+VMoto / Super Soco,vmoto-super-soco,CUx,cux,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+VMoto / Super Soco,vmoto-super-soco,TC,tc,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+VMoto / Super Soco,vmoto-super-soco,TC Max,tc-max,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+VMoto / Super Soco,vmoto-super-soco,TS,ts,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+VMoto / Super Soco,vmoto-super-soco,TS Street Hunter,ts-street-hunter,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Yadea,yadea,C1S,c1s,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Yadea,yadea,G5,g5,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Yadea,yadea,Keeness VFD,keeness-vfd,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Yadea,yadea,T9,t9,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Yamaha,yamaha,Aerox 155,aerox-155,Scooters,155,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Axis Z,axis-z,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,BWS,bws,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Crux,crux,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Cygnus X,cygnus-x,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,DT125,dt125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,DT175,dt175,Trail Bikes,75,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,DT200,dt200,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Fascino,fascino,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Fascino 125,fascino-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Fazer,fazer,Street Bikes,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Fazer 25,fazer-25,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Fazzio,fazzio,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ,fz,Street Bikes,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ FI,fz-fi,Street Bikes,149,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ V2,fz-v2,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ V3,fz-v3,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-S,fz-s,Street Bikes,150,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-S FI,fz-s-fi,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-S Hybrid,fz-s-hybrid,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-S V2,fz-s-v2,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-S V3,fz-s-v3,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-S V4,fz-s-v4,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-X,fz-x,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ-X Hybrid,fz-x-hybrid,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ16,fz16,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZ25,fz25,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZR250,fzr250,High Capacity Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,FZR400,fzr400,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Gladiator,gladiator,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Jog,jog,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Jog 125,jog-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,MT-03,mt-03,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,MT-07,mt-07,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,MT-09,mt-09,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,MT-10,mt-10,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,MT-15,mt-15,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,MT-25,mt-25,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,NMAX 125,nmax-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,NMAX 155,nmax-155,Scooters,155,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,R15M,r15m,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Ray,ray,Scooters,113,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Ray Z,ray-z,Scooters,113,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,RayZR 113,rayzr-113,Scooters,113,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,RayZR 125,rayzr-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,RayZR Street Rally,rayzr-street-rally,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,RX-Z,rx-z,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,RX100,rx100,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,RX115,rx115,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,RX135,rx135,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Saluto,saluto,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Serow 225,serow-225,Trail Bikes,225,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Serow 250,serow-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,SR400,sr400,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,SR500,sr500,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,SZ,sz,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,SZ-R,sz-r,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,SZ-RR,sz-rr,Street Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TMAX,tmax,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Tricity 125,tricity-125,Scooters,125,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Tricity 155,tricity-155,Scooters,155,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Tricker 250,tricker-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TTR125,ttr125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TTR225,ttr225,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TTR230,ttr230,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TTR250,ttr250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TW200,tw200,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TW225,tw225,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TZR125,tzr125,High Capacity Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,TZR250,tzr250,High Capacity Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Ténéré 250,t-n-r-250,Trail Bikes,250,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Ténéré 700,t-n-r-700,Trail Bikes,700,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,Vino,vino,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,WR125,wr125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,WR250F,wr250f,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,WR250R,wr250r,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,WR250X,wr250x,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,WR450F,wr450f,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XMAX,xmax,Scooters,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XSR125,xsr125,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XSR155,xsr155,Classic Bikes,55,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XSR700,xsr700,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XSR900,xsr900,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XSR900 GP,xsr900-gp,Classic Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XT125,xt125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XT225,xt225,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XT250,xt250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XT250X,xt250x,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XT600,xt600,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,XT660,xt660,Trail Bikes,60,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YB100,yb100,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YB125,yb125,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YBR125,ybr125,Commuter,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZ125,yz125,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZ250,yz250,Trail Bikes,50,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZ250F,yz250f,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZ450F,yz450f,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R1,yzf-r1,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R15,yzf-r15,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R15 V2,yzf-r15-v2,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R15 V3,yzf-r15-v3,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R15 V4,yzf-r15-v4,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R15S,yzf-r15s,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R1M,yzf-r1m,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R25,yzf-r25,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R3,yzf-r3,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R6,yzf-r6,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R7,yzf-r7,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yamaha,yamaha,YZF-R9,yzf-r9,Trail Bikes,,Petrol,REVIEW_REQUIRED,JAPAN|IMPORT|SRI_LANKA_USED,ACTIVE
+Yezdi,yezdi,Yezdi Adventure,yezdi-adventure,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Yezdi,yezdi,Yezdi Adventure Tubeless,yezdi-adventure-tubeless,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Yezdi,yezdi,Yezdi Roadster,yezdi-roadster,Classic Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+Yezdi,yezdi,Yezdi Scrambler,yezdi-scrambler,Trail Bikes,,Petrol,REVIEW_REQUIRED,INDIA|SRI_LANKA_USED,ACTIVE
+ZEEHO,zeeho,AE6,ae6,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+ZEEHO,zeeho,AE8,ae8,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+ZEEHO,zeeho,C!TY Sport,c-ty-sport,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+ZEEHO,zeeho,Magnet,magnet,Electric Bikes,,Electric,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zongshen,zongshen,Cyclone RC250,cyclone-rc250,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zongshen,zongshen,Cyclone RX6,cyclone-rx6,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zongshen,zongshen,RX1,rx1,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zongshen,zongshen,RX3,rx3,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zongshen,zongshen,RX4,rx4,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,150D,150d,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,150M,150m,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,150X,150x,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,310M,310m,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,310R,310r,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,310T,310t,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,310V,310v,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,310X,310x,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350D,350d,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350E,350e,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350M,350m,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350R,350r,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350S,350s,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350T,350t,Trail Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350V,350v,Classic Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,350X,350x,Street Bikes,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,368D,368d,Scooters,,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,703F,703f,Street Bikes,70,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,703T,703t,Trail Bikes,70,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,GK350,gk350,Classic Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE
+Zontes,zontes,ZT250,zt250,Street Bikes,50,Petrol,REVIEW_REQUIRED,GLOBAL|IMPORT,ACTIVE

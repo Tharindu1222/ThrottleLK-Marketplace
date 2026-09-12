@@ -60,7 +60,9 @@ export function EditListingForm({
     void Promise.all([
       apiGet<ListingDetail>(`/api/v1/listings/${listingId}`, { token: access }),
       apiGet<Option[]>('/api/v1/brands'),
-      apiGet<Option[]>('/api/v1/categories'),
+      apiGet<Option[]>('/api/v1/categories', {
+        searchParams: { scope: 'public' },
+      }),
       apiGet<Option[]>('/api/v1/locations/districts'),
     ])
       .then(([row, b, c, d]) => {

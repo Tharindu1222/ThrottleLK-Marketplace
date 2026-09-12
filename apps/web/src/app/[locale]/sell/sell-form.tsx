@@ -3,19 +3,35 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ListingImageManager } from '@/components/listing-image-manager';
+import {
+  SearchableCombobox,
+  type ComboboxOption,
+} from '@/components/searchable-combobox';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { Locale } from '@/lib/i18n';
 
 type Option = { id: string; name: string; slug?: string };
-type Model = { id: string; name: string; brandId: string };
+type CatalogModel = {
+  id: string;
+  name: string;
+  brandId: string;
+  defaultCategory: string | null;
+  publicCategory: string | null;
+  defaultEngineCc: number | null;
+  fuelType: string | null;
+  fuelTypeNormalized: 'petrol' | 'electric' | 'other' | null;
+};
 
 type FormState = {
   brandId: string;
+  brandLabel: string;
   modelId: string;
+  modelLabel: string;
   categoryId: string;
   manufactureYear: string;
   engineCc: string;
+  fuelType: 'petrol' | 'electric' | 'other';
   condition: string;
   transmission: string;
   mileage: string;
@@ -40,10 +56,13 @@ const labelClass = 'mb-1.5 block text-sm text-muted';
 
 const emptyForm: FormState = {
   brandId: '',
+  brandLabel: '',
   modelId: '',
+  modelLabel: '',
   categoryId: '',
   manufactureYear: String(new Date().getFullYear()),
   engineCc: '',
+  fuelType: 'petrol',
   condition: 'used',
   transmission: 'manual',
   mileage: '',
@@ -55,38 +74,58 @@ const emptyForm: FormState = {
   dealerId: '',
 };
 
+function useDebounced(value: string, ms: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
+
 export function SellForm({ locale }: { locale: Locale }) {
   const [token, setToken] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [brands, setBrands] = useState<Option[]>([]);
-  const [models, setModels] = useState<Model[]>([]);
+  const [brandOptions, setBrandOptions] = useState<ComboboxOption[]>([]);
+  const [modelOptions, setModelOptions] = useState<ComboboxOption[]>([]);
+  const [modelMeta, setModelMeta] = useState<CatalogModel[]>([]);
+  const [brandQuery, setBrandQuery] = useState('');
+  const [modelQuery, setModelQuery] = useState('');
+  const [brandsLoading, setBrandsLoading] = useState(false);
+  const [modelsLoading, setModelsLoading] = useState(false);
   const [categories, setCategories] = useState<Option[]>([]);
   const [districts, setDistricts] = useState<Option[]>([]);
   const [cities, setCities] = useState<Option[]>([]);
-  const [dealers, setDealers] = useState<{ id: string; name: string; status: string }[]>(
-    [],
-  );
+  const [dealers, setDealers] = useState<
+    { id: string; name: string; status: string }[]
+  >([]);
+  const [categoryTouched, setCategoryTouched] = useState(false);
+  const [engineTouched, setEngineTouched] = useState(false);
+  const [fuelTouched, setFuelTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [listingId, setListingId] = useState<string | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
+  const debouncedBrandQuery = useDebounced(brandQuery, 250);
+  const debouncedModelQuery = useDebounced(modelQuery, 250);
+
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
     void Promise.all([
-      apiGet<Option[]>('/api/v1/brands'),
-      apiGet<Option[]>('/api/v1/categories'),
+      apiGet<Option[]>('/api/v1/categories', {
+        searchParams: { scope: 'public' },
+      }),
       apiGet<Option[]>('/api/v1/locations/districts'),
       apiGet<{ id: string; name: string; status: string }[]>(
         '/api/v1/dealers/mine',
         { token: access },
       ).catch(() => []),
-    ]).then(([b, c, d, mine]) => {
-      setBrands(b);
+    ]).then(([c, d, mine]) => {
       setCategories(c);
       setDistricts(d);
       setDealers(mine.filter((x) => x.status === 'active'));
@@ -94,14 +133,37 @@ export function SellForm({ locale }: { locale: Locale }) {
   }, []);
 
   useEffect(() => {
+    setBrandsLoading(true);
+    void apiGet<Option[]>('/api/v1/brands', {
+      searchParams: { search: debouncedBrandQuery || undefined },
+    })
+      .then((rows) =>
+        setBrandOptions(rows.map((b) => ({ id: b.id, label: b.name }))),
+      )
+      .catch(() => setBrandOptions([]))
+      .finally(() => setBrandsLoading(false));
+  }, [debouncedBrandQuery]);
+
+  useEffect(() => {
     if (!form.brandId) {
-      setModels([]);
+      setModelOptions([]);
+      setModelMeta([]);
       return;
     }
-    void apiGet<Model[]>(`/api/v1/brands/${form.brandId}/models`).then(
-      setModels,
-    );
-  }, [form.brandId]);
+    setModelsLoading(true);
+    void apiGet<CatalogModel[]>(`/api/v1/brands/${form.brandId}/models`, {
+      searchParams: { search: debouncedModelQuery || undefined },
+    })
+      .then((rows) => {
+        setModelMeta(rows);
+        setModelOptions(rows.map((m) => ({ id: m.id, label: m.name })));
+      })
+      .catch(() => {
+        setModelMeta([]);
+        setModelOptions([]);
+      })
+      .finally(() => setModelsLoading(false));
+  }, [form.brandId, debouncedModelQuery]);
 
   useEffect(() => {
     if (!form.districtId) {
@@ -113,21 +175,52 @@ export function SellForm({ locale }: { locale: Locale }) {
     ).then(setCities);
   }, [form.districtId]);
 
-  const brandName = useMemo(
-    () => brands.find((b) => b.id === form.brandId)?.name ?? '',
-    [brands, form.brandId],
-  );
-  const modelName = useMemo(
-    () => models.find((m) => m.id === form.modelId)?.name ?? '',
-    [models, form.modelId],
-  );
   const autoTitle = useMemo(() => {
-    const parts = [brandName, modelName, form.manufactureYear].filter(Boolean);
+    const parts = [
+      form.brandLabel,
+      form.modelLabel,
+      form.manufactureYear,
+    ].filter(Boolean);
     return parts.join(' ').trim();
-  }, [brandName, modelName, form.manufactureYear]);
+  }, [form.brandLabel, form.modelLabel, form.manufactureYear]);
+
+  const isElectric =
+    form.fuelType === 'electric' ||
+    categories
+      .find((c) => c.id === form.categoryId)
+      ?.name.toLowerCase()
+      .includes('electric') === true;
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function applyModelAutofill(model: CatalogModel) {
+    setForm((f) => {
+      const next = { ...f, modelId: model.id, modelLabel: model.name };
+      if (!categoryTouched && model.publicCategory) {
+        const match = categories.find(
+          (c) =>
+            c.name.toLowerCase() === model.publicCategory!.toLowerCase() ||
+            c.slug ===
+              model.publicCategory!.toLowerCase().replace(/\s+/g, '-'),
+        );
+        if (match) next.categoryId = match.id;
+      }
+      if (!engineTouched) {
+        next.engineCc =
+          model.fuelTypeNormalized === 'electric' || !model.defaultEngineCc
+            ? ''
+            : String(model.defaultEngineCc);
+      }
+      if (!fuelTouched && model.fuelTypeNormalized) {
+        next.fuelType =
+          model.fuelTypeNormalized === 'other'
+            ? 'petrol'
+            : model.fuelTypeNormalized;
+      }
+      return next;
+    });
   }
 
   function validateStep(current: number): string | null {
@@ -138,11 +231,13 @@ export function SellForm({ locale }: { locale: Locale }) {
     }
     if (current === 2) {
       const year = Number(form.manufactureYear);
-      if (!year || year < 1970 || year > 2100) return 'Manufacture year is required';
-      if (!form.engineCc || Number(form.engineCc) <= 0)
+      if (!year || year < 1970 || year > 2100)
+        return 'Manufacture year is required';
+      if (!isElectric && (!form.engineCc || Number(form.engineCc) <= 0))
         return 'Engine capacity is required';
       if (!form.condition) return 'Condition is required';
       if (!form.transmission) return 'Transmission is required';
+      if (!form.fuelType) return 'Fuel type is required';
       if (form.mileage === '' || Number(form.mileage) < 0)
         return 'Mileage is required';
       if (!form.priceLkr || Number(form.priceLkr) <= 0) return 'Price is required';
@@ -162,38 +257,36 @@ export function SellForm({ locale }: { locale: Locale }) {
     return null;
   }
 
-  async function createDraftListing(access: string) {
-    const category = categories.find((c) => c.id === form.categoryId);
-    const fuelType =
-      category?.slug === 'electric' || category?.name.toLowerCase() === 'electric'
-        ? 'electric'
-        : 'petrol';
+  function listingBody() {
+    return {
+      brandId: form.brandId,
+      modelId: form.modelId,
+      categoryId: form.categoryId,
+      districtId: form.districtId,
+      cityId: form.cityId,
+      title: autoTitle.length >= 5 ? autoTitle : `${autoTitle} bike`,
+      description: form.description.trim(),
+      priceLkr: Number(form.priceLkr),
+      negotiable: true,
+      manufactureYear: Number(form.manufactureYear),
+      engineCc:
+        form.engineCc && Number(form.engineCc) > 0
+          ? Number(form.engineCc)
+          : undefined,
+      mileage: Number(form.mileage),
+      fuelType: form.fuelType,
+      transmission: form.transmission,
+      condition: form.condition,
+      phone: form.phone.trim(),
+      dealerId: form.dealerId || undefined,
+    };
+  }
 
-    const listing = await apiSend<{ id: string }>(
-      '/api/v1/listings',
-      {
-        token: access,
-        body: {
-          brandId: form.brandId,
-          modelId: form.modelId,
-          categoryId: form.categoryId,
-          districtId: form.districtId,
-          cityId: form.cityId,
-          title: autoTitle.length >= 5 ? autoTitle : `${autoTitle} bike`,
-          description: form.description.trim(),
-          priceLkr: Number(form.priceLkr),
-          negotiable: true,
-          manufactureYear: Number(form.manufactureYear),
-          engineCc: Number(form.engineCc),
-          mileage: Number(form.mileage),
-          fuelType,
-          transmission: form.transmission,
-          condition: form.condition,
-          phone: form.phone.trim(),
-          dealerId: form.dealerId || undefined,
-        },
-      },
-    );
+  async function createDraftListing(access: string) {
+    const listing = await apiSend<{ id: string }>('/api/v1/listings', {
+      token: access,
+      body: listingBody(),
+    });
     return listing.id;
   }
 
@@ -208,32 +301,7 @@ export function SellForm({ locale }: { locale: Locale }) {
     if (step === 3) {
       setBusy(true);
       try {
-        const body = {
-          brandId: form.brandId,
-          modelId: form.modelId,
-          categoryId: form.categoryId,
-          districtId: form.districtId,
-          cityId: form.cityId,
-          title: autoTitle.length >= 5 ? autoTitle : `${autoTitle} bike`,
-          description: form.description.trim(),
-          priceLkr: Number(form.priceLkr),
-          negotiable: true,
-          manufactureYear: Number(form.manufactureYear),
-          engineCc: Number(form.engineCc),
-          mileage: Number(form.mileage),
-          fuelType:
-            categories.find((c) => c.id === form.categoryId)?.slug ===
-              'electric' ||
-            categories
-              .find((c) => c.id === form.categoryId)
-              ?.name.toLowerCase() === 'electric'
-              ? 'electric'
-              : 'petrol',
-          transmission: form.transmission,
-          condition: form.condition,
-          phone: form.phone.trim(),
-          dealerId: form.dealerId || undefined,
-        };
+        const body = listingBody();
         if (listingId) {
           await apiSend(`/api/v1/listings/${listingId}`, {
             method: 'PATCH',
@@ -305,9 +373,14 @@ export function SellForm({ locale }: { locale: Locale }) {
     );
   }
 
+  const categoryChoices = categories;
+
   return (
     <div className="mx-auto mt-8 max-w-2xl">
-      <ol className="mb-8 flex flex-wrap justify-center gap-2" aria-label="Form steps">
+      <ol
+        className="mb-8 flex flex-wrap justify-center gap-2"
+        aria-label="Form steps"
+      >
         {STEPS.map((s) => {
           const active = s.id === step;
           const done = s.id < step;
@@ -332,49 +405,66 @@ export function SellForm({ locale }: { locale: Locale }) {
       </ol>
 
       {step === 1 ? (
-        <div className="grid gap-4">
-          <div>
-            <label className={labelClass} htmlFor="brandId">
-              Brand *
-            </label>
-            <select
-              id="brandId"
-              required
-              className={fieldClass}
-              value={form.brandId}
-              onChange={(e) => {
-                setField('brandId', e.target.value);
-                setField('modelId', '');
-              }}
-            >
-              <option value="">Select brand</option>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="modelId">
-              Model *
-            </label>
-            <select
-              id="modelId"
-              required
-              className={fieldClass}
-              value={form.modelId}
-              disabled={!form.brandId}
-              onChange={(e) => setField('modelId', e.target.value)}
-            >
-              <option value="">Select model</option>
-              {models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="grid gap-4 text-left">
+          <SearchableCombobox
+            label="Brand"
+            required
+            placeholder="Search or select brand"
+            valueId={form.brandId}
+            valueLabel={form.brandLabel}
+            options={brandOptions}
+            loading={brandsLoading}
+            onQueryChange={setBrandQuery}
+            onSelect={(opt) => {
+              setForm((f) => ({
+                ...f,
+                brandId: opt.id,
+                brandLabel: opt.label,
+                modelId: '',
+                modelLabel: '',
+              }));
+              setCategoryTouched(false);
+              setEngineTouched(false);
+              setFuelTouched(false);
+              setModelQuery('');
+            }}
+            onClear={() => {
+              setForm((f) => ({
+                ...f,
+                brandId: '',
+                brandLabel: '',
+                modelId: '',
+                modelLabel: '',
+              }));
+              setModelOptions([]);
+            }}
+          />
+          <SearchableCombobox
+            label="Model"
+            required
+            placeholder={
+              form.brandId ? 'Search or select model' : 'Select a brand first'
+            }
+            valueId={form.modelId}
+            valueLabel={form.modelLabel}
+            options={modelOptions}
+            disabled={!form.brandId}
+            loading={modelsLoading}
+            onQueryChange={setModelQuery}
+            onSelect={(opt) => {
+              const meta = modelMeta.find((m) => m.id === opt.id);
+              if (meta) applyModelAutofill(meta);
+              else
+                setForm((f) => ({
+                  ...f,
+                  modelId: opt.id,
+                  modelLabel: opt.label,
+                }));
+            }}
+            onClear={() =>
+              setForm((f) => ({ ...f, modelId: '', modelLabel: '' }))
+            }
+          />
           <div>
             <label className={labelClass} htmlFor="categoryId">
               Category *
@@ -384,10 +474,13 @@ export function SellForm({ locale }: { locale: Locale }) {
               required
               className={fieldClass}
               value={form.categoryId}
-              onChange={(e) => setField('categoryId', e.target.value)}
+              onChange={(e) => {
+                setCategoryTouched(true);
+                setField('categoryId', e.target.value);
+              }}
             >
               <option value="">Select category</option>
-              {categories.map((c) => (
+              {categoryChoices.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -398,7 +491,7 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {step === 2 ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 text-left sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="manufactureYear">
               Manufacture Year *
@@ -416,17 +509,41 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
           <div>
             <label className={labelClass} htmlFor="engineCc">
-              Engine Capacity (cc) *
+              Engine Capacity (cc){isElectric ? '' : ' *'}
             </label>
             <input
               id="engineCc"
               type="number"
-              required
+              required={!isElectric}
               min={1}
+              disabled={isElectric}
+              placeholder={isElectric ? 'N/A for electric' : undefined}
               className={fieldClass}
               value={form.engineCc}
-              onChange={(e) => setField('engineCc', e.target.value)}
+              onChange={(e) => {
+                setEngineTouched(true);
+                setField('engineCc', e.target.value);
+              }}
             />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="fuelType">
+              Fuel Type *
+            </label>
+            <select
+              id="fuelType"
+              required
+              className={fieldClass}
+              value={form.fuelType}
+              onChange={(e) => {
+                setFuelTouched(true);
+                setField('fuelType', e.target.value as FormState['fuelType']);
+              }}
+            >
+              <option value="petrol">Petrol</option>
+              <option value="electric">Electric</option>
+              <option value="other">Other</option>
+            </select>
           </div>
           <div>
             <label className={labelClass} htmlFor="condition">
@@ -475,7 +592,7 @@ export function SellForm({ locale }: { locale: Locale }) {
               onChange={(e) => setField('mileage', e.target.value)}
             />
           </div>
-          <div>
+          <div className="sm:col-span-2">
             <label className={labelClass} htmlFor="priceLkr">
               Price (LKR) *
             </label>
@@ -499,7 +616,7 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {step === 3 ? (
-        <div className="grid gap-4">
+        <div className="grid gap-4 text-left">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass} htmlFor="districtId">
@@ -598,7 +715,7 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {step === 4 && listingId ? (
-        <div className="border border-white/10 bg-surface/40 p-4">
+        <div className="border border-white/10 bg-surface/40 p-4 text-left">
           <p className="text-sm text-muted">
             Add at least 1 photo * · first photo is the cover · up to 5
           </p>
@@ -625,7 +742,9 @@ export function SellForm({ locale }: { locale: Locale }) {
         </div>
       ) : null}
 
-      {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
+      {error ? (
+        <p className="mt-4 text-center text-sm text-red-400">{error}</p>
+      ) : null}
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         {step > 1 && step < 4 ? (

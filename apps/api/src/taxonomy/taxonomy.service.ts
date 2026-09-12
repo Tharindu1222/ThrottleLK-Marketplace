@@ -6,6 +6,13 @@ import { BikeModel } from './bike-model.entity';
 import { Brand } from './brand.entity';
 import { Category } from './category.entity';
 import { City } from './city.entity';
+import {
+  mapToPublicCategory,
+  normalizeFuelType,
+  PUBLIC_CATEGORY_SEEDS,
+  PUBLIC_CATEGORY_SLUGS,
+  INTERNAL_CATEGORY_SEEDS,
+} from './category-map';
 import { District } from './district.entity';
 
 @Injectable()
@@ -25,22 +32,12 @@ export class TaxonomyService implements OnModuleInit {
   }
 
   async seedIfEmpty() {
-    if ((await this.categories.count()) === 0) {
-      const cats = [
-        'Scooter',
-        'Commuter',
-        'Sports',
-        'Cruiser',
-        'Adventure',
-        'Dual-sport',
-        'Electric',
-        'Other',
-      ];
-      await this.categories.save(
-        cats.map((name) =>
-          this.categories.create({ name, slug: slugify(name) }),
-        ),
-      );
+    for (const name of [...PUBLIC_CATEGORY_SEEDS, ...INTERNAL_CATEGORY_SEEDS]) {
+      const slug = slugify(name);
+      const existing = await this.categories.findOne({ where: { slug } });
+      if (!existing) {
+        await this.categories.save(this.categories.create({ name, slug }));
+      }
     }
 
     if ((await this.districts.count()) === 0) {
@@ -69,25 +66,19 @@ export class TaxonomyService implements OnModuleInit {
       }
     }
 
+    // Minimal brands only if empty — full catalogue via `npm run seed:bike-catalog`
     if ((await this.brands.count()) === 0) {
       const brandModels: Record<string, string[]> = {
         Honda: ['Dio', 'Activa', 'CB150R', 'CBR150R'],
         Yamaha: ['FZ-S', 'R15', 'NMAX'],
         Bajaj: ['Pulsar 150', 'Pulsar NS200', 'CT 100'],
-        TVS: ['Apache RTR 160', 'Ntorq', 'XL100'],
-        Suzuki: ['Gixxer', 'Access 125', 'Burgman'],
-        Hero: ['Splendor', 'Xpulse 200', 'Pleasure'],
-        'Royal Enfield': ['Classic 350', 'Hunter 350', 'Himalayan'],
-        KTM: ['Duke 200', 'Duke 390', 'RC 200'],
       };
-      const scooter = await this.categories.findOne({
-        where: { slug: 'scooter' },
-      });
       for (const [brandName, modelNames] of Object.entries(brandModels)) {
         const brand = await this.brands.save(
           this.brands.create({
             name: brandName,
             slug: slugify(brandName),
+            aliases: [],
             status: 'active',
           }),
         );
@@ -96,26 +87,47 @@ export class TaxonomyService implements OnModuleInit {
             this.models.create({
               brandId: brand.id,
               name,
-              slug: `${brand.slug}-${slugify(name)}`,
-              categoryId: scooter?.id ?? null,
+              slug: slugify(name),
+              aliases: [],
+              marketOrigins: [],
+              modelStatus: 'REVIEW_REQUIRED',
               status: 'active',
             }),
           ),
         );
       }
     }
+
+    await this.brands
+      .createQueryBuilder()
+      .update(Brand)
+      .set({ status: 'inactive' })
+      .where('LOWER(name) LIKE :p OR LOWER(slug) LIKE :p', { p: '%phase7%' })
+      .execute();
   }
 
-  listBrands() {
-    return this.brands.find({
-      where: { status: 'active' },
-      order: { name: 'ASC' },
-    });
+  async listBrands(search?: string) {
+    const qb = this.brands
+      .createQueryBuilder('brand')
+      .where('brand.status = :status', { status: 'active' })
+      .andWhere('LOWER(brand.name) NOT LIKE :phase7', { phase7: '%phase7%' })
+      .orderBy('brand.name', 'ASC')
+      .take(100);
+
+    if (search?.trim()) {
+      const q = `%${search.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(brand.name) LIKE :q OR LOWER(brand.aliases::text) LIKE :q)',
+        { q },
+      );
+    }
+
+    return qb.getMany();
   }
 
   async getBrandBySlug(slug: string) {
     const brand = await this.brands.findOne({ where: { slug } });
-    if (!brand) {
+    if (!brand || brand.status !== 'active') {
       throw new NotFoundException({
         success: false,
         error: { code: 'BRAND_NOT_FOUND', message: 'Brand not found' },
@@ -124,11 +136,45 @@ export class TaxonomyService implements OnModuleInit {
     return brand;
   }
 
-  listModelsByBrand(brandId: string) {
-    return this.models.find({
-      where: { brandId, status: 'active' },
-      order: { name: 'ASC' },
-    });
+  async listModelsByBrand(brandId: string, search?: string) {
+    await this.getBrandOrThrow(brandId);
+    const qb = this.models
+      .createQueryBuilder('model')
+      .where('model.brand_id = :brandId', { brandId })
+      .andWhere('model.status = :status', { status: 'active' })
+      .orderBy('model.name', 'ASC')
+      .take(150);
+
+    if (search?.trim()) {
+      const q = `%${search.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(model.name) LIKE :q OR LOWER(model.aliases::text) LIKE :q)',
+        { q },
+      );
+    }
+
+    const rows = await qb.getMany();
+    return rows.map((m) => this.serializeModel(m));
+  }
+
+  serializeModel(model: BikeModel) {
+    return {
+      id: model.id,
+      name: model.name,
+      slug: model.slug,
+      aliases: model.aliases ?? [],
+      defaultCategory: model.defaultCategory,
+      publicCategory: mapToPublicCategory(model.defaultCategory),
+      defaultEngineCc: model.defaultEngineCc,
+      fuelType: model.fuelType,
+      fuelTypeNormalized: normalizeFuelType(model.fuelType),
+      modelStatus: model.modelStatus,
+      marketOrigins: model.marketOrigins ?? [],
+      isCurrent: model.isCurrent,
+      status: model.status,
+      brandId: model.brandId,
+      categoryId: model.categoryId,
+    };
   }
 
   async getModelBySlug(slug: string) {
@@ -145,7 +191,22 @@ export class TaxonomyService implements OnModuleInit {
     return model;
   }
 
-  listCategories() {
+  listCategories(scope?: string) {
+    if (scope === 'public') {
+      return this.categories
+        .createQueryBuilder('category')
+        .where('category.slug IN (:...slugs)', { slugs: PUBLIC_CATEGORY_SLUGS })
+        .orderBy('category.name', 'ASC')
+        .getMany()
+        .then((rows) => {
+          const order = new Map<string, number>(
+            PUBLIC_CATEGORY_SLUGS.map((slug, i) => [slug, i]),
+          );
+          return rows.sort(
+            (a, b) => (order.get(a.slug) ?? 99) - (order.get(b.slug) ?? 99),
+          );
+        });
+    }
     return this.categories.find({ order: { name: 'ASC' } });
   }
 
@@ -176,7 +237,12 @@ export class TaxonomyService implements OnModuleInit {
     const existing = await this.brands.findOne({ where: { slug } });
     if (existing) return existing;
     return this.brands.save(
-      this.brands.create({ name, slug, status: 'active' }),
+      this.brands.create({
+        name,
+        slug,
+        aliases: [],
+        status: 'active',
+      }),
     );
   }
 
@@ -186,12 +252,21 @@ export class TaxonomyService implements OnModuleInit {
     categoryId?: string,
   ) {
     await this.getBrandOrThrow(brandId);
-    const slug = `${slugify(name)}-${Date.now().toString(36)}`;
+    const base = slugify(name);
+    let slug = base;
+    let n = 0;
+    while (await this.models.findOne({ where: { brandId, slug } })) {
+      n += 1;
+      slug = `${base}-${n}`;
+    }
     return this.models.save(
       this.models.create({
         brandId,
         name,
         slug,
+        aliases: [],
+        marketOrigins: [],
+        modelStatus: 'REVIEW_REQUIRED',
         categoryId: categoryId ?? null,
         status: 'active',
       }),

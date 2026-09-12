@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import type { ApiSuccess } from '@throttlelk/types';
 import { TaxonomyService } from './taxonomy.service';
 
@@ -7,8 +7,10 @@ export class TaxonomyController {
   constructor(private readonly taxonomy: TaxonomyService) {}
 
   @Get('brands')
-  async brands(): Promise<ApiSuccess<unknown>> {
-    return { success: true, data: await this.taxonomy.listBrands() };
+  async brands(
+    @Query('search') search?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.listBrands(search) };
   }
 
   @Get('brands/:slug')
@@ -19,10 +21,11 @@ export class TaxonomyController {
   @Get('brands/:brandId/models')
   async models(
     @Param('brandId') brandId: string,
+    @Query('search') search?: string,
   ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.taxonomy.listModelsByBrand(brandId),
+      data: await this.taxonomy.listModelsByBrand(brandId, search),
     };
   }
 
@@ -32,8 +35,13 @@ export class TaxonomyController {
   }
 
   @Get('categories')
-  async categories(): Promise<ApiSuccess<unknown>> {
-    return { success: true, data: await this.taxonomy.listCategories() };
+  async categories(
+    @Query('scope') scope?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.taxonomy.listCategories(scope),
+    };
   }
 
   @Get('locations/districts')

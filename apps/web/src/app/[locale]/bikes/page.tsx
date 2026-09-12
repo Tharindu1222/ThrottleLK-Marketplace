@@ -74,7 +74,9 @@ export default async function BikesPage({
     }),
     apiGet<Brand[]>('/api/v1/brands'),
     apiGet<District[]>('/api/v1/locations/districts'),
-    apiGet<Category[]>('/api/v1/categories'),
+    apiGet<Category[]>('/api/v1/categories', {
+      searchParams: { scope: 'public' },
+    }),
   ]);
 
   const filterState = {

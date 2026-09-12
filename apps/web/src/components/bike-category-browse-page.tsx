@@ -41,9 +41,9 @@ export async function BikeCategoryBrowsePage({
   const marketing = getBikeCategory(categorySlug);
   if (!marketing) notFound();
 
-  const categories = await apiGet<Category[]>('/api/v1/categories').catch(
-    () => [] as Category[],
-  );
+  const categories = await apiGet<Category[]>('/api/v1/categories', {
+    searchParams: { scope: 'public' },
+  }).catch(() => [] as Category[]);
 
   const matched = categories.find((c) =>
     marketing.taxonomySlugs.includes(c.slug),
