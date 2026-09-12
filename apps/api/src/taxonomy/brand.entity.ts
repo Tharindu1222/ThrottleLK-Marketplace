@@ -22,8 +22,11 @@ export class Brand {
   @Column({ type: 'jsonb', default: () => "'[]'" })
   aliases!: string[];
 
-  @Column({ name: 'logo_url', type: 'varchar', nullable: true })
+  @Column({ name: 'logo_url', type: 'varchar', length: 1000, nullable: true })
   logoUrl!: string | null;
+
+  @Column({ name: 'logo_storage_key', type: 'varchar', length: 500, nullable: true })
+  logoStorageKey!: string | null;
 
   /** active | inactive */
   @Column({ default: 'active' })

@@ -52,6 +52,8 @@ import { DealersService } from '../dealers/dealers.service';
 import { ListingImagesService } from '../listings/listing-images.service';
 import { ListingsService } from '../listings/listings.service';
 import { ReportsService } from '../reports/reports.service';
+import { CategoryCoverService } from '../taxonomy/category-cover.service';
+import { BrandLogoService } from '../taxonomy/brand-logo.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { UsersService } from '../users/users.service';
 import { AdminService } from './admin.service';
@@ -67,6 +69,8 @@ export class AdminController {
     private readonly dealerImagesService: DealerImagesService,
     private readonly reportsService: ReportsService,
     private readonly taxonomy: TaxonomyService,
+    private readonly categoryCovers: CategoryCoverService,
+    private readonly brandLogos: BrandLogoService,
     private readonly users: UsersService,
     private readonly admin: AdminService,
   ) {}
@@ -343,6 +347,63 @@ export class AdminController {
   @Get('brands')
   async brands(): Promise<ApiSuccess<unknown>> {
     return { success: true, data: await this.taxonomy.listBrandsAdmin() };
+  }
+
+  @Get('categories')
+  async categories(): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.categoryCovers.listPublic() };
+  }
+
+  @Post('categories/:id/cover')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadCategoryCover(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.categoryCovers.uploadCover(id, file),
+    };
+  }
+
+  @Delete('categories/:id/cover')
+  async deleteCategoryCover(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.categoryCovers.removeCover(id),
+    };
+  }
+
+  @Post('brands/:id/logo')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadBrandLogo(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.brandLogos.uploadLogo(id, file),
+    };
+  }
+
+  @Delete('brands/:id/logo')
+  async deleteBrandLogo(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.brandLogos.removeLogo(id),
+    };
   }
 
   @Post('brands')

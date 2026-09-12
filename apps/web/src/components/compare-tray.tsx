@@ -44,7 +44,7 @@ export function CompareTray({ locale }: { locale: Locale }) {
           </button>
           <Link
             href={`/${locale}/compare`}
-            className="bg-accent px-3 py-1.5 text-sm text-background"
+            className="bg-accent px-3 py-1.5 text-sm text-white"
           >
             {t(locale, 'viewCompare')}
           </Link>

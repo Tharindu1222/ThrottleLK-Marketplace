@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { Brand, District } from '@/lib/admin-types';
+import { CategoryCoverManager } from './category-cover-manager';
+import { BrandLogoManager } from './brand-logo-manager';
 
 export function AdminTaxonomy() {
   const [token, setToken] = useState<string | null>(null);
@@ -38,11 +40,15 @@ export function AdminTaxonomy() {
           Taxonomy
         </h1>
         <p className="mt-1 text-sm text-[var(--admin-muted)]">
-          Manage brands, models, districts, and cities.
+          Manage category covers, brands, models, districts, and cities.
         </p>
       </div>
 
       {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
+
+      <CategoryCoverManager />
+
+      <BrandLogoManager />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <form

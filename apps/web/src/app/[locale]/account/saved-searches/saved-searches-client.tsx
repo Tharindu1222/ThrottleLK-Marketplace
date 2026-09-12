@@ -95,7 +95,7 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
             <div className="flex gap-2">
               <Link
                 href={toBrowseHref(locale, row.query)}
-                className="bg-accent px-3 py-1.5 text-sm text-background"
+                className="bg-accent px-3 py-1.5 text-sm text-white"
               >
                 {t(locale, 'runSearch')}
               </Link>

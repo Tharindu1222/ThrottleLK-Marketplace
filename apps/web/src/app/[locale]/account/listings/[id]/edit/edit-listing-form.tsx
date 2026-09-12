@@ -336,7 +336,7 @@ export function EditListingForm({
         <button
           type="submit"
           disabled={saving}
-          className="bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-background disabled:opacity-60"
+          className="bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-white disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save changes'}
         </button>

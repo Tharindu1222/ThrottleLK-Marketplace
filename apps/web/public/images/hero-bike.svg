@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" fill="none" role="img" aria-label="Motorbike">
+  <g opacity="0.95">
+    <circle cx="220" cy="360" r="78" stroke="#f5f5f5" stroke-width="10"/>
+    <circle cx="220" cy="360" r="28" stroke="#e10600" stroke-width="6"/>
+    <circle cx="680" cy="360" r="78" stroke="#f5f5f5" stroke-width="10"/>
+    <circle cx="680" cy="360" r="28" stroke="#e10600" stroke-width="6"/>
+    <path d="M220 360c55-120 150-150 270-90l70 45" stroke="#f5f5f5" stroke-width="10" stroke-linecap="round"/>
+    <path d="M490 315h120l55-85h70" stroke="#f5f5f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M300 280l70 25-30 70" stroke="#8a8a8a" stroke-width="8" stroke-linecap="round"/>
+    <path d="M520 250c25-35 70-40 110 5" stroke="#e10600" stroke-width="8" stroke-linecap="round"/>
+    <path d="M160 360h60M620 360h60" stroke="#4a4a4a" stroke-width="6"/>
+  </g>
+</svg>

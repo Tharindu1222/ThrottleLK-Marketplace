@@ -14,5 +14,5 @@
     <path d="M420 280h90l40-50"/>
     <path d="M480 240l70 90"/>
   </g>
-  <path d="M0 420h800" stroke="#e8a317" stroke-opacity="0.2" stroke-width="1"/>
+  <path d="M0 420h800" stroke="#e10600" stroke-opacity="0.2" stroke-width="1"/>
 </svg>

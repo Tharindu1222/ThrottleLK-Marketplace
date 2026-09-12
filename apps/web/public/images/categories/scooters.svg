@@ -7,7 +7,7 @@
     </linearGradient>
   </defs>
   <rect width="800" height="500" fill="url(#g)"/>
-  <g fill="none" stroke="#e8a317" stroke-opacity="0.35" stroke-width="2">
+  <g fill="none" stroke="#e10600" stroke-opacity="0.35" stroke-width="2">
     <circle cx="250" cy="340" r="70"/>
     <circle cx="520" cy="340" r="70"/>
     <path d="M250 340h120c40 0 60-40 90-40h60"/>

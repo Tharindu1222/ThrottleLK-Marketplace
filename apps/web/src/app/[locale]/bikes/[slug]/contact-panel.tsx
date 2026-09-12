@@ -91,7 +91,7 @@ export function ContactPanel({
           {listing.phone ? (
             <a
               href={`tel:${listing.phone}`}
-              className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-background"
+              className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-white"
             >
               {t(locale, 'call')}: {listing.phone}
             </a>

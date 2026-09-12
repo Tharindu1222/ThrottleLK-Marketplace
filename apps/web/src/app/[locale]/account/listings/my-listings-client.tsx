@@ -146,7 +146,7 @@ export function MyListingsClient({ locale }: { locale: Locale }) {
                     <button
                       type="button"
                       disabled={busyId === listing.id}
-                      className="bg-accent px-3 py-1.5 text-sm text-background"
+                      className="bg-accent px-3 py-1.5 text-sm text-white"
                       onClick={() =>
                         runAction(
                           listing.id,
@@ -175,7 +175,7 @@ export function MyListingsClient({ locale }: { locale: Locale }) {
                   <button
                     type="button"
                     disabled={busyId === listing.id}
-                    className="bg-accent px-3 py-1.5 text-sm text-background"
+                    className="bg-accent px-3 py-1.5 text-sm text-white"
                     onClick={() =>
                       runAction(
                         listing.id,

@@ -365,7 +365,7 @@ export function SellForm({ locale }: { locale: Locale }) {
         </p>
         <Link
           href={`/${locale}/account/listings`}
-          className="mt-6 inline-flex bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-background"
+          className="mt-6 inline-flex bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white"
         >
           Manage listings
         </Link>
@@ -776,7 +776,7 @@ export function SellForm({ locale }: { locale: Locale }) {
             <button
               type="button"
               disabled={busy || photoCount < 1}
-              className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-background disabled:opacity-50"
+              className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white disabled:opacity-50"
               onClick={() => void submitAd()}
             >
               {busy ? 'Posting…' : 'Post Ad'}
@@ -786,7 +786,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           <button
             type="button"
             disabled={busy}
-            className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-background disabled:opacity-50"
+            className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white disabled:opacity-50"
             onClick={() => void goNext()}
           >
             {busy ? 'Saving…' : step === 3 ? 'Continue to photos' : 'Continue'}

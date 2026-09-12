@@ -10,4 +10,10 @@ export class Category {
 
   @Column({ unique: true, length: 100 })
   slug!: string;
+
+  @Column({ name: 'cover_storage_key', type: 'varchar', length: 500, nullable: true })
+  coverStorageKey!: string | null;
+
+  @Column({ name: 'cover_image_url', type: 'varchar', length: 1000, nullable: true })
+  coverImageUrl!: string | null;
 }

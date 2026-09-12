@@ -47,8 +47,8 @@ export function AdminSidebar({
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] transition-transform duration-200 lg:static lg:translate-x-0 ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 flex h-svh w-64 flex-col border-r border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] transition-transform duration-200 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         <div className="flex items-center gap-2.5 px-5 py-5">

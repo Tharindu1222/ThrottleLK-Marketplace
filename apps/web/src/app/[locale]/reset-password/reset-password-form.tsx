@@ -62,7 +62,7 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
       <button
         type="submit"
         disabled={!token}
-        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-background disabled:opacity-50"
+        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-white disabled:opacity-50"
       >
         Reset password
       </button>

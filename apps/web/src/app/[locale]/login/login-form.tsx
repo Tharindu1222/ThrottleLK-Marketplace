@@ -50,7 +50,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
       />
       <button
         type="submit"
-        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-background"
+        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-white"
       >
         {t(locale, 'login')}
       </button>

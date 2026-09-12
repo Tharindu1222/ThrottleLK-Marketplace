@@ -92,7 +92,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           )}
           <Link
             href={`/${locale}/sell`}
-            className="bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-background transition hover:brightness-110"
+            className="bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110"
           >
             Post an Ad
           </Link>
@@ -200,7 +200,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             </Link>
             <Link
               href={`/${locale}/sell`}
-              className="mt-2 inline-flex items-center justify-center bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-background"
+              className="mt-2 inline-flex items-center justify-center bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-white"
               onClick={() => setMenuOpen(false)}
             >
               Post an Ad

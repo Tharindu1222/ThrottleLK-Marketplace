@@ -13,5 +13,5 @@
     <path d="M240 320c35-95 130-115 210-55l50 35"/>
     <path d="M450 300l40-100h50"/>
   </g>
-  <path d="M80 200c80 20 120-30 200-10" stroke="#e8a317" stroke-opacity="0.2" fill="none"/>
+  <path d="M80 200c80 20 120-30 200-10" stroke="#e10600" stroke-opacity="0.2" fill="none"/>
 </svg>

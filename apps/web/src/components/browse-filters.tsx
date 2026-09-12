@@ -163,7 +163,7 @@ export function BrowseFilters({
       </select>
       <button
         type="submit"
-        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] tracking-wide text-background sm:col-span-2 lg:col-span-4"
+        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] tracking-wide text-white sm:col-span-2 lg:col-span-4"
       >
         {t(locale, 'applyFilters')}
       </button>

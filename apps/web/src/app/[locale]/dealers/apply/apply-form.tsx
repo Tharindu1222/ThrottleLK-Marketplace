@@ -173,7 +173,7 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
       </select>
       <button
         type="submit"
-        className="bg-accent px-4 py-3 font-[family-name:var(--font-display)] text-background"
+        className="bg-accent px-4 py-3 font-[family-name:var(--font-display)] text-white"
       >
         Submit dealer application
       </button>
