@@ -35,6 +35,7 @@ export function AdminShell({
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <AdminTopbar
+            locale={locale}
             title={title}
             subtitle={subtitle}
             onMenuClick={() => setMobileOpen(true)}

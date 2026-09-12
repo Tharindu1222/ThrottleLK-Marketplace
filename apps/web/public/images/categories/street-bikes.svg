@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Street bikes">
+  <defs>
+    <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#121812"/>
+      <stop offset="50%" stop-color="#1c261f"/>
+      <stop offset="100%" stop-color="#0f1410"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <g fill="none" stroke="#f2efe6" stroke-opacity="0.28" stroke-width="2.5">
+    <circle cx="220" cy="330" r="75"/>
+    <circle cx="560" cy="330" r="75"/>
+    <path d="M220 330c40-90 120-120 200-90l60 40"/>
+    <path d="M420 280h90l40-50"/>
+    <path d="M480 240l70 90"/>
+  </g>
+  <path d="M0 420h800" stroke="#e8a317" stroke-opacity="0.2" stroke-width="1"/>
+</svg>

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminUser, Brand, District } from '@/lib/admin-types';
+import { AdminListingImageManager } from './admin-listing-image-manager';
 
 type ListingRow = {
   id: string;
@@ -229,13 +230,13 @@ export function AdminListings({ search = '' }: { search?: string }) {
       registrationYear: form.registrationYear
         ? Number(form.registrationYear)
         : undefined,
-      engineCc: form.engineCc ? Number(form.engineCc) : undefined,
-      mileage: form.mileage ? Number(form.mileage) : undefined,
+      engineCc: Number(form.engineCc),
+      mileage: Number(form.mileage || 0),
       fuelType: form.fuelType,
       transmission: form.transmission,
       condition: form.condition,
       colour: form.colour || undefined,
-      phone: form.phone || undefined,
+      phone: form.phone.trim(),
       whatsapp: form.whatsapp || undefined,
       status: form.status,
     };
@@ -627,9 +628,10 @@ export function AdminListings({ search = '' }: { search?: string }) {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-[var(--admin-muted)]">Engine CC</span>
+                <span className="text-[var(--admin-muted)]">Engine CC *</span>
                 <input
                   type="number"
+                  required
                   min={1}
                   className="admin-field"
                   value={form.engineCc}
@@ -637,9 +639,10 @@ export function AdminListings({ search = '' }: { search?: string }) {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-[var(--admin-muted)]">Mileage</span>
+                <span className="text-[var(--admin-muted)]">Mileage *</span>
                 <input
                   type="number"
+                  required
                   min={0}
                   className="admin-field"
                   value={form.mileage}
@@ -699,8 +702,10 @@ export function AdminListings({ search = '' }: { search?: string }) {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-[var(--admin-muted)]">Phone</span>
+                <span className="text-[var(--admin-muted)]">Phone *</span>
                 <input
+                  required
+                  minLength={9}
                   className="admin-field"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -725,6 +730,19 @@ export function AdminListings({ search = '' }: { search?: string }) {
                 Negotiable
               </label>
             </div>
+
+            {editingId ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-[var(--admin-text)]">
+                  Listing photos
+                </p>
+                <AdminListingImageManager listingId={editingId} />
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--admin-muted)]">
+                Save the listing first, then you can add up to 5 photos.
+              </p>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <button

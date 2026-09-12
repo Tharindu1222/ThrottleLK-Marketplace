@@ -49,6 +49,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { DealerImagesService } from '../dealers/dealer-images.service';
 import { DealersService } from '../dealers/dealers.service';
+import { ListingImagesService } from '../listings/listing-images.service';
 import { ListingsService } from '../listings/listings.service';
 import { ReportsService } from '../reports/reports.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
@@ -61,6 +62,7 @@ import { AdminService } from './admin.service';
 export class AdminController {
   constructor(
     private readonly listingsService: ListingsService,
+    private readonly listingImagesService: ListingImagesService,
     private readonly dealersService: DealersService,
     private readonly dealerImagesService: DealerImagesService,
     private readonly reportsService: ReportsService,
@@ -129,6 +131,42 @@ export class AdminController {
     return {
       success: true,
       data: await this.listingsService.adminDelete(id),
+    };
+  }
+
+  @Get('listings/:id/images')
+  async listListingImages(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingImagesService.listForListing(id),
+    };
+  }
+
+  @Post('listings/:id/images')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadListingImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingImagesService.uploadAsAdmin(id, file),
+    };
+  }
+
+  @Delete('listings/:id/images/:imageId')
+  async deleteListingImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingImagesService.removeAsAdmin(id, imageId),
     };
   }
 

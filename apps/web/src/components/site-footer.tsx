@@ -4,8 +4,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
   return (
     <footer className="border-t border-white/10 py-8 text-center text-sm text-muted">
       <p>
-        © {new Date().getFullYear()} {t(locale, 'brand')} — Sri Lanka motorcycle
-        marketplace
+        © {new Date().getFullYear()} {t(locale, 'brand')} — Sri Lanka&apos;s
+        motorbike marketplace
       </p>
     </footer>
   );

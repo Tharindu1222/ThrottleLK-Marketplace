@@ -6,12 +6,12 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   brand: 'ThrottleLK',
-  tagline: 'Motorcycles & scooters for Sri Lanka',
+  tagline: "Sri Lanka's Motorbike Marketplace",
   support:
-    'Buy and sell with bike-native search — private sellers and dealers.',
-  browse: 'Browse bikes',
-  sell: 'Sell',
-  login: 'Log in',
+    'Buy and sell motorbikes across Sri Lanka — from private sellers and dealers.',
+  browse: 'Buy Bikes',
+  sell: 'Sell a Bike',
+  login: 'Sign In',
   register: 'Register',
   logout: 'Log out',
   myListings: 'My listings',
@@ -99,10 +99,11 @@ const en: Dict = {
 
 const si: Dict = {
   ...en,
-  tagline: 'ශ්‍රී ලංකාව සඳහා යතුරුපැදි සහ ස්කූටර්',
-  support: 'පුද්ගලික විකුණුම්කරුවන් සහ ඩීලර්වරුන්ගෙන් සොයන්න, ලැයිස්තුගත කරන්න.',
-  browse: 'බයික් බලන්න',
-  sell: 'විකුණන්න',
+  tagline: 'ශ්‍රී ලංකාවේ යතුරුපැදි වෙළඳපොළ',
+  support:
+    'පුද්ගලික විකුණුම්කරුවන් සහ ඩීලර්වරුන්ගෙන් ශ්‍රී ලංකාව පුරා යතුරුපැදි මිලදී ගෙන විකුණන්න.',
+  browse: 'බයික් මිලදී ගන්න',
+  sell: 'බයික්ක් විකුණන්න',
   login: 'පිවිසෙන්න',
   register: 'ලියාපදිංචි වන්න',
   logout: 'පිටවන්න',

@@ -25,11 +25,12 @@ export function ListingImageManager({
   const [busy, setBusy] = useState(false);
 
   async function load(access: string) {
-    setImages(
-      await apiGet<ListingImage[]>(`/api/v1/listings/${listingId}/images`, {
-        token: access,
-      }),
+    const next = await apiGet<ListingImage[]>(
+      `/api/v1/listings/${listingId}/images`,
+      { token: access },
     );
+    setImages(next);
+    return next;
   }
 
   function afterMutation(access: string) {
@@ -40,9 +41,11 @@ export function ListingImageManager({
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void load(access).catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load images'),
-    );
+    void load(access)
+      .then(() => onChange?.())
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : 'Failed to load images'),
+      );
   }, [listingId]);
 
   if (!token) return null;

@@ -536,13 +536,13 @@ export function AdminDealers({ search = '' }: { search?: string }) {
             {editingId ? (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-[var(--admin-text)]">
-                  Shop photos
+                  Shop photo
                 </p>
                 <DealerImageManager dealerId={editingId} />
               </div>
             ) : (
               <p className="text-sm text-[var(--admin-muted)]">
-                Save the shop first, then you can add up to 5 photos.
+                Save the shop first, then you can add 1 photo.
               </p>
             )}
 

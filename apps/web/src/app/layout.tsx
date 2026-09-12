@@ -16,10 +16,11 @@ const sans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'ThrottleLK',
+    default: "ThrottleLK — Sri Lanka's Motorbike Marketplace",
     template: '%s | ThrottleLK',
   },
-  description: 'Motorcycle and scooter marketplace for Sri Lanka',
+  description:
+    'Buy and sell motorbikes across Sri Lanka — from private sellers and dealers.',
 };
 
 export default function RootLayout({

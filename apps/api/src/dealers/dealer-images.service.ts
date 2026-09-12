@@ -14,7 +14,7 @@ import { Dealer } from './dealer.entity';
 
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 5 * 1024 * 1024;
-export const MAX_DEALER_IMAGES = 5;
+export const MAX_DEALER_IMAGES = 1;
 
 @Injectable()
 export class DealerImagesService {
@@ -81,7 +81,7 @@ export class DealerImagesService {
         success: false,
         error: {
           code: 'MAX_IMAGES',
-          message: `Maximum ${MAX_DEALER_IMAGES} photos per dealer shop`,
+          message: `Maximum ${MAX_DEALER_IMAGES} photo per dealer shop`,
         },
       });
     }

@@ -33,6 +33,26 @@ export class ListingImagesService {
   }
 
   async upload(owner: User, listingId: string, file?: Express.Multer.File) {
+    await this.getOwnedListing(owner.id, listingId);
+    return this.uploadFile(listingId, file);
+  }
+
+  async uploadAsAdmin(listingId: string, file?: Express.Multer.File) {
+    await this.getListingOrThrow(listingId);
+    return this.uploadFile(listingId, file);
+  }
+
+  async remove(owner: User, listingId: string, imageId: string) {
+    await this.getOwnedListing(owner.id, listingId);
+    return this.removeImage(listingId, imageId);
+  }
+
+  async removeAsAdmin(listingId: string, imageId: string) {
+    await this.getListingOrThrow(listingId);
+    return this.removeImage(listingId, imageId);
+  }
+
+  private async uploadFile(listingId: string, file?: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException({
         success: false,
@@ -55,8 +75,7 @@ export class ListingImagesService {
       });
     }
 
-    const listing = await this.getOwnedListing(owner.id, listingId);
-    const count = await this.images.count({ where: { listingId: listing.id } });
+    const count = await this.images.count({ where: { listingId } });
     if (count >= MAX_LISTING_IMAGES) {
       throw new BadRequestException({
         success: false,
@@ -73,14 +92,14 @@ export class ListingImagesService {
         : file.mimetype === 'image/webp'
           ? 'webp'
           : 'jpg';
-    const storageKey = `${listing.id}/${randomUUID()}.${ext}`;
+    const storageKey = `${listingId}/${randomUUID()}.${ext}`;
     const stored = await this.storage.putObject(
       storageKey,
       file.buffer,
       file.mimetype,
     );
     const image = this.images.create({
-      listingId: listing.id,
+      listingId,
       storageKey: stored.storageKey,
       imageUrl: stored.publicUrl,
       thumbnailUrl: stored.publicUrl,
@@ -90,8 +109,7 @@ export class ListingImagesService {
     return this.images.save(image);
   }
 
-  async remove(owner: User, listingId: string, imageId: string) {
-    await this.getOwnedListing(owner.id, listingId);
+  private async removeImage(listingId: string, imageId: string) {
     const image = await this.images.findOne({
       where: { id: imageId, listingId },
     });
@@ -122,7 +140,7 @@ export class ListingImagesService {
     }
   }
 
-  private async getOwnedListing(sellerId: string, listingId: string) {
+  private async getListingOrThrow(listingId: string) {
     const listing = await this.listings.findOne({ where: { id: listingId } });
     if (!listing) {
       throw new NotFoundException({
@@ -130,6 +148,11 @@ export class ListingImagesService {
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
       });
     }
+    return listing;
+  }
+
+  private async getOwnedListing(sellerId: string, listingId: string) {
+    const listing = await this.getListingOrThrow(listingId);
     if (listing.sellerId !== sellerId) {
       throw new ForbiddenException({
         success: false,

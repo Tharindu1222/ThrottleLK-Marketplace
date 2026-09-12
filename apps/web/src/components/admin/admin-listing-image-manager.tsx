@@ -4,31 +4,32 @@ import { useEffect, useState } from 'react';
 import { apiGet, apiSend, apiUpload } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 
-const MAX_PHOTOS = 1;
+const MAX_PHOTOS = 5;
 
-type DealerImage = {
+type ListingImage = {
   id: string;
   imageUrl: string;
   sortOrder: number;
 };
 
-export function DealerImageManager({
-  dealerId,
+export function AdminListingImageManager({
+  listingId,
   onChange,
 }: {
-  dealerId: string;
+  listingId: string;
   onChange?: () => void;
 }) {
   const [token, setToken] = useState<string | null>(null);
-  const [images, setImages] = useState<DealerImage[]>([]);
+  const [images, setImages] = useState<ListingImage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load(access: string) {
     setImages(
-      await apiGet<DealerImage[]>(`/api/v1/admin/dealers/${dealerId}/images`, {
-        token: access,
-      }),
+      await apiGet<ListingImage[]>(
+        `/api/v1/admin/listings/${listingId}/images`,
+        { token: access },
+      ),
     );
   }
 
@@ -43,7 +44,7 @@ export function DealerImageManager({
     void load(access).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to load images'),
     );
-  }, [dealerId]);
+  }, [listingId]);
 
   if (!token) return null;
 
@@ -52,7 +53,8 @@ export function DealerImageManager({
   return (
     <div className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-4">
       <p className="text-sm text-[var(--admin-muted)]">
-        Shop photo {images.length}/{MAX_PHOTOS}
+        Listing photos {images.length}/{MAX_PHOTOS}
+        {images.length > 0 ? ' · first photo is the cover' : ''}
       </p>
       <div className="flex flex-wrap gap-3">
         {images.map((image, index) => (
@@ -60,7 +62,7 @@ export function DealerImageManager({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image.imageUrl}
-              alt={`Shop photo ${index + 1}`}
+              alt={`Listing photo ${index + 1}`}
               className="h-20 w-28 rounded-lg object-cover ring-1 ring-[var(--admin-border)]"
             />
             <button
@@ -68,7 +70,7 @@ export function DealerImageManager({
               className="mt-1 text-[11px] text-[var(--admin-muted)] underline hover:text-[var(--admin-danger)]"
               onClick={() => {
                 void apiSend(
-                  `/api/v1/admin/dealers/${dealerId}/images/${image.id}`,
+                  `/api/v1/admin/listings/${listingId}/images/${image.id}`,
                   { method: 'DELETE', token },
                 )
                   .then(() => afterMutation(token))
@@ -90,20 +92,23 @@ export function DealerImageManager({
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             className="hidden"
             disabled={busy}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
+              const files = [...(e.target.files ?? [])].slice(0, remaining);
+              if (files.length === 0) return;
               setBusy(true);
               setError(null);
               void (async () => {
                 try {
-                  await apiUpload(
-                    `/api/v1/admin/dealers/${dealerId}/images`,
-                    file,
-                    token,
-                  );
+                  for (const file of files) {
+                    await apiUpload(
+                      `/api/v1/admin/listings/${listingId}/images`,
+                      file,
+                      token,
+                    );
+                  }
                   await afterMutation(token);
                 } catch (err) {
                   setError(
@@ -118,9 +123,13 @@ export function DealerImageManager({
           />
         </label>
       ) : (
-        <p className="text-sm text-[var(--admin-muted)]">Maximum 1 photo reached.</p>
+        <p className="text-sm text-[var(--admin-muted)]">
+          Maximum 5 photos reached.
+        </p>
       )}
-      {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-[var(--admin-danger)]">{error}</p>
+      ) : null}
     </div>
   );
 }

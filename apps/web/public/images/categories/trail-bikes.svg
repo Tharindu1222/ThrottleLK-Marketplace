@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Trail bikes">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2418"/>
+      <stop offset="100%" stop-color="#0d120e"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <path d="M0 380c120-40 200 20 320-10s200 30 480-20v150H0z" fill="#162018"/>
+  <g fill="none" stroke="#a8b0a4" stroke-opacity="0.4" stroke-width="2.5">
+    <circle cx="240" cy="320" r="72"/>
+    <circle cx="540" cy="320" r="72"/>
+    <path d="M240 320c35-95 130-115 210-55l50 35"/>
+    <path d="M450 300l40-100h50"/>
+  </g>
+  <path d="M80 200c80 20 120-30 200-10" stroke="#e8a317" stroke-opacity="0.2" fill="none"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="High capacity bikes">
+  <defs>
+    <linearGradient id="g" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#2a1f10"/>
+      <stop offset="40%" stop-color="#141810"/>
+      <stop offset="100%" stop-color="#0a0c0a"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <g fill="none" stroke="#e8a317" stroke-opacity="0.45" stroke-width="2.5">
+    <circle cx="210" cy="340" r="78"/>
+    <circle cx="590" cy="340" r="78"/>
+    <path d="M210 340c50-110 160-140 260-70l70 50"/>
+    <path d="M470 320l80-110h70"/>
+    <path d="M290 250l80 20-20 60"/>
+  </g>
+  <path d="M120 120l80 40M640 100l-60 50" stroke="#f2efe6" stroke-opacity="0.12" stroke-width="1"/>
+</svg>

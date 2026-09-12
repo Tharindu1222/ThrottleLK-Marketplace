@@ -23,6 +23,6 @@ import { ListingsService } from './listings.service';
   ],
   providers: [ListingsService, ListingImagesService],
   controllers: [ListingsController],
-  exports: [ListingsService, TypeOrmModule],
+  exports: [ListingsService, ListingImagesService, TypeOrmModule],
 })
 export class ListingsModule {}
