@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   },
   description:
     'Buy and sell motorbikes across Sri Lanka — from private sellers and dealers.',
+  icons: {
+    icon: '/images/brand/throttlelk-logo.png',
+    apple: '/images/brand/throttlelk-logo.png',
+  },
 };
 
 export default function RootLayout({

@@ -10,6 +10,7 @@ import {
 } from '@/lib/auth';
 import { apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
+import { BrandLogo } from './brand-logo';
 
 export function SiteHeader({ locale }: { locale: Locale }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -50,9 +51,10 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-4">
         <Link
           href={`/${locale}`}
-          className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground"
+          className="shrink-0"
+          aria-label={t(locale, 'brand')}
         >
-          {t(locale, 'brand')}
+          <BrandLogo size="header" />
         </Link>
 
         <nav className="ml-6 hidden items-center gap-6 md:flex" aria-label="Main">

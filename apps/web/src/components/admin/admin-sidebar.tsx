@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { Locale } from '@/lib/i18n';
+import { BrandLogo } from '../brand-logo';
 
 const nav = [
   {
@@ -51,18 +52,11 @@ export function AdminSidebar({
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="flex items-center gap-2.5 px-5 py-5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--admin-accent)] text-sm font-bold text-white shadow-[0_0_18px_rgba(124,92,252,0.45)]">
-            TL
-          </span>
-          <div>
-            <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-[var(--admin-text)]">
-              ThrottleLK
-            </p>
-            <p className="text-[11px] tracking-wide text-[var(--admin-faint)] uppercase">
-              Admin
-            </p>
-          </div>
+        <div className="flex items-center gap-3 px-5 py-5">
+          <BrandLogo size="admin" />
+          <p className="text-[11px] tracking-wide text-[var(--admin-faint)] uppercase">
+            Admin
+          </p>
         </div>
 
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
