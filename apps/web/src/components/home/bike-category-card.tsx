@@ -22,7 +22,7 @@ export function BikeCategoryCard({
       />
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/20 transition duration-500 group-hover:via-background/60"
+        className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent transition duration-500 group-hover:from-black/65 group-hover:via-black/10"
       />
       <div
         aria-hidden
@@ -31,19 +31,19 @@ export function BikeCategoryCard({
       <div className="relative flex h-full flex-col justify-end p-4 sm:p-5">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-foreground sm:text-2xl">
+            <h3 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-white sm:text-2xl">
               {category.name}
             </h3>
-            <p className="mt-1 text-xs text-muted sm:text-sm">
+            <p className="mt-1 text-xs text-white/80 sm:text-sm">
               {category.description}
             </p>
-            <p className="mt-2 truncate text-[11px] tracking-wide text-foreground/45 uppercase">
+            <p className="mt-2 truncate text-[11px] tracking-wide text-white/55 uppercase">
               {category.examples}
             </p>
           </div>
           <span
             aria-hidden
-            className="mb-1 flex h-8 w-8 shrink-0 items-center justify-center border border-black/15 text-foreground/70 transition duration-300 group-hover:translate-x-0.5 group-hover:border-accent group-hover:bg-accent group-hover:text-white"
+            className="mb-1 flex h-8 w-8 shrink-0 items-center justify-center border border-white/35 text-white/85 transition duration-300 group-hover:translate-x-0.5 group-hover:border-accent group-hover:bg-accent group-hover:text-white"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M13 5l7 7-7 7" />
