@@ -35,36 +35,36 @@ export function AdminOverview({ locale }: { locale: Locale }) {
       label: 'Total users',
       value: dash.users,
       href: `/${locale}/admin/users`,
-      tint: 'bg-[#6366f1]/15 text-[#a5b4fc]',
-      iconBg: 'bg-[#6366f1]/20 text-[#818cf8]',
+      tint: 'bg-black/5 text-[var(--admin-text)]',
+      iconBg: 'bg-black/10 text-[var(--admin-text)]',
     },
     {
       label: 'Active listings',
       value: dash.activeListings,
       href: `/${locale}/bikes`,
-      tint: 'bg-[var(--admin-accent-soft)] text-[var(--admin-accent-2)]',
-      iconBg: 'bg-[var(--admin-accent)]/20 text-[var(--admin-accent-2)]',
+      tint: 'bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]',
+      iconBg: 'bg-[var(--admin-accent)]/15 text-[var(--admin-accent)]',
     },
     {
       label: 'Pending listings',
       value: dash.pendingListings,
       href: `/${locale}/admin/moderation`,
-      tint: 'bg-[#38bdf8]/15 text-[#7dd3fc]',
-      iconBg: 'bg-[#38bdf8]/20 text-[#38bdf8]',
+      tint: 'bg-[var(--admin-info)]/10 text-[var(--admin-info)]',
+      iconBg: 'bg-[var(--admin-info)]/15 text-[var(--admin-info)]',
     },
     {
       label: 'Pending dealers',
       value: dash.pendingDealers,
       href: `/${locale}/admin/moderation`,
-      tint: 'bg-[#f43f5e]/15 text-[#fb7185]',
-      iconBg: 'bg-[#f43f5e]/20 text-[#f43f5e]',
+      tint: 'bg-[var(--admin-danger)]/10 text-[var(--admin-danger)]',
+      iconBg: 'bg-[var(--admin-danger)]/15 text-[var(--admin-danger)]',
     },
     {
       label: 'Open reports',
       value: dash.openReports,
       href: `/${locale}/admin/reports`,
-      tint: 'bg-[#ec4899]/15 text-[#f9a8d4]',
-      iconBg: 'bg-[#ec4899]/20 text-[#ec4899]',
+      tint: 'bg-[var(--admin-warning)]/10 text-[var(--admin-warning)]',
+      iconBg: 'bg-[var(--admin-warning)]/15 text-[var(--admin-warning)]',
     },
   ] as const;
 
@@ -84,7 +84,7 @@ export function AdminOverview({ locale }: { locale: Locale }) {
           <Link
             key={card.label}
             href={card.href}
-            className="admin-card p-4 transition hover:-translate-y-0.5 hover:border-[var(--admin-accent)]/40 hover:shadow-[0_0_24px_rgba(124,92,252,0.15)]"
+            className="admin-card p-4 transition hover:-translate-y-0.5 hover:border-[var(--admin-accent)]/40 hover:shadow-[0_0_24px_rgba(225,6,0,0.12)]"
           >
             <div className="flex items-center justify-between gap-2">
               <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${card.tint}`}>

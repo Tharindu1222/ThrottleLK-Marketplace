@@ -105,7 +105,7 @@ export default async function ListingDetailPage({
           <img
             src={listing.coverImageUrl}
             alt={listing.title}
-            className="mt-6 max-h-[420px] w-full object-cover ring-1 ring-white/10"
+            className="mt-6 max-h-[420px] w-full object-cover ring-1 ring-black/10"
           />
         ) : null}
         {listing.images && listing.images.length > 1 ? (
@@ -116,7 +116,7 @@ export default async function ListingDetailPage({
                 key={image.id}
                 src={image.imageUrl}
                 alt=""
-                className="h-16 w-20 object-cover ring-1 ring-white/10"
+                className="h-16 w-20 object-cover ring-1 ring-black/10"
               />
             ))}
           </div>

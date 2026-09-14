@@ -69,7 +69,7 @@ export function ContactPanel({
   }
 
   return (
-    <aside className="border border-white/10 bg-surface/50 p-5">
+    <aside className="border border-black/10 bg-surface/50 p-5">
       <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">
         {t(locale, 'contactSeller')}
       </h2>
@@ -125,7 +125,7 @@ export function ContactPanel({
             rows={4}
             minLength={1}
             placeholder={t(locale, 'message')}
-            className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
+            className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
           />
           <button
             type="submit"

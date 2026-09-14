@@ -60,7 +60,7 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
   if (mine.length > 0) {
     const dealer = mine[0];
     return (
-      <div className="mt-8 border border-white/10 bg-surface/40 p-5">
+      <div className="mt-8 border border-black/10 bg-surface/40 p-5">
         <h2 className="font-[family-name:var(--font-display)] text-2xl">
           {dealer.name}
         </h2>
@@ -115,42 +115,42 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
         name="name"
         required
         placeholder="Dealership name"
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <textarea
         name="description"
         rows={4}
         placeholder="About your dealership"
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="phone"
         required
         placeholder={t(locale, 'phone')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="whatsapp"
         placeholder="WhatsApp"
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="email"
         type="email"
         placeholder={t(locale, 'email')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="address"
         placeholder="Address"
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <select
         name="districtId"
         required
         value={districtId}
         onChange={(e) => setDistrictId(e.target.value)}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       >
         <option value="">{t(locale, 'districtFilter')}</option>
         {districts.map((d) => (
@@ -162,7 +162,7 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
       <select
         name="cityId"
         required
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       >
         <option value="">City</option>
         {cities.map((c) => (

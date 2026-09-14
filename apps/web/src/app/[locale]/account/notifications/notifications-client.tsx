@@ -72,7 +72,7 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
           <button
             key={n.id}
             type="button"
-            className={`block w-full border border-white/10 p-4 text-left ${
+            className={`block w-full border border-black/10 p-4 text-left ${
               n.readAt ? 'bg-surface/20' : 'bg-surface/50'
             }`}
             onClick={() => {

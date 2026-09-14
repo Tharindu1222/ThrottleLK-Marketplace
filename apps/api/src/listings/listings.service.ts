@@ -249,10 +249,16 @@ export class ListingsService {
     if (filters.condition) {
       qb.andWhere('l.condition = :condition', { condition: filters.condition });
     }
-    if (filters.q) {
-      qb.andWhere('(l.title ILIKE :q OR l.description ILIKE :q)', {
-        q: `%${filters.q}%`,
-      });
+    if (filters.q?.trim()) {
+      // Tokenize so "d tracker" matches "D-Tracker" (hyphen/space tolerant).
+      const tokens = searchTokens(filters.q);
+      for (let i = 0; i < tokens.length; i++) {
+        const key = `q${i}`;
+        qb.andWhere(
+          `(l.title ILIKE :${key} ESCAPE '\\' OR l.description ILIKE :${key} ESCAPE '\\')`,
+          { [key]: `%${escapeLikePattern(tokens[i])}%` },
+        );
+      }
     }
 
     switch (filters.sort) {
@@ -286,12 +292,15 @@ export class ListingsService {
     const rows = await qb.take(50).getMany();
     if (rows.length === 0) return [];
 
-    const withImages = await this.listings.find({
+    const withRelations = await this.listings.find({
       where: { id: In(rows.map((r) => r.id)) },
-      relations: ['images'],
+      relations: ['images', 'brand', 'model', 'district', 'city', 'dealer'],
     });
-    const byId = new Map(withImages.map((row) => [row.id, row]));
-    return rows.map((row) => this.withCover(byId.get(row.id) ?? row));
+    const byId = new Map(withRelations.map((row) => [row.id, row]));
+    return rows.map((row) => {
+      const full = byId.get(row.id) ?? row;
+      return this.toBrowseCard(full);
+    });
   }
 
   async getPublicOrOwned(idOrSlug: string, viewer?: User | null) {
@@ -344,6 +353,30 @@ export class ListingsService {
       ...listing,
       images,
       coverImageUrl: cover?.imageUrl ?? null,
+    };
+  }
+
+  /** Compact public card payload for browse grids. */
+  private toBrowseCard(listing: Listing) {
+    const covered = this.withCover(listing);
+    return {
+      id: listing.id,
+      slug: listing.slug,
+      title: listing.title,
+      priceLkr: listing.priceLkr,
+      manufactureYear: listing.manufactureYear,
+      engineCc: listing.engineCc,
+      mileage: listing.mileage,
+      condition: listing.condition,
+      districtId: listing.districtId,
+      brandId: listing.brandId,
+      modelId: listing.modelId,
+      brandName: listing.brand?.name ?? null,
+      modelName: listing.model?.name ?? null,
+      districtName: listing.district?.name ?? null,
+      cityName: listing.city?.name ?? null,
+      sellerType: listing.dealerId ? 'dealer' : 'private',
+      coverImageUrl: covered.coverImageUrl,
     };
   }
 
@@ -597,4 +630,18 @@ export class ListingsService {
     }
     return listing;
   }
+}
+
+/** Split query so "d tracker" can match titles like "D-Tracker". */
+export function searchTokens(q: string): string[] {
+  return q
+    .trim()
+    .split(/[\s\-_/.,+]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+}
+
+/** Escape LIKE wildcards in user input. */
+export function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&');
 }

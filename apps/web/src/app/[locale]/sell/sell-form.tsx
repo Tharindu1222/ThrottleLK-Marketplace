@@ -51,7 +51,7 @@ const STEPS = [
 ] as const;
 
 const fieldClass =
-  'w-full bg-background px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-white/10 focus:ring-accent';
+  'w-full bg-background px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 focus:ring-accent';
 const labelClass = 'mb-1.5 block text-sm text-muted';
 
 const emptyForm: FormState = {
@@ -356,7 +356,7 @@ export function SellForm({ locale }: { locale: Locale }) {
 
   if (submitted) {
     return (
-      <div className="mx-auto mt-8 max-w-xl border border-white/10 bg-surface/40 p-6 text-left">
+      <div className="mx-auto mt-8 max-w-xl border border-black/10 bg-surface/40 p-6 text-left">
         <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-accent">
           Ad submitted
         </p>
@@ -391,8 +391,8 @@ export function SellForm({ locale }: { locale: Locale }) {
                 active
                   ? 'border-accent text-accent'
                   : done
-                    ? 'border-white/20 text-foreground'
-                    : 'border-white/10 text-muted'
+                    ? 'border-black/20 text-foreground'
+                    : 'border-black/10 text-muted'
               }`}
             >
               <span className="font-[family-name:var(--font-display)] text-sm">
@@ -715,7 +715,7 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {step === 4 && listingId ? (
-        <div className="border border-white/10 bg-surface/40 p-4 text-left">
+        <div className="border border-black/10 bg-surface/40 p-4 text-left">
           <p className="text-sm text-muted">
             Add at least 1 photo * · first photo is the cover · up to 5
           </p>
@@ -750,7 +750,7 @@ export function SellForm({ locale }: { locale: Locale }) {
         {step > 1 && step < 4 ? (
           <button
             type="button"
-            className="border border-white/20 px-4 py-2.5 text-sm text-foreground hover:border-accent"
+            className="border border-black/20 px-4 py-2.5 text-sm text-foreground hover:border-accent"
             onClick={() => {
               setError(null);
               setStep((s) => s - 1);
@@ -764,7 +764,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           <>
             <button
               type="button"
-              className="border border-white/20 px-4 py-2.5 text-sm text-foreground hover:border-accent"
+              className="border border-black/20 px-4 py-2.5 text-sm text-foreground hover:border-accent"
               onClick={() => {
                 setError(null);
                 setStep(3);

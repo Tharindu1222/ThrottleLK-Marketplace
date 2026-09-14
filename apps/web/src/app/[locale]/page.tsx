@@ -56,7 +56,7 @@ export default async function HomePage({
 
       <HomeScrollReveals>
         <section className="mx-auto max-w-6xl px-6 pb-20">
-          <div className="border-t border-white/10 pt-12" data-reveal>
+          <div className="border-t border-black/10 pt-12" data-reveal>
             <p className="mb-2 text-xs tracking-[0.35em] text-accent uppercase">
               Discover
             </p>
@@ -81,7 +81,7 @@ export default async function HomePage({
                 <li key={district.id}>
                   <Link
                     href={`/${locale}/locations/${district.slug}`}
-                    className="inline-block border border-white/12 px-3 py-1.5 text-sm text-muted transition hover:border-accent hover:text-foreground"
+                    className="inline-block border border-black/12 px-3 py-1.5 text-sm text-muted transition hover:border-accent hover:text-foreground"
                   >
                     {district.name}
                   </Link>

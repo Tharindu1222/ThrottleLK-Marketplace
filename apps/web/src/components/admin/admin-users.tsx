@@ -249,16 +249,16 @@ export function AdminUsers({ search = '' }: { search?: string }) {
                       }
                       className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium outline-none ${
                         user.status === 'suspended'
-                          ? 'bg-[var(--admin-danger)]/15 text-[#fb7185]'
-                          : 'bg-[var(--admin-success)]/15 text-[#4ade80]'
+                          ? 'bg-[var(--admin-danger)]/15 text-[var(--admin-danger)]'
+                          : 'bg-[var(--admin-success)]/15 text-[var(--admin-success)]'
                       }`}
                     >
-                      <option value="active" className="bg-[var(--admin-bg)] text-white">
+                      <option value="active" className="bg-[var(--admin-bg)] text-[var(--admin-text)]">
                         active
                       </option>
                       <option
                         value="suspended"
-                        className="bg-[var(--admin-bg)] text-white"
+                        className="bg-[var(--admin-bg)] text-[var(--admin-text)]"
                       >
                         suspended
                       </option>
@@ -275,7 +275,7 @@ export function AdminUsers({ search = '' }: { search?: string }) {
                       </button>
                       <button
                         type="button"
-                        className="rounded-xl border border-[var(--admin-danger)]/40 px-3 py-1.5 text-xs text-[#fb7185] hover:bg-[var(--admin-danger)]/10"
+                        className="rounded-xl border border-[var(--admin-danger)]/40 px-3 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10"
                         onClick={() => void onDelete(user.id)}
                       >
                         Delete

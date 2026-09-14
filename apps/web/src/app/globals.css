@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #f5f5f5;
-  --muted: #8a8a8a;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --muted: #6b6b6b;
   --accent: #e10600;
-  --surface: #141414;
-  --surface-2: #1c1c1c;
-  --border: rgba(255, 255, 255, 0.12);
-  --gray-bar: #2a2a2a;
-  --gray-bar-light: #4a4a4a;
+  --surface: #f5f5f5;
+  --surface-2: #ebebeb;
+  --border: rgba(0, 0, 0, 0.12);
+  --gray-bar: #4a4a4a;
+  --gray-bar-light: #8a8a8a;
 }
 
 @theme inline {
@@ -43,29 +43,29 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* Admin-only skin (dark navy + purple) — does not affect marketplace */
+/* Admin skin — light red / white / gray / black (matches marketplace) */
 .admin-app {
-  --admin-bg: #0f1219;
-  --admin-bg-elevated: #151a24;
-  --admin-surface: #1a2030;
-  --admin-surface-2: #222a3d;
-  --admin-border: rgba(255, 255, 255, 0.08);
-  --admin-border-strong: rgba(255, 255, 255, 0.12);
-  --admin-text: #f3f4f6;
-  --admin-muted: #94a3b8;
-  --admin-faint: #64748b;
-  --admin-accent: #7c5cfc;
-  --admin-accent-2: #a78bfa;
-  --admin-accent-soft: rgba(124, 92, 252, 0.18);
-  --admin-danger: #f43f5e;
-  --admin-success: #22c55e;
-  --admin-warning: #f59e0b;
-  --admin-info: #38bdf8;
-  --admin-pink: #ec4899;
+  --admin-bg: #f7f7f7;
+  --admin-bg-elevated: #ffffff;
+  --admin-surface: #ffffff;
+  --admin-surface-2: #f0f0f0;
+  --admin-border: rgba(0, 0, 0, 0.08);
+  --admin-border-strong: rgba(0, 0, 0, 0.12);
+  --admin-text: #0a0a0a;
+  --admin-muted: #6b6b6b;
+  --admin-faint: #9a9a9a;
+  --admin-accent: #e10600;
+  --admin-accent-2: #ff3b30;
+  --admin-accent-soft: rgba(225, 6, 0, 0.12);
+  --admin-danger: #dc2626;
+  --admin-success: #16a34a;
+  --admin-warning: #d97706;
+  --admin-info: #2563eb;
+  --admin-pink: #db2777;
 
   background:
-    radial-gradient(ellipse 70% 40% at 10% 0%, rgba(124, 92, 252, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 30% at 90% 10%, rgba(236, 72, 153, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse 70% 40% at 10% 0%, rgba(225, 6, 0, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 90% 10%, rgba(0, 0, 0, 0.03) 0%, transparent 45%),
     var(--admin-bg);
   color: var(--admin-text);
   min-height: 100vh;
@@ -82,7 +82,7 @@ textarea:focus-visible {
   border: 1px solid var(--admin-border);
   background: var(--admin-surface);
   border-radius: 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .admin-btn-primary {
@@ -94,8 +94,8 @@ textarea:focus-visible {
 }
 
 .admin-btn-primary:hover {
-  background: #6d4ef0;
-  box-shadow: 0 0 20px rgba(124, 92, 252, 0.35);
+  background: #c40500;
+  box-shadow: 0 0 20px rgba(225, 6, 0, 0.25);
 }
 
 .admin-btn-ghost {

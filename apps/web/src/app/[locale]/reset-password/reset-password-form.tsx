@@ -57,7 +57,7 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
         required
         minLength={8}
         placeholder="New password"
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <button
         type="submit"

@@ -2,7 +2,7 @@
 
 import type { AdminDashboard } from '@/lib/admin-types';
 
-const COLORS = ['#7c5cfc', '#38bdf8', '#f43f5e', '#22c55e', '#ec4899'];
+const COLORS = ['#e10600', '#4a4a4a', '#dc2626', '#16a34a', '#6b6b6b'];
 
 export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
   const slices = [
@@ -45,7 +45,7 @@ export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
         </div>
         <div className="mt-6 space-y-4">
           {[
-            { label: 'Users', value: dash.users, color: '#a78bfa' },
+            { label: 'Users', value: dash.users, color: '#0a0a0a' },
             ...slices,
           ].map((row) => (
             <div key={row.label}>

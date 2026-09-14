@@ -92,11 +92,11 @@ export function SaveSearchButton({
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
         onClick={() => void onSave()}
-        className="border border-white/20 px-3 py-1.5 text-sm hover:border-accent"
+        className="border border-black/20 px-3 py-1.5 text-sm hover:border-accent"
       >
         {t(locale, 'saveSearch')}
       </button>

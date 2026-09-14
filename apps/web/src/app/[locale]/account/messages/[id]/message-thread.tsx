@@ -120,7 +120,7 @@ export function MessageThread({
         {thread.messages.map((m) => (
           <div
             key={m.id}
-            className={`max-w-[85%] border border-white/10 p-3 text-sm ${
+            className={`max-w-[85%] border border-black/10 p-3 text-sm ${
               m.mine ? 'ml-auto bg-accent/10' : 'bg-surface/40'
             }`}
           >
@@ -138,7 +138,7 @@ export function MessageThread({
           required
           rows={3}
           placeholder={t(locale, 'message')}
-          className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
+          className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
         />
         <button
           type="submit"

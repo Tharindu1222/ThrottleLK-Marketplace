@@ -1,26 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { ListingCard, type BrowseListingCard } from '@/components/listing-card';
 import { apiGet } from '@/lib/api';
 import { getBikeCategory, type BikeCategory } from '@/lib/bike-categories';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 
-type Listing = {
-  id: string;
-  slug: string;
-  title: string;
-  priceLkr: number;
-  manufactureYear: number;
-  mileage: number | null;
-  condition: string;
-  coverImageUrl?: string | null;
-};
-
 type Category = { id: string; name: string; slug: string };
-
-function formatLkr(n: number) {
-  return `Rs. ${n.toLocaleString('en-LK')}`;
-}
 
 export function categoryPageMetadata(category: BikeCategory): Metadata {
   return {
@@ -49,11 +35,11 @@ export async function BikeCategoryBrowsePage({
     marketing.taxonomySlugs.includes(c.slug),
   );
 
-  const listings = await apiGet<Listing[]>('/api/v1/listings', {
+  const listings = await apiGet<BrowseListingCard[]>('/api/v1/listings', {
     searchParams: {
       categoryId: matched?.id,
     },
-  }).catch(() => [] as Listing[]);
+  }).catch(() => [] as BrowseListingCard[]);
 
   const browseHref = matched
     ? `/${locale}/bikes?categoryId=${matched.id}`
@@ -73,45 +59,15 @@ export async function BikeCategoryBrowsePage({
       <div className="mt-6">
         <Link
           href={browseHref}
-          className="inline-flex border border-white/15 px-4 py-2 text-sm text-muted transition hover:border-accent hover:text-foreground"
+          className="inline-flex border border-black/15 px-4 py-2 text-sm text-muted transition hover:border-accent hover:text-foreground"
         >
           Refine search
         </Link>
       </div>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {listings.map((listing) => (
-          <Link
-            key={listing.id}
-            href={`/${locale}/bikes/${listing.slug}`}
-            className="group border border-white/10 bg-surface/40 transition hover:border-accent/40"
-          >
-            {listing.coverImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={listing.coverImageUrl}
-                alt=""
-                className="aspect-[4/3] w-full object-cover"
-              />
-            ) : (
-              <div className="flex aspect-[4/3] items-center justify-center bg-background/50 text-sm text-muted">
-                No photo
-              </div>
-            )}
-            <div className="p-4">
-              <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide group-hover:text-accent">
-                {listing.title}
-              </h2>
-              <p className="mt-2 text-accent">{formatLkr(listing.priceLkr)}</p>
-              <p className="mt-1 text-sm text-muted">
-                {listing.manufactureYear}
-                {listing.mileage != null
-                  ? ` · ${listing.mileage.toLocaleString()} km`
-                  : ''}
-                {` · ${listing.condition}`}
-              </p>
-            </div>
-          </Link>
+          <ListingCard key={listing.id} locale={locale} listing={listing} />
         ))}
       </div>
 

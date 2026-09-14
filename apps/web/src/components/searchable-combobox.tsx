@@ -115,7 +115,7 @@ export function SearchableCombobox({
           disabled={disabled}
           placeholder={placeholder}
           value={display}
-          className="w-full bg-background px-3 py-2.5 pr-16 text-sm text-foreground outline-none ring-1 ring-white/10 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full bg-background px-3 py-2.5 pr-16 text-sm text-foreground outline-none ring-1 ring-black/10 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
           onFocus={() => {
             if (disabled) return;
             setOpen(true);
@@ -148,7 +148,7 @@ export function SearchableCombobox({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto border border-white/15 bg-background shadow-lg"
+          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto border border-black/15 bg-background shadow-lg"
         >
           {loading ? (
             <li className="px-3 py-2.5 text-sm text-muted">Searching…</li>
@@ -166,7 +166,7 @@ export function SearchableCombobox({
                   className={`cursor-pointer px-3 py-2.5 text-sm ${
                     active || selected
                       ? 'bg-accent/15 text-accent'
-                      : 'text-foreground hover:bg-white/5'
+                      : 'text-foreground hover:bg-black/5'
                   }`}
                   onMouseEnter={() => setActiveIndex(index)}
                   onMouseDown={(e) => e.preventDefault()}

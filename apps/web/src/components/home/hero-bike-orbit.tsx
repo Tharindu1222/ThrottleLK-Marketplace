@@ -254,7 +254,7 @@ export function HeroBikeOrbit() {
             clearAutoplay();
             step(-1);
           }}
-          className="flex h-9 w-9 items-center justify-center border border-black/20 bg-white/85 text-lg text-black/70 transition hover:border-accent hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center border border-black/20 bg-white/90 text-lg text-black/70 transition hover:border-accent hover:text-accent"
         >
           ‹
         </button>
@@ -265,7 +265,7 @@ export function HeroBikeOrbit() {
             clearAutoplay();
             step(1);
           }}
-          className="flex h-9 w-9 items-center justify-center border border-black/20 bg-white/85 text-lg text-black/70 transition hover:border-accent hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center border border-black/20 bg-white/90 text-lg text-black/70 transition hover:border-accent hover:text-accent"
         >
           ›
         </button>

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'node:crypto';
 import { In, Repository } from 'typeorm';
 import type {
   AdminCreateUserInput,
@@ -14,8 +15,12 @@ import type {
   UpdateProfileInput,
 } from '@throttlelk/validation';
 import { Listing } from '../listings/listing.entity';
+import { StorageService } from '../storage/storage.service';
 import { Role } from './role.entity';
 import { User } from './user.entity';
+
+const AVATAR_ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 @Injectable()
 export class UsersService {
@@ -23,6 +28,7 @@ export class UsersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Role) private readonly roles: Repository<Role>,
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
+    private readonly storage: StorageService,
   ) {}
 
   async ensureRoles(): Promise<void> {
@@ -161,6 +167,7 @@ export class UsersService {
       lastName: user.lastName,
       email: user.email,
       phone: user.phone,
+      avatarUrl: user.avatarUrl,
       roles: user.roles.map((r) => r.name),
       status: user.status,
       emailVerifiedAt: user.emailVerifiedAt,
@@ -173,6 +180,7 @@ export class UsersService {
     return {
       id: user.id,
       displayName: `${user.firstName} ${user.lastName.charAt(0)}.`.trim(),
+      avatarUrl: user.avatarUrl,
       memberSince: user.createdAt,
     };
   }
@@ -210,6 +218,64 @@ export class UsersService {
       user.passwordHash = await bcrypt.hash(input.newPassword, 10);
     }
 
+    return this.toPublic(await this.users.save(user));
+  }
+
+  async uploadAvatar(user: User, file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException({
+        success: false,
+        error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
+      });
+    }
+    if (!AVATAR_ALLOWED.has(file.mimetype)) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_TYPE',
+          message: 'Only JPEG, PNG, or WebP images are allowed',
+        },
+      });
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      throw new BadRequestException({
+        success: false,
+        error: { code: 'FILE_TOO_LARGE', message: 'Max image size is 5MB' },
+      });
+    }
+
+    if (user.avatarStorageKey) {
+      await this.storage
+        .deleteObject(user.avatarStorageKey)
+        .catch(() => undefined);
+    }
+
+    const ext =
+      file.mimetype === 'image/png'
+        ? 'png'
+        : file.mimetype === 'image/webp'
+          ? 'webp'
+          : 'jpg';
+    const storageKey = `avatars/${user.id}/${randomUUID()}.${ext}`;
+    const stored = await this.storage.putObject(
+      storageKey,
+      file.buffer,
+      file.mimetype,
+    );
+
+    user.avatarStorageKey = stored.storageKey;
+    user.avatarUrl = stored.publicUrl;
+    return this.toPublic(await this.users.save(user));
+  }
+
+  async removeAvatar(user: User) {
+    if (user.avatarStorageKey) {
+      await this.storage
+        .deleteObject(user.avatarStorageKey)
+        .catch(() => undefined);
+    }
+    user.avatarStorageKey = null;
+    user.avatarUrl = null;
     return this.toPublic(await this.users.save(user));
   }
 

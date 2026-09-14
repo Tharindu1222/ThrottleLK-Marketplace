@@ -96,7 +96,7 @@ export default async function DealerShowroomPage({
           {photos.map((photo, index) => (
             <div
               key={photo.id}
-              className={`overflow-hidden border border-white/10 bg-surface/40 ${
+              className={`overflow-hidden border border-black/10 bg-surface/40 ${
                 index === 0 ? 'sm:col-span-2 sm:row-span-2' : ''
               }`}
             >
@@ -119,7 +119,7 @@ export default async function DealerShowroomPage({
         </p>
       ) : null}
 
-      <section className="mt-8 grid gap-4 border border-white/10 bg-surface/40 p-5 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mt-8 grid gap-4 border border-black/10 bg-surface/40 p-5 sm:grid-cols-2 lg:grid-cols-3">
         {location ? (
           <div>
             <p className="text-xs tracking-wide text-muted uppercase">Location</p>
@@ -193,7 +193,7 @@ export default async function DealerShowroomPage({
             <Link
               key={listing.id}
               href={`/${locale}/bikes/${listing.slug}`}
-              className="overflow-hidden border border-white/10 bg-surface/40 hover:border-accent/40"
+              className="overflow-hidden border border-black/10 bg-surface/40 hover:border-accent/40"
             >
               {listing.coverImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

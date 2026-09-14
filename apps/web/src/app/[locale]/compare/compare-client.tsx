@@ -83,9 +83,9 @@ export function CompareClient({ locale }: { locale: Locale }) {
       <table className="w-full min-w-[640px] border-collapse text-left text-sm">
         <thead>
           <tr>
-            <th className="border-b border-white/10 p-3 text-muted"> </th>
+            <th className="border-b border-black/10 p-3 text-muted"> </th>
             {listings.map((listing) => (
-              <th key={listing.id} className="border-b border-white/10 p-3">
+              <th key={listing.id} className="border-b border-black/10 p-3">
                 <Link
                   href={`/${locale}/bikes/${listing.slug}`}
                   className="font-[family-name:var(--font-display)] text-lg hover:text-accent"
@@ -119,11 +119,11 @@ export function CompareClient({ locale }: { locale: Locale }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.key}>
-              <th className="border-b border-white/5 p-3 text-muted">
+              <th className="border-b border-black/5 p-3 text-muted">
                 {t(locale, row.labelKey as 'price')}
               </th>
               {listings.map((listing) => (
-                <td key={listing.id} className="border-b border-white/5 p-3">
+                <td key={listing.id} className="border-b border-black/5 p-3">
                   {cell(listing, row.key)}
                 </td>
               ))}

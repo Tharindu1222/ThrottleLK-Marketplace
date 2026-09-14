@@ -68,7 +68,7 @@ export default async function DealersIndexPage({
               <Link
                 key={dealer.id}
                 href={`/${locale}/dealers/${dealer.slug}`}
-                className="overflow-hidden border border-white/10 bg-surface/40 hover:border-accent/40"
+                className="overflow-hidden border border-black/10 bg-surface/40 hover:border-accent/40"
               >
                 {dealer.coverImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element

@@ -80,7 +80,7 @@ export function AdminSidebar({
                         onClick={onClose}
                         className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
                           active
-                            ? 'bg-[var(--admin-accent)] font-medium text-white shadow-[0_0_16px_rgba(124,92,252,0.35)]'
+                            ? 'bg-[var(--admin-accent)] font-medium text-white shadow-[0_0_16px_rgba(225,6,0,0.25)]'
                             : 'text-[var(--admin-muted)] hover:bg-[var(--admin-surface)] hover:text-[var(--admin-text)]'
                         }`}
                       >
@@ -98,7 +98,7 @@ export function AdminSidebar({
         <div className="border-t border-[var(--admin-border)] p-4">
           <Link
             href={`/${locale}`}
-            className="mb-3 block rounded-xl bg-gradient-to-br from-[#7c5cfc] to-[#a855f7] px-4 py-3 text-center text-sm font-medium text-white shadow-[0_8px_24px_rgba(124,92,252,0.3)]"
+            className="mb-3 block rounded-xl bg-gradient-to-br from-[#e10600] to-[#a30500] px-4 py-3 text-center text-sm font-medium text-white shadow-[0_8px_24px_rgba(225,6,0,0.25)]"
           >
             View marketplace
           </Link>

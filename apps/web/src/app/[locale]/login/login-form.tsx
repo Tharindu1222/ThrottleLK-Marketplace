@@ -38,7 +38,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
         type="email"
         required
         placeholder={t(locale, 'email')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="password"
@@ -46,7 +46,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
         required
         minLength={8}
         placeholder={t(locale, 'password')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <button
         type="submit"

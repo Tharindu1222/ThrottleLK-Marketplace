@@ -65,7 +65,7 @@ export function ListingImageManager({
             <img
               src={image.imageUrl}
               alt={`Photo ${index + 1}`}
-              className="h-20 w-28 object-cover ring-1 ring-white/10"
+              className="h-20 w-28 object-cover ring-1 ring-black/10"
             />
             <button
               type="button"
@@ -89,7 +89,7 @@ export function ListingImageManager({
         ))}
       </div>
       {remaining > 0 ? (
-        <label className="inline-flex cursor-pointer items-center gap-2 border border-white/20 px-3 py-2 text-sm hover:border-accent">
+        <label className="inline-flex cursor-pointer items-center gap-2 border border-black/20 px-3 py-2 text-sm hover:border-accent">
           {busy ? 'Uploading…' : `Add photo (${remaining} left)`}
           <input
             type="file"

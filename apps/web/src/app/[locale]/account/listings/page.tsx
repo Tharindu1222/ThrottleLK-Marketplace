@@ -16,7 +16,8 @@ export default async function MyListingsPage({
       <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
         {t(locale, 'myListings')}
       </h1>
-      <MyListingsClient locale={locale} />
+      <p className="mt-2 text-sm text-muted">{t(locale, 'myListingsHint')}</p>
+      <MyListingsClient locale={locale} layout="cards" />
     </main>
   );
 }

@@ -42,7 +42,7 @@ export default async function GuidesIndexPage({
           <Link
             key={guide.slug}
             href={`/${locale}/guides/${guide.slug}`}
-            className="border border-white/10 bg-surface/40 p-5 hover:border-accent/40"
+            className="border border-black/10 bg-surface/40 p-5 hover:border-accent/40"
           >
             <p className="text-xs tracking-wide text-muted uppercase">
               {guide.publishedAt}

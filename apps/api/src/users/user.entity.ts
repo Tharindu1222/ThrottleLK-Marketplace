@@ -26,6 +26,12 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone!: string | null;
 
+  @Column({ name: 'avatar_url', type: 'text', nullable: true })
+  avatarUrl!: string | null;
+
+  @Column({ name: 'avatar_storage_key', type: 'varchar', length: 512, nullable: true })
+  avatarStorageKey!: string | null;
+
   @Column({ name: 'password_hash' })
   passwordHash!: string;
 

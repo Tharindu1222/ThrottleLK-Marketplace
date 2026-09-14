@@ -75,14 +75,14 @@ export function ListingActions({
       <button
         type="button"
         onClick={() => void onFavourite()}
-        className="border border-white/20 px-4 py-2 text-sm hover:border-accent"
+        className="border border-black/20 px-4 py-2 text-sm hover:border-accent"
       >
         {favourited ? t(locale, 'unfavourite') : t(locale, 'favourite')}
       </button>
       <button
         type="button"
         onClick={onCompare}
-        className="border border-white/20 px-4 py-2 text-sm hover:border-accent"
+        className="border border-black/20 px-4 py-2 text-sm hover:border-accent"
       >
         {inCompare ? t(locale, 'removeCompare') : t(locale, 'addCompare')}
       </button>

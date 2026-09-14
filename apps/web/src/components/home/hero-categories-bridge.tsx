@@ -7,7 +7,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Hero stays sticky; Categories rises from below and covers it while scrolling.
+ * Hero stays sticky; Categories covers it while scrolling.
+ * No vertical offset on categories — keeps hero flush (no white gap).
  */
 export function HeroCategoriesBridge({
   hero,
@@ -30,29 +31,12 @@ export function HeroCategoriesBridge({
     if (!heroEl || !riseEl) return;
 
     const ctx = gsap.context(() => {
-      // Categories lifts up over the sticky hero as you scroll
-      gsap.fromTo(
-        riseEl,
-        { y: 80 },
-        {
-          y: 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: riseEl,
-            start: 'top bottom',
-            end: 'top 12%',
-            scrub: 0.8,
-          },
-        },
-      );
-
-      // Hero gently shrinks / fades while Categories covers it
+      // Fade only — no scale (scale left black/empty gutters on the sides)
       gsap.fromTo(
         heroEl,
-        { scale: 1, opacity: 1 },
+        { opacity: 1 },
         {
-          scale: 0.92,
-          opacity: 0.45,
+          opacity: 0.35,
           ease: 'none',
           scrollTrigger: {
             trigger: riseEl,
@@ -69,18 +53,16 @@ export function HeroCategoriesBridge({
 
   return (
     <div ref={wrapRef} className="relative">
-      <div className="sticky top-0 z-0">
-        <div
-          data-hero-panel
-          className="origin-center will-change-transform"
-        >
+      {/* Pull under sticky header (height + border) — no white strip on top */}
+      <div className="sticky top-0 z-0 -mt-[calc(4rem+1px)] overflow-hidden bg-background sm:-mt-[calc(4.25rem+1px)]">
+        <div data-hero-panel className="will-change-[opacity]">
           {hero}
         </div>
       </div>
 
       <div
         data-categories-rise
-        className="relative z-10 bg-background shadow-[0_-24px_60px_rgba(0,0,0,0.45)] will-change-transform"
+        className="relative z-10 bg-background shadow-[0_-16px_40px_rgba(0,0,0,0.12)]"
       >
         {categories}
       </div>

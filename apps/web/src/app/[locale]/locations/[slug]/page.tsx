@@ -80,7 +80,7 @@ export default async function LocationPage({
             <Link
               key={listing.id}
               href={`/${locale}/bikes/${listing.slug}`}
-              className="border border-white/10 bg-surface/40 p-4 hover:border-accent/40"
+              className="border border-black/10 bg-surface/40 p-4 hover:border-accent/40"
             >
               <h2 className="font-[family-name:var(--font-display)] text-xl">
                 {listing.title}

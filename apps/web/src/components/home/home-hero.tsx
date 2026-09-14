@@ -1,10 +1,10 @@
-import Link from 'next/link';
 import type { Locale } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
 import { HeroBikeOrbit } from './hero-bike-orbit';
 
 export function HomeHero({ locale }: { locale: Locale }) {
   return (
-    <section className="relative isolate h-[min(72svh,720px)] min-h-[520px] max-h-[800px] overflow-hidden bg-background">
+    <section className="relative isolate h-[100svh] max-h-[900px] min-h-[560px] overflow-hidden bg-[#0a0a0a] pt-[calc(4rem+1px)] sm:pt-[calc(4.25rem+1px)]">
       {/* Diagonal black / white split */}
       <div
         aria-hidden
@@ -65,20 +65,30 @@ export function HomeHero({ locale }: { locale: Locale }) {
             Buy and sell motorbikes across Sri Lanka — from private sellers and
             dealers.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href={`/${locale}/bikes`}
-              className="inline-flex items-center bg-accent px-6 py-3 font-[family-name:var(--font-display)] text-lg tracking-wide text-white transition hover:brightness-110 lg:px-7 lg:py-3.5 lg:text-xl"
+          <form
+            action={`/${locale}/bikes`}
+            method="get"
+            role="search"
+            className="mt-8 flex w-full max-w-lg flex-col gap-2 sm:max-w-xl sm:flex-row sm:gap-0 lg:max-w-2xl"
+          >
+            <label htmlFor="hero-bike-search" className="sr-only">
+              {t(locale, 'searchPlaceholder')}
+            </label>
+            <input
+              id="hero-bike-search"
+              name="q"
+              type="search"
+              placeholder={t(locale, 'searchPlaceholder')}
+              autoComplete="off"
+              className="min-w-0 flex-1 border border-black/20 bg-white px-4 py-3.5 text-base text-black outline-none placeholder:text-black/45 focus:border-accent sm:border-r-0 lg:py-4 lg:text-lg"
+            />
+            <button
+              type="submit"
+              className="shrink-0 bg-accent px-6 py-3.5 font-[family-name:var(--font-display)] text-lg tracking-wide text-white transition hover:brightness-110 lg:px-8 lg:py-4 lg:text-xl"
             >
-              Browse Bikes
-            </Link>
-            <Link
-              href={`/${locale}/sell`}
-              className="inline-flex items-center border border-white/35 bg-transparent px-6 py-3 font-[family-name:var(--font-display)] text-lg tracking-wide text-white transition hover:border-accent hover:text-white lg:px-7 lg:py-3.5 lg:text-xl"
-            >
-              Sell Your Bike
-            </Link>
-          </div>
+              {t(locale, 'search')}
+            </button>
+          </form>
         </div>
       </div>
     </section>

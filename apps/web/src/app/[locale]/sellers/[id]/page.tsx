@@ -83,7 +83,7 @@ export default async function SellerProfilePage({
             <Link
               key={listing.id}
               href={`/${locale}/bikes/${listing.slug}`}
-              className="block overflow-hidden border border-white/10 bg-surface/40 transition hover:border-accent/50"
+              className="block overflow-hidden border border-black/10 bg-surface/40 transition hover:border-accent/50"
             >
               {listing.coverImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

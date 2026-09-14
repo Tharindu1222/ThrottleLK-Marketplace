@@ -62,7 +62,7 @@ export function BrandLogoManager() {
             key={brand.id}
             className="overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)]"
           >
-            <div className="flex aspect-[5/3] items-center justify-center bg-white/95 p-3">
+            <div className="flex aspect-[5/3] items-center justify-center bg-black/95 p-3">
               {brand.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

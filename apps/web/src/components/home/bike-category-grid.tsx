@@ -24,7 +24,7 @@ export async function BikeCategoryGrid({ locale }: { locale: Locale }) {
 
   return (
     <section
-      className="relative mx-auto max-w-6xl bg-background px-6 pt-14 pb-16 sm:pt-16"
+      className="relative mx-auto max-w-6xl bg-background px-6 pt-8 pb-16 sm:pt-10"
       data-reveal="categories"
     >
       <div className="mb-8 max-w-2xl" data-categories-header>

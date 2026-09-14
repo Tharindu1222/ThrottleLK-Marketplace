@@ -12,6 +12,7 @@ export type AuthUser = {
   phone: string | null;
   roles: string[];
   emailVerifiedAt?: string | null;
+  avatarUrl?: string | null;
 };
 
 export function saveSession(data: {

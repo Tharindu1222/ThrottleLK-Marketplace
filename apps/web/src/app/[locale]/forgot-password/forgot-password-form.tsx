@@ -32,7 +32,7 @@ export function ForgotPasswordForm({ locale }: { locale: Locale }) {
         type="email"
         required
         placeholder={t(locale, 'email')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <button
         type="submit"

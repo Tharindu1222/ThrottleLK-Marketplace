@@ -49,7 +49,7 @@ export function ReportListing({
   }
 
   return (
-    <div className="mt-8 border-t border-white/10 pt-6">
+    <div className="mt-8 border-t border-black/10 pt-6">
       {!open ? (
         <button
           type="button"
@@ -70,7 +70,7 @@ export function ReportListing({
           <select
             name="reason"
             required
-            className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
+            className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
           >
             <option value="spam">Spam</option>
             <option value="fraud">Fraud / scam</option>
@@ -85,7 +85,7 @@ export function ReportListing({
             minLength={10}
             rows={3}
             placeholder={t(locale, 'reportDetails')}
-            className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
+            className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
           />
           <div className="flex gap-2">
             <button

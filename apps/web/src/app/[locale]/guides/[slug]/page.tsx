@@ -52,7 +52,7 @@ export default async function GuideArticlePage({
           <p key={paragraph.slice(0, 24)}>{paragraph}</p>
         ))}
       </div>
-      <p className="mt-12 border-t border-white/10 pt-6 text-sm text-muted">
+      <p className="mt-12 border-t border-black/10 pt-6 text-sm text-muted">
         Ready to look?{' '}
         <Link href={`/${locale}/bikes`} className="text-accent underline">
           Browse bikes on ThrottleLK

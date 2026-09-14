@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+  Body,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   updateProfileSchema,
@@ -29,6 +41,35 @@ export class UsersController {
     return {
       success: true,
       data: await this.usersService.updateProfile(user, body),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/avatar')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadAvatar(
+    @CurrentUser() user: User,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.usersService.uploadAvatar(user, file),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/avatar')
+  async removeAvatar(
+    @CurrentUser() user: User,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.usersService.removeAvatar(user),
     };
   }
 }

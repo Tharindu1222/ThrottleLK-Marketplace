@@ -50,7 +50,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
           <Link
             key={row.id}
             href={`/${locale}/account/messages/${row.id}`}
-            className="block border border-white/10 bg-surface/40 p-4 hover:border-accent/40"
+            className="block border border-black/10 bg-surface/40 p-4 hover:border-accent/40"
           >
             <p className="font-[family-name:var(--font-display)] text-xl tracking-wide">
               {row.listingTitle}

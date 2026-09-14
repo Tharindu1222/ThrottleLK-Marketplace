@@ -81,16 +81,16 @@ type FormState = typeof emptyForm;
 function statusTone(status: string) {
   switch (status) {
     case 'active':
-      return 'bg-[var(--admin-success)]/15 text-[#4ade80]';
+      return 'bg-[var(--admin-success)]/15 text-[var(--admin-success)]';
     case 'pending_review':
-      return 'bg-[var(--admin-info)]/15 text-[#7dd3fc]';
+      return 'bg-[var(--admin-info)]/15 text-[var(--admin-info)]';
     case 'rejected':
     case 'expired':
-      return 'bg-[var(--admin-danger)]/15 text-[#fb7185]';
+      return 'bg-[var(--admin-danger)]/15 text-[var(--admin-danger)]';
     case 'paused':
-      return 'bg-[var(--admin-warning)]/15 text-[#fbbf24]';
+      return 'bg-[var(--admin-warning)]/15 text-[var(--admin-warning)]';
     case 'sold':
-      return 'bg-[var(--admin-accent-soft)] text-[var(--admin-accent-2)]';
+      return 'bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]';
     default:
       return 'bg-[var(--admin-surface-2)] text-[var(--admin-muted)]';
   }
@@ -384,7 +384,7 @@ export function AdminListings({ search = '' }: { search?: string }) {
                       className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium outline-none ${statusTone(row.status)}`}
                     >
                       {STATUSES.map((s) => (
-                        <option key={s} value={s} className="bg-[var(--admin-bg)] text-white">
+                        <option key={s} value={s} className="bg-[var(--admin-bg)] text-[var(--admin-text)]">
                           {s}
                         </option>
                       ))}
@@ -404,7 +404,7 @@ export function AdminListings({ search = '' }: { search?: string }) {
                       </button>
                       <button
                         type="button"
-                        className="rounded-xl border border-[var(--admin-danger)]/40 px-3 py-1.5 text-xs text-[#fb7185] hover:bg-[var(--admin-danger)]/10"
+                        className="rounded-xl border border-[var(--admin-danger)]/40 px-3 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10"
                         onClick={() => void onDelete(row.id)}
                       >
                         Delete

@@ -72,7 +72,7 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
         rows.map((row) => (
           <div
             key={row.id}
-            className="flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-surface/40 p-4"
+            className="flex flex-wrap items-center justify-between gap-3 border border-black/10 bg-surface/40 p-4"
           >
             <div>
               <h2 className="font-[family-name:var(--font-display)] text-xl">
@@ -101,7 +101,7 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
               </Link>
               <button
                 type="button"
-                className="border border-white/20 px-3 py-1.5 text-sm"
+                className="border border-black/20 px-3 py-1.5 text-sm"
                 onClick={() => {
                   void apiSend(`/api/v1/saved-searches/${row.id}`, {
                     method: 'DELETE',

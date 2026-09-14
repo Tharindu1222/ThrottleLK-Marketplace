@@ -26,7 +26,7 @@ export function CompareTray({ locale }: { locale: Locale }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-background/95 backdrop-blur">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">
         <p className="text-sm text-muted">
           {t(locale, 'compare')}: {items.map((i) => i.title).join(' · ')}

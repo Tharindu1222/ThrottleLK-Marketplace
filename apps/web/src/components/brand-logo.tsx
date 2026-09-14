@@ -5,6 +5,8 @@ type BrandLogoProps = {
   className?: string;
   /** Header / footer size presets */
   size?: 'header' | 'footer' | 'admin';
+  /** Logo artwork is white; use black on light surfaces */
+  tone?: 'black' | 'white';
 };
 
 const sizeClass: Record<NonNullable<BrandLogoProps['size']>, string> = {
@@ -13,13 +15,22 @@ const sizeClass: Record<NonNullable<BrandLogoProps['size']>, string> = {
   admin: 'h-8 w-auto',
 };
 
-export function BrandLogo({ className, size = 'header' }: BrandLogoProps) {
+const toneClass: Record<NonNullable<BrandLogoProps['tone']>, string> = {
+  black: 'brightness-0',
+  white: '',
+};
+
+export function BrandLogo({
+  className,
+  size = 'header',
+  tone = 'black',
+}: BrandLogoProps) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={BRAND_LOGO_SRC}
       alt={BRAND_LOGO_ALT}
-      className={`${sizeClass[size]} object-contain object-left ${className ?? ''}`}
+      className={`${sizeClass[size]} ${toneClass[tone]} object-contain object-left ${className ?? ''}`}
     />
   );
 }

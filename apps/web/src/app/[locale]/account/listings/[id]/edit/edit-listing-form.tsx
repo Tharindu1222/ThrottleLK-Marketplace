@@ -175,7 +175,7 @@ export function EditListingForm({
           minLength={5}
           defaultValue={listing.title}
           placeholder={t(locale, 'title')}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         />
         <textarea
           name="description"
@@ -184,7 +184,7 @@ export function EditListingForm({
           rows={5}
           defaultValue={listing.description}
           placeholder={t(locale, 'description')}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         />
         <input
           name="priceLkr"
@@ -192,7 +192,7 @@ export function EditListingForm({
           required
           defaultValue={listing.priceLkr}
           placeholder={t(locale, 'price')}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         />
         <select
           name="brandId"
@@ -202,7 +202,7 @@ export function EditListingForm({
             setBrandId(e.target.value);
             setModelId('');
           }}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         >
           <option value="">{t(locale, 'brandFilter')}</option>
           {brands.map((b) => (
@@ -216,7 +216,7 @@ export function EditListingForm({
           required
           value={modelId}
           onChange={(e) => setModelId(e.target.value)}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         >
           <option value="">Model</option>
           {models.map((m) => (
@@ -229,7 +229,7 @@ export function EditListingForm({
           name="categoryId"
           required
           defaultValue={listing.categoryId}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         >
           <option value="">Category</option>
           {categories.map((c) => (
@@ -246,7 +246,7 @@ export function EditListingForm({
             setDistrictId(e.target.value);
             setCityId('');
           }}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         >
           <option value="">{t(locale, 'districtFilter')}</option>
           {districts.map((d) => (
@@ -260,7 +260,7 @@ export function EditListingForm({
           required
           value={cityId}
           onChange={(e) => setCityId(e.target.value)}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         >
           <option value="">City</option>
           {cities.map((c) => (
@@ -275,21 +275,21 @@ export function EditListingForm({
             type="number"
             required
             defaultValue={listing.manufactureYear}
-            className="bg-background px-3 py-2 ring-1 ring-white/10"
+            className="bg-background px-3 py-2 ring-1 ring-black/10"
           />
           <input
             name="engineCc"
             type="number"
             defaultValue={listing.engineCc ?? undefined}
             placeholder="CC"
-            className="bg-background px-3 py-2 ring-1 ring-white/10"
+            className="bg-background px-3 py-2 ring-1 ring-black/10"
           />
           <input
             name="mileage"
             type="number"
             defaultValue={listing.mileage ?? undefined}
             placeholder={t(locale, 'mileage')}
-            className="bg-background px-3 py-2 ring-1 ring-white/10"
+            className="bg-background px-3 py-2 ring-1 ring-black/10"
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -297,7 +297,7 @@ export function EditListingForm({
             name="fuelType"
             required
             defaultValue={listing.fuelType}
-            className="bg-background px-3 py-2 ring-1 ring-white/10"
+            className="bg-background px-3 py-2 ring-1 ring-black/10"
           >
             <option value="petrol">Petrol</option>
             <option value="diesel">Diesel</option>
@@ -309,7 +309,7 @@ export function EditListingForm({
             name="transmission"
             required
             defaultValue={listing.transmission}
-            className="bg-background px-3 py-2 ring-1 ring-white/10"
+            className="bg-background px-3 py-2 ring-1 ring-black/10"
           >
             <option value="manual">Manual</option>
             <option value="automatic">Automatic</option>
@@ -320,7 +320,7 @@ export function EditListingForm({
             name="condition"
             required
             defaultValue={listing.condition}
-            className="bg-background px-3 py-2 ring-1 ring-white/10"
+            className="bg-background px-3 py-2 ring-1 ring-black/10"
           >
             <option value="used">Used</option>
             <option value="new">New</option>
@@ -331,7 +331,7 @@ export function EditListingForm({
           name="phone"
           defaultValue={listing.phone ?? ''}
           placeholder={t(locale, 'phone')}
-          className="bg-background px-3 py-2 ring-1 ring-white/10"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
         />
         <button
           type="submit"
@@ -344,7 +344,7 @@ export function EditListingForm({
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
       </form>
 
-      <div className="border border-white/10 bg-surface/40 p-4">
+      <div className="border border-black/10 bg-surface/40 p-4">
         <p className="text-sm text-muted">Photos</p>
         <ListingImageManager listingId={listingId} />
       </div>

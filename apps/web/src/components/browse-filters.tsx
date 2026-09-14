@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 
@@ -19,6 +19,9 @@ const SORTS = [
   { value: 'year_desc', labelKey: 'sortYearDesc' },
   { value: 'year_asc', labelKey: 'sortYearAsc' },
 ] as const;
+
+const fieldClass =
+  'w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
 
 export function BrowseFilters({
   locale,
@@ -48,6 +51,25 @@ export function BrowseFilters({
   const [brandId, setBrandId] = useState(initial.brandId ?? '');
   const [models, setModels] = useState<Model[]>([]);
 
+  const hasActiveFilters = useMemo(
+    () =>
+      Boolean(
+        initial.q ||
+          initial.brandId ||
+          initial.modelId ||
+          initial.categoryId ||
+          initial.districtId ||
+          initial.minPrice ||
+          initial.maxPrice ||
+          initial.minYear ||
+          initial.maxYear ||
+          initial.condition,
+      ),
+    [initial],
+  );
+
+  const [open, setOpen] = useState(hasActiveFilters);
+
   useEffect(() => {
     if (!brandId) {
       setModels([]);
@@ -59,114 +81,137 @@ export function BrowseFilters({
   }, [brandId]);
 
   return (
-    <form className="mt-8 grid gap-3 border border-white/10 bg-surface/60 p-4 sm:grid-cols-2 lg:grid-cols-4">
-      <input
-        name="q"
-        defaultValue={initial.q}
-        placeholder={t(locale, 'searchPlaceholder')}
-        className="bg-background px-3 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-accent sm:col-span-2"
-      />
-      <select
-        name="brandId"
-        value={brandId}
-        onChange={(e) => setBrandId(e.target.value)}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      >
-        <option value="">{t(locale, 'brandFilter')}</option>
-        {brands.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.name}
-          </option>
-        ))}
-      </select>
-      <select
-        name="modelId"
-        defaultValue={initial.modelId}
-        disabled={!brandId}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10 disabled:opacity-50"
-      >
-        <option value="">{t(locale, 'modelFilter')}</option>
-        {models.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.name}
-          </option>
-        ))}
-      </select>
-      <select
-        name="categoryId"
-        defaultValue={initial.categoryId}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      >
-        <option value="">{t(locale, 'categoryFilter')}</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      <select
-        name="districtId"
-        defaultValue={initial.districtId}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      >
-        <option value="">{t(locale, 'districtFilter')}</option>
-        {districts.map((d) => (
-          <option key={d.id} value={d.id}>
-            {d.name}
-          </option>
-        ))}
-      </select>
-      <select
-        name="condition"
-        defaultValue={initial.condition}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      >
-        <option value="">{t(locale, 'condition')}</option>
-        <option value="new">New</option>
-        <option value="used">Used</option>
-        <option value="reconditioned">Reconditioned</option>
-      </select>
-      <input
-        name="minPrice"
-        defaultValue={initial.minPrice}
-        placeholder={t(locale, 'minPrice')}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      />
-      <input
-        name="maxPrice"
-        defaultValue={initial.maxPrice}
-        placeholder={t(locale, 'maxPrice')}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      />
-      <input
-        name="minYear"
-        defaultValue={initial.minYear}
-        placeholder={t(locale, 'minYear')}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      />
-      <input
-        name="maxYear"
-        defaultValue={initial.maxYear}
-        placeholder={t(locale, 'maxYear')}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10"
-      />
-      <select
-        name="sort"
-        defaultValue={initial.sort ?? 'newest'}
-        className="bg-background px-3 py-2 text-sm ring-1 ring-white/10 sm:col-span-2"
-      >
-        {SORTS.map((s) => (
-          <option key={s.value} value={s.value}>
-            {t(locale, s.labelKey)}
-          </option>
-        ))}
-      </select>
+    <div className="lg:sticky lg:top-24 lg:self-start">
       <button
-        type="submit"
-        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] tracking-wide text-white sm:col-span-2 lg:col-span-4"
+        type="button"
+        className="flex w-full items-center justify-between border border-black/15 bg-surface/60 px-4 py-3 text-left font-[family-name:var(--font-display)] tracking-wide lg:hidden"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
       >
-        {t(locale, 'applyFilters')}
+        <span>{t(locale, 'filters')}</span>
+        <span className="text-sm text-muted">{open ? '−' : '+'}</span>
       </button>
-    </form>
+
+      <form
+        className={`mt-3 flex flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 ${
+          open ? 'flex' : 'hidden lg:flex'
+        }`}
+      >
+        <p className="hidden font-[family-name:var(--font-display)] text-lg tracking-wide lg:block">
+          {t(locale, 'filters')}
+        </p>
+        <input
+          name="q"
+          defaultValue={initial.q}
+          placeholder={t(locale, 'searchPlaceholder')}
+          className={fieldClass}
+        />
+        <select
+          name="brandId"
+          value={brandId}
+          onChange={(e) => setBrandId(e.target.value)}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'brandFilter')}</option>
+          {brands.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="modelId"
+          defaultValue={initial.modelId}
+          disabled={!brandId}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'modelFilter')}</option>
+          {models.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="categoryId"
+          defaultValue={initial.categoryId}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'categoryFilter')}</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="districtId"
+          defaultValue={initial.districtId}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'districtFilter')}</option>
+          {districts.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="condition"
+          defaultValue={initial.condition}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'condition')}</option>
+          <option value="new">New</option>
+          <option value="used">Used</option>
+          <option value="reconditioned">Reconditioned</option>
+        </select>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="minPrice"
+            defaultValue={initial.minPrice}
+            placeholder={t(locale, 'minPrice')}
+            className={fieldClass}
+          />
+          <input
+            name="maxPrice"
+            defaultValue={initial.maxPrice}
+            placeholder={t(locale, 'maxPrice')}
+            className={fieldClass}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="minYear"
+            defaultValue={initial.minYear}
+            placeholder={t(locale, 'minYear')}
+            className={fieldClass}
+          />
+          <input
+            name="maxYear"
+            defaultValue={initial.maxYear}
+            placeholder={t(locale, 'maxYear')}
+            className={fieldClass}
+          />
+        </div>
+        <select
+          name="sort"
+          defaultValue={initial.sort ?? 'newest'}
+          className={fieldClass}
+        >
+          {SORTS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {t(locale, s.labelKey)}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
+        >
+          {t(locale, 'applyFilters')}
+        </button>
+      </form>
+    </div>
   );
 }

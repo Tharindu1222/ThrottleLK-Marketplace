@@ -40,25 +40,25 @@ export function RegisterForm({ locale }: { locale: Locale }) {
         name="firstName"
         required
         placeholder={t(locale, 'firstName')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="lastName"
         required
         placeholder={t(locale, 'lastName')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="email"
         type="email"
         required
         placeholder={t(locale, 'email')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="phone"
         placeholder={t(locale, 'phone')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <input
         name="password"
@@ -66,7 +66,7 @@ export function RegisterForm({ locale }: { locale: Locale }) {
         required
         minLength={8}
         placeholder={t(locale, 'password')}
-        className="bg-background px-3 py-2 ring-1 ring-white/10"
+        className="bg-background px-3 py-2 ring-1 ring-black/10"
       />
       <button
         type="submit"

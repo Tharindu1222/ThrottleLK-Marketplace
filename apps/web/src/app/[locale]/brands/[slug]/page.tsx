@@ -76,7 +76,7 @@ export default async function BrandPage({
             <li key={model.id}>
               <Link
                 href={`/${locale}/brands/${brand.slug}/${model.slug}`}
-                className="border border-white/15 px-3 py-1.5 text-sm hover:border-accent"
+                className="border border-black/15 px-3 py-1.5 text-sm hover:border-accent"
               >
                 {model.name}
               </Link>
@@ -97,7 +97,7 @@ export default async function BrandPage({
               <Link
                 key={listing.id}
                 href={`/${locale}/bikes/${listing.slug}`}
-                className="border border-white/10 bg-surface/40 p-4 hover:border-accent/40"
+                className="border border-black/10 bg-surface/40 p-4 hover:border-accent/40"
               >
                 <h3 className="font-[family-name:var(--font-display)] text-xl">
                   {listing.title}
