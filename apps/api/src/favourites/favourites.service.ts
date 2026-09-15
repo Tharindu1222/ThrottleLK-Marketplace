@@ -29,6 +29,7 @@ function toBrowseCard(listing: Listing) {
     sellerType: listing.dealerId ? 'dealer' : 'private',
     coverImageUrl: cover?.imageUrl ?? null,
     listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
+    viewCount: listing.viewCount ?? 0,
   };
 }
 

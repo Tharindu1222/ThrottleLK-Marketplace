@@ -8,8 +8,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { User } from '../users/user.entity';
+import { UsersService } from '../users/users.service';
 import { ConversationMessage } from './conversation-message.entity';
 import { Conversation } from './conversation.entity';
+
+type ContactCard = {
+  id: string;
+  displayName: string;
+  fullName: string;
+  phone: string | null;
+  avatarUrl: string | null;
+};
 
 @Injectable()
 export class ConversationsService {
@@ -21,6 +31,7 @@ export class ConversationsService {
     @InjectRepository(Listing)
     private readonly listings: Repository<Listing>,
     private readonly notifications: NotificationsService,
+    private readonly usersService: UsersService,
   ) {}
 
   async start(buyerUserId: string, listingId: string, body: string) {
@@ -67,17 +78,38 @@ export class ConversationsService {
       order: { lastMessageAt: 'DESC', createdAt: 'DESC' },
       take: 50,
     });
-    return rows.map((c) => ({
-      id: c.id,
-      listingId: c.listingId,
-      listingTitle: c.listing?.title ?? 'Listing',
-      listingSlug: c.listing?.slug ?? null,
-      buyerUserId: c.buyerUserId,
-      sellerUserId: c.sellerUserId,
-      lastMessageAt: c.lastMessageAt,
-      createdAt: c.createdAt,
-      role: c.buyerUserId === userId ? 'buyer' : 'seller',
-    }));
+
+    const counterpartIds = [
+      ...new Set(
+        rows.map((c) =>
+          c.buyerUserId === userId ? c.sellerUserId : c.buyerUserId,
+        ),
+      ),
+    ];
+    const users = await this.loadUsersByIds(counterpartIds);
+    const lastByConversation = await this.loadLastMessages(
+      rows.map((c) => c.id),
+    );
+
+    return rows.map((c) => {
+      const counterpartId =
+        c.buyerUserId === userId ? c.sellerUserId : c.buyerUserId;
+      const last = lastByConversation.get(c.id);
+      return {
+        id: c.id,
+        listingId: c.listingId,
+        listingTitle: c.listing?.title ?? 'Listing',
+        listingSlug: c.listing?.slug ?? null,
+        buyerUserId: c.buyerUserId,
+        sellerUserId: c.sellerUserId,
+        lastMessageAt: c.lastMessageAt,
+        createdAt: c.createdAt,
+        role: c.buyerUserId === userId ? ('buyer' as const) : ('seller' as const),
+        counterpart: this.toContactCard(users.get(counterpartId) ?? null),
+        lastMessagePreview: last?.body?.slice(0, 140) ?? null,
+        lastMessageMine: last ? last.senderUserId === userId : false,
+      };
+    });
   }
 
   async getForUser(userId: string, id: string) {
@@ -97,6 +129,14 @@ export class ConversationsService {
       order: { createdAt: 'ASC' },
       take: 200,
     });
+    const counterpartId =
+      conversation.buyerUserId === userId
+        ? conversation.sellerUserId
+        : conversation.buyerUserId;
+    const counterpartUser = await this.usersService
+      .findByIdOrThrow(counterpartId)
+      .catch(() => null);
+
     return {
       id: conversation.id,
       listingId: conversation.listingId,
@@ -105,6 +145,11 @@ export class ConversationsService {
       buyerUserId: conversation.buyerUserId,
       sellerUserId: conversation.sellerUserId,
       lastMessageAt: conversation.lastMessageAt,
+      role:
+        conversation.buyerUserId === userId
+          ? ('buyer' as const)
+          : ('seller' as const),
+      counterpart: this.toContactCard(counterpartUser),
       messages: messages.map((m) => ({
         id: m.id,
         senderUserId: m.senderUserId,
@@ -166,6 +211,50 @@ export class ConversationsService {
         createdAt: message.createdAt,
         mine: true,
       },
+    };
+  }
+
+  private async loadUsersByIds(ids: string[]) {
+    const map = new Map<string, User>();
+    if (ids.length === 0) return map;
+    const rows = await this.usersService.findByIds(ids);
+    for (const u of rows) map.set(u.id, u);
+    return map;
+  }
+
+  private async loadLastMessages(conversationIds: string[]) {
+    const map = new Map<
+      string,
+      { body: string; senderUserId: string; createdAt: Date }
+    >();
+    if (conversationIds.length === 0) return map;
+
+    const rows = await this.messages
+      .createQueryBuilder('m')
+      .distinctOn(['m.conversation_id'])
+      .where('m.conversation_id IN (:...ids)', { ids: conversationIds })
+      .orderBy('m.conversation_id')
+      .addOrderBy('m.created_at', 'DESC')
+      .getMany();
+
+    for (const m of rows) {
+      map.set(m.conversationId, {
+        body: m.body,
+        senderUserId: m.senderUserId,
+        createdAt: m.createdAt,
+      });
+    }
+    return map;
+  }
+
+  private toContactCard(user: User | null): ContactCard | null {
+    if (!user) return null;
+    return {
+      id: user.id,
+      displayName: `${user.firstName} ${user.lastName.charAt(0)}.`.trim(),
+      fullName: `${user.firstName} ${user.lastName}`.trim(),
+      phone: user.phone,
+      avatarUrl: user.avatarUrl,
     };
   }
 

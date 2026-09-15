@@ -202,7 +202,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
                 <span
                   className={
                     last
-                      ? 'truncate font-medium text-accent'
+                      ? 'truncate font-medium text-foreground'
                       : 'truncate text-muted'
                   }
                   aria-current={last ? 'page' : undefined}

@@ -12,11 +12,11 @@ export default async function NotificationsPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <div>
+      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
         {t(locale, 'notifications')}
       </h1>
       <NotificationsClient locale={locale} />
-    </main>
+    </div>
   );
 }

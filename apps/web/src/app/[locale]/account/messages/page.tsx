@@ -12,11 +12,11 @@ export default async function MessagesPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <div>
+      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
         {t(locale, 'messages')}
       </h1>
       <MessagesInbox locale={locale} />
-    </main>
+    </div>
   );
 }

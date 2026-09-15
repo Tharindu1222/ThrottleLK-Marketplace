@@ -12,11 +12,13 @@ export default async function EditListingPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <div>
+      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
         Edit listing
       </h1>
-      <EditListingForm locale={locale} listingId={id} />
-    </main>
+      <div className="mt-8">
+        <EditListingForm locale={locale} listingId={id} />
+      </div>
+    </div>
   );
 }

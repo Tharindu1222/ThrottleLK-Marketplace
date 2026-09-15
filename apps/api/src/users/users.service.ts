@@ -145,6 +145,11 @@ export class UsersService {
     return user;
   }
 
+  async findByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return [];
+    return this.users.find({ where: { id: In(ids) } });
+  }
+
   async addRole(user: User, roleName: string): Promise<User> {
     const role = await this.roles.findOne({ where: { name: roleName } });
     if (!role) {

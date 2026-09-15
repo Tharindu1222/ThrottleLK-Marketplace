@@ -10,6 +10,7 @@ import {
   ListingCard,
   type BrowseListingCard,
 } from '@/components/listing-card';
+import { ListingViewTracker } from '@/components/listing-view-tracker';
 import { ReportListing } from '@/components/report-listing';
 import { BreadcrumbLabels } from '@/components/breadcrumbs';
 import { ContactPanel } from './contact-panel';
@@ -34,6 +35,7 @@ type Listing = {
   contactHidden?: boolean;
   brandId?: string;
   modelId?: string;
+  viewCount?: number;
   coverImageUrl?: string | null;
   images?: { id: string; imageUrl: string; isCover: boolean }[];
   seller?: { id: string; displayName: string } | null;
@@ -105,6 +107,14 @@ export default async function ListingDetailPage({
       : null,
     listing.engineCc != null ? `${listing.engineCc} cc` : null,
     listing.condition,
+    listing.viewCount != null && listing.viewCount > 0
+      ? listing.viewCount === 1
+        ? t(locale, 'viewsOne')
+        : t(locale, 'views').replace(
+            '{n}',
+            listing.viewCount.toLocaleString('en-LK'),
+          )
+      : null,
   ].filter(Boolean);
 
   const specs: { label: string; value: string }[] = [
@@ -148,6 +158,7 @@ export default async function ListingDetailPage({
   return (
     <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
       <BreadcrumbLabels labels={{ [slug]: listing.title }} />
+      <ListingViewTracker listingId={listing.id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

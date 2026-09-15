@@ -14,12 +14,26 @@ type Dealer = {
   status: string;
 };
 
+const fieldClass =
+  'w-full rounded-full border border-black/10 bg-surface/90 px-5 py-3 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
+
+const areaClass =
+  'w-full resize-y rounded-2xl border border-black/10 bg-surface/90 px-5 py-3 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
+
+const cardClass =
+  'overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-18px_rgba(0,0,0,0.22)]';
+
+function statusLabel(status: string) {
+  return status.replace(/_/g, ' ');
+}
+
 export function DealerApplyForm({ locale }: { locale: Locale }) {
   const [token, setToken] = useState<string | null>(null);
   const [mine, setMine] = useState<Dealer[]>([]);
   const [districts, setDistricts] = useState<Option[]>([]);
   const [cities, setCities] = useState<Option[]>([]);
   const [districtId, setDistrictId] = useState('');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
@@ -30,10 +44,14 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
     void Promise.all([
       apiGet<Dealer[]>('/api/v1/dealers/mine', { token: access }),
       apiGet<Option[]>('/api/v1/locations/districts'),
-    ]).then(([d, districtsList]) => {
-      setMine(d);
-      setDistricts(districtsList);
-    });
+    ])
+      .then(([d, districtsList]) => {
+        setMine(d);
+        setDistricts(districtsList);
+      })
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : 'Failed to load'),
+      );
   }, []);
 
   useEffect(() => {
@@ -48,37 +66,53 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
 
   if (!token) {
     return (
-      <p className="mt-6 text-muted">
-        <Link href={`/${locale}/login`} className="text-accent underline">
+      <div className={`${cardClass} p-6 sm:p-8`}>
+        <p className="text-sm text-muted">{t(locale, 'dealerApplyLogin')}</p>
+        <Link
+          href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/dealers/apply`)}`}
+          className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
+        >
           {t(locale, 'login')}
-        </Link>{' '}
-        to apply as a dealer.
-      </p>
+        </Link>
+      </div>
     );
   }
 
   if (mine.length > 0) {
     const dealer = mine[0];
+    const pending = dealer.status !== 'active';
     return (
-      <div className="mt-8 border border-black/10 bg-surface/40 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-2xl">
+      <div className={`${cardClass} p-6 sm:p-8`}>
+        <p className="text-[11px] tracking-[0.14em] text-muted uppercase">
+          {t(locale, 'dealerStatus')}
+        </p>
+        <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
           {dealer.name}
         </h2>
-        <p className="mt-2 text-sm text-muted">
-          Status: <span className="text-accent">{dealer.status}</span>
-        </p>
-        {dealer.status === 'active' ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex border px-2.5 py-1 text-[11px] tracking-wide uppercase ${
+              pending
+                ? 'border-amber-600/20 bg-amber-50 text-amber-900'
+                : 'border-emerald-600/20 bg-emerald-50 text-emerald-800'
+            }`}
+          >
+            {statusLabel(dealer.status)}
+          </span>
+        </div>
+        {pending ? (
+          <p className="mt-4 text-sm text-muted">
+            {t(locale, 'dealerPendingHint')}
+          </p>
+        ) : (
           <Link
             href={`/${locale}/dealers/${dealer.slug}`}
-            className="mt-4 inline-block text-accent underline"
+            className="mt-5 inline-flex items-center justify-center rounded-full border border-black/15 px-5 py-2.5 text-sm text-foreground transition hover:border-accent hover:text-accent"
           >
-            View showroom
+            {t(locale, 'viewShowroom')}
           </Link>
-        ) : (
-          <p className="mt-3 text-sm text-muted">
-            Waiting for admin approval before your showroom goes public.
-          </p>
         )}
+        {ok ? <p className="mt-4 text-sm text-foreground">{ok}</p> : null}
       </div>
     );
   }
@@ -87,6 +121,7 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
     e.preventDefault();
     setError(null);
     setOk(null);
+    setBusy(true);
     const form = new FormData(e.currentTarget);
     try {
       const dealer = await apiSend<Dealer>('/api/v1/dealers', {
@@ -103,82 +138,136 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
         },
       });
       setMine([dealer]);
-      setOk('Dealer application submitted for review.');
+      setOk(t(locale, 'dealerApplicationSubmitted'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-8 grid max-w-xl gap-3">
-      <input
-        name="name"
-        required
-        placeholder="Dealership name"
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
-      <textarea
-        name="description"
-        rows={4}
-        placeholder="About your dealership"
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
-      <input
-        name="phone"
-        required
-        placeholder={t(locale, 'phone')}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
-      <input
-        name="whatsapp"
-        placeholder="WhatsApp"
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
-      <input
-        name="email"
-        type="email"
-        placeholder={t(locale, 'email')}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
-      <input
-        name="address"
-        placeholder="Address"
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
-      <select
-        name="districtId"
-        required
-        value={districtId}
-        onChange={(e) => setDistrictId(e.target.value)}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      >
-        <option value="">{t(locale, 'districtFilter')}</option>
-        {districts.map((d) => (
-          <option key={d.id} value={d.id}>
-            {d.name}
-          </option>
-        ))}
-      </select>
-      <select
-        name="cityId"
-        required
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      >
-        <option value="">City</option>
-        {cities.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      <button
-        type="submit"
-        className="bg-accent px-4 py-3 font-[family-name:var(--font-display)] text-white"
-      >
-        Submit dealer application
-      </button>
-      {ok ? <p className="text-sm text-accent">{ok}</p> : null}
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+    <form onSubmit={onSubmit} className={`${cardClass} p-6 sm:p-8`}>
+      <div className="grid gap-5">
+        <label className="grid gap-1.5">
+          <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+            {t(locale, 'dealershipName')}
+          </span>
+          <input
+            name="name"
+            required
+            placeholder={t(locale, 'dealershipName')}
+            className={fieldClass}
+          />
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+            {t(locale, 'aboutDealership')}
+          </span>
+          <textarea
+            name="description"
+            rows={4}
+            placeholder={t(locale, 'aboutDealership')}
+            className={areaClass}
+          />
+        </label>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+              {t(locale, 'phone')}
+            </span>
+            <input
+              name="phone"
+              required
+              placeholder={t(locale, 'phone')}
+              className={fieldClass}
+            />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+              {t(locale, 'whatsapp')}
+            </span>
+            <input
+              name="whatsapp"
+              placeholder={t(locale, 'whatsapp')}
+              className={fieldClass}
+            />
+          </label>
+        </div>
+
+        <label className="grid gap-1.5">
+          <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+            {t(locale, 'email')}
+          </span>
+          <input
+            name="email"
+            type="email"
+            placeholder={t(locale, 'email')}
+            className={fieldClass}
+          />
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+            {t(locale, 'address')}
+          </span>
+          <input
+            name="address"
+            placeholder={t(locale, 'address')}
+            className={fieldClass}
+          />
+        </label>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+              {t(locale, 'districtFilter')}
+            </span>
+            <select
+              name="districtId"
+              required
+              value={districtId}
+              onChange={(e) => setDistrictId(e.target.value)}
+              className={fieldClass}
+            >
+              <option value="">{t(locale, 'districtFilter')}</option>
+              {districts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-[11px] tracking-[0.14em] text-muted uppercase">
+              {t(locale, 'city')}
+            </span>
+            <select name="cityId" required className={fieldClass}>
+              <option value="">{t(locale, 'city')}</option>
+              {cities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="pt-1">
+          <button
+            type="submit"
+            disabled={busy}
+            className="inline-flex w-full items-center justify-center rounded-full bg-accent px-6 py-3.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110 disabled:opacity-60 sm:w-auto"
+          >
+            {busy ? '…' : t(locale, 'submitDealerApplication')}
+          </button>
+        </div>
+
+        {ok ? <p className="text-sm text-foreground">{ok}</p> : null}
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      </div>
     </form>
   );
 }

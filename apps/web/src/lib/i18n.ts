@@ -149,6 +149,28 @@ const en: Dict = {
   noAccountYet: "Don't have an account?",
   similarListings: 'Similar listings',
   seeMore: 'See more',
+  compareHint: 'Side-by-side specs so you can pick the right ride.',
+  views: '{n} views',
+  viewsOne: '1 view',
+  becomeDealer: 'Become a dealer',
+  becomeDealerHint:
+    'Create a ThrottleLK showroom. Admin approval is required before it goes public.',
+  dealershipName: 'Dealership name',
+  aboutDealership: 'About your dealership',
+  address: 'Address',
+  city: 'City',
+  submitDealerApplication: 'Submit application',
+  dealerApplyLogin: 'Sign in to apply as a dealer.',
+  dealerPendingHint: 'Waiting for admin approval before your showroom goes public.',
+  dealerApplicationSubmitted: 'Dealer application submitted for review.',
+  viewShowroom: 'View showroom',
+  dealerStatus: 'Status',
+  markAllRead: 'Mark all read',
+  noNotifications: 'No notifications yet.',
+  viewAllNotifications: 'View all',
+  viewAllMessages: 'View all',
+  openInbox: 'Open inbox',
+  you: 'You',
 };
 
 const si: Dict = {
@@ -253,6 +275,29 @@ const si: Dict = {
   noAccountYet: 'ගිණුමක් නැද්ද?',
   similarListings: 'සමාන ලැයිස්තු',
   seeMore: 'තවත් බලන්න',
+  compareHint: 'නිවැරදි බයික් තෝරා ගැනීමට පැතිකඩින් පැතිකඩ විස්තර සසඳන්න.',
+  views: 'නැරඹුම් {n}',
+  viewsOne: 'නැරඹුම් 1',
+  becomeDealer: 'ඩීලර් වන්න',
+  becomeDealerHint:
+    'ThrottleLK showroom එකක් සාදන්න. ප්‍රසිද්ධ වීමට පෙර admin අනුමැතිය අවශ්‍යයි.',
+  dealershipName: 'ඩීලර්ෂිප් නාමය',
+  aboutDealership: 'ඔබේ ඩීලර්ෂිප් ගැන',
+  address: 'ලිපිනය',
+  city: 'නගරය',
+  submitDealerApplication: 'අයදුම්පත ඉදිරිපත් කරන්න',
+  dealerApplyLogin: 'ඩීලර් ලෙස අයදුම් කිරීමට පිවිසෙන්න.',
+  dealerPendingHint:
+    'ඔබේ showroom එක ප්‍රසිද්ධ වීමට පෙර admin අනුමැතිය බලාපොරොත්තු වේ.',
+  dealerApplicationSubmitted: 'ඩීලර් අයදුම්පත සමාලෝචනයට යවන ලදී.',
+  viewShowroom: 'Showroom බලන්න',
+  dealerStatus: 'තත්ත්වය',
+  markAllRead: 'සියල්ල කියවූ ලෙස සලකුණු කරන්න',
+  noNotifications: 'තවම දැනුම්දීම් නැත.',
+  viewAllNotifications: 'සියල්ල බලන්න',
+  viewAllMessages: 'සියල්ල බලන්න',
+  openInbox: 'Inbox එක විවෘත කරන්න',
+  you: 'ඔබ',
 };
 
 const tables: Record<Locale, Dict> = { en, si };

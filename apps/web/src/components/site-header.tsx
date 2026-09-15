@@ -13,6 +13,8 @@ import {
 import { apiGet, apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 import { BrandLogo } from './brand-logo';
+import { MessagesNavIcon } from './messages-nav-icon';
+import { NotificationsBell } from './notifications-bell';
 
 function AccountAvatar({
   user,
@@ -163,6 +165,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
           {user ? (
             <>
+              <MessagesNavIcon locale={locale} />
+              <NotificationsBell locale={locale} />
               <div className="relative" ref={accountRef}>
                 <button
                   type="button"
@@ -213,6 +217,14 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     </Link>
                     <Link
                       role="menuitem"
+                      href={`/${locale}/account/notifications`}
+                      className="block px-4 py-2.5 text-sm text-muted transition hover:bg-black/5 hover:text-foreground"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      {t(locale, 'notifications')}
+                    </Link>
+                    <Link
+                      role="menuitem"
                       href={`/${locale}/account/favourites`}
                       className="block px-4 py-2.5 text-sm text-muted transition hover:bg-black/5 hover:text-foreground"
                       onClick={() => setAccountOpen(false)}
@@ -258,13 +270,20 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
         </div>
 
-        <button
-          type="button"
-          className="ml-auto inline-flex min-h-11 min-w-11 items-center justify-center border border-black/15 text-foreground md:hidden"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((o) => !o)}
-        >
+        <div className="ml-auto flex items-center gap-1 md:hidden">
+          {user ? (
+            <>
+              <MessagesNavIcon locale={locale} />
+              <NotificationsBell locale={locale} />
+            </>
+          ) : null}
+          <button
+            type="button"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center border border-black/15 text-foreground"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
           {menuOpen ? (
             <svg
               className="h-5 w-5"
@@ -286,7 +305,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               <path d="M4 7h16M4 12h16M4 17h16" />
             </svg>
           )}
-        </button>
+          </button>
+        </div>
       </div>
 
       {menuOpen ? (
@@ -345,6 +365,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'messages')}
+                </Link>
+                <Link
+                  href={`/${locale}/account/notifications`}
+                  className="py-3 pl-2 text-base text-muted"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t(locale, 'notifications')}
                 </Link>
                 <Link
                   href={`/${locale}/account/favourites`}

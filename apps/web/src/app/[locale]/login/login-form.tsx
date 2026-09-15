@@ -32,7 +32,12 @@ export function LoginForm({ locale }: { locale: Locale }) {
         },
       });
       saveSession(data);
-      window.location.href = `/${locale}/bikes`;
+      const next = new URLSearchParams(window.location.search).get('next');
+      const safeNext =
+        next && next.startsWith(`/${locale}/`) && !next.includes('//')
+          ? next
+          : `/${locale}/bikes`;
+      window.location.href = safeNext;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
       setBusy(false);

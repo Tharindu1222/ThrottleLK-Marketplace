@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { apiGet } from '@/lib/api';
-import { isLocale, type Locale } from '@/lib/i18n';
+import { isLocale, t, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
 
 type Dealer = {
@@ -51,9 +51,9 @@ export default async function DealersIndexPage({
         </div>
         <Link
           href={`/${locale}/dealers/apply`}
-          className="bg-accent px-4 py-2 text-sm text-white"
+          className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
         >
-          Become a dealer
+          {t(locale, 'becomeDealer')}
         </Link>
       </div>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

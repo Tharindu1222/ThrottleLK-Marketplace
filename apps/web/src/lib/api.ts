@@ -25,6 +25,63 @@ export class ApiRequestError extends Error {
   }
 }
 
+const ACCESS_KEY = 'throttlelk_access';
+const REFRESH_KEY = 'throttlelk_refresh';
+const USER_KEY = 'throttlelk_user';
+
+const AUTH_NO_REDIRECT_CODES = new Set([
+  'INVALID_CREDENTIALS',
+  'ACCOUNT_DISABLED',
+]);
+
+function clearClientSession() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(ACCESS_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+
+/** On browser 401s (expired/invalid session), send user to login. */
+function redirectToLoginIfUnauthorized(
+  path: string,
+  status: number,
+  body: ApiErrorBody | null,
+) {
+  if (typeof window === 'undefined') return;
+  if (status !== 401) return;
+
+  const code = body?.error?.code;
+  if (code && AUTH_NO_REDIRECT_CODES.has(code)) return;
+
+  const normalized = path.toLowerCase();
+  if (
+    normalized.includes('/auth/login') ||
+    normalized.includes('/auth/register') ||
+    normalized.includes('/auth/refresh') ||
+    normalized.includes('/auth/forgot') ||
+    normalized.includes('/auth/reset')
+  ) {
+    return;
+  }
+
+  const pathname = window.location.pathname;
+  if (pathname.includes('/login')) return;
+
+  clearClientSession();
+  const locale = pathname.split('/').filter(Boolean)[0] || 'en';
+  const next = encodeURIComponent(`${pathname}${window.location.search}`);
+  window.location.assign(`/${locale}/login?next=${next}`);
+}
+
+function throwApiError(
+  path: string,
+  status: number,
+  body: ApiErrorBody | null,
+): never {
+  redirectToLoginIfUnauthorized(path, status, body);
+  throw new ApiRequestError(status, body);
+}
+
 export async function apiGet<T>(
   path: string,
   init?: { token?: string; searchParams?: Record<string, string | undefined> },
@@ -44,7 +101,7 @@ export async function apiGet<T>(
   });
   const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
   if (!res.ok || !('success' in json) || !json.success) {
-    throw new ApiRequestError(res.status, json as ApiErrorBody);
+    throwApiError(path, res.status, json as ApiErrorBody);
   }
   return json.data;
 }
@@ -68,7 +125,7 @@ export async function apiSend<T>(
   });
   const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
   if (!res.ok || !('success' in json) || !json.success) {
-    throw new ApiRequestError(res.status, json as ApiErrorBody);
+    throwApiError(path, res.status, json as ApiErrorBody);
   }
   return json.data;
 }
@@ -90,7 +147,7 @@ export async function apiUpload<T>(
   });
   const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
   if (!res.ok || !('success' in json) || !json.success) {
-    throw new ApiRequestError(res.status, json as ApiErrorBody);
+    throwApiError(path, res.status, json as ApiErrorBody);
   }
   return json.data;
 }

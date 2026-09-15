@@ -12,11 +12,13 @@ export default async function FavouritesPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <div>
+      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
         {t(locale, 'favourites')}
       </h1>
-      <FavouritesClient locale={locale} />
-    </main>
+      <div className="mt-8">
+        <FavouritesClient locale={locale} />
+      </div>
+    </div>
   );
 }

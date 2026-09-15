@@ -335,6 +335,26 @@ export class ListingsService {
     return { ...this.withCover(listing), seller, contactHidden: false as const };
   }
 
+  /** Count a public detail view (skips seller’s own views). */
+  async recordView(idOrSlug: string, viewer?: User | null) {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        idOrSlug,
+      );
+    const listing = await this.listings.findOne({
+      where: isUuid ? [{ id: idOrSlug }, { slug: idOrSlug }] : { slug: idOrSlug },
+      select: ['id', 'sellerId', 'status'],
+    });
+    if (!listing || listing.status !== 'active') {
+      return { recorded: false as const };
+    }
+    if (viewer?.id && viewer.id === listing.sellerId) {
+      return { recorded: false as const };
+    }
+    await this.listings.increment({ id: listing.id }, 'viewCount', 1);
+    return { recorded: true as const };
+  }
+
   private withCover(listing: Listing) {
     const images = [...(listing.images ?? [])].sort(
       (a, b) => a.sortOrder - b.sortOrder,
@@ -369,6 +389,7 @@ export class ListingsService {
       sellerType: listing.dealerId ? 'dealer' : 'private',
       coverImageUrl: covered.coverImageUrl,
       listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
+      viewCount: listing.viewCount ?? 0,
     };
   }
 

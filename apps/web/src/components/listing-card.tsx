@@ -24,6 +24,7 @@ export type BrowseListingCard = {
   coverImageUrl?: string | null;
   /** ISO date when listing went live (publishedAt) or was created */
   listedAt?: string | null;
+  viewCount?: number | null;
 };
 
 function formatLkr(n: number) {
@@ -216,6 +217,15 @@ export function ListingCard({
   const listedLabel = listing.listedAt
     ? formatListedAt(listing.listedAt, locale)
     : null;
+  const views =
+    listing.viewCount != null && listing.viewCount > 0
+      ? listing.viewCount === 1
+        ? t(locale, 'viewsOne')
+        : t(locale, 'views').replace(
+            '{n}',
+            listing.viewCount.toLocaleString('en-LK'),
+          )
+      : null;
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden border border-black/[0.08] bg-white transition duration-300 ease-out hover:-translate-y-1 hover:border-accent/35 hover:shadow-[0_18px_36px_-24px_rgba(0,0,0,0.45)]">
@@ -285,7 +295,7 @@ export function ListingCard({
           </SpecChip>
         </div>
 
-        {location || listedLabel ? (
+        {location || listedLabel || views ? (
           <div className="mt-auto flex items-center justify-between gap-3 text-sm text-muted">
             {location ? (
               <p className="flex min-w-0 items-center gap-1.5 truncate">
@@ -305,15 +315,22 @@ export function ListingCard({
             ) : (
               <span />
             )}
-            {listedLabel ? (
-              <time
-                dateTime={listing.listedAt ?? undefined}
-                suppressHydrationWarning
-                className="shrink-0 text-xs tracking-wide text-muted/90"
-              >
-                {listedLabel}
-              </time>
-            ) : null}
+            <div className="flex shrink-0 items-center gap-2 text-xs tracking-wide text-muted/90">
+              {views ? <span>{views}</span> : null}
+              {views && listedLabel ? (
+                <span className="text-black/25" aria-hidden>
+                  ·
+                </span>
+              ) : null}
+              {listedLabel ? (
+                <time
+                  dateTime={listing.listedAt ?? undefined}
+                  suppressHydrationWarning
+                >
+                  {listedLabel}
+                </time>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>

@@ -163,6 +163,19 @@ export class ListingsController {
     };
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @Post(':id/views')
+  async recordView(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: User },
+  ): Promise<ApiSuccess<{ recorded: boolean }>> {
+    return {
+      success: true,
+      data: await this.listingsService.recordView(id, req.user ?? null),
+    };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
