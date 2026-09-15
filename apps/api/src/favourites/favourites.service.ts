@@ -8,6 +8,30 @@ import { Repository } from 'typeorm';
 import { Listing } from '../listings/listing.entity';
 import { Favourite } from './favourite.entity';
 
+function toBrowseCard(listing: Listing) {
+  const images = [...(listing.images ?? [])].sort(
+    (a, b) => a.sortOrder - b.sortOrder,
+  );
+  const cover = images[0] ?? null;
+  return {
+    id: listing.id,
+    slug: listing.slug,
+    title: listing.title,
+    priceLkr: listing.priceLkr,
+    manufactureYear: listing.manufactureYear,
+    engineCc: listing.engineCc,
+    mileage: listing.mileage,
+    condition: listing.condition,
+    brandName: listing.brand?.name ?? null,
+    modelName: listing.model?.name ?? null,
+    districtName: listing.district?.name ?? null,
+    cityName: listing.city?.name ?? null,
+    sellerType: listing.dealerId ? 'dealer' : 'private',
+    coverImageUrl: cover?.imageUrl ?? null,
+    listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
+  };
+}
+
 @Injectable()
 export class FavouritesService {
   constructor(
@@ -19,7 +43,14 @@ export class FavouritesService {
   async listForUser(userId: string) {
     const rows = await this.favourites.find({
       where: { userId },
-      relations: ['listing'],
+      relations: [
+        'listing',
+        'listing.brand',
+        'listing.model',
+        'listing.district',
+        'listing.city',
+        'listing.images',
+      ],
       order: { createdAt: 'DESC' },
     });
     return rows
@@ -28,7 +59,7 @@ export class FavouritesService {
         id: row.id,
         listingId: row.listingId,
         createdAt: row.createdAt,
-        listing: row.listing,
+        listing: toBrowseCard(row.listing),
       }));
   }
 

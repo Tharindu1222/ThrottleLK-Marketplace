@@ -83,8 +83,8 @@ export default async function BikesPage({
         {t(locale, 'browse')}
       </h1>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)] lg:items-start">
-        <aside className="space-y-3">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
+        <aside className="space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
           <BrowseFilters
             locale={locale}
             brands={brands}

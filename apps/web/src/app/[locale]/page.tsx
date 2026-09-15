@@ -80,7 +80,7 @@ export default async function HomePage({
               {districts.map((district) => (
                 <li key={district.id}>
                   <Link
-                    href={`/${locale}/locations/${district.slug}`}
+                    href={`/${locale}/bikes?districtId=${district.id}`}
                     className="inline-block border border-black/12 px-3 py-1.5 text-sm text-muted transition hover:border-accent hover:text-foreground"
                   >
                     {district.name}

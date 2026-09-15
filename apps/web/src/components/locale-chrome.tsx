@@ -1,6 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import {
+  BreadcrumbLabelProvider,
+  SiteBreadcrumbs,
+} from '@/components/breadcrumbs';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { CompareTray } from '@/components/compare-tray';
@@ -15,17 +19,24 @@ export function LocaleChrome({
 }) {
   const pathname = usePathname();
   const isAdmin = /\/(en|si)\/admin(\/|$)/.test(pathname);
+  const isAuth =
+    /\/(en|si)\/(login|register|forgot-password|reset-password|verify-email)(\/|$)/.test(
+      pathname,
+    );
 
   if (isAdmin) {
     return <>{children}</>;
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader locale={locale} />
-      <div className="flex-1 pb-20">{children}</div>
-      <SiteFooter locale={locale} />
-      <CompareTray locale={locale} />
-    </div>
+    <BreadcrumbLabelProvider>
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader locale={locale} />
+        {!isAuth ? <SiteBreadcrumbs locale={locale} /> : null}
+        <div className={`flex-1 ${isAuth ? '' : 'pb-20'}`}>{children}</div>
+        {!isAuth ? <SiteFooter locale={locale} /> : null}
+        {!isAuth ? <CompareTray locale={locale} /> : null}
+      </div>
+    </BreadcrumbLabelProvider>
   );
 }

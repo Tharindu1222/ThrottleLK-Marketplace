@@ -327,21 +327,12 @@ export class ListingsService {
       });
     }
 
-    const showContact = Boolean(viewer) || isOwner || isAdmin;
     const seller = await this.usersService
       .findByIdOrThrow(listing.sellerId)
       .then((u) => this.usersService.toSellerPublic(u))
       .catch(() => null);
-    const base = { ...this.withCover(listing), seller };
-    if (!showContact) {
-      return {
-        ...base,
-        phone: null,
-        whatsapp: null,
-        contactHidden: true as const,
-      };
-    }
-    return { ...base, contactHidden: false as const };
+    // Phone / WhatsApp are public on active listings; messaging still requires auth.
+    return { ...this.withCover(listing), seller, contactHidden: false as const };
   }
 
   private withCover(listing: Listing) {
@@ -377,6 +368,7 @@ export class ListingsService {
       cityName: listing.city?.name ?? null,
       sellerType: listing.dealerId ? 'dealer' : 'private',
       coverImageUrl: covered.coverImageUrl,
+      listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
     };
   }
 

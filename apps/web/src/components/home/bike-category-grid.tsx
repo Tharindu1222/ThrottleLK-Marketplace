@@ -4,6 +4,7 @@ import { bikeCategories, type BikeCategory } from '@/lib/bike-categories';
 import { BikeCategoryCard } from './bike-category-card';
 
 type ApiCategory = {
+  id: string;
   slug: string;
   coverImageUrl?: string | null;
 };
@@ -16,6 +17,13 @@ export async function BikeCategoryGrid({ locale }: { locale: Locale }) {
   const coverBySlug = new Map(
     apiCategories.map((c) => [c.slug, c.coverImageUrl ?? null]),
   );
+  const idByMarketingSlug = new Map<string, string>();
+  for (const marketing of bikeCategories) {
+    const matched = apiCategories.find((c) =>
+      marketing.taxonomySlugs.includes(c.slug),
+    );
+    if (matched) idByMarketingSlug.set(marketing.slug, matched.id);
+  }
 
   const categories: BikeCategory[] = bikeCategories.map((category) => {
     const cover = coverBySlug.get(category.slug);
@@ -53,15 +61,25 @@ export async function BikeCategoryGrid({ locale }: { locale: Locale }) {
       </div>
 
       <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 lg:gap-4">
-        {categories.map((category) => (
-          <div
-            key={category.slug}
-            data-category-card
-            className="origin-bottom will-change-transform"
-          >
-            <BikeCategoryCard locale={locale} category={category} />
-          </div>
-        ))}
+        {categories.map((category) => {
+          const categoryId = idByMarketingSlug.get(category.slug);
+          const href = categoryId
+            ? `/${locale}/bikes?categoryId=${categoryId}`
+            : `/${locale}/bikes`;
+          return (
+            <div
+              key={category.slug}
+              data-category-card
+              className="origin-bottom will-change-transform"
+            >
+              <BikeCategoryCard
+                locale={locale}
+                category={category}
+                href={href}
+              />
+            </div>
+          );
+        })}
       </div>
     </section>
   );

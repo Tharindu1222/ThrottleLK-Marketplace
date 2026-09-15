@@ -1,18 +1,24 @@
+# Local Postgres only. API + Web run on the host (npm run dev:api / dev:web).
+# From repo root:
+#   npm run docker:up
+#   npm run docker:down
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: throttlelk-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: throttlelk
-      POSTGRES_PASSWORD: throttlelk
-      POSTGRES_DB: throttlelk
+      POSTGRES_USER: ${POSTGRES_USER:-throttlelk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-throttlelk}
+      POSTGRES_DB: ${POSTGRES_DB:-throttlelk}
     ports:
+      # Host API connects here: localhost:5432 → container 5432
       - '5432:5432'
     volumes:
       - throttlelk_pg:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U throttlelk -d throttlelk']
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 5s
       timeout: 5s
       retries: 10

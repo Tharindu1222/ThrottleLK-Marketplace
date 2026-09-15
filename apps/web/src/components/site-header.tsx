@@ -211,6 +211,22 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     >
                       {t(locale, 'messages')}
                     </Link>
+                    <Link
+                      role="menuitem"
+                      href={`/${locale}/account/favourites`}
+                      className="block px-4 py-2.5 text-sm text-muted transition hover:bg-black/5 hover:text-foreground"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      {t(locale, 'savedListings')}
+                    </Link>
+                    <Link
+                      role="menuitem"
+                      href={`/${locale}/compare`}
+                      className="block px-4 py-2.5 text-sm text-muted transition hover:bg-black/5 hover:text-foreground"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      {t(locale, 'compare')}
+                    </Link>
                     <div className="my-1 border-t border-black/10" />
                     <button
                       type="button"
@@ -329,6 +345,20 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'messages')}
+                </Link>
+                <Link
+                  href={`/${locale}/account/favourites`}
+                  className="py-3 pl-2 text-base text-muted"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t(locale, 'savedListings')}
+                </Link>
+                <Link
+                  href={`/${locale}/compare`}
+                  className="py-3 pl-2 text-base text-muted"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t(locale, 'compare')}
                 </Link>
                 {user.roles.includes('admin') ? (
                   <Link

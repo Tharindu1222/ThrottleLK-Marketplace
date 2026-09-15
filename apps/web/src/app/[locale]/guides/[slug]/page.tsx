@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getGuide, guides } from '@/content/guides';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
+import { BreadcrumbLabels } from '@/components/breadcrumbs';
 
 export function generateStaticParams() {
   return guides.map((guide) => ({ slug: guide.slug }));
@@ -37,6 +38,7 @@ export default async function GuideArticlePage({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
+      <BreadcrumbLabels labels={{ [slug]: guide.title }} />
       <p className="text-sm text-muted">
         <Link href={`/${locale}/guides`} className="hover:text-accent">
           Guides

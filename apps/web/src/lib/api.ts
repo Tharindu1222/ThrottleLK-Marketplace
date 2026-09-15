@@ -1,9 +1,20 @@
 import type { ApiSuccess, ApiErrorBody } from '@throttlelk/types';
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.API_URL ??
-  'http://localhost:3001';
+/**
+ * Prefer NEXT_PUBLIC_API_URL in the browser; on the server allow
+ * API_INTERNAL_URL / API_URL overrides (e.g. future container SSR).
+ */
+function resolveApiUrl(): string {
+  if (typeof window === 'undefined') {
+    return (
+      process.env.API_INTERNAL_URL ??
+      process.env.API_URL ??
+      process.env.NEXT_PUBLIC_API_URL ??
+      'http://localhost:3001'
+    );
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+}
 
 export class ApiRequestError extends Error {
   constructor(
@@ -18,7 +29,8 @@ export async function apiGet<T>(
   path: string,
   init?: { token?: string; searchParams?: Record<string, string | undefined> },
 ): Promise<T> {
-  const url = new URL(path.startsWith('http') ? path : `${API_URL}${path}`);
+  const base = resolveApiUrl();
+  const url = new URL(path.startsWith('http') ? path : `${base}${path}`);
   if (init?.searchParams) {
     for (const [key, value] of Object.entries(init.searchParams)) {
       if (value) url.searchParams.set(key, value);
@@ -45,7 +57,7 @@ export async function apiSend<T>(
     token?: string;
   },
 ): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${resolveApiUrl()}${path}`, {
     method: options.method ?? 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -68,7 +80,7 @@ export async function apiUpload<T>(
 ): Promise<T> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${resolveApiUrl()}${path}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -83,4 +95,4 @@ export async function apiUpload<T>(
   return json.data;
 }
 
-export { API_URL };
+export { resolveApiUrl };

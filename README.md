@@ -5,24 +5,32 @@ Sri Lanka motorcycle & scooter marketplace — SEO-first web app (Next.js) + Nes
 ## Prerequisites
 
 - Node.js 22+
-- Docker Desktop (for local PostgreSQL), or a local Postgres 16 instance
+- Docker Desktop (Postgres only)
 
-## Setup
+## Develop (recommended)
 
 ```powershell
-copy .env.example .env
+copy .env.example .env   # first time
 npm install
-docker compose -f infrastructure/docker/docker-compose.yml up -d
-# Then set SKIP_DB=false in .env
-# If Docker is unavailable, leave SKIP_DB=true (API health still works; DB features need Postgres)
+npm run docker:up        # Postgres in Docker → localhost:5432
+# ensure SKIP_DB=false in .env
+npm run dev:api          # http://localhost:3001/health
+npm run dev:web          # http://localhost:3000
 ```
 
-## Develop
+Stop DB: `npm run docker:down`
 
-```powershell
-npm run dev:api   # http://localhost:3001/health  +  /api/v1/*
-npm run dev:web   # http://localhost:3000/en
+### How the API reaches Docker Postgres
+
+Docker publishes container port `5432` on your machine as `localhost:5432`.  
+Host API uses `.env`:
+
+```env
+DATABASE_URL=postgresql://throttlelk:throttlelk@localhost:5432/throttlelk
+SKIP_DB=false
 ```
+
+No special Docker network needed — `localhost` is enough when API runs on the host.
 
 ### Useful API paths
 
@@ -35,3 +43,4 @@ npm run dev:web   # http://localhost:3000/en
 - Product design: `docs/superpowers/specs/2026-09-11-throttlelk-product-design.md`
 - Master spec: `sri_lanka_bike_marketplace_master_spec.md`
 - Phase 0 plan: `docs/superpowers/plans/2026-09-11-throttlelk-phase-0-foundation.md`
+- Dev Docker (Postgres): `docs/superpowers/specs/2026-09-15-docker-dev-stack-design.md`

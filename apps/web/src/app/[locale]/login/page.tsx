@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { AuthShell } from '@/components/auth/auth-shell';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { LoginForm } from './login-form';
 
@@ -12,11 +13,12 @@ export default async function LoginPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
-        {t(locale, 'login')}
-      </h1>
+    <AuthShell
+      locale={locale}
+      title={t(locale, 'welcome')}
+      subtitle={t(locale, 'signInToAccount')}
+    >
       <LoginForm locale={locale} />
-    </main>
+    </AuthShell>
   );
 }

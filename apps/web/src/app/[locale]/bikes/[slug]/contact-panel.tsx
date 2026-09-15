@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
-import { apiGet, apiSend } from '@/lib/api';
+import { apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 
@@ -14,6 +14,12 @@ type ListingContact = {
   seller?: { id: string; displayName: string } | null;
 };
 
+function sellerInitial(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return '?';
+  return trimmed.charAt(0).toUpperCase();
+}
+
 export function ContactPanel({
   locale,
   listing: initial,
@@ -21,24 +27,17 @@ export function ContactPanel({
   locale: Locale;
   listing: ListingContact;
 }) {
-  const [listing, setListing] = useState(initial);
+  const [listing] = useState(initial);
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
-    const access = getAccessToken();
-    setToken(access);
-    if (!access) return;
-    void apiGet<ListingContact>(`/api/v1/listings/${initial.id}`, {
-      token: access,
-    })
-      .then(setListing)
-      .catch(() => undefined);
-  }, [initial.id]);
+    setToken(getAccessToken());
+  }, []);
 
-  const showPhone = Boolean(token) && listing.contactHidden === false;
+  const hasPhone = Boolean(listing.phone || listing.whatsapp);
   const seller = listing.seller ?? initial.seller;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -69,29 +68,39 @@ export function ContactPanel({
   }
 
   return (
-    <aside className="border border-black/10 bg-surface/50 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">
+    <aside className="border border-black/12 bg-white p-6 shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-18px_rgba(0,0,0,0.28)] sm:p-7">
+      <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground">
         {t(locale, 'contactSeller')}
       </h2>
 
       {seller ? (
-        <p className="mt-3 text-sm">
-          <span className="text-muted">{t(locale, 'seller')}: </span>
-          <Link
-            href={`/${locale}/sellers/${seller.id}`}
-            className="text-accent underline"
+        <div className="mt-5 flex items-center gap-3">
+          <span
+            aria-hidden
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/10 font-[family-name:var(--font-display)] text-lg text-accent"
           >
-            {seller.displayName}
-          </Link>
-        </p>
+            {sellerInitial(seller.displayName)}
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs tracking-wide text-muted uppercase">
+              {t(locale, 'seller')}
+            </p>
+            <Link
+              href={`/${locale}/sellers/${seller.id}`}
+              className="truncate font-medium text-foreground transition hover:text-accent hover:underline"
+            >
+              {seller.displayName}
+            </Link>
+          </div>
+        </div>
       ) : null}
 
-      {showPhone ? (
-        <div className="mt-4 flex flex-wrap gap-3">
+      {hasPhone ? (
+        <div className="mt-5 flex flex-col gap-2.5">
           {listing.phone ? (
             <a
               href={`tel:${listing.phone}`}
-              className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-white"
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] transition hover:brightness-110"
             >
               {t(locale, 'call')}: {listing.phone}
             </a>
@@ -101,57 +110,55 @@ export function ContactPanel({
               href={`https://wa.me/94${(listing.whatsapp || listing.phone || '').replace(/\D/g, '').replace(/^0/, '')}`}
               target="_blank"
               rel="noreferrer"
-              className="border border-accent px-4 py-2 text-accent"
+              className="inline-flex items-center justify-center rounded-full border border-accent px-5 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-accent transition hover:bg-accent/5"
             >
               {t(locale, 'whatsapp')}
             </a>
           )}
         </div>
-      ) : (
-        <p className="mt-3 text-sm text-muted">
-          {t(locale, 'phoneHidden')}{' '}
-          <Link href={`/${locale}/login`} className="text-accent underline">
-            {t(locale, 'login')}
-          </Link>
-        </p>
-      )}
+      ) : null}
 
-      {token ? (
-        <form onSubmit={onSubmit} className="mt-6 grid gap-3">
-          <p className="text-sm text-muted">{t(locale, 'messageSellerHint')}</p>
-          <textarea
-            name="message"
-            required
-            rows={4}
-            minLength={1}
-            placeholder={t(locale, 'message')}
-            className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
-          />
-          <button
-            type="submit"
-            className="bg-foreground px-4 py-2 font-[family-name:var(--font-display)] tracking-wide text-background"
-          >
-            {t(locale, 'sendMessage')}
-          </button>
-          {conversationId ? (
-            <Link
-              href={`/${locale}/account/messages/${conversationId}`}
-              className="text-sm text-accent underline"
+      <div className="mt-6 border-t border-black/10 pt-6">
+        {token ? (
+          <form onSubmit={onSubmit} className="grid gap-3">
+            <p className="text-sm text-muted">{t(locale, 'messageSellerHint')}</p>
+            <textarea
+              name="message"
+              required
+              rows={4}
+              minLength={1}
+              placeholder={t(locale, 'message')}
+              className="w-full resize-y border border-black/10 bg-surface/80 px-4 py-3 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
+            />
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] transition hover:brightness-110"
             >
-              {t(locale, 'openConversation')}
+              {t(locale, 'sendMessage')}
+            </button>
+            {conversationId ? (
+              <Link
+                href={`/${locale}/account/messages/${conversationId}`}
+                className="text-center text-sm font-medium text-accent hover:underline"
+              >
+                {t(locale, 'openConversation')}
+              </Link>
+            ) : null}
+            {status ? <p className="text-sm text-accent">{status}</p> : null}
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted">{t(locale, 'loginToMessage')}</p>
+            <Link
+              href={`/${locale}/login`}
+              className="inline-flex w-full items-center justify-center rounded-full border border-black/15 px-5 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground transition hover:border-accent hover:text-accent"
+            >
+              {t(locale, 'login')}
             </Link>
-          ) : null}
-          {status ? <p className="text-sm text-accent">{status}</p> : null}
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
-        </form>
-      ) : (
-        <p className="mt-6 text-sm text-muted">
-          {t(locale, 'loginToMessage')}{' '}
-          <Link href={`/${locale}/login`} className="text-accent underline">
-            {t(locale, 'login')}
-          </Link>
-        </p>
-      )}
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

@@ -81,7 +81,7 @@ export function BrowseFilters({
   }, [brandId]);
 
   return (
-    <div className="lg:sticky lg:top-24 lg:self-start">
+    <div>
       <button
         type="button"
         className="flex w-full items-center justify-between border border-black/15 bg-surface/60 px-4 py-3 text-left font-[family-name:var(--font-display)] tracking-wide lg:hidden"
@@ -93,6 +93,8 @@ export function BrowseFilters({
       </button>
 
       <form
+        method="get"
+        action={`/${locale}/bikes`}
         className={`mt-3 flex flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 ${
           open ? 'flex' : 'hidden lg:flex'
         }`}

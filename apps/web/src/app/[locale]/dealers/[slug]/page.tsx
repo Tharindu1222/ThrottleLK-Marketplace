@@ -4,6 +4,11 @@ import { notFound } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
+import { BreadcrumbLabels } from '@/components/breadcrumbs';
+import {
+  ListingCard,
+  type BrowseListingCard,
+} from '@/components/listing-card';
 
 type DealerImage = {
   id: string;
@@ -26,15 +31,6 @@ type Dealer = {
   images: DealerImage[];
   district?: { id: string; name: string } | null;
   city?: { id: string; name: string } | null;
-};
-
-type Listing = {
-  id: string;
-  slug: string;
-  title: string;
-  priceLkr: number;
-  manufactureYear: number;
-  coverImageUrl?: string | null;
 };
 
 export async function generateMetadata({
@@ -73,7 +69,7 @@ export default async function DealerShowroomPage({
     notFound();
   }
 
-  const listings = await apiGet<Listing[]>('/api/v1/listings', {
+  const listings = await apiGet<BrowseListingCard[]>('/api/v1/listings', {
     searchParams: { dealerId: dealer.id },
   });
 
@@ -86,6 +82,7 @@ export default async function DealerShowroomPage({
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
+      <BreadcrumbLabels labels={{ [slug]: dealer.name }} />
       <p className="text-sm tracking-[0.25em] text-accent uppercase">Dealer</p>
       <h1 className="mt-2 font-[family-name:var(--font-display)] text-5xl tracking-wide">
         {dealer.name}
@@ -185,38 +182,18 @@ export default async function DealerShowroomPage({
       <h2 className="mt-12 font-[family-name:var(--font-display)] text-2xl tracking-wide">
         Inventory
       </h2>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {listings.length === 0 ? (
-          <p className="text-muted">No active bikes in this showroom yet.</p>
+          <p className="text-muted sm:col-span-2 lg:col-span-3">
+            No active bikes in this showroom yet.
+          </p>
         ) : (
           listings.map((listing) => (
-            <Link
+            <ListingCard
               key={listing.id}
-              href={`/${locale}/bikes/${listing.slug}`}
-              className="overflow-hidden border border-black/10 bg-surface/40 hover:border-accent/40"
-            >
-              {listing.coverImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={listing.coverImageUrl}
-                  alt={listing.title}
-                  className="aspect-[4/3] w-full object-cover"
-                />
-              ) : (
-                <div className="flex aspect-[4/3] items-center justify-center bg-background/40 text-sm text-muted">
-                  No photo
-                </div>
-              )}
-              <div className="p-4">
-                <h3 className="font-[family-name:var(--font-display)] text-xl">
-                  {listing.title}
-                </h3>
-                <p className="mt-2 text-accent">
-                  Rs. {listing.priceLkr.toLocaleString('en-LK')}
-                </p>
-                <p className="mt-1 text-sm text-muted">{listing.manufactureYear}</p>
-              </div>
-            </Link>
+              locale={locale}
+              listing={listing}
+            />
           ))
         )}
       </div>

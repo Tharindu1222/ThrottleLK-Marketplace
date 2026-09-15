@@ -2,16 +2,23 @@
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import {
+  authFieldClass,
+  authPrimaryBtnClass,
+  authSecondaryBtnClass,
+} from '@/components/auth/auth-shell';
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 
 export function RegisterForm({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setBusy(true);
     const form = new FormData(e.currentTarget);
     try {
       const data = await apiSend<{
@@ -31,52 +38,70 @@ export function RegisterForm({ locale }: { locale: Locale }) {
       window.location.href = `/${locale}/sell`;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Register failed');
+      setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto mt-8 grid max-w-md gap-3">
-      <input
-        name="firstName"
-        required
-        placeholder={t(locale, 'firstName')}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
-      <input
-        name="lastName"
-        required
-        placeholder={t(locale, 'lastName')}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
+    <form onSubmit={onSubmit} className="grid gap-3.5">
+      <div className="grid gap-3.5 sm:grid-cols-2">
+        <input
+          name="firstName"
+          required
+          autoComplete="given-name"
+          placeholder={t(locale, 'firstName')}
+          className={authFieldClass}
+        />
+        <input
+          name="lastName"
+          required
+          autoComplete="family-name"
+          placeholder={t(locale, 'lastName')}
+          className={authFieldClass}
+        />
+      </div>
       <input
         name="email"
         type="email"
         required
+        autoComplete="email"
         placeholder={t(locale, 'email')}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
+        className={authFieldClass}
       />
       <input
         name="phone"
+        autoComplete="tel"
         placeholder={t(locale, 'phone')}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
+        className={authFieldClass}
       />
       <input
         name="password"
         type="password"
         required
         minLength={8}
+        autoComplete="new-password"
         placeholder={t(locale, 'password')}
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
+        className={authFieldClass}
       />
-      <button
-        type="submit"
-        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-white"
-      >
-        {t(locale, 'register')}
-      </button>
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      <p className="text-sm text-muted">
-        <Link href={`/${locale}/login`} className="text-accent underline">
+
+      <div className="mt-1 flex flex-col gap-3 sm:flex-row">
+        <button type="submit" disabled={busy} className={authPrimaryBtnClass}>
+          {busy ? '…' : t(locale, 'register').toUpperCase()}
+        </button>
+        <Link href={`/${locale}/login`} className={authSecondaryBtnClass}>
+          {t(locale, 'login').toUpperCase()}
+        </Link>
+      </div>
+
+      {error ? (
+        <p className="text-center text-sm text-accent" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <p className="text-center text-sm text-muted">
+        {t(locale, 'alreadyHaveAccount')}{' '}
+        <Link href={`/${locale}/login`} className="font-medium text-accent">
           {t(locale, 'login')}
         </Link>
       </p>

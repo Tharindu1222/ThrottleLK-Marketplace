@@ -13,7 +13,9 @@
     "lint": "npm run lint -w @throttlelk/web -w @throttlelk/api",
     "test": "npm run test -w @throttlelk/api -w @throttlelk/validation",
     "smoke:api": "powershell -File scripts/smoke-api.ps1",
-    "docker:prod": "docker compose -f infrastructure/docker/docker-compose.prod.yml --env-file .env up --build"
+    "docker:up": "powershell -NoProfile -Command \"if (-not (Test-Path .env)) { Copy-Item .env.example .env }; docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up -d\"",
+    "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f infrastructure/docker/docker-compose.yml logs -f"
   },
   "engines": {
     "node": ">=22"

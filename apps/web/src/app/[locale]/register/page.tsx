@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { AuthShell } from '@/components/auth/auth-shell';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { RegisterForm } from './register-form';
 
@@ -12,11 +13,12 @@ export default async function RegisterPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
-        {t(locale, 'register')}
-      </h1>
+    <AuthShell
+      locale={locale}
+      title={t(locale, 'welcome')}
+      subtitle={t(locale, 'createYourAccount')}
+    >
       <RegisterForm locale={locale} />
-    </main>
+    </AuthShell>
   );
 }

@@ -5,13 +5,15 @@ import { categoryHref, type BikeCategory } from '@/lib/bike-categories';
 export function BikeCategoryCard({
   locale,
   category,
+  href,
 }: {
   locale: Locale;
   category: BikeCategory;
+  href?: string;
 }) {
   return (
     <Link
-      href={categoryHref(locale, category.slug)}
+      href={href ?? categoryHref(locale, category.slug)}
       className="group relative block h-[220px] overflow-hidden border border-black/10 bg-surface transition duration-500 ease-out hover:-translate-y-1.5 hover:border-accent hover:shadow-[0_20px_40px_-20px_rgba(225,6,0,0.45)] sm:h-[240px] lg:h-[260px]"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
