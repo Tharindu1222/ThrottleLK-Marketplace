@@ -52,9 +52,9 @@ const titles: Record<string, { title: string; subtitle: string; placeholder: str
     placeholder: 'Search dealers…',
   },
   taxonomy: {
-    title: 'Taxonomy',
-    subtitle: 'Brands, models & locations',
-    placeholder: 'Search taxonomy…',
+    title: 'Catalog',
+    subtitle: 'Categories, brands, and locations',
+    placeholder: 'Search this tab…',
   },
   reports: {
     title: 'Reports',
