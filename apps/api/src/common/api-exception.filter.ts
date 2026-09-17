@@ -20,6 +20,17 @@ export class ApiExceptionFilter implements ExceptionFilter {
         response.status(status).json(body);
         return;
       }
+      if (status === HttpStatus.TOO_MANY_REQUESTS) {
+        response.setHeader('Retry-After', '60');
+        response.status(status).json({
+          success: false,
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Too many requests. Try again in a minute.',
+          },
+        });
+        return;
+      }
       const message =
         typeof body === 'string'
           ? body

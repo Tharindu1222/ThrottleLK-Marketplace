@@ -38,10 +38,12 @@ function makeService(
   const service = new ListingsService(
     listingsRepo as never,
     { create: jest.fn(), save: jest.fn() } as never,
+    {} as never,
     dealersService as never,
     notifications as never,
     { userIdsForListing: jest.fn(async () => []) } as never,
     {} as never,
+    { invalidateDashboard: jest.fn() } as never,
   );
   return { service, notifications, row, listingsRepo, dealersService };
 }
@@ -158,8 +160,10 @@ describe('ListingsService.listPending', () => {
       { create: jest.fn(), save: jest.fn() } as never,
       {} as never,
       {} as never,
+      {} as never,
       { userIdsForListing: jest.fn(async () => []) } as never,
       {} as never,
+      { invalidateDashboard: jest.fn() } as never,
     );
 
     const [row] = await service.listPending();

@@ -315,6 +315,10 @@ const en: Dict = {
   emptyResults: 'No results found',
   searching: 'Searching…',
   clear: 'Clear',
+  pagination: 'Listing pages',
+  pagePrev: 'Previous',
+  pageNext: 'Next',
+  pageOf: 'Page {page} of {pages}',
 };
 
 const si: Dict = {
@@ -599,6 +603,10 @@ const si: Dict = {
   emptyResults: 'ප්‍රතිඵල නැත',
   searching: 'සොයමින්…',
   clear: 'හිස් කරන්න',
+  pagination: 'පිටු',
+  pagePrev: 'පෙර',
+  pageNext: 'ඊළඟ',
+  pageOf: 'පිටුව {page} / {pages}',
 };
 
 const tables: Record<Locale, Dict> = { en, si };

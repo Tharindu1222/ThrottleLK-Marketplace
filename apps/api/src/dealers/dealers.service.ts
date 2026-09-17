@@ -11,6 +11,8 @@ import type {
   CreateDealerInput,
 } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
+import { CacheService } from '../common/cache.service';
+import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -25,6 +27,7 @@ export class DealersService {
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     private readonly usersService: UsersService,
     private readonly notifications: NotificationsService,
+    private readonly cache: CacheService,
   ) {}
 
   async create(owner: User, input: CreateDealerInput): Promise<Dealer> {
@@ -68,7 +71,9 @@ export class DealersService {
       cityId: input.cityId,
       status: 'pending',
     });
-    return this.dealers.save(dealer);
+    const saved = await this.dealers.save(dealer);
+    void this.cache.invalidateDashboard();
+    return saved;
   }
 
   listMine(ownerUserId: string) {
@@ -76,6 +81,7 @@ export class DealersService {
       .find({
         where: { ownerUserId },
         order: { createdAt: 'DESC' },
+        take: 20,
       })
       .then(async (rows) => {
         const active = rows.find((row) => row.status === 'active');
@@ -93,6 +99,7 @@ export class DealersService {
     return this.dealers.find({
       where: { status: 'pending' },
       order: { createdAt: 'ASC' },
+      take: 100,
     });
   }
 
@@ -102,20 +109,29 @@ export class DealersService {
         where: { status: 'active' },
         relations: ['images', 'district', 'city'],
         order: { name: 'ASC' },
+        take: 100,
       })
       .then((rows) => rows.map((row) => this.withCover(row)));
   }
 
-  async listAllAdmin(filters?: { status?: string; q?: string }) {
+  async listAllAdmin(filters?: {
+    status?: string;
+    q?: string;
+    page?: string | number;
+    limit?: string | number;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: filters?.page,
+      limit: filters?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
     const qb = this.dealers
       .createQueryBuilder('d')
       .leftJoinAndSelect('d.owner', 'owner')
       .leftJoinAndSelect('d.district', 'district')
       .leftJoinAndSelect('d.city', 'city')
-      .leftJoinAndSelect('d.images', 'images')
-      .orderBy('d.updatedAt', 'DESC')
-      .addOrderBy('images.sortOrder', 'ASC')
-      .take(200);
+      .orderBy('d.updatedAt', 'DESC');
 
     if (filters?.status) {
       qb.andWhere('d.status = :status', { status: filters.status });
@@ -128,8 +144,12 @@ export class DealersService {
       );
     }
 
-    const rows = await qb.getMany();
-    return rows.map((row) => this.withCover(row));
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    return {
+      items: rows.map((row) => this.withCover(row)),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async adminGet(id: string) {
@@ -167,6 +187,7 @@ export class DealersService {
       verifiedAt: status === 'active' ? new Date() : null,
     });
     const saved = await this.dealers.save(dealer);
+    void this.cache.invalidateDashboard();
     if (status === 'active') {
       await this.promoteOwnerToDealer(owner, saved);
     }
@@ -203,6 +224,9 @@ export class DealersService {
     }
 
     const saved = await this.dealers.save(dealer);
+    if (input.status && input.status !== prevStatus) {
+      void this.cache.invalidateDashboard();
+    }
 
     if (input.status === 'active' && prevStatus !== 'active') {
       const owner = await this.usersService.findByIdOrThrow(saved.ownerUserId);
@@ -267,6 +291,7 @@ export class DealersService {
     dealer.status = 'active';
     dealer.verifiedAt = new Date();
     await this.dealers.save(dealer);
+    void this.cache.invalidateDashboard();
     const owner = await this.usersService.findByIdOrThrow(dealer.ownerUserId);
     await this.promoteOwnerToDealer(owner, dealer);
     void this.notifications.dealerApproved(dealer.ownerUserId, {
@@ -287,6 +312,7 @@ export class DealersService {
     }
     dealer.status = 'rejected';
     await this.dealers.save(dealer);
+    void this.cache.invalidateDashboard();
     void this.notifications.dealerRejected(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,

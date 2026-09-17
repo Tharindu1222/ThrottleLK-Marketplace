@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import {
 import { Listing } from './listing.entity';
 
 @Entity('listing_inquiries')
+@Index('IDX_listing_inquiries_listing_id', ['listingId'])
 export class ListingInquiry {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

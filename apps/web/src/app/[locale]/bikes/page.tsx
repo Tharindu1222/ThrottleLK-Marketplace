@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation';
 import { BrowseFilters } from '@/components/browse-filters';
 import { ListingCard, type BrowseListingCard } from '@/components/listing-card';
 import { SaveSearchButton } from '@/components/save-search-button';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
+import Link from 'next/link';
 
 type Brand = { id: string; name: string; slug: string };
 type District = { id: string; name: string; slug: string };
@@ -39,9 +40,10 @@ export default async function BikesPage({
   const maxYear = spStr(sp, 'maxYear');
   const condition = spStr(sp, 'condition');
   const sort = spStr(sp, 'sort');
+  const page = spStr(sp, 'page');
 
-  const [listings, brands, districts, categories] = await Promise.all([
-    apiGet<BrowseListingCard[]>('/api/v1/listings', {
+  const [listingPage, brands, districts, categories] = await Promise.all([
+    apiGetWithMeta<BrowseListingCard[]>('/api/v1/listings', {
       searchParams: {
         q,
         brandId,
@@ -54,6 +56,7 @@ export default async function BikesPage({
         maxYear,
         condition,
         sort,
+        page,
       },
     }),
     apiGet<Brand[]>('/api/v1/brands'),
@@ -77,6 +80,20 @@ export default async function BikesPage({
     sort,
   };
 
+  const listings = listingPage.data;
+  const total = listingPage.meta?.total ?? listings.length;
+  const pager = listingPage.meta;
+
+  function pageHref(nextPage: number) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filterState)) {
+      if (value) params.set(key, value);
+    }
+    if (nextPage > 1) params.set('page', String(nextPage));
+    const qs = params.toString();
+    return `/${locale}/bikes${qs ? `?${qs}` : ''}`;
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
       <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
@@ -97,12 +114,9 @@ export default async function BikesPage({
 
         <div>
           <p className="mb-4 text-sm text-muted">
-            {listings.length === 1
+            {total === 1
               ? t(locale, 'resultCountOne')
-              : t(locale, 'resultCount').replace(
-                  '{count}',
-                  String(listings.length),
-                )}
+              : t(locale, 'resultCount').replace('{count}', String(total))}
           </p>
           <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {listings.length === 0 ? (
@@ -119,6 +133,32 @@ export default async function BikesPage({
               ))
             )}
           </div>
+          {pager && pager.totalPages > 1 ? (
+            <nav
+              className="mt-8 flex items-center justify-between text-sm"
+              aria-label={t(locale, 'pagination')}
+            >
+              {pager.hasPreviousPage ? (
+                <Link href={pageHref(pager.page - 1)} className="text-accent">
+                  {t(locale, 'pagePrev')}
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span className="text-muted">
+                {t(locale, 'pageOf')
+                  .replace('{page}', String(pager.page))
+                  .replace('{pages}', String(pager.totalPages))}
+              </span>
+              {pager.hasNextPage ? (
+                <Link href={pageHref(pager.page + 1)} className="text-accent">
+                  {t(locale, 'pageNext')}
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          ) : null}
         </div>
       </div>
     </main>

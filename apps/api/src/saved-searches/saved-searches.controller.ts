@@ -17,6 +17,7 @@ import {
 } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { SavedSearchesService } from './saved-searches.service';
@@ -34,6 +35,7 @@ export class SavedSearchesController {
     };
   }
 
+  @RateLimit('write')
   @Post()
   async create(
     @CurrentUser() user: User,
@@ -46,6 +48,7 @@ export class SavedSearchesController {
     };
   }
 
+  @RateLimit('write')
   @Patch(':id')
   async update(
     @CurrentUser() user: User,
@@ -59,6 +62,7 @@ export class SavedSearchesController {
     };
   }
 
+  @RateLimit('write')
   @Delete(':id')
   async remove(
     @CurrentUser() user: User,

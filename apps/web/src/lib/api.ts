@@ -1,4 +1,4 @@
-import type { ApiSuccess, ApiErrorBody } from '@throttlelk/types';
+import type { ApiSuccess, ApiErrorBody, PaginationMeta } from '@throttlelk/types';
 
 /**
  * Prefer NEXT_PUBLIC_API_URL in the browser; on the server allow
@@ -73,6 +73,15 @@ function redirectToLoginIfUnauthorized(
   window.location.assign(`/${locale}/login?next=${next}`);
 }
 
+function apiHeaders(extra?: Record<string, string>): Record<string, string> {
+  const headers = { ...extra };
+  if (typeof window === 'undefined') {
+    const key = process.env.INTERNAL_API_KEY?.trim();
+    if (key) headers['x-throttlelk-internal'] = key;
+  }
+  return headers;
+}
+
 function throwApiError(
   path: string,
   status: number,
@@ -94,9 +103,9 @@ export async function apiGet<T>(
     }
   }
   const res = await fetch(url, {
-    headers: {
-      ...(init?.token ? { Authorization: `Bearer ${init.token}` } : {}),
-    },
+    headers: apiHeaders(
+      init?.token ? { Authorization: `Bearer ${init.token}` } : undefined,
+    ),
     cache: 'no-store',
   });
   const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
@@ -104,6 +113,30 @@ export async function apiGet<T>(
     throwApiError(path, res.status, json as ApiErrorBody);
   }
   return json.data;
+}
+
+export async function apiGetWithMeta<T>(
+  path: string,
+  init?: { token?: string; searchParams?: Record<string, string | undefined> },
+): Promise<{ data: T; meta?: PaginationMeta }> {
+  const base = resolveApiUrl();
+  const url = new URL(path.startsWith('http') ? path : `${base}${path}`);
+  if (init?.searchParams) {
+    for (const [key, value] of Object.entries(init.searchParams)) {
+      if (value) url.searchParams.set(key, value);
+    }
+  }
+  const res = await fetch(url, {
+    headers: apiHeaders(
+      init?.token ? { Authorization: `Bearer ${init.token}` } : undefined,
+    ),
+    cache: 'no-store',
+  });
+  const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
+  if (!res.ok || !('success' in json) || !json.success) {
+    throwApiError(path, res.status, json as ApiErrorBody);
+  }
+  return { data: json.data, meta: json.meta as PaginationMeta | undefined };
 }
 
 export async function apiSend<T>(
@@ -116,10 +149,10 @@ export async function apiSend<T>(
 ): Promise<T> {
   const res = await fetch(`${resolveApiUrl()}${path}`, {
     method: options.method ?? 'POST',
-    headers: {
+    headers: apiHeaders({
       'Content-Type': 'application/json',
       ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
-    },
+    }),
     body: options.body ? JSON.stringify(options.body) : undefined,
     cache: 'no-store',
   });
@@ -139,9 +172,9 @@ export async function apiUpload<T>(
   form.append('file', file);
   const res = await fetch(`${resolveApiUrl()}${path}`, {
     method: 'POST',
-    headers: {
+    headers: apiHeaders({
       Authorization: `Bearer ${token}`,
-    },
+    }),
     body: form,
     cache: 'no-store',
   });

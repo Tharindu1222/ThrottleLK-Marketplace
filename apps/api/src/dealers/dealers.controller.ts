@@ -18,6 +18,7 @@ import {
 } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { DealerImagesService } from './dealer-images.service';
@@ -48,6 +49,7 @@ export class DealersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('dealerApply')
   @Post()
   async create(
     @CurrentUser() user: User,
@@ -68,6 +70,7 @@ export class DealersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('upload')
   @Post('id/:id/images')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -87,6 +90,7 @@ export class DealersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Delete('id/:id/images/:imageId')
   async deleteImage(
     @CurrentUser() user: User,

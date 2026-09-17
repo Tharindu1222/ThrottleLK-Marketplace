@@ -9,6 +9,7 @@ import {
 import type { ApiSuccess } from '@throttlelk/types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { User } from '../users/user.entity';
 import { FavouritesService } from './favourites.service';
 
@@ -33,6 +34,7 @@ export class FavouritesController {
     };
   }
 
+  @RateLimit('favourite')
   @Post(':listingId')
   async add(
     @CurrentUser() user: User,
@@ -44,6 +46,7 @@ export class FavouritesController {
     };
   }
 
+  @RateLimit('favourite')
   @Delete(':listingId')
   async remove(
     @CurrentUser() user: User,

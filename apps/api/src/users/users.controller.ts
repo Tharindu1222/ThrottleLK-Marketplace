@@ -18,6 +18,7 @@ import {
 } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from './user.entity';
 import { UsersService } from './users.service';
@@ -33,6 +34,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Patch('me')
   async updateMe(
     @CurrentUser() user: User,
@@ -45,6 +47,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('upload')
   @Post('me/avatar')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -63,6 +66,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Delete('me/avatar')
   async removeAvatar(
     @CurrentUser() user: User,

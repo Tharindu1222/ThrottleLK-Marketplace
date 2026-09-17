@@ -4,6 +4,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -20,6 +21,15 @@ import { Dealer } from '../dealers/dealer.entity';
 import { ListingImage } from './listing-image.entity';
 
 @Entity('listings')
+@Index('IDX_listings_status_published_at', ['status', 'publishedAt'])
+@Index('IDX_listings_status_brand_id', ['status', 'brandId'])
+@Index('IDX_listings_status_district_id', ['status', 'districtId'])
+@Index('IDX_listings_status_category_id', ['status', 'categoryId'])
+@Index('IDX_listings_status_price_lkr', ['status', 'priceLkr'])
+@Index('IDX_listings_seller_updated_at', ['sellerId', 'updatedAt'])
+@Index('IDX_listings_dealer_id', ['dealerId'])
+@Index('IDX_listings_model_id', ['modelId'])
+@Index('IDX_listings_city_id', ['cityId'])
 export class Listing {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -14,6 +15,8 @@ import { City } from '../taxonomy/city.entity';
 import { DealerImage } from './dealer-image.entity';
 
 @Entity('dealers')
+@Index('IDX_dealers_status_name', ['status', 'name'])
+@Index('IDX_dealers_owner_user_id', ['ownerUserId'])
 export class Dealer {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

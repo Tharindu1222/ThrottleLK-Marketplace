@@ -15,6 +15,8 @@ import { ConversationMessage } from './conversation-message.entity';
 
 @Entity('conversations')
 @Index(['listingId', 'buyerUserId'], { unique: true })
+@Index('IDX_conversations_buyer_last_message', ['buyerUserId', 'lastMessageAt'])
+@Index('IDX_conversations_seller_last_message', ['sellerUserId', 'lastMessageAt'])
 export class Conversation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

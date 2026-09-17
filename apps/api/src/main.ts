@@ -16,6 +16,10 @@ async function bootstrap() {
     exclude: ['health'],
   });
   app.useGlobalFilters(new ApiExceptionFilter());
+  // ASVS 15.3.4 — honor X-Forwarded-For only behind Cloudflare/nginx.
+  if (process.env.TRUST_PROXY === 'true') {
+    app.set('trust proxy', 1);
+  }
   app.enableCors({
     origin: process.env.WEB_URL ?? 'http://localhost:3000',
     credentials: true,

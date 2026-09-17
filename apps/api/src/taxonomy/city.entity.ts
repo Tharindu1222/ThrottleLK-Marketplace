@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -8,6 +9,7 @@ import {
 import { District } from './district.entity';
 
 @Entity('cities')
+@Index('IDX_cities_district_id', ['districtId'])
 export class City {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

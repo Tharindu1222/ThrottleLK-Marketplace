@@ -46,6 +46,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { DealerImagesService } from '../dealers/dealer-images.service';
 import { DealersService } from '../dealers/dealers.service';
@@ -61,6 +62,7 @@ import { AdminService } from './admin.service';
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
+@RateLimit('admin')
 export class AdminController {
   constructor(
     private readonly listingsService: ListingsService,
@@ -84,10 +86,19 @@ export class AdminController {
   async allListings(
     @Query('status') status?: string,
     @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.listingsService.listAllAdmin({
+      status,
+      q,
+      page,
+      limit,
+    });
     return {
       success: true,
-      data: await this.listingsService.listAllAdmin({ status, q }),
+      data: items,
+      meta,
     };
   }
 
@@ -146,6 +157,7 @@ export class AdminController {
     };
   }
 
+  @RateLimit('upload')
   @Post('listings/:id/images')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -178,10 +190,19 @@ export class AdminController {
   async allDealers(
     @Query('status') status?: string,
     @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.dealersService.listAllAdmin({
+      status,
+      q,
+      page,
+      limit,
+    });
     return {
       success: true,
-      data: await this.dealersService.listAllAdmin({ status, q }),
+      data: items,
+      meta,
     };
   }
 
@@ -240,6 +261,7 @@ export class AdminController {
     };
   }
 
+  @RateLimit('upload')
   @Post('dealers/:id/images')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -354,6 +376,7 @@ export class AdminController {
     return { success: true, data: await this.categoryCovers.listPublic() };
   }
 
+  @RateLimit('upload')
   @Post('categories/:id/cover')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -381,6 +404,7 @@ export class AdminController {
     };
   }
 
+  @RateLimit('upload')
   @Post('brands/:id/logo')
   @UseInterceptors(
     FileInterceptor('file', {

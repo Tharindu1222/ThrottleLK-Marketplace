@@ -11,10 +11,19 @@ export type ListingStatus =
   | 'sold'
   | 'expired';
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface ApiSuccess<T> {
   success: true;
   data: T;
-  meta?: Record<string, unknown>;
+  meta?: PaginationMeta | Record<string, unknown>;
 }
 
 export interface ApiErrorBody {

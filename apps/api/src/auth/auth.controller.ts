@@ -1,5 +1,4 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   forgotPasswordSchema,
@@ -14,6 +13,7 @@ import {
   type VerifyEmailInput,
 } from '@throttlelk/validation';
 import { z } from 'zod';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { CurrentUser } from './current-user.decorator';
@@ -24,7 +24,7 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @RateLimit('auth')
   @Post('register')
   async register(
     @Body(new ZodValidationPipe(registerSchema)) body: RegisterInput,
@@ -33,7 +33,7 @@ export class AuthController {
     return { success: true, data };
   }
 
-  @Throttle({ default: { limit: 8, ttl: 60000 } })
+  @RateLimit('login')
   @Post('login')
   async login(
     @Body(new ZodValidationPipe(loginSchema)) body: LoginInput,
@@ -42,6 +42,7 @@ export class AuthController {
     return { success: true, data };
   }
 
+  @RateLimit('refresh')
   @Post('refresh')
   async refresh(
     @Body(new ZodValidationPipe(z.object({ refreshToken: z.string().min(10) })))
@@ -51,6 +52,7 @@ export class AuthController {
     return { success: true, data };
   }
 
+  @RateLimit('write')
   @Post('logout')
   async logout(
     @Body(
@@ -66,7 +68,7 @@ export class AuthController {
     };
   }
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @RateLimit('auth')
   @Post('forgot-password')
   async forgotPassword(
     @Body(new ZodValidationPipe(forgotPasswordSchema))
@@ -78,7 +80,7 @@ export class AuthController {
     };
   }
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @RateLimit('auth')
   @Post('reset-password')
   async resetPassword(
     @Body(new ZodValidationPipe(resetPasswordSchema)) body: ResetPasswordInput,
@@ -89,6 +91,7 @@ export class AuthController {
     };
   }
 
+  @RateLimit('auth')
   @Post('verify-email')
   async verifyEmail(
     @Body(new ZodValidationPipe(verifyEmailSchema)) body: VerifyEmailInput,
@@ -100,6 +103,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('auth')
   @Post('resend-verification')
   async resendVerification(
     @CurrentUser() user: User,

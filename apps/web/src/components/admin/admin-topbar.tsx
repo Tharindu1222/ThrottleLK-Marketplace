@@ -23,11 +23,22 @@ export function AdminTopbar({
   searchPlaceholder?: string;
 }) {
   const [name, setName] = useState('Admin');
+  const [draft, setDraft] = useState(searchValue ?? '');
 
   useEffect(() => {
     const user = getStoredUser();
     if (user) setName(`${user.firstName} ${user.lastName}`.trim() || user.email);
   }, []);
+
+  useEffect(() => {
+    setDraft(searchValue ?? '');
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (!onSearchChange) return;
+    const timer = window.setTimeout(() => onSearchChange(draft), 400);
+    return () => window.clearTimeout(timer);
+  }, [draft, onSearchChange]);
 
   return (
     <header className="sticky top-0 z-30 flex flex-wrap items-center gap-4 border-b border-[var(--admin-border)] bg-[var(--admin-bg)]/90 px-4 py-4 backdrop-blur-md sm:px-6 lg:px-8">
@@ -65,8 +76,8 @@ export function AdminTopbar({
             </svg>
           </span>
           <input
-            value={searchValue ?? ''}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
             placeholder={searchPlaceholder}
             className="w-full rounded-full border border-[var(--admin-border-strong)] bg-[var(--admin-surface)] py-2.5 pr-4 pl-10 text-sm text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-faint)] focus:border-[var(--admin-accent)] focus:ring-2 focus:ring-[var(--admin-accent)]/30"
           />

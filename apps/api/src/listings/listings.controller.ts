@@ -13,7 +13,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Throttle } from '@nestjs/throttler';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   contactListingSchema,
@@ -28,6 +27,7 @@ import { memoryStorage } from 'multer';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { ListingImagesService } from './listing-images.service';
@@ -55,8 +55,10 @@ export class ListingsController {
     @Query('condition') condition?: string,
     @Query('sort') sort?: string,
     @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.listingsService.listPublic({
+    const { items, meta } = await this.listingsService.listPublic({
       brandId,
       modelId,
       categoryId,
@@ -70,8 +72,10 @@ export class ListingsController {
       condition,
       sort,
       q,
+      page,
+      limit,
     });
-    return { success: true, data };
+    return { success: true, data: items, meta };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -84,6 +88,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Post()
   async create(
     @CurrentUser() user: User,
@@ -104,6 +109,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('upload')
   @Post(':id/images')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -123,6 +129,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Delete(':id/images/:imageId')
   async deleteImage(
     @CurrentUser() user: User,
@@ -150,7 +157,7 @@ export class ListingsController {
     };
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @RateLimit('contact')
   @Post(':id/contact')
   async contact(
     @Param('id') id: string,
@@ -164,7 +171,7 @@ export class ListingsController {
   }
 
   @UseGuards(OptionalJwtAuthGuard)
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @RateLimit('views')
   @Post(':id/views')
   async recordView(
     @Param('id') id: string,
@@ -177,6 +184,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Patch(':id')
   async update(
     @CurrentUser() user: User,
@@ -190,6 +198,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Post(':id/submit')
   async submit(
     @CurrentUser() user: User,
@@ -202,6 +211,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Post(':id/pause')
   async pause(
     @CurrentUser() user: User,
@@ -214,6 +224,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Post(':id/resume')
   async resume(
     @CurrentUser() user: User,
@@ -226,6 +237,7 @@ export class ListingsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Post(':id/mark-sold')
   async markSold(
     @CurrentUser() user: User,

@@ -23,5 +23,12 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: throttlelk-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+
 volumes:
   throttlelk_pg:

@@ -2,7 +2,10 @@ import { resolve } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AppThrottlerGuard } from './common/app-throttler.guard';
+import { CacheModule } from './common/cache.module';
+import { RATE_LIMITS } from './common/rate-limit';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config as loadEnv } from 'dotenv';
 import { AdminModule } from './admin/admin.module';
@@ -41,8 +44,8 @@ const skipDb = process.env.SKIP_DB === 'true';
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60_000,
-        limit: 120,
+        ttl: RATE_LIMITS.default.ttl,
+        limit: RATE_LIMITS.default.limit,
       },
     ]),
     ...(skipDb
@@ -50,15 +53,30 @@ const skipDb = process.env.SKIP_DB === 'true';
       : [
           TypeOrmModule.forRootAsync({
             inject: [ConfigService],
-            useFactory: (config: ConfigService) => ({
-              type: 'postgres' as const,
-              url: config.get<string>('DATABASE_URL'),
-              synchronize: config.get<string>('NODE_ENV') !== 'production',
-              autoLoadEntities: true,
-            }),
+            useFactory: (config: ConfigService) => {
+              const nodeEnv = config.get<string>('NODE_ENV') ?? 'development';
+              const slowMs = Number(
+                config.get<string>('SLOW_QUERY_MS') ??
+                  (nodeEnv === 'production' ? 1000 : 500),
+              );
+              const poolMax = Number(config.get<string>('DB_POOL_MAX') ?? 10);
+              return {
+                type: 'postgres' as const,
+                url: config.get<string>('DATABASE_URL'),
+                synchronize: nodeEnv !== 'production',
+                autoLoadEntities: true,
+                maxQueryExecutionTime: Number.isFinite(slowMs) ? slowMs : 1000,
+                extra: {
+                  max: Number.isFinite(poolMax) ? poolMax : 10,
+                  idleTimeoutMillis: 30_000,
+                  connectionTimeoutMillis: 10_000,
+                },
+              };
+            },
           }),
         ]),
     HealthModule,
+    CacheModule,
     UsersModule,
     AuthModule,
     TaxonomyModule,
@@ -76,7 +94,7 @@ const skipDb = process.env.SKIP_DB === 'true';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
   ],
 })

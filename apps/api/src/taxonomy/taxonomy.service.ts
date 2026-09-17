@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CacheService } from '../common/cache.service';
 import { slugify } from '../common/slugify';
 import { BikeModel } from './bike-model.entity';
 import { Brand } from './brand.entity';
@@ -25,6 +26,7 @@ export class TaxonomyService implements OnModuleInit {
     @InjectRepository(District)
     private readonly districts: Repository<District>,
     @InjectRepository(City) private readonly cities: Repository<City>,
+    private readonly cache: CacheService,
   ) {}
 
   async onModuleInit() {
@@ -107,6 +109,11 @@ export class TaxonomyService implements OnModuleInit {
   }
 
   async listBrands(search?: string) {
+    const useCache = !search?.trim();
+    if (useCache) {
+      const cached = await this.cache.get<Brand[]>(this.cache.keys.taxonomyBrands);
+      if (cached) return cached;
+    }
     const qb = this.brands
       .createQueryBuilder('brand')
       .where('brand.status = :status', { status: 'active' })
@@ -122,7 +129,11 @@ export class TaxonomyService implements OnModuleInit {
       );
     }
 
-    return qb.getMany();
+    const rows = await qb.getMany();
+    if (useCache) {
+      await this.cache.set(this.cache.keys.taxonomyBrands, rows, 1800);
+    }
+    return rows;
   }
 
   async getBrandBySlug(slug: string) {
@@ -191,27 +202,37 @@ export class TaxonomyService implements OnModuleInit {
     return model;
   }
 
-  listCategories(scope?: string) {
+  async listCategories(scope?: string) {
     if (scope === 'public') {
-      return this.categories
+      const cached = await this.cache.get<Category[]>(
+        this.cache.keys.taxonomyCategoriesPublic,
+      );
+      if (cached) return cached;
+      const rows = await this.categories
         .createQueryBuilder('category')
         .where('category.slug IN (:...slugs)', { slugs: PUBLIC_CATEGORY_SLUGS })
         .orderBy('category.name', 'ASC')
-        .getMany()
-        .then((rows) => {
-          const order = new Map<string, number>(
-            PUBLIC_CATEGORY_SLUGS.map((slug, i) => [slug, i]),
-          );
-          return rows.sort(
-            (a, b) => (order.get(a.slug) ?? 99) - (order.get(b.slug) ?? 99),
-          );
-        });
+        .getMany();
+      const order = new Map<string, number>(
+        PUBLIC_CATEGORY_SLUGS.map((slug, i) => [slug, i]),
+      );
+      const sorted = rows.sort(
+        (a, b) => (order.get(a.slug) ?? 99) - (order.get(b.slug) ?? 99),
+      );
+      await this.cache.set(this.cache.keys.taxonomyCategoriesPublic, sorted, 1800);
+      return sorted;
     }
     return this.categories.find({ order: { name: 'ASC' } });
   }
 
-  listDistricts() {
-    return this.districts.find({ order: { name: 'ASC' } });
+  async listDistricts() {
+    const cached = await this.cache.get<District[]>(
+      this.cache.keys.taxonomyDistricts,
+    );
+    if (cached) return cached;
+    const rows = await this.districts.find({ order: { name: 'ASC' } });
+    await this.cache.set(this.cache.keys.taxonomyDistricts, rows, 1800);
+    return rows;
   }
 
   async getDistrictBySlug(slug: string) {
@@ -236,7 +257,7 @@ export class TaxonomyService implements OnModuleInit {
     const slug = slugify(name);
     const existing = await this.brands.findOne({ where: { slug } });
     if (existing) return existing;
-    return this.brands.save(
+    const saved = await this.brands.save(
       this.brands.create({
         name,
         slug,
@@ -244,6 +265,8 @@ export class TaxonomyService implements OnModuleInit {
         status: 'active',
       }),
     );
+    void this.cache.invalidateTaxonomy();
+    return saved;
   }
 
   async adminCreateModel(
@@ -277,7 +300,9 @@ export class TaxonomyService implements OnModuleInit {
     const slug = slugify(name);
     const existing = await this.districts.findOne({ where: { slug } });
     if (existing) return existing;
-    return this.districts.save(this.districts.create({ name, slug }));
+    const saved = await this.districts.save(this.districts.create({ name, slug }));
+    void this.cache.invalidateTaxonomy();
+    return saved;
   }
 
   async adminCreateCity(districtId: string, name: string) {
@@ -288,13 +313,15 @@ export class TaxonomyService implements OnModuleInit {
         error: { code: 'DISTRICT_NOT_FOUND', message: 'District not found' },
       });
     }
-    return this.cities.save(
+    const saved = await this.cities.save(
       this.cities.create({
         districtId,
         name,
         slug: `${district.slug}-${slugify(name)}`,
       }),
     );
+    void this.cache.invalidateTaxonomy();
+    return saved;
   }
 
   listBrandsAdmin() {

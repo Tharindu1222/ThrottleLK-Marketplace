@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CacheService } from '../common/cache.service';
 import { Dealer } from '../dealers/dealer.entity';
 import { Listing } from '../listings/listing.entity';
 import { Report } from '../reports/report.entity';
@@ -13,9 +14,18 @@ export class AdminService {
     @InjectRepository(Dealer) private readonly dealers: Repository<Dealer>,
     @InjectRepository(Report) private readonly reports: Repository<Report>,
     private readonly users: UsersService,
+    private readonly cache: CacheService,
   ) {}
 
   async dashboard() {
+    const cached = await this.cache.get<{
+      users: number;
+      activeListings: number;
+      pendingListings: number;
+      pendingDealers: number;
+      openReports: number;
+    }>(this.cache.keys.dashboard);
+    if (cached) return cached;
     const [
       users,
       activeListings,
@@ -29,12 +39,14 @@ export class AdminService {
       this.dealers.count({ where: { status: 'pending' } }),
       this.reports.count({ where: { status: 'open' } }),
     ]);
-    return {
+    const data = {
       users,
       activeListings,
       pendingListings,
       pendingDealers,
       openReports,
     };
+    await this.cache.set(this.cache.keys.dashboard, data, 60);
+    return data;
   }
 }

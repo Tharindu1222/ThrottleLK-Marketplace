@@ -2,6 +2,7 @@ import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import type { ApiSuccess } from '@throttlelk/types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { User } from '../users/user.entity';
 import { NotificationsService } from './notifications.service';
 
@@ -28,6 +29,7 @@ export class NotificationsController {
     };
   }
 
+  @RateLimit('write')
   @Patch('read-all')
   async readAll(@CurrentUser() user: User): Promise<ApiSuccess<unknown>> {
     return {
@@ -36,6 +38,7 @@ export class NotificationsController {
     };
   }
 
+  @RateLimit('write')
   @Patch(':id/read')
   async readOne(
     @CurrentUser() user: User,

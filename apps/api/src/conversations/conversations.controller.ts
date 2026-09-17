@@ -6,9 +6,9 @@ import {
   type SendConversationMessageInput,
   type StartConversationInput,
 } from '@throttlelk/validation';
-import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { ConversationsService } from './conversations.service';
@@ -37,7 +37,7 @@ export class ConversationsController {
     };
   }
 
-  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @RateLimit('messageStart')
   @Post()
   async start(
     @CurrentUser() user: User,
@@ -54,7 +54,7 @@ export class ConversationsController {
     };
   }
 
-  @Throttle({ default: { limit: 40, ttl: 60_000 } })
+  @RateLimit('messageReply')
   @Post(':id/messages')
   async reply(
     @CurrentUser() user: User,

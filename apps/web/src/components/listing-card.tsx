@@ -3,10 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { BRAND_LOGO_SRC } from '@/components/brand-logo';
-import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
+import { apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { composeListingTitle } from '@/lib/listing-title';
+import {
+  loadFavouriteIds,
+  patchFavouriteIdsCache,
+} from '@/lib/favourite-ids';
 import {
   getCompareItems,
   toggleCompare,
@@ -110,7 +114,7 @@ function FavouriteHeart({
   useEffect(() => {
     const access = getAccessToken();
     if (!access) return;
-    void apiGet<string[]>('/api/v1/favourites/ids', { token: access })
+    void loadFavouriteIds(access)
       .then((ids) => setFavourited(ids.includes(listingId)))
       .catch(() => undefined);
   }, [listingId]);
@@ -166,6 +170,7 @@ function FavouriteHeart({
           }
         }
       }
+      patchFavouriteIdsCache(token, listingId, next);
     } catch (err) {
       setFavourited(!next);
       setError(err instanceof Error ? err.message : 'Failed');
@@ -448,6 +453,8 @@ export function ListingCard({
           <img
             src={listing.coverImageUrl}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
             onError={(e) => {
               const el = e.currentTarget;

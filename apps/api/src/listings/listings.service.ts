@@ -11,7 +11,9 @@ import type {
   UpdateListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus } from '@throttlelk/types';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { CacheService } from '../common/cache.service';
+import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
 import { composeListingTitle } from '../common/listing-title';
 import { User } from '../users/user.entity';
@@ -19,6 +21,7 @@ import { DealersService } from '../dealers/dealers.service';
 import { FavouritesService } from '../favourites/favourites.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { ListingImage } from './listing-image.entity';
 import { ListingInquiry } from './listing-inquiry.entity';
 import { Listing } from './listing.entity';
 
@@ -28,10 +31,13 @@ export class ListingsService {
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     @InjectRepository(ListingInquiry)
     private readonly inquiries: Repository<ListingInquiry>,
+    @InjectRepository(ListingImage)
+    private readonly listingImages: Repository<ListingImage>,
     private readonly dealersService: DealersService,
     private readonly notifications: NotificationsService,
     private readonly favourites: FavouritesService,
     private readonly usersService: UsersService,
+    private readonly cache: CacheService,
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
@@ -95,6 +101,7 @@ export class ListingsService {
         listing.publishedAt = null;
         listing.rejectionReason = null;
         const saved = await this.listings.save(listing);
+        this.bumpDashboard();
         void this.notifications.listingPendingReview({
           id: saved.id,
           title: saved.title,
@@ -132,6 +139,7 @@ export class ListingsService {
     listing.status = 'pending_review';
     listing.rejectionReason = null;
     const saved = await this.listings.save(listing);
+    this.bumpDashboard();
     void this.notifications.listingPendingReview({
       id: saved.id,
       title: saved.title,
@@ -149,7 +157,9 @@ export class ListingsService {
       });
     }
     listing.status = 'paused';
-    return this.listings.save(listing);
+    const saved = await this.listings.save(listing);
+    this.bumpDashboard();
+    return saved;
   }
 
   async resume(seller: User, id: string): Promise<Listing> {
@@ -165,7 +175,9 @@ export class ListingsService {
     }
     listing.status = 'active';
     if (!listing.publishedAt) listing.publishedAt = new Date();
-    return this.listings.save(listing);
+    const saved = await this.listings.save(listing);
+    this.bumpDashboard();
+    return saved;
   }
 
   async markSold(seller: User, id: string): Promise<Listing> {
@@ -178,7 +190,9 @@ export class ListingsService {
     }
     listing.status = 'sold';
     listing.soldAt = new Date();
-    return this.listings.save(listing);
+    const saved = await this.listings.save(listing);
+    this.bumpDashboard();
+    return saved;
   }
 
   listMine(sellerId: string) {
@@ -187,6 +201,7 @@ export class ListingsService {
         where: { sellerId },
         relations: ['images', 'brand', 'model', 'district', 'city'],
         order: { updatedAt: 'DESC' },
+        take: 100,
       })
       .then((rows) =>
         rows.map((row) => ({
@@ -230,9 +245,21 @@ export class ListingsService {
     condition?: string;
     q?: string;
     sort?: string;
+    page?: string | number;
+    limit?: string | number;
   }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: filters.page,
+      limit: filters.limit,
+      defaultLimit: 50,
+      maxLimit: 50,
+    });
     const qb = this.listings
       .createQueryBuilder('l')
+      .leftJoinAndSelect('l.brand', 'brand')
+      .leftJoinAndSelect('l.model', 'model')
+      .leftJoinAndSelect('l.district', 'district')
+      .leftJoinAndSelect('l.city', 'city')
       .where('l.status = :status', { status: 'active' });
 
     if (filters.brandId) qb.andWhere('l.brand_id = :brandId', { brandId: filters.brandId });
@@ -265,26 +292,25 @@ export class ListingsService {
       qb.andWhere('l.condition = :condition', { condition: filters.condition });
     }
     if (filters.q?.trim()) {
-      // Tokenize so "d tracker" matches "D-Tracker" (hyphen/space tolerant).
+      // Title-only: description ILIKE cannot use indexes and scans every active row.
       const tokens = searchTokens(filters.q);
       for (let i = 0; i < tokens.length; i++) {
         const key = `q${i}`;
-        qb.andWhere(
-          `(l.title ILIKE :${key} ESCAPE '\\' OR l.description ILIKE :${key} ESCAPE '\\')`,
-          { [key]: `%${escapeLikePattern(tokens[i])}%` },
-        );
+        qb.andWhere(`l.title ILIKE :${key} ESCAPE '\\'`, {
+          [key]: `%${escapeLikePattern(tokens[i])}%`,
+        });
       }
     }
 
     switch (filters.sort) {
       case 'oldest':
-        qb.orderBy('l.published_at', 'ASC', 'NULLS LAST');
+        qb.orderBy('l.publishedAt', 'ASC', 'NULLS LAST');
         break;
       case 'price_asc':
-        qb.orderBy('l.price_lkr', 'ASC');
+        qb.orderBy('l.priceLkr', 'ASC');
         break;
       case 'price_desc':
-        qb.orderBy('l.price_lkr', 'DESC');
+        qb.orderBy('l.priceLkr', 'DESC');
         break;
       case 'mileage_asc':
         qb.orderBy('l.mileage', 'ASC', 'NULLS LAST');
@@ -293,29 +319,26 @@ export class ListingsService {
         qb.orderBy('l.mileage', 'DESC', 'NULLS LAST');
         break;
       case 'year_asc':
-        qb.orderBy('l.manufacture_year', 'ASC');
+        qb.orderBy('l.manufactureYear', 'ASC');
         break;
       case 'year_desc':
-        qb.orderBy('l.manufacture_year', 'DESC');
+        qb.orderBy('l.manufactureYear', 'DESC');
         break;
       case 'newest':
       default:
-        qb.orderBy('l.published_at', 'DESC', 'NULLS LAST');
+        qb.orderBy('l.publishedAt', 'DESC', 'NULLS LAST');
         break;
     }
 
-    const rows = await qb.take(50).getMany();
-    if (rows.length === 0) return [];
-
-    const withRelations = await this.listings.find({
-      where: { id: In(rows.map((r) => r.id)) },
-      relations: ['images', 'brand', 'model', 'district', 'city', 'dealer'],
-    });
-    const byId = new Map(withRelations.map((row) => [row.id, row]));
-    return rows.map((row) => {
-      const full = byId.get(row.id) ?? row;
-      return this.toBrowseCard(full);
-    });
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    return {
+      items: rows.map((row) =>
+        this.toBrowseCard(row, covers.get(row.id) ?? null),
+      ),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async getPublicOrOwned(idOrSlug: string, viewer?: User | null) {
@@ -409,8 +432,11 @@ export class ListingsService {
   }
 
   /** Compact public card payload for browse grids. */
-  private toBrowseCard(listing: Listing) {
-    const covered = this.withCover(listing);
+  private toBrowseCard(listing: Listing, coverImageUrl?: string | null) {
+    const covered =
+      coverImageUrl !== undefined
+        ? coverImageUrl
+        : this.withCover(listing).coverImageUrl;
     return {
       id: listing.id,
       slug: listing.slug,
@@ -433,10 +459,30 @@ export class ListingsService {
       districtName: listing.district?.name ?? null,
       cityName: listing.city?.name ?? null,
       sellerType: listing.dealerId ? 'dealer' : 'private',
-      coverImageUrl: covered.coverImageUrl,
+      coverImageUrl: covered,
       listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
       viewCount: listing.viewCount ?? 0,
     };
+  }
+
+  private async coverUrlsByListingId(ids: string[]) {
+    const map = new Map<string, string>();
+    if (ids.length === 0) return map;
+    const images = await this.listingImages
+      .createQueryBuilder('img')
+      .select(['img.listingId', 'img.imageUrl', 'img.sortOrder', 'img.isCover'])
+      .where('img.listingId IN (:...ids)', { ids })
+      .orderBy('img.isCover', 'DESC')
+      .addOrderBy('img.sortOrder', 'ASC')
+      .getMany();
+    for (const img of images) {
+      if (!map.has(img.listingId)) map.set(img.listingId, img.imageUrl);
+    }
+    return map;
+  }
+
+  private bumpDashboard() {
+    void this.cache.invalidateDashboard();
   }
 
   listPending() {
@@ -445,6 +491,7 @@ export class ListingsService {
         where: { status: 'pending_review' as ListingStatus },
         relations: ['images', 'seller'],
         order: { updatedAt: 'ASC' },
+        take: 100,
       })
       .then((rows) =>
         rows.map((row) => {
@@ -463,7 +510,18 @@ export class ListingsService {
       );
   }
 
-  async listAllAdmin(filters?: { status?: string; q?: string }) {
+  async listAllAdmin(filters?: {
+    status?: string;
+    q?: string;
+    page?: string | number;
+    limit?: string | number;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: filters?.page,
+      limit: filters?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
     const qb = this.listings
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.brand', 'brand')
@@ -471,9 +529,7 @@ export class ListingsService {
       .leftJoinAndSelect('l.district', 'district')
       .leftJoinAndSelect('l.city', 'city')
       .leftJoinAndSelect('l.seller', 'seller')
-      .leftJoinAndSelect('l.images', 'images')
-      .orderBy('l.updatedAt', 'DESC')
-      .take(200);
+      .orderBy('l.updatedAt', 'DESC');
 
     if (filters?.status) {
       qb.andWhere('l.status = :status', { status: filters.status });
@@ -486,8 +542,17 @@ export class ListingsService {
       );
     }
 
-    const rows = await qb.getMany();
-    return rows.map((row) => this.withCover(row));
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    return {
+      items: rows.map((row) => ({
+        ...row,
+        images: [],
+        coverImageUrl: covers.get(row.id) ?? null,
+      })),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async adminGet(id: string) {
@@ -612,12 +677,15 @@ export class ListingsService {
       }
     }
 
-    return this.listings.save(listing);
+    const saved = await this.listings.save(listing);
+    this.bumpDashboard();
+    return saved;
   }
 
   async adminDelete(id: string): Promise<{ id: string; deleted: true }> {
     const listing = await this.getById(id);
     await this.listings.softRemove(listing);
+    this.bumpDashboard();
     return { id, deleted: true };
   }
 
@@ -633,6 +701,7 @@ export class ListingsService {
     listing.publishedAt = new Date();
     listing.rejectionReason = null;
     const saved = await this.listings.save(listing);
+    this.bumpDashboard();
     void this.notifications.listingApproved(saved.sellerId, {
       id: saved.id,
       title: saved.title,
@@ -652,6 +721,7 @@ export class ListingsService {
     listing.status = 'rejected';
     listing.rejectionReason = reason;
     const saved = await this.listings.save(listing);
+    this.bumpDashboard();
     void this.notifications.listingRejected(
       saved.sellerId,
       { id: saved.id, title: saved.title },

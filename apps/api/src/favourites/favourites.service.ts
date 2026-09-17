@@ -53,6 +53,7 @@ export class FavouritesService {
         'listing.images',
       ],
       order: { createdAt: 'DESC' },
+      take: 200,
     });
     return rows
       .filter((row) => row.listing && row.listing.status === 'active')

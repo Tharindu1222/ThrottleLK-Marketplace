@@ -48,6 +48,7 @@ function makeService(dealer: Partial<Dealer>, owner: User) {
     listingsRepo as never,
     usersService as never,
     notifications as never,
+    { invalidateDashboard: jest.fn() } as never,
   );
   return { service, usersService, listingsRepo, execute, notifications, row };
 }

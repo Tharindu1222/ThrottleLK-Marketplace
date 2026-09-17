@@ -11,7 +11,7 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Index()
+  @Index('IDX_notifications_user_created', ['userId', 'createdAt'])
   @Column({ name: 'user_id' })
   userId!: string;
 

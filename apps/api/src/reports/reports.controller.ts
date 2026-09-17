@@ -6,6 +6,7 @@ import {
 } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { ReportsService } from './reports.service';
@@ -15,6 +16,7 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @UseGuards(JwtAuthGuard)
+  @RateLimit('report')
   @Post()
   async create(
     @CurrentUser() user: User,

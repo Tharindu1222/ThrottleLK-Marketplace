@@ -1,6 +1,6 @@
 import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
-import { HeroBikeOrbit } from './hero-bike-orbit';
+import { HeroBikeOrbitLazy } from './hero-bike-orbit-lazy';
 
 export function HomeHero({ locale }: { locale: Locale }) {
   return (
@@ -46,7 +46,7 @@ export function HomeHero({ locale }: { locale: Locale }) {
       {/* Bike stage — full hero width & height */}
       <div className="pointer-events-none absolute inset-0 z-[5] h-full w-full">
         <div className="pointer-events-auto h-full w-full">
-          <HeroBikeOrbit />
+          <HeroBikeOrbitLazy />
         </div>
       </div>
 

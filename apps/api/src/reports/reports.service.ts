@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import type { CreateReportInput } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
+import { CacheService } from '../common/cache.service';
 import { Listing } from '../listings/listing.entity';
 import { Report } from './report.entity';
 
@@ -14,6 +15,7 @@ export class ReportsService {
   constructor(
     @InjectRepository(Report) private readonly reports: Repository<Report>,
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
+    private readonly cache: CacheService,
   ) {}
 
   async create(userId: string | null, input: CreateReportInput) {
@@ -33,7 +35,9 @@ export class ReportsService {
       description: input.description,
       status: 'open',
     });
-    return this.reports.save(report);
+    const saved = await this.reports.save(report);
+    void this.cache.invalidateDashboard();
+    return saved;
   }
 
   listOpen() {
@@ -62,6 +66,8 @@ export class ReportsService {
       });
     }
     report.status = status;
-    return this.reports.save(report);
+    const saved = await this.reports.save(report);
+    void this.cache.invalidateDashboard();
+    return saved;
   }
 }

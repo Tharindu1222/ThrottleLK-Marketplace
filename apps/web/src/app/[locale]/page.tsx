@@ -1,13 +1,20 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { HomeHero } from '@/components/home/home-hero';
 import { BikeCategoryGrid } from '@/components/home/bike-category-grid';
-import { HomeScrollReveals } from '@/components/home/home-scroll-reveals';
 import { HeroCategoriesBridge } from '@/components/home/hero-categories-bridge';
 import { HomeBrandGrid } from '@/components/home/home-brand-grid';
 import { apiGet } from '@/lib/api';
 import { isLocale, type Locale } from '@/lib/i18n';
+
+const HomeScrollReveals = dynamic(
+  () =>
+    import('@/components/home/home-scroll-reveals').then(
+      (mod) => mod.HomeScrollReveals,
+    ),
+);
 
 type Brand = {
   id: string;

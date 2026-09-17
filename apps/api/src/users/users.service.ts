@@ -15,6 +15,7 @@ import type {
   UpdateProfileInput,
 } from '@throttlelk/validation';
 import { Listing } from '../listings/listing.entity';
+import { CacheService } from '../common/cache.service';
 import { Dealer } from '../dealers/dealer.entity';
 import { StorageService } from '../storage/storage.service';
 import { Role } from './role.entity';
@@ -31,6 +32,7 @@ export class UsersService {
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     @InjectRepository(Dealer) private readonly dealers: Repository<Dealer>,
     private readonly storage: StorageService,
+    private readonly cache: CacheService,
   ) {}
 
   async ensureRoles(): Promise<void> {
@@ -63,7 +65,9 @@ export class UsersService {
       passwordHash,
       roles,
     });
-    return this.users.save(user);
+    const saved = await this.users.save(user);
+    void this.cache.invalidateDashboard();
+    return saved;
   }
 
   async adminCreate(input: AdminCreateUserInput) {

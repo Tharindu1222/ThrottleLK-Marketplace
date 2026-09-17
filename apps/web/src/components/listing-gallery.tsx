@@ -80,6 +80,8 @@ export function ListingGallery({
                 <img
                   src={image.imageUrl}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="h-16 w-20 object-cover sm:h-[4.5rem] sm:w-24"
                 />
               </button>

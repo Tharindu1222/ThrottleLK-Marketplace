@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinTable,
   ManyToMany,
   PrimaryGeneratedColumn,
@@ -10,6 +11,7 @@ import {
 import { Role } from './role.entity';
 
 @Entity('users')
+@Index('IDX_users_status_created_at', ['status', 'createdAt'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

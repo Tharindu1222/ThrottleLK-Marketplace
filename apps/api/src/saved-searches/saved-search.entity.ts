@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -19,6 +20,7 @@ export type SavedSearchQuery = {
 };
 
 @Entity('saved_searches')
+@Index('IDX_saved_searches_user_id', ['userId'])
 export class SavedSearch {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

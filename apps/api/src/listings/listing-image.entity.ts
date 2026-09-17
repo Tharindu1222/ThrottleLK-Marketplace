@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import {
 import { Listing } from './listing.entity';
 
 @Entity('listing_images')
+@Index('IDX_listing_images_listing_sort', ['listingId', 'sortOrder'])
 export class ListingImage {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

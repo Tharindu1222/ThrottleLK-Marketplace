@@ -1,10 +1,11 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend } from '@/lib/api';
+import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminUser, District } from '@/lib/admin-types';
 import { DealerImageManager } from './dealer-image-manager';
+import { AdminPager } from './admin-pager';
 
 type City = { id: string; name: string };
 
@@ -85,16 +86,43 @@ export function AdminDealers({ search = '' }: { search?: string }) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [page, setPage] = useState(1);
+  const [listMeta, setListMeta] = useState<{
+    page: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+  } | null>(null);
 
-  async function loadList(access: string, status?: string, q?: string) {
-    const data = await apiGet<DealerRow[]>('/api/v1/admin/dealers', {
-      token: access,
-      searchParams: {
-        status: status || undefined,
-        q: q || undefined,
+  async function loadList(
+    access: string,
+    status?: string,
+    q?: string,
+    pageNum = 1,
+  ) {
+    const { data, meta } = await apiGetWithMeta<DealerRow[]>(
+      '/api/v1/admin/dealers',
+      {
+        token: access,
+        searchParams: {
+          status: status || undefined,
+          q: q || undefined,
+          page: String(pageNum),
+          limit: '20',
+        },
       },
-    });
+    );
     setRows(data);
+    setListMeta(
+      meta
+        ? {
+            page: meta.page,
+            totalPages: meta.totalPages,
+            hasPreviousPage: meta.hasPreviousPage,
+            hasNextPage: meta.hasNextPage,
+          }
+        : null,
+    );
   }
 
   async function loadMeta(access: string) {
@@ -110,17 +138,21 @@ export function AdminDealers({ search = '' }: { search?: string }) {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void Promise.all([loadList(access), loadMeta(access)]).catch((err) =>
+    void loadMeta(access).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to load dealers'),
     );
   }, []);
 
   useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  useEffect(() => {
     if (!token) return;
-    void loadList(token, statusFilter, search).catch((err) =>
+    void loadList(token, statusFilter, search, page).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to filter'),
     );
-  }, [token, statusFilter, search]);
+  }, [token, statusFilter, search, page]);
 
   useEffect(() => {
     if (!form.districtId) {
@@ -199,7 +231,7 @@ export function AdminDealers({ search = '' }: { search?: string }) {
         });
         setEditingId(created.id);
       }
-      await loadList(token, statusFilter, search);
+      await loadList(token, statusFilter, search, page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed');
     } finally {
@@ -214,7 +246,7 @@ export function AdminDealers({ search = '' }: { search?: string }) {
     setError(null);
     try {
       await apiSend(`/api/v1/admin/dealers/${id}`, { method: 'DELETE', token });
-      await loadList(token, statusFilter, search);
+      await loadList(token, statusFilter, search, page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
     } finally {
@@ -231,7 +263,7 @@ export function AdminDealers({ search = '' }: { search?: string }) {
         token,
         body: { status },
       });
-      await loadList(token, statusFilter, search);
+      await loadList(token, statusFilter, search, page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Status update failed');
     } finally {
@@ -363,6 +395,15 @@ export function AdminDealers({ search = '' }: { search?: string }) {
           <p className="p-6 text-sm text-[var(--admin-muted)]">No dealer shops found.</p>
         ) : null}
       </div>
+      {listMeta ? (
+        <AdminPager
+          page={listMeta.page}
+          totalPages={listMeta.totalPages}
+          hasPreviousPage={listMeta.hasPreviousPage}
+          hasNextPage={listMeta.hasNextPage}
+          onPage={setPage}
+        />
+      ) : null}
 
       {editorOpen ? (
         <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
