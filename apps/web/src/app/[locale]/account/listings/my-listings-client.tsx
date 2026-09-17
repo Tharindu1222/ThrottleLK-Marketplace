@@ -6,9 +6,13 @@ import {
   ListingCard,
   type BrowseListingCard,
 } from '@/components/listing-card';
-import { apiGet, apiSend } from '@/lib/api';
+import { Pagination } from '@/components/pagination';
+import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { clampedPage, emptyMeta } from '@/lib/pagination';
+import { useUrlPage } from '@/lib/use-url-page';
+import type { PaginationMeta } from '@throttlelk/types';
 
 type Listing = BrowseListingCard & { status: string };
 
@@ -198,16 +202,34 @@ export function MyListingsClient({
   embedded?: boolean;
   layout?: 'rows' | 'cards';
 }) {
+  const { page, goTo } = useUrlPage();
   const [token, setToken] = useState<string | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  async function load(access: string) {
-    const data = await apiGet<Listing[]>('/api/v1/listings/mine', {
-      token: access,
-    });
-    setListings(data);
+  async function load(access: string, pageNum = page) {
+    setLoading(true);
+    try {
+      const { data, meta: nextMeta } = await apiGetWithMeta<Listing[]>(
+        '/api/v1/listings/mine',
+        {
+          token: access,
+          searchParams: { page: String(pageNum), limit: '20' },
+        },
+      );
+      const clamp = clampedPage(nextMeta, data.length);
+      if (clamp != null && clamp !== pageNum) {
+        goTo(clamp);
+        return;
+      }
+      setListings(data);
+      if (nextMeta) setMeta(nextMeta);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function runAction(listingId: string, path: string) {
@@ -215,7 +237,7 @@ export function MyListingsClient({
     setBusyId(listingId);
     setError(null);
     void apiSend(path, { token })
-      .then(() => load(token))
+      .then(() => load(token, page))
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Action failed'),
       )
@@ -226,10 +248,11 @@ export function MyListingsClient({
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void load(access).catch((err) =>
+    void load(access, page).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed'),
     );
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   if (!token) {
     if (embedded) return null;
@@ -246,11 +269,11 @@ export function MyListingsClient({
     <div className={embedded ? 'mt-0' : 'mt-8'}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">
-          {listings.length === 1
+          {(meta.total || listings.length) === 1
             ? t(locale, 'resultCountOne')
             : t(locale, 'resultCount').replace(
                 '{count}',
-                String(listings.length),
+                String(meta.total || listings.length),
               )}
         </p>
         <Link
@@ -263,6 +286,7 @@ export function MyListingsClient({
 
       {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
 
+      <div aria-busy={loading} className={loading ? 'pointer-events-none opacity-60' : undefined}>
       {listings.length === 0 ? (
         <div className="border border-dashed border-black/15 px-6 py-14 text-center">
           <p className="text-muted">{t(locale, 'noListingsYet')}</p>
@@ -357,6 +381,22 @@ export function MyListingsClient({
           })}
         </ul>
       )}
+      </div>
+      <Pagination
+        page={meta.page}
+        totalPages={meta.totalPages}
+        hasPreviousPage={meta.hasPreviousPage}
+        hasNextPage={meta.hasNextPage}
+        total={meta.total}
+        limit={meta.limit}
+        ariaLabel={t(locale, 'pagination')}
+        previousLabel={t(locale, 'pagePrev')}
+        nextLabel={t(locale, 'pageNext')}
+        pageOfTemplate={t(locale, 'pageOf')}
+        showingTemplate={t(locale, 'showingRange')}
+        disabled={loading}
+        onPage={goTo}
+      />
     </div>
   );
 }

@@ -1,9 +1,12 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend } from '@/lib/api';
+import { FormEvent, useEffect, useState } from 'react';
+import { Pagination } from '@/components/pagination';
+import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminUser } from '@/lib/admin-types';
+import { clampedPage, emptyMeta } from '@/lib/pagination';
+import type { PaginationMeta } from '@throttlelk/types';
 
 const ROLE_OPTIONS = ['buyer', 'seller', 'dealer', 'admin'] as const;
 
@@ -30,40 +33,54 @@ const emptyForm: FormState = {
 export function AdminUsers({ search = '' }: { search?: string }) {
   const [token, setToken] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
+  const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  async function load(access: string) {
-    setUsers(await apiGet<AdminUser[]>('/api/v1/admin/users', { token: access }));
+  async function load(access: string, pageNum = page, q = search) {
+    setLoading(true);
+    try {
+      const { data, meta: nextMeta } = await apiGetWithMeta<AdminUser[]>(
+        '/api/v1/admin/users',
+        {
+          token: access,
+          searchParams: {
+            page: String(pageNum),
+            limit: '20',
+            q: q.trim() || undefined,
+          },
+        },
+      );
+      const clamp = clampedPage(nextMeta, data.length);
+      if (clamp != null && clamp !== pageNum) {
+        setPage(clamp);
+        return;
+      }
+      setUsers(data);
+      if (nextMeta) setMeta(nextMeta);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void load(access).catch((err) =>
+    void load(access, page, search).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to load users'),
     );
-  }, []);
-
-  const q = search.trim().toLowerCase();
-  const filtered = useMemo(
-    () =>
-      q
-        ? users.filter(
-            (u) =>
-              u.email.toLowerCase().includes(q) ||
-              u.firstName.toLowerCase().includes(q) ||
-              u.lastName.toLowerCase().includes(q) ||
-              u.roles.join(' ').toLowerCase().includes(q) ||
-              (u.phone ?? '').toLowerCase().includes(q),
-          )
-        : users,
-    [users, q],
-  );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search]);
 
   function openCreate() {
     setEditingId(null);
@@ -213,7 +230,7 @@ export function AdminUsers({ search = '' }: { search?: string }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((user) => (
+              {users.map((user) => (
                 <tr
                   key={user.id}
                   className="border-b border-[var(--admin-border)] last:border-0"
@@ -287,10 +304,22 @@ export function AdminUsers({ search = '' }: { search?: string }) {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 ? (
+        {users.length === 0 ? (
           <p className="p-6 text-sm text-[var(--admin-muted)]">No users match your search.</p>
         ) : null}
       </div>
+      <Pagination
+        variant="admin"
+        page={meta.page}
+        totalPages={meta.totalPages}
+        hasPreviousPage={meta.hasPreviousPage}
+        hasNextPage={meta.hasNextPage}
+        total={meta.total}
+        limit={meta.limit}
+        disabled={loading || busy}
+        scroll={false}
+        onPage={setPage}
+      />
 
       {editorOpen ? (
         <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">

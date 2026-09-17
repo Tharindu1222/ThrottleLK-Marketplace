@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import type { ApiSuccess } from '@throttlelk/types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -12,11 +12,16 @@ export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Get()
-  async list(@CurrentUser() user: User): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.notifications.listForUser(user.id),
-    };
+  async list(
+    @CurrentUser() user: User,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.notifications.listForUser(user.id, {
+      page,
+      limit,
+    });
+    return { success: true, data: items, meta };
   }
 
   @Get('unread-count')

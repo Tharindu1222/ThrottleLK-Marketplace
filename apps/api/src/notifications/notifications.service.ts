@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
+import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { UsersService } from '../users/users.service';
 import { EmailService } from './email.service';
 import { Notification } from './notification.entity';
@@ -14,12 +15,23 @@ export class NotificationsService {
     private readonly email: EmailService,
   ) {}
 
-  async listForUser(userId: string, limit = 50) {
-    return this.notifications.find({
+  async listForUser(
+    userId: string,
+    paging?: { page?: string | number; limit?: string | number },
+  ) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
+    const [rows, total] = await this.notifications.findAndCount({
       where: { userId },
       order: { createdAt: 'DESC' },
+      skip,
       take: limit,
     });
+    return { items: rows, meta: paginationMeta(total, page, limit) };
   }
 
   async unreadCount(userId: string) {

@@ -5,7 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { Listing } from '../listings/listing.entity';
+import { ListingImage } from '../listings/listing-image.entity';
 import { Favourite } from './favourite.entity';
 
 function toBrowseCard(listing: Listing) {
@@ -39,30 +41,62 @@ export class FavouritesService {
     @InjectRepository(Favourite)
     private readonly favourites: Repository<Favourite>,
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
+    @InjectRepository(ListingImage)
+    private readonly listingImages: Repository<ListingImage>,
   ) {}
 
-  async listForUser(userId: string) {
-    const rows = await this.favourites.find({
-      where: { userId },
-      relations: [
-        'listing',
-        'listing.brand',
-        'listing.model',
-        'listing.district',
-        'listing.city',
-        'listing.images',
-      ],
-      order: { createdAt: 'DESC' },
-      take: 200,
+  async listForUser(
+    userId: string,
+    paging?: { page?: string | number; limit?: string | number },
+  ) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
     });
-    return rows
-      .filter((row) => row.listing && row.listing.status === 'active')
-      .map((row) => ({
+    const qb = this.favourites
+      .createQueryBuilder('f')
+      .innerJoinAndSelect('f.listing', 'listing')
+      .leftJoinAndSelect('listing.brand', 'brand')
+      .leftJoinAndSelect('listing.model', 'model')
+      .leftJoinAndSelect('listing.district', 'district')
+      .leftJoinAndSelect('listing.city', 'city')
+      .where('f.userId = :userId', { userId })
+      .andWhere('listing.status = :status', { status: 'active' })
+      .orderBy('f.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    const covers = await this.coverUrls(rows.map((row) => row.listingId));
+    return {
+      items: rows.map((row) => ({
         id: row.id,
         listingId: row.listingId,
         createdAt: row.createdAt,
-        listing: toBrowseCard(row.listing),
-      }));
+        listing: {
+          ...toBrowseCard(row.listing),
+          coverImageUrl: covers.get(row.listingId) ?? null,
+        },
+      })),
+      meta: paginationMeta(total, page, limit),
+    };
+  }
+
+  private async coverUrls(ids: string[]) {
+    const map = new Map<string, string>();
+    if (ids.length === 0) return map;
+    const images = await this.listingImages
+      .createQueryBuilder('img')
+      .select(['img.listingId', 'img.imageUrl', 'img.sortOrder', 'img.isCover'])
+      .where('img.listingId IN (:...ids)', { ids })
+      .orderBy('img.isCover', 'DESC')
+      .addOrderBy('img.sortOrder', 'ASC')
+      .getMany();
+    for (const img of images) {
+      if (!map.has(img.listingId)) map.set(img.listingId, img.imageUrl);
+    }
+    return map;
   }
 
   async idsForUser(userId: string): Promise<string[]> {

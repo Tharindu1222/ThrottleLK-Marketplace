@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { FavouritesClient } from './favourites-client';
@@ -17,7 +18,9 @@ export default async function FavouritesPage({
         {t(locale, 'favourites')}
       </h1>
       <div className="mt-8">
-        <FavouritesClient locale={locale} />
+        <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+          <FavouritesClient locale={locale} />
+        </Suspense>
       </div>
     </div>
   );

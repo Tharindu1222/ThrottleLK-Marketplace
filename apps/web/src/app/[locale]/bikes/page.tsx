@@ -1,10 +1,13 @@
-import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { notFound, redirect } from 'next/navigation';
 import { BrowseFilters } from '@/components/browse-filters';
 import { ListingCard, type BrowseListingCard } from '@/components/listing-card';
+import { Pagination } from '@/components/pagination';
 import { SaveSearchButton } from '@/components/save-search-button';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
-import Link from 'next/link';
+import { hrefWithPage, parsePageParam } from '@/lib/pagination';
+import { pageMetadata } from '@/lib/seo';
 
 type Brand = { id: string; name: string; slug: string };
 type District = { id: string; name: string; slug: string };
@@ -18,6 +21,47 @@ function spStr(
   return typeof v === 'string' ? v : undefined;
 }
 
+function filterStateFrom(
+  sp: Record<string, string | string[] | undefined>,
+) {
+  return {
+    q: spStr(sp, 'q'),
+    brandId: spStr(sp, 'brandId'),
+    modelId: spStr(sp, 'modelId'),
+    categoryId: spStr(sp, 'categoryId'),
+    districtId: spStr(sp, 'districtId'),
+    minPrice: spStr(sp, 'minPrice'),
+    maxPrice: spStr(sp, 'maxPrice'),
+    minYear: spStr(sp, 'minYear'),
+    maxYear: spStr(sp, 'maxYear'),
+    condition: spStr(sp, 'condition'),
+    sort: spStr(sp, 'sort'),
+  };
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const sp = await searchParams;
+  const page = parsePageParam(spStr(sp, 'page'));
+  const path = hrefWithPage(`/${locale}/bikes`, filterStateFrom(sp), page);
+  const title =
+    page > 1
+      ? `Motorcycles for sale in Sri Lanka — page ${page}`
+      : 'Motorcycles for sale in Sri Lanka';
+  return pageMetadata({
+    title,
+    description:
+      'Browse used and new motorbikes and scooters from private sellers and dealers across Sri Lanka.',
+    path,
+  });
+}
+
 export default async function BikesPage({
   params,
   searchParams,
@@ -29,34 +73,14 @@ export default async function BikesPage({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
   const sp = await searchParams;
-  const q = spStr(sp, 'q');
-  const brandId = spStr(sp, 'brandId');
-  const modelId = spStr(sp, 'modelId');
-  const categoryId = spStr(sp, 'categoryId');
-  const districtId = spStr(sp, 'districtId');
-  const minPrice = spStr(sp, 'minPrice');
-  const maxPrice = spStr(sp, 'maxPrice');
-  const minYear = spStr(sp, 'minYear');
-  const maxYear = spStr(sp, 'maxYear');
-  const condition = spStr(sp, 'condition');
-  const sort = spStr(sp, 'sort');
-  const page = spStr(sp, 'page');
+  const filterState = filterStateFrom(sp);
+  const page = parsePageParam(spStr(sp, 'page'));
 
   const [listingPage, brands, districts, categories] = await Promise.all([
     apiGetWithMeta<BrowseListingCard[]>('/api/v1/listings', {
       searchParams: {
-        q,
-        brandId,
-        modelId,
-        categoryId,
-        districtId,
-        minPrice,
-        maxPrice,
-        minYear,
-        maxYear,
-        condition,
-        sort,
-        page,
+        ...filterState,
+        page: String(page),
       },
     }),
     apiGet<Brand[]>('/api/v1/brands'),
@@ -66,37 +90,20 @@ export default async function BikesPage({
     }),
   ]);
 
-  const filterState = {
-    q,
-    brandId,
-    modelId,
-    categoryId,
-    districtId,
-    minPrice,
-    maxPrice,
-    minYear,
-    maxYear,
-    condition,
-    sort,
-  };
-
   const listings = listingPage.data;
-  const total = listingPage.meta?.total ?? listings.length;
   const pager = listingPage.meta;
+  const total = pager?.total ?? listings.length;
 
-  function pageHref(nextPage: number) {
-    const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(filterState)) {
-      if (value) params.set(key, value);
-    }
-    if (nextPage > 1) params.set('page', String(nextPage));
-    const qs = params.toString();
-    return `/${locale}/bikes${qs ? `?${qs}` : ''}`;
+  if (pager && pager.total > 0 && pager.page > pager.totalPages) {
+    redirect(hrefWithPage(`/${locale}/bikes`, filterState, pager.totalPages));
   }
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+      <h1
+        id="listing-results"
+        className="font-[family-name:var(--font-display)] text-4xl tracking-wide"
+      >
         {t(locale, 'browse')}
       </h1>
 
@@ -133,31 +140,23 @@ export default async function BikesPage({
               ))
             )}
           </div>
-          {pager && pager.totalPages > 1 ? (
-            <nav
-              className="mt-8 flex items-center justify-between text-sm"
-              aria-label={t(locale, 'pagination')}
-            >
-              {pager.hasPreviousPage ? (
-                <Link href={pageHref(pager.page - 1)} className="text-accent">
-                  {t(locale, 'pagePrev')}
-                </Link>
-              ) : (
-                <span />
-              )}
-              <span className="text-muted">
-                {t(locale, 'pageOf')
-                  .replace('{page}', String(pager.page))
-                  .replace('{pages}', String(pager.totalPages))}
-              </span>
-              {pager.hasNextPage ? (
-                <Link href={pageHref(pager.page + 1)} className="text-accent">
-                  {t(locale, 'pageNext')}
-                </Link>
-              ) : (
-                <span />
-              )}
-            </nav>
+          {pager ? (
+            <Pagination
+              page={pager.page}
+              totalPages={pager.totalPages}
+              hasPreviousPage={pager.hasPreviousPage}
+              hasNextPage={pager.hasNextPage}
+              total={pager.total}
+              limit={pager.limit}
+              ariaLabel={t(locale, 'pagination')}
+              previousLabel={t(locale, 'pagePrev')}
+              nextLabel={t(locale, 'pageNext')}
+              pageOfTemplate={t(locale, 'pageOf')}
+              showingTemplate={t(locale, 'showingRange')}
+              hrefForPage={(next) =>
+                hrefWithPage(`/${locale}/bikes`, filterState, next)
+              }
+            />
           ) : null}
         </div>
       </div>

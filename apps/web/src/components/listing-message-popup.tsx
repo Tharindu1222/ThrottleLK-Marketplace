@@ -138,6 +138,7 @@ export function ListingMessagePopup({
       try {
         const rows = await apiGet<ConversationRow[]>('/api/v1/conversations', {
           token: access,
+          searchParams: { listingId, limit: '1' },
         });
         const existing = rows.find((row) => row.listingId === listingId);
         if (!existing || cancelled) return;

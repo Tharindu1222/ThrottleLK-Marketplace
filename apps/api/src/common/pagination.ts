@@ -39,3 +39,15 @@ export function paginationMeta(
     hasPreviousPage: page > 1 && total > 0,
   };
 }
+
+/** Page to load after a mutation if the requested page is now empty/beyond the end. */
+export function clampedPage(
+  meta: PaginationMeta,
+  itemCount: number,
+): number {
+  if (itemCount === 0 && meta.page > 1) {
+    return Math.max(1, Math.min(meta.page - 1, meta.totalPages));
+  }
+  if (meta.page > meta.totalPages) return meta.totalPages;
+  return meta.page;
+}

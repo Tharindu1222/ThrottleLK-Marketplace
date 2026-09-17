@@ -7,7 +7,8 @@ import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminUser, Brand, District } from '@/lib/admin-types';
 import { AdminListingImageManager } from './admin-listing-image-manager';
-import { AdminPager } from './admin-pager';
+import { Pagination } from '@/components/pagination';
+import { clampedPage } from '@/lib/pagination';
 
 type ListingRow = {
   id: string;
@@ -123,6 +124,8 @@ export function AdminListings({ search = '' }: { search?: string }) {
     totalPages: number;
     hasPreviousPage: boolean;
     hasNextPage: boolean;
+    total: number;
+    limit: number;
   } | null>(null);
 
   async function loadList(
@@ -143,6 +146,11 @@ export function AdminListings({ search = '' }: { search?: string }) {
         },
       },
     );
+    const clamp = clampedPage(meta, data.length);
+    if (clamp != null && clamp !== pageNum) {
+      setPage(clamp);
+      return;
+    }
     setRows(data);
     setListMeta(
       meta
@@ -151,19 +159,24 @@ export function AdminListings({ search = '' }: { search?: string }) {
             totalPages: meta.totalPages,
             hasPreviousPage: meta.hasPreviousPage,
             hasNextPage: meta.hasNextPage,
+            total: meta.total,
+            limit: meta.limit,
           }
         : null,
     );
   }
 
   async function loadMeta(access: string) {
-    const [userRows, brandRows, categoryRows, districtRows] = await Promise.all([
-      apiGet<AdminUser[]>('/api/v1/admin/users', { token: access }),
+    const [userPage, brandRows, categoryRows, districtRows] = await Promise.all([
+      apiGetWithMeta<AdminUser[]>('/api/v1/admin/users', {
+        token: access,
+        searchParams: { limit: '100' },
+      }),
       apiGet<Brand[]>('/api/v1/admin/brands', { token: access }),
       apiGet<Category[]>('/api/v1/categories'),
       apiGet<District[]>('/api/v1/locations/districts'),
     ]);
-    setUsers(userRows);
+    setUsers(userPage.data);
     setBrands(brandRows);
     setCategories(categoryRows);
     setDistricts(districtRows);
@@ -484,11 +497,15 @@ export function AdminListings({ search = '' }: { search?: string }) {
         ) : null}
       </div>
       {listMeta ? (
-        <AdminPager
+        <Pagination
+          variant="admin"
           page={listMeta.page}
           totalPages={listMeta.totalPages}
           hasPreviousPage={listMeta.hasPreviousPage}
           hasNextPage={listMeta.hasNextPage}
+          total={listMeta.total}
+          limit={listMeta.limit}
+          scroll={false}
           onPage={setPage}
         />
       ) : null}

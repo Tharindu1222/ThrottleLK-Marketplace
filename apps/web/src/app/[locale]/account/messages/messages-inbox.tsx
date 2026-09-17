@@ -2,9 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { apiGet } from '@/lib/api';
+import { Pagination } from '@/components/pagination';
+import { apiGetWithMeta } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { clampedPage, emptyMeta } from '@/lib/pagination';
+import { useUrlPage } from '@/lib/use-url-page';
+import type { PaginationMeta } from '@throttlelk/types';
 
 type Counterpart = {
   id: string;
@@ -80,20 +84,36 @@ function Avatar({
 }
 
 export function MessagesInbox({ locale }: { locale: Locale }) {
+  const { page, goTo } = useUrlPage();
   const [token, setToken] = useState<string | null>(null);
   const [items, setItems] = useState<ConversationRow[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void apiGet<ConversationRow[]>('/api/v1/conversations', { token: access })
-      .then(setItems)
+    setLoading(true);
+    void apiGetWithMeta<ConversationRow[]>('/api/v1/conversations', {
+      token: access,
+      searchParams: { page: String(page), limit: '20' },
+    })
+      .then(({ data, meta: nextMeta }) => {
+        const clamp = clampedPage(nextMeta, data.length);
+        if (clamp != null && clamp !== page) {
+          goTo(clamp);
+          return;
+        }
+        setItems(data);
+        if (nextMeta) setMeta(nextMeta);
+      })
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Failed'),
-      );
-  }, []);
+      )
+      .finally(() => setLoading(false));
+  }, [page, goTo]);
 
   if (!token) {
     return (
@@ -113,6 +133,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
   return (
     <div className="mt-8">
       {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+      <div aria-busy={loading} className={loading ? 'pointer-events-none opacity-60' : undefined}>
       {items.length === 0 ? (
         <div className={`${cardClass} px-6 py-12 text-center`}>
           <p className="text-muted">{t(locale, 'noMessages')}</p>
@@ -173,6 +194,22 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
           })}
         </div>
       )}
+      </div>
+      <Pagination
+        page={meta.page}
+        totalPages={meta.totalPages}
+        hasPreviousPage={meta.hasPreviousPage}
+        hasNextPage={meta.hasNextPage}
+        total={meta.total}
+        limit={meta.limit}
+        ariaLabel={t(locale, 'pagination')}
+        previousLabel={t(locale, 'pagePrev')}
+        nextLabel={t(locale, 'pageNext')}
+        pageOfTemplate={t(locale, 'pageOf')}
+        showingTemplate={t(locale, 'showingRange')}
+        disabled={loading}
+        onPage={goTo}
+      />
     </div>
   );
 }

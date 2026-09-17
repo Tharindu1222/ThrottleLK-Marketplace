@@ -1,43 +1,60 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { Pagination } from '@/components/pagination';
+import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminReport } from '@/lib/admin-types';
+import { clampedPage, emptyMeta } from '@/lib/pagination';
+import type { PaginationMeta } from '@throttlelk/types';
 
 export function AdminReports({ search = '' }: { search?: string }) {
   const [token, setToken] = useState<string | null>(null);
   const [reports, setReports] = useState<AdminReport[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
+  const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  async function load(access: string) {
-    setReports(
-      await apiGet<AdminReport[]>('/api/v1/admin/reports/open', { token: access }),
-    );
+  async function load(access: string, pageNum = page, q = search) {
+    setLoading(true);
+    try {
+      const { data, meta: nextMeta } = await apiGetWithMeta<AdminReport[]>(
+        '/api/v1/admin/reports/open',
+        {
+          token: access,
+          searchParams: {
+            page: String(pageNum),
+            limit: '20',
+            q: q.trim() || undefined,
+          },
+        },
+      );
+      const clamp = clampedPage(nextMeta, data.length);
+      if (clamp != null && clamp !== pageNum) {
+        setPage(clamp);
+        return;
+      }
+      setReports(data);
+      if (nextMeta) setMeta(nextMeta);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void load(access).catch((err) =>
+    void load(access, page, search).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to load reports'),
     );
-  }, []);
-
-  const q = search.trim().toLowerCase();
-  const filtered = useMemo(
-    () =>
-      q
-        ? reports.filter(
-            (r) =>
-              r.reason.toLowerCase().includes(q) ||
-              r.description.toLowerCase().includes(q) ||
-              r.listingId.toLowerCase().includes(q),
-          )
-        : reports,
-    [reports, q],
-  );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search]);
 
   if (!token) return null;
 
@@ -67,7 +84,7 @@ export function AdminReports({ search = '' }: { search?: string }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((report) => (
+              {reports.map((report) => (
                 <tr
                   key={report.id}
                   className="border-b border-[var(--admin-border)] last:border-0"
@@ -133,10 +150,22 @@ export function AdminReports({ search = '' }: { search?: string }) {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 ? (
+        {reports.length === 0 ? (
           <p className="p-6 text-sm text-[var(--admin-muted)]">No open reports.</p>
         ) : null}
       </div>
+      <Pagination
+        variant="admin"
+        page={meta.page}
+        totalPages={meta.totalPages}
+        hasPreviousPage={meta.hasPreviousPage}
+        hasNextPage={meta.hasNextPage}
+        total={meta.total}
+        limit={meta.limit}
+        disabled={loading}
+        scroll={false}
+        onPage={setPage}
+      />
     </div>
   );
 }

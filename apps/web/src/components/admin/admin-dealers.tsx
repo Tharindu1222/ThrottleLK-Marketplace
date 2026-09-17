@@ -5,7 +5,8 @@ import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminUser, District } from '@/lib/admin-types';
 import { DealerImageManager } from './dealer-image-manager';
-import { AdminPager } from './admin-pager';
+import { Pagination } from '@/components/pagination';
+import { clampedPage } from '@/lib/pagination';
 
 type City = { id: string; name: string };
 
@@ -92,6 +93,8 @@ export function AdminDealers({ search = '' }: { search?: string }) {
     totalPages: number;
     hasPreviousPage: boolean;
     hasNextPage: boolean;
+    total: number;
+    limit: number;
   } | null>(null);
 
   async function loadList(
@@ -112,6 +115,11 @@ export function AdminDealers({ search = '' }: { search?: string }) {
         },
       },
     );
+    const clamp = clampedPage(meta, data.length);
+    if (clamp != null && clamp !== pageNum) {
+      setPage(clamp);
+      return;
+    }
     setRows(data);
     setListMeta(
       meta
@@ -120,17 +128,22 @@ export function AdminDealers({ search = '' }: { search?: string }) {
             totalPages: meta.totalPages,
             hasPreviousPage: meta.hasPreviousPage,
             hasNextPage: meta.hasNextPage,
+            total: meta.total,
+            limit: meta.limit,
           }
         : null,
     );
   }
 
   async function loadMeta(access: string) {
-    const [userRows, districtRows] = await Promise.all([
-      apiGet<AdminUser[]>('/api/v1/admin/users', { token: access }),
+    const [userPage, districtRows] = await Promise.all([
+      apiGetWithMeta<AdminUser[]>('/api/v1/admin/users', {
+        token: access,
+        searchParams: { limit: '100' },
+      }),
       apiGet<District[]>('/api/v1/locations/districts'),
     ]);
-    setUsers(userRows);
+    setUsers(userPage.data);
     setDistricts(districtRows);
   }
 
@@ -396,11 +409,15 @@ export function AdminDealers({ search = '' }: { search?: string }) {
         ) : null}
       </div>
       {listMeta ? (
-        <AdminPager
+        <Pagination
+          variant="admin"
           page={listMeta.page}
           totalPages={listMeta.totalPages}
           hasPreviousPage={listMeta.hasPreviousPage}
           hasNextPage={listMeta.hasNextPage}
+          total={listMeta.total}
+          limit={listMeta.limit}
+          scroll={false}
           onPage={setPage}
         />
       ) : null}

@@ -195,20 +195,31 @@ export class ListingsService {
     return saved;
   }
 
-  listMine(sellerId: string) {
-    return this.listings
-      .find({
-        where: { sellerId },
-        relations: ['images', 'brand', 'model', 'district', 'city'],
-        order: { updatedAt: 'DESC' },
-        take: 100,
-      })
-      .then((rows) =>
-        rows.map((row) => ({
-          ...this.toBrowseCard(row),
-          status: row.status,
-        })),
-      );
+  async listMine(
+    sellerId: string,
+    paging?: { page?: string | number; limit?: string | number },
+  ) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
+    const [rows, total] = await this.listings.findAndCount({
+      where: { sellerId },
+      relations: ['brand', 'model', 'district', 'city'],
+      order: { updatedAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+    const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    return {
+      items: rows.map((row) => ({
+        ...this.toBrowseCard(row, covers.get(row.id) ?? null),
+        status: row.status,
+      })),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async createInquiry(listingId: string, input: ContactListingInput) {
@@ -454,6 +465,7 @@ export class ListingsService {
       districtId: listing.districtId,
       brandId: listing.brandId,
       modelId: listing.modelId,
+      sellerId: listing.sellerId,
       brandName: listing.brand?.name ?? null,
       modelName: listing.model?.name ?? null,
       districtName: listing.district?.name ?? null,
@@ -485,29 +497,77 @@ export class ListingsService {
     void this.cache.invalidateDashboard();
   }
 
-  listPending() {
-    return this.listings
-      .find({
-        where: { status: 'pending_review' as ListingStatus },
-        relations: ['images', 'seller'],
-        order: { updatedAt: 'ASC' },
-        take: 100,
-      })
-      .then((rows) =>
-        rows.map((row) => {
-          const covered = this.withCover(row);
-          return {
-            ...covered,
-            seller: row.seller
-              ? {
-                  id: row.seller.id,
-                  firstName: row.seller.firstName,
-                  lastName: row.seller.lastName,
-                }
-              : null,
-          };
-        }),
+  async listSeoSlugs(paging?: {
+    page?: string | number;
+    limit?: string | number;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 50,
+      maxLimit: 100,
+    });
+    const [rows, total] = await this.listings.findAndCount({
+      where: { status: 'active' as ListingStatus },
+      select: ['id', 'slug', 'sellerId', 'updatedAt'],
+      order: { updatedAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+    return {
+      items: rows.map((row) => ({
+        slug: row.slug,
+        sellerId: row.sellerId,
+        updatedAt: row.updatedAt?.toISOString?.() ?? null,
+      })),
+      meta: paginationMeta(total, page, limit),
+    };
+  }
+
+  async listPending(paging?: {
+    page?: string | number;
+    limit?: string | number;
+    q?: string;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
+    const qb = this.listings
+      .createQueryBuilder('l')
+      .leftJoinAndSelect('l.seller', 'seller')
+      .where('l.status = :status', { status: 'pending_review' })
+      .orderBy('l.updatedAt', 'ASC');
+    if (paging?.q?.trim()) {
+      const q = `%${paging.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(l.title) LIKE :q OR LOWER(seller.firstName) LIKE :q OR LOWER(seller.lastName) LIKE :q OR LOWER(seller.email) LIKE :q)',
+        { q },
       );
+    }
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    return {
+      items: rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        priceLkr: row.priceLkr,
+        manufactureYear: row.manufactureYear,
+        updatedAt: row.updatedAt,
+        coverImageUrl: covers.get(row.id) ?? null,
+        seller: row.seller
+          ? {
+              id: row.seller.id,
+              firstName: row.seller.firstName,
+              lastName: row.seller.lastName,
+            }
+          : null,
+      })),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async listAllAdmin(filters?: {

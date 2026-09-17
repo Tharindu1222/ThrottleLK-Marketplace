@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import type { ApiSuccess } from '@throttlelk/types';
@@ -19,11 +20,16 @@ export class FavouritesController {
   constructor(private readonly favouritesService: FavouritesService) {}
 
   @Get()
-  async list(@CurrentUser() user: User): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.favouritesService.listForUser(user.id),
-    };
+  async list(
+    @CurrentUser() user: User,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.favouritesService.listForUser(user.id, {
+      page,
+      limit,
+    });
+    return { success: true, data: items, meta };
   }
 
   @Get('ids')

@@ -103,11 +103,17 @@ export class AdminController {
   }
 
   @Get('listings/pending')
-  async pendingListings(): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.listingsService.listPending(),
-    };
+  async pendingListings(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.listingsService.listPending({
+      page,
+      limit,
+      q,
+    });
+    return { success: true, data: items, meta };
   }
 
   @Get('listings/:id')
@@ -207,11 +213,17 @@ export class AdminController {
   }
 
   @Get('dealers/pending')
-  async pendingDealers(): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.dealersService.listPending(),
-    };
+  async pendingDealers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.dealersService.listPending({
+      page,
+      limit,
+      q,
+    });
+    return { success: true, data: items, meta };
   }
 
   @Get('dealers/:id')
@@ -291,11 +303,17 @@ export class AdminController {
   }
 
   @Get('reports/open')
-  async openReports(): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.reportsService.listOpen(),
-    };
+  async openReports(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.reportsService.listOpen({
+      page,
+      limit,
+      q,
+    });
+    return { success: true, data: items, meta };
   }
 
   @Post('reports/:id/resolve')
@@ -311,8 +329,13 @@ export class AdminController {
   }
 
   @Get('users')
-  async usersList(): Promise<ApiSuccess<unknown>> {
-    return { success: true, data: await this.users.listUsers() };
+  async usersList(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.users.listUsers({ page, limit, q });
+    return { success: true, data: items, meta };
   }
 
   @Get('users/:id')

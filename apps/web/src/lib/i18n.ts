@@ -319,6 +319,7 @@ const en: Dict = {
   pagePrev: 'Previous',
   pageNext: 'Next',
   pageOf: 'Page {page} of {pages}',
+  showingRange: 'Showing {from}–{to} of {total}',
 };
 
 const si: Dict = {
@@ -607,6 +608,7 @@ const si: Dict = {
   pagePrev: 'පෙර',
   pageNext: 'ඊළඟ',
   pageOf: 'පිටුව {page} / {pages}',
+  showingRange: '{total}න් {from}–{to}',
 };
 
 const tables: Record<Locale, Dict> = { en, si };

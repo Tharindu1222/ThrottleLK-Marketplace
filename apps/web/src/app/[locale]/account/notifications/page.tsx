@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { NotificationsClient } from './notifications-client';
@@ -16,7 +17,9 @@ export default async function NotificationsPage({
       <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
         {t(locale, 'notifications')}
       </h1>
-      <NotificationsClient locale={locale} />
+      <Suspense fallback={<p className="mt-8 text-sm text-muted">Loading…</p>}>
+        <NotificationsClient locale={locale} />
+      </Suspense>
     </div>
   );
 }

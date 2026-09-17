@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { apiGet } from '@/lib/api';
-import { isLocale, type Locale } from '@/lib/i18n';
+import { Pagination } from '@/components/pagination';
+import { apiGet, apiGetWithMeta } from '@/lib/api';
+import { isLocale, t, type Locale } from '@/lib/i18n';
+import { hrefWithPage, parsePageParam } from '@/lib/pagination';
 import { pageMetadata } from '@/lib/seo';
 import { BreadcrumbLabels } from '@/components/breadcrumbs';
 import {
@@ -36,12 +38,17 @@ export async function generateMetadata({
 
 export default async function SellerProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale: raw, id } = await params;
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
+  const sp = await searchParams;
+  const pageRaw = sp.page;
+  const page = parsePageParam(typeof pageRaw === 'string' ? pageRaw : undefined);
 
   let seller: Seller;
   try {
@@ -54,9 +61,17 @@ export default async function SellerProfilePage({
     redirect(`/${locale}/dealers/${seller.dealerSlug}`);
   }
 
-  const listings = await apiGet<BrowseListingCard[]>('/api/v1/listings', {
-    searchParams: { sellerId: seller.id },
-  });
+  const listingPage = await apiGetWithMeta<BrowseListingCard[]>(
+    '/api/v1/listings',
+    {
+      searchParams: { sellerId: seller.id, page: String(page) },
+    },
+  );
+  const listings = listingPage.data;
+  const pager = listingPage.meta;
+  if (pager && pager.total > 0 && pager.page > pager.totalPages) {
+    redirect(hrefWithPage(`/${locale}/sellers/${id}`, {}, pager.totalPages));
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -73,7 +88,10 @@ export default async function SellerProfilePage({
         })}
       </p>
 
-      <h2 className="mt-12 font-[family-name:var(--font-display)] text-2xl tracking-wide">
+      <h2
+        id="listing-results"
+        className="mt-12 font-[family-name:var(--font-display)] text-2xl tracking-wide"
+      >
         Active listings
       </h2>
       <div className="mt-6 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -91,6 +109,24 @@ export default async function SellerProfilePage({
           ))
         )}
       </div>
+      {pager ? (
+        <Pagination
+          page={pager.page}
+          totalPages={pager.totalPages}
+          hasPreviousPage={pager.hasPreviousPage}
+          hasNextPage={pager.hasNextPage}
+          total={pager.total}
+          limit={pager.limit}
+          ariaLabel={t(locale, 'pagination')}
+          previousLabel={t(locale, 'pagePrev')}
+          nextLabel={t(locale, 'pageNext')}
+          pageOfTemplate={t(locale, 'pageOf')}
+          showingTemplate={t(locale, 'showingRange')}
+          hrefForPage={(next) =>
+            hrefWithPage(`/${locale}/sellers/${id}`, {}, next)
+          }
+        />
+      ) : null}
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { MyListingsClient } from './my-listings-client';
@@ -18,7 +19,9 @@ export default async function MyListingsPage({
       </h1>
       <p className="mt-2 text-sm text-muted">{t(locale, 'myListingsHint')}</p>
       <div className="mt-8">
-        <MyListingsClient locale={locale} layout="cards" />
+        <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+          <MyListingsClient locale={locale} layout="cards" />
+        </Suspense>
       </div>
     </div>
   );

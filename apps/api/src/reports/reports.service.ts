@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { CreateReportInput } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
+import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { Listing } from '../listings/listing.entity';
 import { Report } from './report.entity';
 
@@ -40,12 +41,31 @@ export class ReportsService {
     return saved;
   }
 
-  listOpen() {
-    return this.reports.find({
-      where: { status: 'open' },
-      order: { createdAt: 'ASC' },
-      take: 100,
+  async listOpen(paging?: {
+    page?: string | number;
+    limit?: string | number;
+    q?: string;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
     });
+    const qb = this.reports
+      .createQueryBuilder('r')
+      .where('r.status = :status', { status: 'open' })
+      .orderBy('r.createdAt', 'ASC');
+    if (paging?.q?.trim()) {
+      const q = `%${paging.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(r.reason) LIKE :q OR LOWER(r.description) LIKE :q OR LOWER(r.listingId) LIKE :q)',
+        { q },
+      );
+    }
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    return { items: rows, meta: paginationMeta(total, page, limit) };
   }
 
   async setStatus(id: string, status: 'actioned' | 'dismissed') {

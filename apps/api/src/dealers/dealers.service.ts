@@ -18,6 +18,7 @@ import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
+import { DealerImage } from './dealer-image.entity';
 import { Dealer } from './dealer.entity';
 
 @Injectable()
@@ -95,23 +96,87 @@ export class DealersService {
       });
   }
 
-  listPending() {
-    return this.dealers.find({
-      where: { status: 'pending' },
-      order: { createdAt: 'ASC' },
-      take: 100,
+  async listPending(paging?: {
+    page?: string | number;
+    limit?: string | number;
+    q?: string;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
     });
+    const qb = this.dealers
+      .createQueryBuilder('d')
+      .where('d.status = :status', { status: 'pending' })
+      .orderBy('d.createdAt', 'ASC');
+    if (paging?.q?.trim()) {
+      const q = `%${paging.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(d.name) LIKE :q OR LOWER(d.phone) LIKE :q OR LOWER(d.slug) LIKE :q)',
+        { q },
+      );
+    }
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    return { items: rows, meta: paginationMeta(total, page, limit) };
   }
 
-  listActive() {
-    return this.dealers
-      .find({
-        where: { status: 'active' },
-        relations: ['images', 'district', 'city'],
-        order: { name: 'ASC' },
-        take: 100,
-      })
-      .then((rows) => rows.map((row) => this.withCover(row)));
+  async listActive(paging?: {
+    page?: string | number;
+    limit?: string | number;
+    q?: string;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
+    const qb = this.dealers
+      .createQueryBuilder('d')
+      .leftJoinAndSelect('d.district', 'district')
+      .leftJoinAndSelect('d.city', 'city')
+      .where('d.status = :status', { status: 'active' })
+      .orderBy('d.name', 'ASC');
+    if (paging?.q?.trim()) {
+      const q = `%${paging.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(d.name) LIKE :q OR LOWER(d.slug) LIKE :q OR LOWER(city.name) LIKE :q OR LOWER(district.name) LIKE :q)',
+        { q },
+      );
+    }
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    const withImages = await this.attachDealerCovers(rows);
+    return {
+      items: withImages,
+      meta: paginationMeta(total, page, limit),
+    };
+  }
+
+  async listSeoSlugs(paging?: {
+    page?: string | number;
+    limit?: string | number;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 50,
+      maxLimit: 100,
+    });
+    const [rows, total] = await this.dealers.findAndCount({
+      where: { status: 'active' },
+      select: ['id', 'slug'],
+      order: { name: 'ASC' },
+      skip,
+      take: limit,
+    });
+    return {
+      items: rows.map((row) => ({ slug: row.slug })),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async listAllAdmin(filters?: {
@@ -278,6 +343,29 @@ export class DealersService {
       images,
       coverImageUrl: cover?.imageUrl ?? null,
     };
+  }
+
+  private async attachDealerCovers(dealers: Dealer[]) {
+    const ids = dealers.map((row) => row.id);
+    if (ids.length === 0) return [];
+    const images = await this.dealers.manager
+      .getRepository(DealerImage)
+      .createQueryBuilder('img')
+      .where('img.dealerId IN (:...ids)', { ids })
+      .orderBy('img.isCover', 'DESC')
+      .addOrderBy('img.sortOrder', 'ASC')
+      .getMany();
+    const coverByDealer = new Map<string, string>();
+    for (const img of images) {
+      if (!coverByDealer.has(img.dealerId)) {
+        coverByDealer.set(img.dealerId, img.imageUrl);
+      }
+    }
+    return dealers.map((row) => ({
+      ...row,
+      images: [],
+      coverImageUrl: coverByDealer.get(row.id) ?? null,
+    }));
   }
 
   async approve(id: string): Promise<Dealer> {

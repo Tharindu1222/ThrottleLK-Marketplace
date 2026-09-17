@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { User } from '../users/user.entity';
@@ -71,13 +72,31 @@ export class ConversationsService {
     return this.addMessage(conversation.id, buyerUserId, body);
   }
 
-  async listForUser(userId: string) {
-    const rows = await this.conversations.find({
-      where: [{ buyerUserId: userId }, { sellerUserId: userId }],
-      relations: ['listing'],
-      order: { lastMessageAt: 'DESC', createdAt: 'DESC' },
-      take: 50,
+  async listForUser(
+    userId: string,
+    paging?: {
+      page?: string | number;
+      limit?: string | number;
+      listingId?: string;
+    },
+  ) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
     });
+    const qb = this.conversations
+      .createQueryBuilder('c')
+      .leftJoinAndSelect('c.listing', 'listing')
+      .where('c.buyerUserId = :userId OR c.sellerUserId = :userId', { userId })
+      .orderBy('c.lastMessageAt', 'DESC', 'NULLS LAST')
+      .addOrderBy('c.createdAt', 'DESC');
+    if (paging?.listingId) {
+      qb.andWhere('c.listingId = :listingId', { listingId: paging.listingId });
+    }
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
 
     const counterpartIds = [
       ...new Set(
@@ -91,26 +110,29 @@ export class ConversationsService {
       rows.map((c) => c.id),
     );
 
-    return rows.map((c) => {
-      const counterpartId =
-        c.buyerUserId === userId ? c.sellerUserId : c.buyerUserId;
-      const last = lastByConversation.get(c.id);
-      return {
-        id: c.id,
-        listingId: c.listingId,
-        listingTitle: c.listing?.title ?? 'Listing',
-        listingSlug: c.listing?.slug ?? null,
-        buyerUserId: c.buyerUserId,
-        sellerUserId: c.sellerUserId,
-        lastMessageAt: c.lastMessageAt,
-        createdAt: c.createdAt,
-        role: c.buyerUserId === userId ? ('buyer' as const) : ('seller' as const),
-        counterpart: this.toContactCard(users.get(counterpartId) ?? null),
-        lastMessagePreview: last?.body?.slice(0, 140) ?? null,
-        lastMessageMine: last ? last.senderUserId === userId : false,
-        unread: this.isUnread(c, last, userId),
-      };
-    });
+    return {
+      items: rows.map((c) => {
+        const counterpartId =
+          c.buyerUserId === userId ? c.sellerUserId : c.buyerUserId;
+        const last = lastByConversation.get(c.id);
+        return {
+          id: c.id,
+          listingId: c.listingId,
+          listingTitle: c.listing?.title ?? 'Listing',
+          listingSlug: c.listing?.slug ?? null,
+          buyerUserId: c.buyerUserId,
+          sellerUserId: c.sellerUserId,
+          lastMessageAt: c.lastMessageAt,
+          createdAt: c.createdAt,
+          role: c.buyerUserId === userId ? ('buyer' as const) : ('seller' as const),
+          counterpart: this.toContactCard(users.get(counterpartId) ?? null),
+          lastMessagePreview: last?.body?.slice(0, 140) ?? null,
+          lastMessageMine: last ? last.senderUserId === userId : false,
+          unread: this.isUnread(c, last, userId),
+        };
+      }),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async getForUser(userId: string, id: string) {

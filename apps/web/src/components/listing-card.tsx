@@ -103,9 +103,11 @@ function formatListedAt(iso: string, locale: Locale): string {
 function FavouriteHeart({
   locale,
   listingId,
+  onChange,
 }: {
   locale: Locale;
   listingId: string;
+  onChange?: (listingId: string, favourited: boolean) => void;
 }) {
   const [favourited, setFavourited] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -171,6 +173,7 @@ function FavouriteHeart({
         }
       }
       patchFavouriteIdsCache(token, listingId, next);
+      onChange?.(listingId, next);
     } catch (err) {
       setFavourited(!next);
       setError(err instanceof Error ? err.message : 'Failed');
@@ -398,6 +401,7 @@ export function ListingCard({
   statusBadge,
   showFavourite = true,
   footer,
+  onFavouriteChange,
 }: {
   locale: Locale;
   listing: BrowseListingCard;
@@ -406,6 +410,7 @@ export function ListingCard({
   statusBadge?: { label: string; status: string };
   showFavourite?: boolean;
   footer?: ReactNode;
+  onFavouriteChange?: (listingId: string, favourited: boolean) => void;
 }) {
   const displayTitle = composeListingTitle({
     title: listing.title,
@@ -502,7 +507,11 @@ export function ListingCard({
             <CompareToggle locale={locale} listing={listing} />
           </div>
           <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1">
-            <FavouriteHeart locale={locale} listingId={listing.id} />
+            <FavouriteHeart
+              locale={locale}
+              listingId={listing.id}
+              onChange={onFavouriteChange}
+            />
           </div>
         </>
       ) : null}

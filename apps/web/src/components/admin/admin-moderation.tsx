@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { apiGet, apiSend } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { Pagination } from '@/components/pagination';
+import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { PendingDealer, PendingListing } from '@/lib/admin-types';
+import { clampedPage, emptyMeta } from '@/lib/pagination';
+import type { PaginationMeta } from '@throttlelk/types';
 
 function sellerName(listing: PendingListing) {
   const first = listing.seller?.firstName?.trim() ?? '';
@@ -28,52 +31,91 @@ export function AdminModeration({ search = '' }: { search?: string }) {
   const [token, setToken] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingListing[]>([]);
   const [dealers, setDealers] = useState<PendingDealer[]>([]);
+  const [listingMeta, setListingMeta] = useState<PaginationMeta>(emptyMeta);
+  const [dealerMeta, setDealerMeta] = useState<PaginationMeta>(emptyMeta);
+  const [listingPage, setListingPage] = useState(1);
+  const [dealerPage, setDealerPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [dealerRejectId, setDealerRejectId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [dealerReason, setDealerReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function loadListings(access: string, pageNum: number, q: string) {
+    const { data, meta } = await apiGetWithMeta<PendingListing[]>(
+      '/api/v1/admin/listings/pending',
+      {
+        token: access,
+        searchParams: {
+          page: String(pageNum),
+          limit: '20',
+          q: q || undefined,
+        },
+      },
+    );
+    const clamp = clampedPage(meta, data.length);
+    if (clamp != null && clamp !== pageNum) {
+      setListingPage(clamp);
+      return;
+    }
+    setPending(data);
+    if (meta) setListingMeta(meta);
+  }
+
+  async function loadDealers(access: string, pageNum: number, q: string) {
+    const { data, meta } = await apiGetWithMeta<PendingDealer[]>(
+      '/api/v1/admin/dealers/pending',
+      {
+        token: access,
+        searchParams: {
+          page: String(pageNum),
+          limit: '20',
+          q: q || undefined,
+        },
+      },
+    );
+    const clamp = clampedPage(meta, data.length);
+    if (clamp != null && clamp !== pageNum) {
+      setDealerPage(clamp);
+      return;
+    }
+    setDealers(data);
+    if (meta) setDealerMeta(meta);
+  }
 
   async function load(access: string) {
-    const [listings, pendingDealers] = await Promise.all([
-      apiGet<PendingListing[]>('/api/v1/admin/listings/pending', { token: access }),
-      apiGet<PendingDealer[]>('/api/v1/admin/dealers/pending', { token: access }),
-    ]);
-    setPending(listings);
-    setDealers(pendingDealers);
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadListings(access, listingPage, search),
+        loadDealers(access, dealerPage, search),
+      ]);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  useEffect(() => {
+    setListingPage(1);
+    setDealerPage(1);
+  }, [search]);
 
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void load(access).catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load'),
-    );
-  }, []);
-
-  const q = search.trim().toLowerCase();
-  const filteredListings = useMemo(
-    () =>
-      q
-        ? pending.filter((l) => {
-            const hay = `${l.title} ${sellerName(l)}`.toLowerCase();
-            return hay.includes(q);
-          })
-        : pending,
-    [pending, q],
-  );
-  const filteredDealers = useMemo(
-    () =>
-      q
-        ? dealers.filter(
-            (d) =>
-              d.name.toLowerCase().includes(q) ||
-              d.phone.toLowerCase().includes(q),
-          )
-        : dealers,
-    [dealers, q],
-  );
+    setLoading(true);
+    void Promise.all([
+      loadListings(access, listingPage, search),
+      loadDealers(access, dealerPage, search),
+    ])
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : 'Failed to load'),
+      )
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listingPage, dealerPage, search]);
 
   if (!token) return null;
 
@@ -95,10 +137,10 @@ export function AdminModeration({ search = '' }: { search?: string }) {
           Pending listings
         </h2>
         <div className="mt-4 space-y-3">
-          {filteredListings.length === 0 ? (
+          {pending.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">No listings waiting for review.</p>
           ) : (
-            filteredListings.map((listing) => (
+            pending.map((listing) => (
               <div
                 key={listing.id}
                 className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)]/60 p-4"
@@ -208,6 +250,18 @@ export function AdminModeration({ search = '' }: { search?: string }) {
             ))
           )}
         </div>
+        <Pagination
+          variant="admin"
+          page={listingMeta.page}
+          totalPages={listingMeta.totalPages}
+          hasPreviousPage={listingMeta.hasPreviousPage}
+          hasNextPage={listingMeta.hasNextPage}
+          total={listingMeta.total}
+          limit={listingMeta.limit}
+          disabled={loading}
+          scroll={false}
+          onPage={setListingPage}
+        />
       </section>
 
       <section className="admin-card p-5">
@@ -215,10 +269,10 @@ export function AdminModeration({ search = '' }: { search?: string }) {
           Pending dealers
         </h2>
         <div className="mt-4 space-y-3">
-          {filteredDealers.length === 0 ? (
+          {dealers.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">No dealer applications waiting.</p>
           ) : (
-            filteredDealers.map((dealer) => (
+            dealers.map((dealer) => (
               <div
                 key={dealer.id}
                 className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)]/60 p-4"
@@ -301,6 +355,18 @@ export function AdminModeration({ search = '' }: { search?: string }) {
             ))
           )}
         </div>
+        <Pagination
+          variant="admin"
+          page={dealerMeta.page}
+          totalPages={dealerMeta.totalPages}
+          hasPreviousPage={dealerMeta.hasPreviousPage}
+          hasNextPage={dealerMeta.hasNextPage}
+          total={dealerMeta.total}
+          limit={dealerMeta.limit}
+          disabled={loading}
+          scroll={false}
+          onPage={setDealerPage}
+        />
       </section>
     </div>
   );

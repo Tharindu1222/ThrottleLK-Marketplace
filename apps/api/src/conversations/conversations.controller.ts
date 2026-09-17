@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   sendConversationMessageSchema,
@@ -19,11 +19,18 @@ export class ConversationsController {
   constructor(private readonly conversations: ConversationsService) {}
 
   @Get()
-  async list(@CurrentUser() user: User): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.conversations.listForUser(user.id),
-    };
+  async list(
+    @CurrentUser() user: User,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('listingId') listingId?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.conversations.listForUser(user.id, {
+      page,
+      limit,
+      listingId,
+    });
+    return { success: true, data: items, meta };
   }
 
   @Get(':id')

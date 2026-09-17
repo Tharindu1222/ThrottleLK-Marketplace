@@ -16,6 +16,7 @@ import type {
 } from '@throttlelk/validation';
 import { Listing } from '../listings/listing.entity';
 import { CacheService } from '../common/cache.service';
+import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { Dealer } from '../dealers/dealer.entity';
 import { StorageService } from '../storage/storage.service';
 import { Role } from './role.entity';
@@ -317,12 +318,34 @@ export class UsersService {
     return this.users.save(user);
   }
 
-  async listUsers(limit = 100) {
-    const rows = await this.users.find({
-      order: { createdAt: 'DESC' },
-      take: limit,
+  async listUsers(paging?: {
+    page?: string | number;
+    limit?: string | number;
+    q?: string;
+  }) {
+    const { page, limit, skip } = parsePageLimit({
+      page: paging?.page,
+      limit: paging?.limit,
+      defaultLimit: 20,
+      maxLimit: 100,
     });
-    return rows.map((u) => this.toPublic(u));
+    const qb = this.users
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'roles')
+      .orderBy('user.createdAt', 'DESC');
+    if (paging?.q?.trim()) {
+      const q = `%${paging.q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(user.email) LIKE :q OR LOWER(user.firstName) LIKE :q OR LOWER(user.lastName) LIKE :q OR LOWER(COALESCE(user.phone, \'\')) LIKE :q)',
+        { q },
+      );
+    }
+    qb.skip(skip).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    return {
+      items: rows.map((u) => this.toPublic(u)),
+      meta: paginationMeta(total, page, limit),
+    };
   }
 
   async setStatus(userId: string, status: 'active' | 'suspended') {

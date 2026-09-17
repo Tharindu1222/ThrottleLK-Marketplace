@@ -80,11 +80,28 @@ export class ListingsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('mine')
-  async mine(@CurrentUser() user: User): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.listingsService.listMine(user.id),
-    };
+  async mine(
+    @CurrentUser() user: User,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.listingsService.listMine(user.id, {
+      page,
+      limit,
+    });
+    return { success: true, data: items, meta };
+  }
+
+  @Get('seo-slugs')
+  async seoSlugs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.listingsService.listSeoSlugs({
+      page,
+      limit,
+    });
+    return { success: true, data: items, meta };
   }
 
   @UseGuards(JwtAuthGuard)

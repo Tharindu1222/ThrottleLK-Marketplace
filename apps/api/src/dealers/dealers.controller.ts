@@ -8,6 +8,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -32,11 +33,29 @@ export class DealersController {
   ) {}
 
   @Get()
-  async listActive(): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.dealersService.listActive(),
-    };
+  async listActive(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.dealersService.listActive({
+      page,
+      limit,
+      q,
+    });
+    return { success: true, data: items, meta };
+  }
+
+  @Get('seo-slugs')
+  async seoSlugs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.dealersService.listSeoSlugs({
+      page,
+      limit,
+    });
+    return { success: true, data: items, meta };
   }
 
   @UseGuards(JwtAuthGuard)

@@ -131,34 +131,48 @@ describe('ListingsService admin review notifications', () => {
 describe('ListingsService.listPending', () => {
   it('returns cover image, seller name, and submitted time without secrets', async () => {
     const submittedAt = new Date('2026-09-17T04:30:00.000Z');
-    const listingsRepo = {
-      find: jest.fn(async () => [
-        {
-          id: 'listing-1',
-          title: 'Honda Activa',
-          priceLkr: 500000,
-          manufactureYear: 2021,
-          updatedAt: submittedAt,
-          seller: {
-            id: 'seller-1',
-            firstName: 'Nimal',
-            lastName: 'Perera',
-            email: 'nimal@example.com',
-            passwordHash: 'secret',
-          },
-          images: [
-            { sortOrder: 1, imageUrl: 'https://cdn.example/second.jpg' },
-            { sortOrder: 0, imageUrl: 'https://cdn.example/cover.jpg' },
-          ],
-        },
+    const pendingRow = {
+      id: 'listing-1',
+      title: 'Honda Activa',
+      priceLkr: 500000,
+      manufactureYear: 2021,
+      updatedAt: submittedAt,
+      seller: {
+        id: 'seller-1',
+        firstName: 'Nimal',
+        lastName: 'Perera',
+        email: 'nimal@example.com',
+        passwordHash: 'secret',
+      },
+    };
+    const listingsQb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(async () => [[pendingRow], 1]),
+    };
+    const imagesQb = {
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => [
+        { listingId: 'listing-1', imageUrl: 'https://cdn.example/cover.jpg' },
       ]),
-      findOne: jest.fn(),
-      save: jest.fn(),
+    };
+    const listingsRepo = {
+      createQueryBuilder: jest.fn(() => listingsQb),
+    };
+    const listingImagesRepo = {
+      createQueryBuilder: jest.fn(() => imagesQb),
     };
     const service = new ListingsService(
       listingsRepo as never,
       { create: jest.fn(), save: jest.fn() } as never,
-      {} as never,
+      listingImagesRepo as never,
       {} as never,
       {} as never,
       { userIdsForListing: jest.fn(async () => []) } as never,
@@ -166,13 +180,11 @@ describe('ListingsService.listPending', () => {
       { invalidateDashboard: jest.fn() } as never,
     );
 
-    const [row] = await service.listPending();
+    const { items, meta } = await service.listPending();
+    const [row] = items;
 
-    expect(listingsRepo.find).toHaveBeenCalledWith(
-      expect.objectContaining({
-        relations: ['images', 'seller'],
-      }),
-    );
+    expect(listingsQb.skip).toHaveBeenCalled();
+    expect(listingsQb.take).toHaveBeenCalled();
     expect(row.coverImageUrl).toBe('https://cdn.example/cover.jpg');
     expect(row.seller).toEqual({
       id: 'seller-1',
@@ -181,6 +193,54 @@ describe('ListingsService.listPending', () => {
     });
     expect(row.seller).not.toHaveProperty('passwordHash');
     expect(row.updatedAt).toEqual(submittedAt);
+    expect(meta).toMatchObject({ page: 1, limit: 20, total: 1 });
+  });
+});
+
+describe('ListingsService.listMine', () => {
+  it('pages with skip/take and returns meta', async () => {
+    const listingsRepo = {
+      findAndCount: jest.fn(async () => [[{ id: 'listing-1' }], 21]),
+    };
+    const imagesQb = {
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => []),
+    };
+    const service = new ListingsService(
+      listingsRepo as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { createQueryBuilder: jest.fn(() => imagesQb) } as never,
+      {} as never,
+      {} as never,
+      { userIdsForListing: jest.fn(async () => []) } as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+
+    const { items, meta } = await service.listMine('seller-1', {
+      page: 2,
+      limit: 20,
+    });
+
+    expect(listingsRepo.findAndCount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { sellerId: 'seller-1' },
+        skip: 20,
+        take: 20,
+      }),
+    );
+    expect(items).toHaveLength(1);
+    expect(meta).toMatchObject({
+      page: 2,
+      limit: 20,
+      total: 21,
+      totalPages: 2,
+      hasNextPage: false,
+      hasPreviousPage: true,
+    });
   });
 });
 

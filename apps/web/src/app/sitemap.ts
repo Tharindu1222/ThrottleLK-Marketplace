@@ -1,12 +1,28 @@
 import type { MetadataRoute } from 'next';
 import { guides } from '@/content/guides';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { absoluteUrl } from '@/lib/seo';
 
 type Brand = { slug: string };
 type District = { slug: string };
-type Listing = { slug: string; sellerId?: string; updatedAt?: string };
-type Dealer = { slug: string };
+type ListingSlug = { slug: string; sellerId?: string; updatedAt?: string };
+type DealerSlug = { slug: string };
+
+async function fetchAllPages<T>(path: string): Promise<T[]> {
+  const all: T[] = [];
+  let page = 1;
+  let hasNext = true;
+  while (hasNext) {
+    const { data, meta } = await apiGetWithMeta<T[]>(path, {
+      searchParams: { page: String(page), limit: '100' },
+    });
+    all.push(...(data ?? []));
+    hasNext = Boolean(meta?.hasNextPage);
+    page += 1;
+    if (page > 500) break;
+  }
+  return all;
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base: MetadataRoute.Sitemap = [
@@ -39,8 +55,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [brands, districts, listings, dealers] = await Promise.all([
       apiGet<Brand[]>('/api/v1/brands'),
       apiGet<District[]>('/api/v1/locations/districts'),
-      apiGet<Listing[]>('/api/v1/listings'),
-      apiGet<Dealer[]>('/api/v1/dealers'),
+      fetchAllPages<ListingSlug>('/api/v1/listings/seo-slugs'),
+      fetchAllPages<DealerSlug>('/api/v1/dealers/seo-slugs'),
     ]);
 
     for (const brand of brands) {

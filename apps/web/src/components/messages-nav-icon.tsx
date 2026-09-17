@@ -74,6 +74,7 @@ export function MessagesNavIcon({ locale }: { locale: Locale }) {
   const refresh = useCallback(async (access: string) => {
     const list = await apiGet<ConversationItem[]>('/api/v1/conversations', {
       token: access,
+      searchParams: { limit: String(DROPDOWN_LIMIT) },
     });
     setItems(list.slice(0, DROPDOWN_LIMIT));
     setUnread(list.filter((c) => c.unread).length);
