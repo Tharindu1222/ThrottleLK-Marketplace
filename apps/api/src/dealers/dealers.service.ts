@@ -28,6 +28,15 @@ export class DealersService {
   ) {}
 
   async create(owner: User, input: CreateDealerInput): Promise<Dealer> {
+    if (owner.roles.some((role) => role.name === 'dealer')) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'DEALER_EXISTS',
+          message: 'You already have a dealer profile',
+        },
+      });
+    }
     const existingActiveOrPending = await this.dealers.findOne({
       where: [
         { ownerUserId: owner.id, status: 'pending' },
@@ -63,10 +72,21 @@ export class DealersService {
   }
 
   listMine(ownerUserId: string) {
-    return this.dealers.find({
-      where: { ownerUserId },
-      order: { createdAt: 'DESC' },
-    });
+    return this.dealers
+      .find({
+        where: { ownerUserId },
+        order: { createdAt: 'DESC' },
+      })
+      .then(async (rows) => {
+        const active = rows.find((row) => row.status === 'active');
+        if (active) {
+          const owner = await this.usersService.findByIdOrThrow(ownerUserId);
+          if (owner.roles.some((role) => role.name === 'seller')) {
+            await this.promoteOwnerToDealer(owner, active);
+          }
+        }
+        return rows;
+      });
   }
 
   listPending() {
@@ -148,7 +168,7 @@ export class DealersService {
     });
     const saved = await this.dealers.save(dealer);
     if (status === 'active') {
-      await this.usersService.addRole(owner, 'dealer');
+      await this.promoteOwnerToDealer(owner, saved);
     }
     return this.adminGet(saved.id);
   }
@@ -186,7 +206,7 @@ export class DealersService {
 
     if (input.status === 'active' && prevStatus !== 'active') {
       const owner = await this.usersService.findByIdOrThrow(saved.ownerUserId);
-      await this.usersService.addRole(owner, 'dealer');
+      await this.promoteOwnerToDealer(owner, saved);
     }
 
     return this.adminGet(saved.id);
@@ -248,7 +268,7 @@ export class DealersService {
     dealer.verifiedAt = new Date();
     await this.dealers.save(dealer);
     const owner = await this.usersService.findByIdOrThrow(dealer.ownerUserId);
-    await this.usersService.addRole(owner, 'dealer');
+    await this.promoteOwnerToDealer(owner, dealer);
     void this.notifications.dealerApproved(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,
@@ -273,6 +293,25 @@ export class DealersService {
       reason,
     });
     return dealer;
+  }
+
+  async findActiveOwned(ownerUserId: string): Promise<Dealer | null> {
+    return this.dealers.findOne({
+      where: { ownerUserId, status: 'active' },
+    });
+  }
+
+  /** Approved dealers keep buyer access but are no longer private sellers. */
+  async promoteOwnerToDealer(owner: User, dealer: Dealer): Promise<void> {
+    let user = await this.usersService.addRole(owner, 'dealer');
+    user = await this.usersService.removeRole(user, 'seller');
+    await this.listings
+      .createQueryBuilder()
+      .update(Listing)
+      .set({ dealerId: dealer.id })
+      .where('seller_id = :ownerId', { ownerId: user.id })
+      .andWhere('dealer_id IS NULL')
+      .execute();
   }
 
   async assertOwnedActiveDealer(ownerUserId: string, dealerId: string) {

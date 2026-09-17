@@ -43,6 +43,12 @@ export class Conversation {
   @Column({ name: 'last_message_at', type: 'timestamptz', nullable: true })
   lastMessageAt!: Date | null;
 
+  @Column({ name: 'buyer_last_read_at', type: 'timestamptz', nullable: true })
+  buyerLastReadAt!: Date | null;
+
+  @Column({ name: 'seller_last_read_at', type: 'timestamptz', nullable: true })
+  sellerLastReadAt!: Date | null;
+
   @OneToMany(() => ConversationMessage, (m) => m.conversation)
   messages!: ConversationMessage[];
 

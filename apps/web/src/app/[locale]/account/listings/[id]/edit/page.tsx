@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { isLocale, type Locale } from '@/lib/i18n';
+import { isLocale, t, type Locale } from '@/lib/i18n';
 import { EditListingForm } from './edit-listing-form';
 
 export default async function EditListingPage({
@@ -14,11 +14,9 @@ export default async function EditListingPage({
   return (
     <div>
       <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
-        Edit listing
+        {t(locale, 'editListingPage')}
       </h1>
-      <div className="mt-8">
-        <EditListingForm locale={locale} listingId={id} />
-      </div>
+      <EditListingForm locale={locale} listingId={id} />
     </div>
   );
 }

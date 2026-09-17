@@ -51,24 +51,24 @@ export function ListingGallery({
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden border border-black/10 bg-surface shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-24px_rgba(0,0,0,0.35)]">
+      <div className="overflow-hidden border border-black/10 bg-zinc-100 shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-24px_rgba(0,0,0,0.35)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={current}
           alt={title}
-          className="max-h-[520px] min-h-[240px] w-full object-cover sm:min-h-[320px]"
+          className="aspect-[16/10] w-full object-cover"
         />
       </div>
       {ordered.length > 1 ? (
         <div className="flex flex-wrap gap-2">
-          {ordered.map((image) => {
+          {ordered.map((image, index) => {
             const selected = image.imageUrl === current;
             return (
               <button
                 key={image.id}
                 type="button"
                 onClick={() => setActiveUrl(image.imageUrl)}
-                aria-label={`View photo`}
+                aria-label={`Photo ${index + 1} of ${ordered.length}`}
                 aria-pressed={selected}
                 className={`overflow-hidden border bg-surface transition ${
                   selected

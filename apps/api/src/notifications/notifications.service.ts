@@ -158,6 +158,27 @@ export class NotificationsService {
     });
   }
 
+  async listingPendingReview(listing: {
+    id: string;
+    title: string;
+    slug: string;
+  }) {
+    const adminIds = await this.users.findActiveAdminIds();
+    await Promise.all(
+      adminIds.map((userId) =>
+        this.notifyUser({
+          userId,
+          type: 'listing_pending_review',
+          title: 'Listing pending review',
+          message: `"${listing.title}" is waiting for approval.`,
+          data: { listingId: listing.id, slug: listing.slug },
+          emailSubject: `ThrottleLK: listing pending review — ${listing.title}`,
+          emailHtml: `<p>A listing <strong>${listing.title}</strong> was submitted and is waiting for admin review.</p>`,
+        }),
+      ),
+    );
+  }
+
   async priceDrop(
     userId: string,
     listing: { id: string; title: string; slug: string },

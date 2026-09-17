@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { HeaderNavBadge, headerIconButtonClass } from './header-nav-badge';
 
 export type AppNotification = {
   id: string;
@@ -27,6 +28,9 @@ export function notificationHref(
   n: AppNotification,
 ): string | null {
   const data = n.dataJson;
+  if (n.type === 'listing_pending_review') {
+    return `/${locale}/admin/moderation`;
+  }
   if (!data) return null;
   if (data.conversationId) {
     return `/${locale}/account/messages/${data.conversationId}`;
@@ -137,8 +141,12 @@ export function NotificationsBell({ locale }: { locale: Locale }) {
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        className="relative inline-flex h-10 w-10 items-center justify-center text-muted transition hover:text-foreground"
-        aria-label={t(locale, 'notifications')}
+        className={headerIconButtonClass}
+        aria-label={
+          unread > 0
+            ? t(locale, 'unreadNotifications').replace('{n}', String(unread))
+            : t(locale, 'notifications')
+        }
         aria-expanded={open}
         onClick={() => {
           const next = !open;
@@ -162,11 +170,7 @@ export function NotificationsBell({ locale }: { locale: Locale }) {
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
-        {unread > 0 ? (
-          <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white">
-            {unread > 99 ? '99+' : unread}
-          </span>
-        ) : null}
+        {unread > 0 ? <HeaderNavBadge count={unread} /> : null}
       </button>
 
       {open ? (

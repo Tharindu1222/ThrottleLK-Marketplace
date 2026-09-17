@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
@@ -13,6 +13,7 @@ type Seller = {
   id: string;
   displayName: string;
   memberSince: string;
+  dealerSlug?: string | null;
 };
 
 export async function generateMetadata({
@@ -47,6 +48,10 @@ export default async function SellerProfilePage({
     seller = await apiGet<Seller>(`/api/v1/sellers/${id}`);
   } catch {
     notFound();
+  }
+
+  if (seller.dealerSlug) {
+    redirect(`/${locale}/dealers/${seller.dealerSlug}`);
   }
 
   const listings = await apiGet<BrowseListingCard[]>('/api/v1/listings', {

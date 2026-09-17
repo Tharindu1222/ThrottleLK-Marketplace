@@ -1,61 +1,50 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  formatNotificationWhen,
+  notificationHref,
+  type AppNotification,
+} from '@/components/notifications-bell';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { Locale } from '@/lib/i18n';
 
-type Notification = {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  readAt: string | null;
-  createdAt: string;
-  dataJson?: { slug?: string; conversationId?: string } | null;
-};
-
-function formatWhen(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
-  const diffMs = Date.now() - date.getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
-}
+const POLL_MS = 30_000;
 
 export function AdminNotificationsBell({ locale }: { locale: Locale }) {
+  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<Notification[]>([]);
+  const [items, setItems] = useState<AppNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  async function refresh(access: string) {
+  const refresh = useCallback(async (access: string) => {
     const [list, count] = await Promise.all([
-      apiGet<Notification[]>('/api/v1/notifications', { token: access }),
+      apiGet<AppNotification[]>('/api/v1/notifications', { token: access }),
       apiGet<{ count: number }>('/api/v1/notifications/unread-count', {
         token: access,
       }),
     ]);
-    setItems(list);
+    setItems(list.slice(0, 8));
     setUnread(count.count);
-  }
+  }, []);
 
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
     void refresh(access).catch(() => undefined);
-  }, []);
+    const id = window.setInterval(() => {
+      void refresh(access).catch(() => undefined);
+    }, POLL_MS);
+    return () => window.clearInterval(id);
+  }, [refresh]);
 
   useEffect(() => {
     if (!open) return;
@@ -155,59 +144,61 @@ export function AdminNotificationsBell({ locale }: { locale: Locale }) {
                 No notifications yet.
               </p>
             ) : (
-              items.map((n) => (
-                <div
-                  key={n.id}
-                  className={`border-b border-[var(--admin-border)] px-4 py-3 last:border-b-0 ${
-                    n.readAt
-                      ? 'bg-transparent'
-                      : 'bg-[var(--admin-accent-soft)]/40'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    className="w-full text-left"
-                    onClick={() => {
-                      if (n.readAt) return;
-                      void apiSend(`/api/v1/notifications/${n.id}/read`, {
-                        method: 'PATCH',
-                        token,
-                      })
-                        .then(() => refresh(token))
-                        .catch(() => undefined);
-                    }}
+              items.map((n) => {
+                const href = notificationHref(locale, n);
+                return (
+                  <div
+                    key={n.id}
+                    className={`border-b border-[var(--admin-border)] px-4 py-3 last:border-b-0 ${
+                      n.readAt
+                        ? 'bg-transparent'
+                        : 'bg-[var(--admin-accent-soft)]/40'
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-[var(--admin-text)]">
-                        {n.title}
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => {
+                        setOpen(false);
+                        if (!n.readAt) {
+                          void apiSend(`/api/v1/notifications/${n.id}/read`, {
+                            method: 'PATCH',
+                            token,
+                          })
+                            .then(() => refresh(token))
+                            .catch(() => undefined);
+                        }
+                        if (href) router.push(href);
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium text-[var(--admin-text)]">
+                          {n.title}
+                        </p>
+                        <span className="shrink-0 text-[10px] text-[var(--admin-faint)]">
+                          {formatNotificationWhen(n.createdAt)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                        {n.message}
                       </p>
-                      <span className="shrink-0 text-[10px] text-[var(--admin-faint)]">
-                        {formatWhen(n.createdAt)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--admin-muted)]">
-                      {n.message}
-                    </p>
-                  </button>
-                  {n.dataJson?.conversationId ? (
-                    <Link
-                      href={`/${locale}/account/messages/${n.dataJson.conversationId}`}
-                      className="mt-2 inline-block text-xs text-[var(--admin-accent-2)] underline"
-                      onClick={() => setOpen(false)}
-                    >
-                      Open conversation
-                    </Link>
-                  ) : n.dataJson?.slug ? (
-                    <Link
-                      href={`/${locale}/bikes/${n.dataJson.slug}`}
-                      className="mt-2 inline-block text-xs text-[var(--admin-accent-2)] underline"
-                      onClick={() => setOpen(false)}
-                    >
-                      View listing
-                    </Link>
-                  ) : null}
-                </div>
-              ))
+                    </button>
+                    {href ? (
+                      <Link
+                        href={href}
+                        className="mt-2 inline-block text-xs text-[var(--admin-accent-2)] underline"
+                        onClick={() => setOpen(false)}
+                      >
+                        {n.type === 'listing_pending_review'
+                          ? 'Review listing'
+                          : n.dataJson?.conversationId
+                            ? 'Open conversation'
+                            : 'View listing'}
+                      </Link>
+                    ) : null}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

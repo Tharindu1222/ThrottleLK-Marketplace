@@ -212,7 +212,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
     : t(locale, 'accountNav');
 
   return (
-    <aside className="flex flex-col gap-3 lg:sticky lg:top-[5.75rem] lg:h-[calc(100vh-7.25rem)] lg:self-start">
+    <aside className="flex flex-col gap-3 px-4 pt-4 lg:sticky lg:top-[4.25rem] lg:h-[calc(100svh-4.25rem)] lg:w-[260px] lg:shrink-0 lg:gap-0 lg:self-start lg:px-0 lg:pt-0 xl:w-[280px]">
       {/* Mobile chips */}
       <nav
         aria-label={t(locale, 'accountNav')}
@@ -240,7 +240,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
       </nav>
 
       {/* Desktop panel */}
-      <div className="hidden min-h-0 flex-1 flex-col overflow-hidden border border-black/15 bg-white shadow-[0_1px_0_rgba(0,0,0,0.05),0_16px_36px_-26px_rgba(15,23,42,0.4)] lg:flex">
+      <div className="hidden min-h-0 flex-1 flex-col overflow-hidden border-r border-black/10 bg-white lg:flex">
         <div className="shrink-0 border-b border-black/15 bg-gradient-to-b from-[#eef0f3] to-white px-4 py-4">
           <div className="flex items-center gap-3">
             <SidebarAvatar user={user} />

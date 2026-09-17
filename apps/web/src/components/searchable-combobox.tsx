@@ -24,6 +24,8 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   emptyText?: string;
+  loadingText?: string;
+  clearText?: string;
   onQueryChange: (query: string) => void;
   onSelect: (option: ComboboxOption) => void;
   onClear?: () => void;
@@ -39,6 +41,8 @@ export function SearchableCombobox({
   disabled,
   loading,
   emptyText = 'No results found',
+  loadingText = 'Searching…',
+  clearText = 'Clear',
   onQueryChange,
   onSelect,
   onClear,
@@ -140,7 +144,7 @@ export function SearchableCombobox({
               setOpen(false);
             }}
           >
-            Clear
+            {clearText}
           </button>
         ) : null}
       </div>
@@ -151,7 +155,7 @@ export function SearchableCombobox({
           className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto border border-black/15 bg-background shadow-lg"
         >
           {loading ? (
-            <li className="px-3 py-2.5 text-sm text-muted">Searching…</li>
+            <li className="px-3 py-2.5 text-sm text-muted">{loadingText}</li>
           ) : options.length === 0 ? (
             <li className="px-3 py-2.5 text-sm text-muted">{emptyText}</li>
           ) : (

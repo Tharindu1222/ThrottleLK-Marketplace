@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { HeaderNavBadge, headerIconButtonClass } from './header-nav-badge';
 
 type ConversationItem = {
   id: string;
@@ -21,6 +22,8 @@ type ConversationItem = {
     avatarUrl: string | null;
   } | null;
   lastMessagePreview?: string | null;
+  lastMessageMine?: boolean;
+  unread?: boolean;
 };
 
 const DROPDOWN_LIMIT = 8;
@@ -64,6 +67,7 @@ export function MessagesNavIcon({ locale }: { locale: Locale }) {
   const [token, setToken] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<ConversationItem[]>([]);
+  const [unread, setUnread] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -72,6 +76,7 @@ export function MessagesNavIcon({ locale }: { locale: Locale }) {
       token: access,
     });
     setItems(list.slice(0, DROPDOWN_LIMIT));
+    setUnread(list.filter((c) => c.unread).length);
   }, []);
 
   useEffect(() => {
@@ -109,8 +114,12 @@ export function MessagesNavIcon({ locale }: { locale: Locale }) {
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        className="relative inline-flex h-10 w-10 items-center justify-center text-muted transition hover:text-foreground"
-        aria-label={t(locale, 'messages')}
+        className={headerIconButtonClass}
+        aria-label={
+          unread > 0
+            ? t(locale, 'unreadMessages').replace('{n}', String(unread))
+            : t(locale, 'messages')
+        }
         aria-expanded={open}
         onClick={() => {
           const next = !open;
@@ -124,9 +133,7 @@ export function MessagesNavIcon({ locale }: { locale: Locale }) {
         }}
       >
         <ChatBubblesIcon className="h-5 w-5" />
-        {items.length > 0 ? (
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" />
-        ) : null}
+        <HeaderNavBadge count={unread} />
       </button>
 
       {open ? (
@@ -162,8 +169,18 @@ export function MessagesNavIcon({ locale }: { locale: Locale }) {
                 <button
                   key={c.id}
                   type="button"
-                  className="block w-full border-b border-black/5 px-4 py-3 text-left transition last:border-b-0 hover:bg-surface/80"
+                  className={`block w-full border-b border-black/5 px-4 py-3 text-left transition last:border-b-0 hover:bg-surface/80 ${
+                    c.unread ? 'bg-accent/[0.04]' : ''
+                  }`}
                   onClick={() => {
+                    if (c.unread) {
+                      setUnread((n) => Math.max(0, n - 1));
+                      setItems((rows) =>
+                        rows.map((row) =>
+                          row.id === c.id ? { ...row, unread: false } : row,
+                        ),
+                      );
+                    }
                     setOpen(false);
                     router.push(`/${locale}/account/messages/${c.id}`);
                   }}

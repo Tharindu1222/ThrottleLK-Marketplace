@@ -1,4 +1,50 @@
+import { BadRequestException } from '@nestjs/common';
 import { ListingsService, searchTokens } from './listings.service';
+import type { User } from '../users/user.entity';
+import type { Listing } from './listing.entity';
+
+const seller = { id: 'seller-1' } as User;
+
+function makeService(
+  listing: Partial<Listing>,
+  extras?: {
+    dealerId?: string | null;
+    findActiveOwned?: jest.Mock;
+  },
+) {
+  const row = { ...listing } as Listing;
+  const listingsRepo = {
+    findOne: jest.fn(async () => row),
+    save: jest.fn(async (saved: Listing) => saved),
+    create: jest.fn((value: Listing) => value),
+  };
+  const notifications = {
+    listingPendingReview: jest.fn(async () => undefined),
+    listingApproved: jest.fn(),
+    listingRejected: jest.fn(),
+    priceDrop: jest.fn(),
+  };
+  const dealersService = {
+    assertOwnedActiveDealer: jest.fn(async (_owner: string, id: string) => ({
+      id,
+      status: 'active',
+    })),
+    findActiveOwned: extras?.findActiveOwned ?? jest.fn(async () =>
+      extras?.dealerId
+        ? { id: extras.dealerId, status: 'active' }
+        : null,
+    ),
+  };
+  const service = new ListingsService(
+    listingsRepo as never,
+    { create: jest.fn(), save: jest.fn() } as never,
+    dealersService as never,
+    notifications as never,
+    { userIdsForListing: jest.fn(async () => []) } as never,
+    {} as never,
+  );
+  return { service, notifications, row, listingsRepo, dealersService };
+}
 
 describe('ListingsService status rules', () => {
   it('documents allowed submit sources', () => {
@@ -12,6 +58,128 @@ describe('ListingsService status rules', () => {
   });
 });
 
+describe('ListingsService admin review notifications', () => {
+  it('notifies admins when a draft listing is submitted', async () => {
+    const { service, notifications, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'draft',
+      title: 'BMW Motorrad S 1000 R 2026',
+      slug: 'bmw-s-1000-r',
+    });
+
+    await service.submit(seller, row.id);
+
+    expect(notifications.listingPendingReview).toHaveBeenCalledWith({
+      id: 'listing-1',
+      title: 'BMW Motorrad S 1000 R 2026',
+      slug: 'bmw-s-1000-r',
+    });
+  });
+
+  it('notifies admins when an active listing is sent back for review', async () => {
+    const { service, notifications, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+      title: 'BMW Motorrad S 1000 R 2026',
+      slug: 'bmw-s-1000-r',
+      priceLkr: 3900000,
+    });
+
+    await service.update(seller, row.id, { title: 'BMW Motorrad S 1000 R 2026' });
+
+    expect(notifications.listingPendingReview).toHaveBeenCalledWith({
+      id: 'listing-1',
+      title: 'BMW Motorrad S 1000 R 2026',
+      slug: 'bmw-s-1000-r',
+    });
+  });
+
+  it('does not notify admins for price-only edits on an active listing', async () => {
+    const { service, notifications, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+      title: 'Honda CBR',
+      slug: 'honda-cbr',
+      priceLkr: 500000,
+    });
+
+    await service.update(seller, row.id, { priceLkr: 450000 });
+
+    expect(notifications.listingPendingReview).not.toHaveBeenCalled();
+  });
+
+  it('does not notify admins when editing a listing already in review', async () => {
+    const { service, notifications, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'pending_review',
+      title: 'Honda CBR',
+      slug: 'honda-cbr',
+    });
+
+    await service.update(seller, row.id, { title: 'Honda CBR updated' });
+
+    expect(notifications.listingPendingReview).not.toHaveBeenCalled();
+  });
+});
+
+describe('ListingsService.listPending', () => {
+  it('returns cover image, seller name, and submitted time without secrets', async () => {
+    const submittedAt = new Date('2026-09-17T04:30:00.000Z');
+    const listingsRepo = {
+      find: jest.fn(async () => [
+        {
+          id: 'listing-1',
+          title: 'Honda Activa',
+          priceLkr: 500000,
+          manufactureYear: 2021,
+          updatedAt: submittedAt,
+          seller: {
+            id: 'seller-1',
+            firstName: 'Nimal',
+            lastName: 'Perera',
+            email: 'nimal@example.com',
+            passwordHash: 'secret',
+          },
+          images: [
+            { sortOrder: 1, imageUrl: 'https://cdn.example/second.jpg' },
+            { sortOrder: 0, imageUrl: 'https://cdn.example/cover.jpg' },
+          ],
+        },
+      ]),
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+    const service = new ListingsService(
+      listingsRepo as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      {} as never,
+      {} as never,
+      { userIdsForListing: jest.fn(async () => []) } as never,
+      {} as never,
+    );
+
+    const [row] = await service.listPending();
+
+    expect(listingsRepo.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        relations: ['images', 'seller'],
+      }),
+    );
+    expect(row.coverImageUrl).toBe('https://cdn.example/cover.jpg');
+    expect(row.seller).toEqual({
+      id: 'seller-1',
+      firstName: 'Nimal',
+      lastName: 'Perera',
+    });
+    expect(row.seller).not.toHaveProperty('passwordHash');
+    expect(row.updatedAt).toEqual(submittedAt);
+  });
+});
+
 describe('searchTokens', () => {
   it('splits on spaces and hyphens so d tracker matches D-Tracker', () => {
     expect(searchTokens('d tracker')).toEqual(['d', 'tracker']);
@@ -20,5 +188,68 @@ describe('searchTokens', () => {
 
   it('ignores empty query', () => {
     expect(searchTokens('   ')).toEqual([]);
+  });
+});
+
+const createInput = {
+  title: 'Honda Dio',
+  description: 'A well kept scooter for city use in Colombo.',
+  brandId: 'brand-1',
+  modelId: 'model-1',
+  categoryId: 'cat-1',
+  districtId: 'dist-1',
+  cityId: 'city-1',
+  priceLkr: 500000,
+  manufactureYear: 2020,
+  fuelType: 'petrol',
+  transmission: 'automatic',
+  condition: 'used',
+};
+
+describe('ListingsService.create dealer conversion', () => {
+  it('keeps private-seller listings unattached to a dealer', async () => {
+    const privateSeller = {
+      id: 'seller-1',
+      roles: [{ name: 'buyer' }, { name: 'seller' }],
+    } as User;
+    const { service, listingsRepo } = makeService({});
+
+    await service.create(privateSeller, createInput as never);
+
+    expect(listingsRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ dealerId: null, sellerId: 'seller-1' }),
+    );
+  });
+
+  it('forces approved dealers to list under their showroom', async () => {
+    const dealerUser = {
+      id: 'seller-1',
+      roles: [{ name: 'buyer' }, { name: 'dealer' }],
+    } as User;
+    const { service, listingsRepo } = makeService(
+      {},
+      { dealerId: 'dealer-1' },
+    );
+
+    await service.create(dealerUser, createInput as never);
+
+    expect(listingsRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ dealerId: 'dealer-1', sellerId: 'seller-1' }),
+    );
+  });
+
+  it('rejects a private seller trying to list under a dealer', async () => {
+    const privateSeller = {
+      id: 'seller-1',
+      roles: [{ name: 'buyer' }, { name: 'seller' }],
+    } as User;
+    const { service } = makeService({});
+
+    await expect(
+      service.create(privateSeller, {
+        ...createInput,
+        dealerId: 'dealer-1',
+      } as never),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

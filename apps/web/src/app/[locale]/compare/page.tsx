@@ -16,7 +16,7 @@ export default async function ComparePage({
       <p className="text-xs tracking-[0.28em] text-accent uppercase">
         ThrottleLK
       </p>
-      <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl tracking-wide text-foreground sm:text-5xl">
+      <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
         {t(locale, 'compare')}
       </h1>
       <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">

@@ -9,7 +9,7 @@ import {
 } from '@/components/searchable-combobox';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
-import type { Locale } from '@/lib/i18n';
+import { t, type Locale } from '@/lib/i18n';
 
 type Option = { id: string; name: string; slug?: string };
 type CatalogModel = {
@@ -44,10 +44,10 @@ type FormState = {
 };
 
 const STEPS = [
-  { id: 1, label: 'Bike' },
-  { id: 2, label: 'Specs' },
-  { id: 3, label: 'Details' },
-  { id: 4, label: 'Photos' },
+  { id: 1, labelKey: 'sellStepBike' },
+  { id: 2, labelKey: 'sellStepSpecs' },
+  { id: 3, labelKey: 'sellStepDetails' },
+  { id: 4, labelKey: 'sellStepPhotos' },
 ] as const;
 
 const fieldClass =
@@ -128,7 +128,13 @@ export function SellForm({ locale }: { locale: Locale }) {
     ]).then(([c, d, mine]) => {
       setCategories(c);
       setDistricts(d);
-      setDealers(mine.filter((x) => x.status === 'active'));
+      const active = mine.filter((x) => x.status === 'active');
+      setDealers(active);
+      if (active[0]) {
+        setForm((prev) =>
+          prev.dealerId ? prev : { ...prev, dealerId: active[0].id },
+        );
+      }
     });
   }, []);
 
@@ -225,34 +231,35 @@ export function SellForm({ locale }: { locale: Locale }) {
 
   function validateStep(current: number): string | null {
     if (current === 1) {
-      if (!form.brandId) return 'Brand is required';
-      if (!form.modelId) return 'Model is required';
-      if (!form.categoryId) return 'Category is required';
+      if (!form.brandId) return t(locale, 'requiredBrand');
+      if (!form.modelId) return t(locale, 'requiredModel');
+      if (!form.categoryId) return t(locale, 'requiredCategory');
     }
     if (current === 2) {
       const year = Number(form.manufactureYear);
       if (!year || year < 1970 || year > 2100)
-        return 'Manufacture year is required';
+        return t(locale, 'requiredYear');
       if (!isElectric && (!form.engineCc || Number(form.engineCc) <= 0))
-        return 'Engine capacity is required';
-      if (!form.condition) return 'Condition is required';
-      if (!form.transmission) return 'Transmission is required';
-      if (!form.fuelType) return 'Fuel type is required';
+        return t(locale, 'requiredEngine');
+      if (!form.condition) return t(locale, 'requiredCondition');
+      if (!form.transmission) return t(locale, 'requiredTransmission');
+      if (!form.fuelType) return t(locale, 'requiredFuel');
       if (form.mileage === '' || Number(form.mileage) < 0)
-        return 'Mileage is required';
-      if (!form.priceLkr || Number(form.priceLkr) <= 0) return 'Price is required';
+        return t(locale, 'requiredMileage');
+      if (!form.priceLkr || Number(form.priceLkr) <= 0)
+        return t(locale, 'requiredPrice');
     }
     if (current === 3) {
-      if (!form.districtId) return 'District is required';
-      if (!form.cityId) return 'City is required';
+      if (!form.districtId) return t(locale, 'requiredDistrict');
+      if (!form.cityId) return t(locale, 'requiredCity');
       if (!form.description || form.description.trim().length < 20)
-        return 'Description must be at least 20 characters';
+        return t(locale, 'requiredDescription');
       if (!form.phone || form.phone.trim().length < 9)
-        return 'Phone number is required';
+        return t(locale, 'requiredPhone');
     }
     if (current === 4) {
-      if (!listingId) return 'Listing not created yet';
-      if (photoCount < 1) return 'Add at least 1 photo';
+      if (!listingId) return t(locale, 'listingNotCreated');
+      if (photoCount < 1) return t(locale, 'requiredPhoto');
     }
     return null;
   }
@@ -315,7 +322,7 @@ export function SellForm({ locale }: { locale: Locale }) {
         }
         setStep(4);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save listing');
+        setError(err instanceof Error ? err.message : t(locale, 'saveListingFailed'));
       } finally {
         setBusy(false);
       }
@@ -337,7 +344,7 @@ export function SellForm({ locale }: { locale: Locale }) {
       await apiSend(`/api/v1/listings/${listingId}/submit`, { token: token! });
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Submit failed');
+      setError(err instanceof Error ? err.message : t(locale, 'submitFailed'));
     } finally {
       setBusy(false);
     }
@@ -346,9 +353,9 @@ export function SellForm({ locale }: { locale: Locale }) {
   if (!token) {
     return (
       <p className="mt-6 text-center text-muted">
-        Sign in required —{' '}
+        {t(locale, 'signInRequired')}{' '}
         <Link href={`/${locale}/login`} className="text-accent underline">
-          Sign In
+          {t(locale, 'login')}
         </Link>
       </p>
     );
@@ -358,16 +365,14 @@ export function SellForm({ locale }: { locale: Locale }) {
     return (
       <div className="mx-auto mt-8 max-w-xl border border-black/10 bg-surface/40 p-6 text-left">
         <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-accent">
-          Ad submitted
+          {t(locale, 'adSubmitted')}
         </p>
-        <p className="mt-2 text-muted">
-          Your listing is in admin review. It will appear publicly once approved.
-        </p>
+        <p className="mt-2 text-muted">{t(locale, 'adSubmittedHint')}</p>
         <Link
           href={`/${locale}/account/listings`}
           className="mt-6 inline-flex bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white"
         >
-          Manage listings
+          {t(locale, 'manageListings')}
         </Link>
       </div>
     );
@@ -379,7 +384,7 @@ export function SellForm({ locale }: { locale: Locale }) {
     <div className="mx-auto mt-8 max-w-2xl">
       <ol
         className="mb-8 flex flex-wrap justify-center gap-2"
-        aria-label="Form steps"
+        aria-label={t(locale, 'sellFormSteps')}
       >
         {STEPS.map((s) => {
           const active = s.id === step;
@@ -387,7 +392,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           return (
             <li
               key={s.id}
-              className={`flex items-center gap-2 border px-3 py-1.5 text-xs tracking-wide uppercase ${
+              className={`flex items-center gap-2 border px-3 py-1.5 text-xs tracking-wide ${
                 active
                   ? 'border-accent text-accent'
                   : done
@@ -398,7 +403,7 @@ export function SellForm({ locale }: { locale: Locale }) {
               <span className="font-[family-name:var(--font-display)] text-sm">
                 {s.id}
               </span>
-              {s.label}
+              {t(locale, s.labelKey)}
             </li>
           );
         })}
@@ -407,13 +412,16 @@ export function SellForm({ locale }: { locale: Locale }) {
       {step === 1 ? (
         <div className="grid gap-4 text-left">
           <SearchableCombobox
-            label="Brand"
+            label={t(locale, 'brandFilter')}
             required
-            placeholder="Search or select brand"
+            placeholder={t(locale, 'searchOrSelectBrand')}
             valueId={form.brandId}
             valueLabel={form.brandLabel}
             options={brandOptions}
             loading={brandsLoading}
+            emptyText={t(locale, 'emptyResults')}
+            loadingText={t(locale, 'searching')}
+            clearText={t(locale, 'clear')}
             onQueryChange={setBrandQuery}
             onSelect={(opt) => {
               setForm((f) => ({
@@ -440,16 +448,21 @@ export function SellForm({ locale }: { locale: Locale }) {
             }}
           />
           <SearchableCombobox
-            label="Model"
+            label={t(locale, 'modelFilter')}
             required
             placeholder={
-              form.brandId ? 'Search or select model' : 'Select a brand first'
+              form.brandId
+                ? t(locale, 'searchOrSelectModel')
+                : t(locale, 'selectBrandFirst')
             }
             valueId={form.modelId}
             valueLabel={form.modelLabel}
             options={modelOptions}
             disabled={!form.brandId}
             loading={modelsLoading}
+            emptyText={t(locale, 'emptyResults')}
+            loadingText={t(locale, 'searching')}
+            clearText={t(locale, 'clear')}
             onQueryChange={setModelQuery}
             onSelect={(opt) => {
               const meta = modelMeta.find((m) => m.id === opt.id);
@@ -467,7 +480,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           />
           <div>
             <label className={labelClass} htmlFor="categoryId">
-              Category *
+              {t(locale, 'categoryFilter')} *
             </label>
             <select
               id="categoryId"
@@ -479,7 +492,7 @@ export function SellForm({ locale }: { locale: Locale }) {
                 setField('categoryId', e.target.value);
               }}
             >
-              <option value="">Select category</option>
+              <option value="">{t(locale, 'selectCategory')}</option>
               {categoryChoices.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -494,7 +507,7 @@ export function SellForm({ locale }: { locale: Locale }) {
         <div className="grid gap-4 text-left sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="manufactureYear">
-              Manufacture Year *
+              {t(locale, 'manufactureYear')} *
             </label>
             <input
               id="manufactureYear"
@@ -509,7 +522,8 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
           <div>
             <label className={labelClass} htmlFor="engineCc">
-              Engine Capacity (cc){isElectric ? '' : ' *'}
+              {t(locale, 'engineCapacity')}
+              {isElectric ? '' : ' *'}
             </label>
             <input
               id="engineCc"
@@ -517,7 +531,7 @@ export function SellForm({ locale }: { locale: Locale }) {
               required={!isElectric}
               min={1}
               disabled={isElectric}
-              placeholder={isElectric ? 'N/A for electric' : undefined}
+              placeholder={isElectric ? t(locale, 'engineNaElectric') : undefined}
               className={fieldClass}
               value={form.engineCc}
               onChange={(e) => {
@@ -528,7 +542,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
           <div>
             <label className={labelClass} htmlFor="fuelType">
-              Fuel Type *
+              {t(locale, 'fuelType')} *
             </label>
             <select
               id="fuelType"
@@ -540,14 +554,14 @@ export function SellForm({ locale }: { locale: Locale }) {
                 setField('fuelType', e.target.value as FormState['fuelType']);
               }}
             >
-              <option value="petrol">Petrol</option>
-              <option value="electric">Electric</option>
-              <option value="other">Other</option>
+              <option value="petrol">{t(locale, 'fuelPetrol')}</option>
+              <option value="electric">{t(locale, 'fuelElectric')}</option>
+              <option value="other">{t(locale, 'fuelOther')}</option>
             </select>
           </div>
           <div>
             <label className={labelClass} htmlFor="condition">
-              Condition *
+              {t(locale, 'condition')} *
             </label>
             <select
               id="condition"
@@ -556,14 +570,16 @@ export function SellForm({ locale }: { locale: Locale }) {
               value={form.condition}
               onChange={(e) => setField('condition', e.target.value)}
             >
-              <option value="used">Used</option>
-              <option value="new">New</option>
-              <option value="reconditioned">Reconditioned</option>
+              <option value="used">{t(locale, 'conditionUsed')}</option>
+              <option value="new">{t(locale, 'conditionNew')}</option>
+              <option value="reconditioned">
+                {t(locale, 'conditionReconditioned')}
+              </option>
             </select>
           </div>
           <div>
             <label className={labelClass} htmlFor="transmission">
-              Transmission *
+              {t(locale, 'transmission')} *
             </label>
             <select
               id="transmission"
@@ -572,15 +588,15 @@ export function SellForm({ locale }: { locale: Locale }) {
               value={form.transmission}
               onChange={(e) => setField('transmission', e.target.value)}
             >
-              <option value="manual">Manual</option>
-              <option value="automatic">Automatic</option>
-              <option value="semi_automatic">Semi-auto</option>
-              <option value="other">Other</option>
+              <option value="manual">{t(locale, 'transManual')}</option>
+              <option value="automatic">{t(locale, 'transAuto')}</option>
+              <option value="semi_automatic">{t(locale, 'transSemi')}</option>
+              <option value="other">{t(locale, 'transOther')}</option>
             </select>
           </div>
           <div>
             <label className={labelClass} htmlFor="mileage">
-              Mileage (km) *
+              {t(locale, 'mileageKm')} *
             </label>
             <input
               id="mileage"
@@ -594,7 +610,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
           <div className="sm:col-span-2">
             <label className={labelClass} htmlFor="priceLkr">
-              Price (LKR) *
+              {t(locale, 'priceLkr')} *
             </label>
             <input
               id="priceLkr"
@@ -608,7 +624,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
           {autoTitle ? (
             <p className="sm:col-span-2 text-sm text-muted">
-              Title will be:{' '}
+              {t(locale, 'titleWillBe')}{' '}
               <span className="text-foreground">{autoTitle}</span>
             </p>
           ) : null}
@@ -620,7 +636,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass} htmlFor="districtId">
-                District *
+                {t(locale, 'districtFilter')} *
               </label>
               <select
                 id="districtId"
@@ -632,7 +648,7 @@ export function SellForm({ locale }: { locale: Locale }) {
                   setField('cityId', '');
                 }}
               >
-                <option value="">Select district</option>
+                <option value="">{t(locale, 'selectDistrict')}</option>
                 {districts.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
@@ -642,7 +658,7 @@ export function SellForm({ locale }: { locale: Locale }) {
             </div>
             <div>
               <label className={labelClass} htmlFor="cityId">
-                City *
+                {t(locale, 'city')} *
               </label>
               <select
                 id="cityId"
@@ -652,7 +668,7 @@ export function SellForm({ locale }: { locale: Locale }) {
                 disabled={!form.districtId}
                 onChange={(e) => setField('cityId', e.target.value)}
               >
-                <option value="">Select city</option>
+                <option value="">{t(locale, 'selectCity')}</option>
                 {cities.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -663,7 +679,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
           <div>
             <label className={labelClass} htmlFor="description">
-              Description *
+              {t(locale, 'description')} *
             </label>
             <textarea
               id="description"
@@ -673,12 +689,12 @@ export function SellForm({ locale }: { locale: Locale }) {
               className={fieldClass}
               value={form.description}
               onChange={(e) => setField('description', e.target.value)}
-              placeholder="Condition, service history, extras…"
+              placeholder={t(locale, 'descriptionPlaceholder')}
             />
           </div>
           <div>
             <label className={labelClass} htmlFor="phone">
-              Phone number *
+              {t(locale, 'phoneNumber')} *
             </label>
             <input
               id="phone"
@@ -693,22 +709,29 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
           {dealers.length > 0 ? (
             <div>
-              <label className={labelClass} htmlFor="dealerId">
-                List under dealer (optional)
-              </label>
-              <select
-                id="dealerId"
-                className={fieldClass}
-                value={form.dealerId}
-                onChange={(e) => setField('dealerId', e.target.value)}
-              >
-                <option value="">Private listing</option>
-                {dealers.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
+              <p className={labelClass}>{t(locale, 'listUnderDealer')}</p>
+              {dealers.length === 1 ? (
+                <p className="rounded-md bg-surface px-3 py-2.5 text-sm text-foreground">
+                  {dealers[0].name}
+                </p>
+              ) : (
+                <select
+                  id="dealerId"
+                  className={fieldClass}
+                  value={form.dealerId}
+                  onChange={(e) => setField('dealerId', e.target.value)}
+                  required
+                >
+                  {dealers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="mt-1.5 text-xs text-muted">
+                {t(locale, 'dealerListingNote')}
+              </p>
             </div>
           ) : null}
         </div>
@@ -716,11 +739,10 @@ export function SellForm({ locale }: { locale: Locale }) {
 
       {step === 4 && listingId ? (
         <div className="border border-black/10 bg-surface/40 p-4 text-left">
-          <p className="text-sm text-muted">
-            Add at least 1 photo * · first photo is the cover · up to 5
-          </p>
+          <p className="text-sm text-muted">{t(locale, 'photosHint')}</p>
           <ListingImageManager
             listingId={listingId}
+            locale={locale}
             onChange={() => {
               void apiGet<{ id: string }[]>(
                 `/api/v1/listings/${listingId}/images`,
@@ -732,11 +754,13 @@ export function SellForm({ locale }: { locale: Locale }) {
           />
           {photoCount < 1 ? (
             <p className="mt-3 text-sm text-accent">
-              Upload at least one photo to continue.
+              {t(locale, 'uploadOnePhoto')}
             </p>
           ) : (
             <p className="mt-3 text-sm text-muted">
-              {photoCount} photo{photoCount === 1 ? '' : 's'} ready.
+              {photoCount === 1
+                ? t(locale, 'photosReadyOne')
+                : t(locale, 'photosReady').replace('{n}', String(photoCount))}
             </p>
           )}
         </div>
@@ -757,7 +781,7 @@ export function SellForm({ locale }: { locale: Locale }) {
             }}
             disabled={busy}
           >
-            Back
+            {t(locale, 'back')}
           </button>
         ) : null}
         {step === 4 ? (
@@ -771,7 +795,7 @@ export function SellForm({ locale }: { locale: Locale }) {
               }}
               disabled={busy}
             >
-              Back
+              {t(locale, 'back')}
             </button>
             <button
               type="button"
@@ -779,7 +803,7 @@ export function SellForm({ locale }: { locale: Locale }) {
               className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white disabled:opacity-50"
               onClick={() => void submitAd()}
             >
-              {busy ? 'Posting…' : 'Post Ad'}
+              {busy ? t(locale, 'posting') : t(locale, 'postAd')}
             </button>
           </>
         ) : (
@@ -789,7 +813,11 @@ export function SellForm({ locale }: { locale: Locale }) {
             className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white disabled:opacity-50"
             onClick={() => void goNext()}
           >
-            {busy ? 'Saving…' : step === 3 ? 'Continue to photos' : 'Continue'}
+            {busy
+              ? t(locale, 'saving')
+              : step === 3
+                ? t(locale, 'continueToPhotos')
+                : t(locale, 'continue')}
           </button>
         )}
       </div>

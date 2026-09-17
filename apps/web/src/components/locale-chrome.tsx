@@ -23,6 +23,9 @@ export function LocaleChrome({
     /\/(en|si)\/(login|register|forgot-password|reset-password|verify-email)(\/|$)/.test(
       pathname,
     );
+  const isAccount = /\/(en|si)\/account(\/|$)/.test(pathname);
+  const isCompare = /\/(en|si)\/compare(\/|$)/.test(pathname);
+  const showTray = !isAuth && !isAccount && !isCompare;
 
   if (isAdmin) {
     return <>{children}</>;
@@ -32,10 +35,12 @@ export function LocaleChrome({
     <BreadcrumbLabelProvider>
       <div className="flex min-h-screen flex-col">
         <SiteHeader locale={locale} />
-        {!isAuth ? <SiteBreadcrumbs locale={locale} /> : null}
-        <div className={`flex-1 ${isAuth ? '' : 'pb-20'}`}>{children}</div>
-        {!isAuth ? <SiteFooter locale={locale} /> : null}
-        {!isAuth ? <CompareTray locale={locale} /> : null}
+        {!isAuth && !isAccount ? <SiteBreadcrumbs locale={locale} /> : null}
+        <div className={`flex-1 ${showTray ? 'pb-20' : ''}`}>
+          {children}
+        </div>
+        {!isAuth && !isAccount ? <SiteFooter locale={locale} /> : null}
+        {showTray ? <CompareTray locale={locale} /> : null}
       </div>
     </BreadcrumbLabelProvider>
   );

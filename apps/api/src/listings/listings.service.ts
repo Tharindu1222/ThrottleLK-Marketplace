@@ -13,6 +13,7 @@ import type {
 import type { ListingStatus } from '@throttlelk/types';
 import { In, Repository } from 'typeorm';
 import { slugify } from '../common/slugify';
+import { composeListingTitle } from '../common/listing-title';
 import { User } from '../users/user.entity';
 import { DealersService } from '../dealers/dealers.service';
 import { FavouritesService } from '../favourites/favourites.service';
@@ -34,17 +35,12 @@ export class ListingsService {
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
-    if (input.dealerId) {
-      await this.dealersService.assertOwnedActiveDealer(
-        seller.id,
-        input.dealerId,
-      );
-    }
+    const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
     const baseSlug = slugify(input.title) || 'listing';
     const slug = `${baseSlug}-${Date.now().toString(36)}`;
     const listing = this.listings.create({
       sellerId: seller.id,
-      dealerId: input.dealerId ?? null,
+      dealerId,
       brandId: input.brandId,
       modelId: input.modelId,
       categoryId: input.categoryId,
@@ -98,7 +94,13 @@ export class ListingsService {
         listing.status = 'pending_review';
         listing.publishedAt = null;
         listing.rejectionReason = null;
-        return this.listings.save(listing);
+        const saved = await this.listings.save(listing);
+        void this.notifications.listingPendingReview({
+          id: saved.id,
+          title: saved.title,
+          slug: saved.slug,
+        });
+        return saved;
       }
       throw new BadRequestException({
         success: false,
@@ -129,7 +131,13 @@ export class ListingsService {
     }
     listing.status = 'pending_review';
     listing.rejectionReason = null;
-    return this.listings.save(listing);
+    const saved = await this.listings.save(listing);
+    void this.notifications.listingPendingReview({
+      id: saved.id,
+      title: saved.title,
+      slug: saved.slug,
+    });
+    return saved;
   }
 
   async pause(seller: User, id: string): Promise<Listing> {
@@ -174,11 +182,18 @@ export class ListingsService {
   }
 
   listMine(sellerId: string) {
-    return this.listings.find({
-      where: { sellerId },
-      relations: ['images'],
-      order: { updatedAt: 'DESC' },
-    }).then((rows) => rows.map((row) => this.withCover(row)));
+    return this.listings
+      .find({
+        where: { sellerId },
+        relations: ['images', 'brand', 'model', 'district', 'city'],
+        order: { updatedAt: 'DESC' },
+      })
+      .then((rows) =>
+        rows.map((row) => ({
+          ...this.toBrowseCard(row),
+          status: row.status,
+        })),
+      );
   }
 
   async createInquiry(listingId: string, input: ContactListingInput) {
@@ -310,7 +325,7 @@ export class ListingsService {
       );
     const listing = await this.listings.findOne({
       where: isUuid ? [{ id: idOrSlug }, { slug: idOrSlug }] : { slug: idOrSlug },
-      relations: ['images'],
+      relations: ['images', 'brand', 'model', 'category', 'district', 'city'],
     });
     if (!listing) {
       throw new NotFoundException({
@@ -327,12 +342,38 @@ export class ListingsService {
       });
     }
 
-    const seller = await this.usersService
+    const sellerUser = await this.usersService
       .findByIdOrThrow(listing.sellerId)
-      .then((u) => this.usersService.toSellerPublic(u))
       .catch(() => null);
+    const shop = sellerUser
+      ? await this.dealersService.findActiveOwned(sellerUser.id)
+      : null;
+    const seller = sellerUser
+      ? {
+          ...this.usersService.toSellerPublic(sellerUser),
+          dealerSlug: shop?.slug ?? null,
+        }
+      : null;
     // Phone / WhatsApp are public on active listings; messaging still requires auth.
-    return { ...this.withCover(listing), seller, contactHidden: false as const };
+    return {
+      ...this.withCover(listing),
+      title: composeListingTitle({
+        title: listing.title,
+        brandName: listing.brand?.name,
+        modelName: listing.model?.name,
+        manufactureYear: listing.manufactureYear,
+      }),
+      brandName: listing.brand?.name ?? null,
+      modelName: listing.model?.name ?? null,
+      categoryName: listing.category?.name ?? null,
+      districtName: listing.district?.name ?? null,
+      cityName: listing.city?.name ?? null,
+      listedAt:
+        (listing.publishedAt ?? listing.createdAt)?.toISOString?.() ?? null,
+      sellerType: listing.dealerId ? 'dealer' : 'private',
+      seller,
+      contactHidden: false as const,
+    };
   }
 
   /** Count a public detail view (skips seller’s own views). */
@@ -373,7 +414,12 @@ export class ListingsService {
     return {
       id: listing.id,
       slug: listing.slug,
-      title: listing.title,
+      title: composeListingTitle({
+        title: listing.title,
+        brandName: listing.brand?.name,
+        modelName: listing.model?.name,
+        manufactureYear: listing.manufactureYear,
+      }),
       priceLkr: listing.priceLkr,
       manufactureYear: listing.manufactureYear,
       engineCc: listing.engineCc,
@@ -394,10 +440,27 @@ export class ListingsService {
   }
 
   listPending() {
-    return this.listings.find({
-      where: { status: 'pending_review' as ListingStatus },
-      order: { updatedAt: 'ASC' },
-    });
+    return this.listings
+      .find({
+        where: { status: 'pending_review' as ListingStatus },
+        relations: ['images', 'seller'],
+        order: { updatedAt: 'ASC' },
+      })
+      .then((rows) =>
+        rows.map((row) => {
+          const covered = this.withCover(row);
+          return {
+            ...covered,
+            seller: row.seller
+              ? {
+                  id: row.seller.id,
+                  firstName: row.seller.firstName,
+                  lastName: row.seller.lastName,
+                }
+              : null,
+          };
+        }),
+      );
   }
 
   async listAllAdmin(filters?: { status?: string; q?: string }) {
@@ -446,18 +509,13 @@ export class ListingsService {
     status?: ListingStatus;
   } & CreateListingInput): Promise<Listing> {
     const seller = await this.usersService.findByIdOrThrow(input.sellerId);
-    if (input.dealerId) {
-      await this.dealersService.assertOwnedActiveDealer(
-        seller.id,
-        input.dealerId,
-      );
-    }
+    const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
     const baseSlug = slugify(input.title) || 'listing';
     const slug = `${baseSlug}-${Date.now().toString(36)}`;
     const status = (input.status ?? 'draft') as ListingStatus;
     const listing = this.listings.create({
       sellerId: seller.id,
-      dealerId: input.dealerId ?? null,
+      dealerId,
       brandId: input.brandId,
       modelId: input.modelId,
       categoryId: input.categoryId,
@@ -620,6 +678,40 @@ export class ListingsService {
           ),
         ),
     );
+  }
+
+  private async resolveListingDealerId(
+    seller: User,
+    requested?: string | null,
+  ): Promise<string | null> {
+    const isDealer = seller.roles?.some((role) => role.name === 'dealer') ?? false;
+    if (isDealer) {
+      if (requested) {
+        await this.dealersService.assertOwnedActiveDealer(seller.id, requested);
+        return requested;
+      }
+      const owned = await this.dealersService.findActiveOwned(seller.id);
+      if (!owned) {
+        throw new BadRequestException({
+          success: false,
+          error: {
+            code: 'DEALER_NOT_ACTIVE',
+            message: 'Dealer must be approved before attaching listings',
+          },
+        });
+      }
+      return owned.id;
+    }
+    if (requested) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'PRIVATE_SELLER_ONLY',
+          message: 'Private sellers cannot list under a dealer',
+        },
+      });
+    }
+    return null;
   }
 
   private async getOwned(sellerId: string, id: string): Promise<Listing> {

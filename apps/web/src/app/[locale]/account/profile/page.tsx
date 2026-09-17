@@ -19,7 +19,7 @@ export default async function ProfilePage({
       <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">
         {t(locale, 'accountDetailsHint')}
       </p>
-      <div className="mt-8">
+      <div className="mt-6">
         <ProfileForm locale={locale} />
       </div>
     </div>

@@ -15,6 +15,7 @@ import type {
   UpdateProfileInput,
 } from '@throttlelk/validation';
 import { Listing } from '../listings/listing.entity';
+import { Dealer } from '../dealers/dealer.entity';
 import { StorageService } from '../storage/storage.service';
 import { Role } from './role.entity';
 import { User } from './user.entity';
@@ -28,6 +29,7 @@ export class UsersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Role) private readonly roles: Repository<Role>,
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
+    @InjectRepository(Dealer) private readonly dealers: Repository<Dealer>,
     private readonly storage: StorageService,
   ) {}
 
@@ -96,8 +98,11 @@ export class UsersService {
       user.passwordHash = await bcrypt.hash(input.password, 10);
     }
     if (input.roles) {
-      const roles = await this.roles.find({ where: { name: In(input.roles) } });
-      if (roles.length !== input.roles.length) {
+      const roleNames = input.roles.includes('dealer')
+        ? input.roles.filter((name) => name !== 'seller')
+        : input.roles;
+      const roles = await this.roles.find({ where: { name: In(roleNames) } });
+      if (roles.length !== roleNames.length) {
         throw new BadRequestException({
           success: false,
           error: {
@@ -165,6 +170,12 @@ export class UsersService {
     return user;
   }
 
+  async removeRole(user: User, roleName: string): Promise<User> {
+    if (!user.roles.some((r) => r.name === roleName)) return user;
+    user.roles = user.roles.filter((r) => r.name !== roleName);
+    return this.users.save(user);
+  }
+
   toPublic(user: User) {
     return {
       id: user.id,
@@ -198,7 +209,13 @@ export class UsersService {
         error: { code: 'USER_NOT_FOUND', message: 'Seller not found' },
       });
     }
-    return this.toSellerPublic(user);
+    const shop = await this.dealers.findOne({
+      where: { ownerUserId: id, status: 'active' },
+    });
+    return {
+      ...this.toSellerPublic(user),
+      dealerSlug: shop?.slug ?? null,
+    };
   }
 
   async updateProfile(user: User, input: UpdateProfileInput) {
@@ -312,5 +329,16 @@ export class UsersService {
 
   async countUsers() {
     return this.users.count();
+  }
+
+  async findActiveAdminIds(): Promise<string[]> {
+    const rows = await this.users
+      .createQueryBuilder('user')
+      .innerJoin('user.roles', 'role')
+      .where('role.name = :role', { role: 'admin' })
+      .andWhere('user.status = :status', { status: 'active' })
+      .select(['user.id'])
+      .getMany();
+    return rows.map((user) => user.id);
   }
 }

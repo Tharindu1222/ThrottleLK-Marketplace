@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getAccessToken, getStoredUser } from '@/lib/auth';
+import { getAccessToken, getStoredUser, syncAccessCookie } from '@/lib/auth';
 import type { Locale } from '@/lib/i18n';
 
 export function AdminGate({
@@ -19,6 +19,7 @@ export function AdminGate({
   useEffect(() => {
     const access = getAccessToken();
     const user = getStoredUser();
+    syncAccessCookie();
     setToken(access);
     setIsAdmin(Boolean(user?.roles.includes('admin')));
     setReady(true);

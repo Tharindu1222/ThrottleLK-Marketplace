@@ -1,19 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import {
+  ListingCard,
+  type BrowseListingCard,
+} from '@/components/listing-card';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 
-type Listing = {
-  id: string;
-  slug: string;
-  title: string;
-  status: string;
-  priceLkr: number;
-  coverImageUrl?: string | null;
-};
+type Listing = BrowseListingCard & { status: string };
 
 function formatLkr(n: number) {
   return `Rs. ${n.toLocaleString('en-LK')}`;
@@ -57,10 +54,28 @@ function statusBadgeClass(status: string) {
   }
 }
 
-const btnSecondary =
-  'inline-flex items-center justify-center border border-black/15 px-2.5 py-1.5 text-xs text-foreground transition hover:border-accent hover:text-accent disabled:opacity-50';
-const btnPrimary =
-  'inline-flex items-center justify-center bg-accent px-2.5 py-1.5 text-xs text-white transition hover:brightness-110 disabled:opacity-50';
+const btnBase =
+  'inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium tracking-wide transition duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50';
+const btnGhost = `${btnBase} border border-black/[0.08] bg-[#f7f7f7] text-foreground hover:border-black/15 hover:bg-white hover:shadow-[0_1px_2px_rgba(15,15,15,0.06)]`;
+const btnSolid = `${btnBase} bg-foreground text-white hover:bg-foreground/90`;
+const btnAccent = `${btnBase} bg-accent text-white hover:brightness-110`;
+
+function ActionIcon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-3.5 w-3.5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  );
+}
 
 function ListingActions({
   locale,
@@ -75,52 +90,62 @@ function ListingActions({
   runAction: (listingId: string, path: string) => void;
   dense?: boolean;
 }) {
-  const wrap = dense
-    ? 'grid grid-cols-2 gap-1.5'
-    : 'flex flex-wrap gap-1.5';
-  const full = dense ? 'w-full' : '';
+  const editHref = `/${locale}/account/listings/${listing.id}/edit`;
+  const viewHref = `/${locale}/bikes/${listing.slug}`;
+  const viewLabel = dense ? t(locale, 'viewShort') : t(locale, 'viewListing');
+  const soldLabel = dense ? t(locale, 'markSoldShort') : t(locale, 'markSold');
+
+  const editBtn = listing.status !== 'sold' ? (
+    <Link href={editHref} className={btnGhost}>
+      <ActionIcon>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+      </ActionIcon>
+      <span className="truncate">{t(locale, 'editListing')}</span>
+    </Link>
+  ) : null;
+
+  const viewBtn = (
+    <Link href={viewHref} className={listing.status === 'active' ? btnSolid : btnGhost}>
+      <ActionIcon>
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+        <circle cx="12" cy="12" r="3" />
+      </ActionIcon>
+      <span className="truncate">{viewLabel}</span>
+    </Link>
+  );
+
+  const soldBtn = (
+    <button
+      type="button"
+      disabled={busy}
+      className={btnGhost}
+      onClick={() =>
+        runAction(listing.id, `/api/v1/listings/${listing.id}/mark-sold`)
+      }
+    >
+      <ActionIcon>
+        <path d="M12 3l7 4v5c0 5-3.5 8.5-7 10-4.5-1.5-8-5-8-10V7l7-4z" />
+        <path d="M9 12l2 2 4-4" />
+      </ActionIcon>
+      <span className="truncate">{soldLabel}</span>
+    </button>
+  );
+
+  const wrap =
+    listing.status === 'active' || listing.status === 'paused'
+      ? 'grid grid-cols-3 gap-1.5'
+      : ['draft', 'rejected'].includes(listing.status)
+        ? 'grid grid-cols-2 gap-1.5'
+        : 'grid grid-cols-1 gap-1.5';
 
   return (
-    <div className={wrap}>
-      {listing.status !== 'sold' ? (
-        <Link
-          href={`/${locale}/account/listings/${listing.id}/edit`}
-          className={`${btnSecondary} ${full} ${
-            dense && listing.status === 'pending_review' ? 'col-span-2' : ''
-          }`}
-        >
-          {t(locale, 'editListing')}
-        </Link>
-      ) : null}
-
+    <div className={dense ? wrap : 'flex flex-wrap gap-1.5'} aria-busy={busy}>
       {listing.status === 'active' ? (
         <>
-          <Link
-            href={`/${locale}/bikes/${listing.slug}`}
-            className={`${btnSecondary} ${full}`}
-          >
-            {t(locale, 'viewListing')}
-          </Link>
-          <button
-            type="button"
-            disabled={busy}
-            className={`${btnSecondary} ${full}`}
-            onClick={() =>
-              runAction(listing.id, `/api/v1/listings/${listing.id}/pause`)
-            }
-          >
-            {t(locale, 'pauseListing')}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            className={`${btnSecondary} ${full}`}
-            onClick={() =>
-              runAction(listing.id, `/api/v1/listings/${listing.id}/mark-sold`)
-            }
-          >
-            {t(locale, 'markSold')}
-          </button>
+          {viewBtn}
+          {editBtn}
+          {soldBtn}
         </>
       ) : null}
 
@@ -129,47 +154,37 @@ function ListingActions({
           <button
             type="button"
             disabled={busy}
-            className={`${btnPrimary} ${full}`}
+            className={btnAccent}
             onClick={() =>
               runAction(listing.id, `/api/v1/listings/${listing.id}/resume`)
             }
           >
-            {t(locale, 'resumeListing')}
+            <span className="truncate">{t(locale, 'resumeListing')}</span>
           </button>
+          {editBtn}
+          {soldBtn}
+        </>
+      ) : null}
+
+      {listing.status === 'pending_review' ? editBtn : null}
+
+      {['draft', 'rejected'].includes(listing.status) ? (
+        <>
+          {editBtn}
           <button
             type="button"
             disabled={busy}
-            className={`${btnSecondary} ${full}`}
+            className={btnAccent}
             onClick={() =>
-              runAction(listing.id, `/api/v1/listings/${listing.id}/mark-sold`)
+              runAction(listing.id, `/api/v1/listings/${listing.id}/submit`)
             }
           >
-            {t(locale, 'markSold')}
+            <span className="truncate">{t(locale, 'submitForReview')}</span>
           </button>
         </>
       ) : null}
 
-      {['draft', 'rejected'].includes(listing.status) ? (
-        <button
-          type="button"
-          disabled={busy}
-          className={`${btnPrimary} ${full} ${dense ? 'col-span-2' : ''}`}
-          onClick={() =>
-            runAction(listing.id, `/api/v1/listings/${listing.id}/submit`)
-          }
-        >
-          {t(locale, 'submitForReview')}
-        </button>
-      ) : null}
-
-      {listing.status === 'sold' ? (
-        <Link
-          href={`/${locale}/bikes/${listing.slug}`}
-          className={`${btnSecondary} ${full} ${dense ? 'col-span-2' : ''}`}
-        >
-          {t(locale, 'viewListing')}
-        </Link>
-      ) : null}
+      {listing.status === 'sold' ? viewBtn : null}
     </div>
   );
 }
@@ -259,53 +274,34 @@ export function MyListingsClient({
           </Link>
         </div>
       ) : layout === 'cards' ? (
-        <ul className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul className="grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {listings.map((listing) => {
             const busy = busyId === listing.id;
             return (
               <li key={listing.id} className="min-h-0">
-                <article className="flex h-full flex-col overflow-hidden border border-black/10 bg-surface/50 transition hover:border-black/20">
-                  <div className="relative h-40 shrink-0 overflow-hidden bg-background sm:h-44">
-                    {listing.coverImageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={listing.coverImageUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-muted">
-                        No photo
-                      </div>
-                    )}
-                    <span
-                      className={`absolute top-2 left-2 inline-flex px-2 py-0.5 text-[11px] ring-1 backdrop-blur-sm ${statusBadgeClass(listing.status)}`}
-                    >
-                      {statusLabel(locale, listing.status)}
-                    </span>
-                  </div>
-
-                  <div className="flex min-h-0 flex-1 flex-col p-3.5">
-                    <h3 className="line-clamp-2 min-h-[2.75rem] font-[family-name:var(--font-display)] text-[15px] leading-snug tracking-wide">
-                      {listing.title}
-                    </h3>
-                    <p className="mt-1.5 text-sm font-medium text-accent">
-                      {formatLkr(listing.priceLkr)}
-                    </p>
-
-                    <div className="mt-auto border-t border-black/10 pt-3">
-                      <div className="min-h-[76px]">
-                        <ListingActions
-                          locale={locale}
-                          listing={listing}
-                          busy={busy}
-                          runAction={runAction}
-                          dense
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </article>
+                <ListingCard
+                  locale={locale}
+                  listing={listing}
+                  href={
+                    listing.status === 'active' || listing.status === 'sold'
+                      ? `/${locale}/bikes/${listing.slug}`
+                      : `/${locale}/account/listings/${listing.id}/edit`
+                  }
+                  statusBadge={{
+                    label: statusLabel(locale, listing.status),
+                    status: listing.status,
+                  }}
+                  showFavourite={false}
+                  footer={
+                    <ListingActions
+                      locale={locale}
+                      listing={listing}
+                      busy={busy}
+                      runAction={runAction}
+                      dense
+                    />
+                  }
+                />
               </li>
             );
           })}

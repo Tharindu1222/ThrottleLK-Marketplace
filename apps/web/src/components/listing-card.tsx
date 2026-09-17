@@ -6,16 +6,22 @@ import { BRAND_LOGO_SRC } from '@/components/brand-logo';
 import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { composeListingTitle } from '@/lib/listing-title';
+import {
+  getCompareItems,
+  toggleCompare,
+  type CompareItem,
+} from '@/lib/compare';
 
 export type BrowseListingCard = {
   id: string;
   slug: string;
   title: string;
   priceLkr: number;
-  manufactureYear: number;
+  manufactureYear?: number | null;
   engineCc?: number | null;
   mileage: number | null;
-  condition: string;
+  condition?: string | null;
   brandName?: string | null;
   modelName?: string | null;
   districtName?: string | null;
@@ -26,6 +32,30 @@ export type BrowseListingCard = {
   listedAt?: string | null;
   viewCount?: number | null;
 };
+
+function OverlayTip({
+  label,
+  align,
+  children,
+}: {
+  label: string;
+  align: 'left' | 'right';
+  children: ReactNode;
+}) {
+  return (
+    <span className="pointer-events-auto relative inline-flex">
+      {children}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute top-[calc(100%+6px)] z-30 whitespace-nowrap rounded-sm bg-black/85 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-sm transition duration-150 peer-hover:opacity-100 peer-focus-visible:opacity-100 ${
+          align === 'left' ? 'left-0' : 'right-0'
+        }`}
+      >
+        {label}
+      </span>
+    </span>
+  );
+}
 
 function formatLkr(n: number) {
   return `Rs. ${n.toLocaleString('en-LK')}`;
@@ -144,24 +174,28 @@ function FavouriteHeart({
     }
   }
 
+  const favLabel = favourited
+    ? t(locale, 'unfavourite')
+    : t(locale, 'addFavourite');
+
   return (
-    <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1">
-      <button
-        type="button"
-        disabled={busy}
-        aria-pressed={favourited}
-        aria-label={
-          favourited ? t(locale, 'unfavourite') : t(locale, 'favourite')
-        }
-        onClick={(e) => void onToggle(e)}
-        onMouseDown={stopCardNav}
-        onPointerDown={stopCardNav}
-        className={`pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 disabled:opacity-60 ${
-          favourited
-            ? 'border-accent bg-accent text-white shadow-accent/25'
-            : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
-        }`}
-      >
+    <>
+      <OverlayTip label={favLabel} align="right">
+        <button
+          type="button"
+          disabled={busy}
+          aria-pressed={favourited}
+          aria-label={favLabel}
+          title={favLabel}
+          onClick={(e) => void onToggle(e)}
+          onMouseDown={stopCardNav}
+          onPointerDown={stopCardNav}
+          className={`peer pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 disabled:opacity-60 ${
+            favourited
+              ? 'border-accent bg-accent text-white shadow-accent/25'
+              : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
+          }`}
+        >
         <svg
           viewBox="0 0 24 24"
           className="h-[18px] w-[18px]"
@@ -174,40 +208,212 @@ function FavouriteHeart({
         >
           <path d="M16.5 3.5c-1.74 0-3.41.81-4.5 2.09A6.03 6.03 0 0 0 7.5 3.5 5.5 5.5 0 0 0 2 9c0 6.16 8.5 11.5 10 11.5S22 15.16 22 9a5.5 5.5 0 0 0-5.5-5.5z" />
         </svg>
-      </button>
+        </button>
+      </OverlayTip>
       {error ? (
         <span className="max-w-[9rem] rounded bg-black/75 px-1.5 py-0.5 text-[10px] leading-tight text-white">
           {error}
         </span>
       ) : null}
-    </div>
+    </>
   );
 }
 
-function SpecChip({ children }: { children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-sm bg-surface px-2 py-1 text-[12px] leading-none text-foreground/90">
-      {children}
-    </span>
-  );
-}
-
-export function ListingCard({
+function CompareToggle({
   locale,
   listing,
 }: {
   locale: Locale;
   listing: BrowseListingCard;
 }) {
-  const brandModel =
-    [listing.brandName, listing.modelName].filter(Boolean).join(' ') ||
-    listing.title;
+  const [inCompare, setInCompare] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const sync = () =>
+      setInCompare(getCompareItems().some((c) => c.id === listing.id));
+    sync();
+    window.addEventListener('throttlelk-compare', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('throttlelk-compare', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, [listing.id]);
+
+  function stopCardNav(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onToggle(e: MouseEvent) {
+    stopCardNav(e);
+    const item: CompareItem = {
+      id: listing.id,
+      slug: listing.slug,
+      title: composeListingTitle({
+        title: listing.title,
+        brandName: listing.brandName,
+        modelName: listing.modelName,
+        manufactureYear: listing.manufactureYear,
+      }),
+    };
+    const result = toggleCompare(item);
+    setInCompare(result.items.some((c) => c.id === listing.id));
+    setError(result.full ? t(locale, 'compareFull') : null);
+  }
+
+  const compareLabel = inCompare
+    ? t(locale, 'removeCompare')
+    : t(locale, 'addCompare');
+
+  return (
+    <>
+      <OverlayTip label={compareLabel} align="left">
+        <button
+          type="button"
+          aria-pressed={inCompare}
+          aria-label={compareLabel}
+          title={compareLabel}
+          onClick={onToggle}
+          onMouseDown={stopCardNav}
+          onPointerDown={stopCardNav}
+          className={`peer pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 ${
+            inCompare
+              ? 'border-accent bg-accent text-white shadow-accent/25'
+              : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
+          }`}
+        >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-[18px] w-[18px]"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <rect x="3.5" y="4.5" width="7" height="15" rx="1.5" />
+          <rect x="13.5" y="4.5" width="7" height="15" rx="1.5" />
+          <path d="M6.5 9h1M6.5 13h1M16.5 9h1M16.5 13h1" />
+        </svg>
+        </button>
+      </OverlayTip>
+      {error ? (
+        <span className="max-w-[9rem] rounded bg-black/75 px-1.5 py-0.5 text-[10px] leading-tight text-white">
+          {error}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+function CardIcon({
+  children,
+  className = 'h-3.5 w-3.5',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={`shrink-0 ${className}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.85"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  );
+}
+
+function SpecCell({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value: string;
+  children: ReactNode;
+}) {
+  return (
+    <li className="flex min-w-0 items-center gap-2 bg-white px-2.5 py-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface text-foreground/75">
+        {children}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[13px] font-medium leading-tight text-foreground">
+          {value}
+        </span>
+        <span className="block text-[10px] tracking-wide text-muted uppercase">
+          {label}
+        </span>
+      </span>
+    </li>
+  );
+}
+
+function MetaBit({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5 text-xs tracking-wide text-muted">
+      {children}
+    </span>
+  );
+}
+
+function statusRibbonClass(status: string) {
+  switch (status) {
+    case 'active':
+      return 'bg-emerald-600 text-white';
+    case 'pending_review':
+      return 'bg-amber-400 text-zinc-950';
+    case 'draft':
+      return 'bg-zinc-700 text-white';
+    case 'paused':
+      return 'bg-sky-600 text-white';
+    case 'rejected':
+      return 'bg-red-700 text-white';
+    case 'sold':
+      return 'bg-accent text-white';
+    default:
+      return 'bg-zinc-800 text-white';
+  }
+}
+
+export function ListingCard({
+  locale,
+  listing,
+  href,
+  badge,
+  statusBadge,
+  showFavourite = true,
+  footer,
+}: {
+  locale: Locale;
+  listing: BrowseListingCard;
+  href?: string;
+  badge?: string;
+  statusBadge?: { label: string; status: string };
+  showFavourite?: boolean;
+  footer?: ReactNode;
+}) {
+  const displayTitle = composeListingTitle({
+    title: listing.title,
+    brandName: listing.brandName,
+    modelName: listing.modelName,
+    manufactureYear: listing.manufactureYear,
+  });
   const location = formatLocation(listing.cityName, listing.districtName);
   const sellerLabel =
     listing.sellerType === 'dealer'
       ? t(locale, 'sellerDealer')
       : t(locale, 'sellerPrivate');
-  const href = `/${locale}/bikes/${listing.slug}`;
+  const cardHref = href ?? `/${locale}/bikes/${listing.slug}`;
   const mileageLabel =
     listing.mileage != null
       ? `${listing.mileage.toLocaleString('en-LK')} km`
@@ -228,12 +434,12 @@ export function ListingCard({
       : null;
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden border border-black/[0.08] bg-white transition duration-300 ease-out hover:-translate-y-1 hover:border-accent/35 hover:shadow-[0_18px_36px_-24px_rgba(0,0,0,0.45)]">
+    <article className="group relative flex h-full flex-col overflow-hidden border border-black/10 bg-white shadow-[0_1px_2px_rgba(15,15,15,0.06),0_10px_28px_-16px_rgba(15,15,15,0.22)] transition duration-300 ease-out hover:-translate-y-1 hover:border-accent/35 hover:shadow-[0_4px_8px_rgba(15,15,15,0.06),0_18px_36px_-16px_rgba(15,15,15,0.28)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       {/* Stretched link: whole card navigates; favourite stays above with pointer-events */}
       <Link
-        href={href}
+        href={cardHref}
         className="absolute inset-0 z-0"
-        aria-label={brandModel}
+        aria-label={displayTitle}
       />
 
       <div className="pointer-events-none relative aspect-[4/3] shrink-0 overflow-hidden bg-surface">
@@ -268,72 +474,132 @@ export function ListingCard({
           aria-hidden
           className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 via-black/20 to-transparent"
         />
-        <span className="absolute bottom-3 left-3 rounded-sm bg-black/70 px-2 py-1 text-[11px] font-medium tracking-wide text-white backdrop-blur-sm">
-          {sellerLabel}
-        </span>
+        {statusBadge ? (
+          <div className="pointer-events-none absolute top-0 left-0 z-[2] h-[6.25rem] w-[6.25rem] overflow-hidden">
+            <span
+              className={`absolute top-[22px] -left-10 w-[10.5rem] rotate-[-45deg] py-1.5 text-center text-[10px] font-bold tracking-[0.16em] shadow-[0_2px_6px_rgba(0,0,0,0.35)] ${statusRibbonClass(statusBadge.status)}`}
+            >
+              {statusBadge.label}
+            </span>
+          </div>
+        ) : (
+          <span className="absolute bottom-3 left-3 rounded-sm bg-black/70 px-2 py-1 text-[11px] font-medium tracking-wide text-white backdrop-blur-sm">
+            {badge ?? sellerLabel}
+          </span>
+        )}
       </div>
 
-      {/* Outside pointer-events-none so the heart always receives clicks */}
-      <FavouriteHeart locale={locale} listingId={listing.id} />
+      {showFavourite ? (
+        <>
+          <div className="absolute top-3 left-3 z-20 flex flex-col items-start gap-1">
+            <CompareToggle locale={locale} listing={listing} />
+          </div>
+          <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1">
+            <FavouriteHeart locale={locale} listingId={listing.id} />
+          </div>
+        </>
+      ) : null}
 
-      <div className="pointer-events-none relative z-[1] flex flex-1 flex-col gap-3 p-4 sm:p-5">
-        <div className="min-w-0 space-y-1.5">
-          <h2 className="line-clamp-2 min-h-[2.5rem] font-[family-name:var(--font-display)] text-[1.05rem] leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent sm:text-[1.125rem]">
-            {brandModel}
+      <div
+        className={`pointer-events-none relative z-[1] flex flex-1 flex-col gap-2.5 px-3.5 pt-3 ${
+          footer ? 'pb-2.5' : 'pb-3.5'
+        }`}
+      >
+        <div className="min-w-0">
+          <h2 className="line-clamp-2 font-[family-name:var(--font-display)] text-[1.05rem] leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent">
+            {displayTitle}
           </h2>
-          <p className="font-[family-name:var(--font-display)] text-xl tracking-wide text-accent sm:text-[1.35rem]">
+          <p className="mt-1 font-[family-name:var(--font-display)] text-xl leading-none tracking-wide text-accent">
             {formatLkr(listing.priceLkr)}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          <SpecChip>{listing.manufactureYear}</SpecChip>
-          {mileageLabel ? <SpecChip>{mileageLabel}</SpecChip> : null}
-          {ccLabel ? <SpecChip>{ccLabel}</SpecChip> : null}
-          <SpecChip>
-            <span className="capitalize">{listing.condition}</span>
-          </SpecChip>
-        </div>
+        <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-black/[0.06] bg-black/[0.06]">
+          {listing.manufactureYear != null ? (
+            <SpecCell label={t(locale, 'year')} value={String(listing.manufactureYear)}>
+              <CardIcon>
+                <rect x="4" y="5" width="16" height="16" rx="2" />
+                <path d="M8 3v4M16 3v4M4 11h16" />
+              </CardIcon>
+            </SpecCell>
+          ) : null}
+          {listing.condition ? (
+            <SpecCell
+              label={t(locale, 'condition')}
+              value={listing.condition.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+            >
+              <CardIcon>
+                <path d="M12 3l7 4v5c0 5-3.5 8.5-7 10-4.5-1.5-8-5-8-10V7l7-4z" />
+                <path d="M9 12l2 2 4-4" />
+              </CardIcon>
+            </SpecCell>
+          ) : null}
+          {mileageLabel ? (
+            <SpecCell label={t(locale, 'mileage')} value={mileageLabel}>
+              <CardIcon>
+                <circle cx="12" cy="13" r="8" />
+                <path d="M12 13l4-4" />
+                <path d="M7 8.5a8 8 0 0 1 10 0" />
+              </CardIcon>
+            </SpecCell>
+          ) : null}
+          {ccLabel ? (
+            <SpecCell label={t(locale, 'cc')} value={ccLabel}>
+              <CardIcon>
+                <path d="M7 8h10l1.5 4H18v5H6v-5h-.5L7 8z" />
+                <path d="M9 8V6h6v2" />
+                <path d="M10 17v2M14 17v2" />
+              </CardIcon>
+            </SpecCell>
+          ) : null}
+        </ul>
 
         {location || listedLabel || views ? (
-          <div className="mt-auto flex items-center justify-between gap-3 text-sm text-muted">
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-black/[0.06] pt-2.5">
             {location ? (
-              <p className="flex min-w-0 items-center gap-1.5 truncate">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-3.5 w-3.5 shrink-0 opacity-70"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden
-                >
+              <MetaBit>
+                <CardIcon className="h-3.5 w-3.5 text-foreground/55">
                   <path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z" />
                   <circle cx="12" cy="10" r="2.5" />
-                </svg>
+                </CardIcon>
                 <span className="truncate">{location}</span>
-              </p>
+              </MetaBit>
             ) : (
               <span />
             )}
-            <div className="flex shrink-0 items-center gap-2 text-xs tracking-wide text-muted/90">
-              {views ? <span>{views}</span> : null}
-              {views && listedLabel ? (
-                <span className="text-black/25" aria-hidden>
-                  ·
-                </span>
+            <div className="flex shrink-0 items-center gap-2.5">
+              {views ? (
+                <MetaBit>
+                  <CardIcon className="h-3.5 w-3.5 text-foreground/55">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </CardIcon>
+                  <span>{views}</span>
+                </MetaBit>
               ) : null}
               {listedLabel ? (
-                <time
-                  dateTime={listing.listedAt ?? undefined}
-                  suppressHydrationWarning
-                >
-                  {listedLabel}
-                </time>
+                <MetaBit>
+                  <CardIcon className="h-3.5 w-3.5 text-foreground/55">
+                    <circle cx="12" cy="12" r="8" />
+                    <path d="M12 8v4l2.5 1.5" />
+                  </CardIcon>
+                  <time
+                    dateTime={listing.listedAt ?? undefined}
+                    suppressHydrationWarning
+                  >
+                    {listedLabel}
+                  </time>
+                </MetaBit>
               ) : null}
             </div>
           </div>
         ) : null}
       </div>
+      {footer ? (
+        <div className="relative z-10 border-t border-black/[0.06] bg-white px-3.5 py-3">
+          {footer}
+        </div>
+      ) : null}
     </article>
   );
 }

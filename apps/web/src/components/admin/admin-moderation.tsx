@@ -5,6 +5,25 @@ import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { PendingDealer, PendingListing } from '@/lib/admin-types';
 
+function sellerName(listing: PendingListing) {
+  const first = listing.seller?.firstName?.trim() ?? '';
+  const last = listing.seller?.lastName?.trim() ?? '';
+  const name = `${first} ${last}`.trim();
+  return name || 'Unknown seller';
+}
+
+function formatSubmittedAt(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-LK', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export function AdminModeration({ search = '' }: { search?: string }) {
   const [token, setToken] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingListing[]>([]);
@@ -35,7 +54,13 @@ export function AdminModeration({ search = '' }: { search?: string }) {
 
   const q = search.trim().toLowerCase();
   const filteredListings = useMemo(
-    () => (q ? pending.filter((l) => l.title.toLowerCase().includes(q)) : pending),
+    () =>
+      q
+        ? pending.filter((l) => {
+            const hay = `${l.title} ${sellerName(l)}`.toLowerCase();
+            return hay.includes(q);
+          })
+        : pending,
     [pending, q],
   );
   const filteredDealers = useMemo(
@@ -78,15 +103,43 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                 key={listing.id}
                 className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)]/60 p-4"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold text-[var(--admin-text)]">{listing.title}</h3>
-                    <p className="text-sm text-[var(--admin-muted)]">
-                      Rs. {listing.priceLkr.toLocaleString('en-LK')} ·{' '}
-                      {listing.manufactureYear}
-                    </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)] sm:h-20 sm:w-28">
+                      {listing.coverImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={listing.coverImageUrl}
+                          alt={listing.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center px-2 text-center text-[11px] text-[var(--admin-faint)]">
+                          No photo
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-[var(--admin-text)]">
+                        {listing.title}
+                      </h3>
+                      <p className="text-sm text-[var(--admin-muted)]">
+                        Rs. {listing.priceLkr.toLocaleString('en-LK')} ·{' '}
+                        {listing.manufactureYear}
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--admin-text)]">
+                        Posted by {sellerName(listing)}
+                      </p>
+                      {listing.updatedAt ? (
+                        <p className="text-xs text-[var(--admin-faint)]">
+                          <time dateTime={listing.updatedAt}>
+                            Submitted {formatSubmittedAt(listing.updatedAt)}
+                          </time>
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 sm:shrink-0">
                     <button
                       type="button"
                       className="admin-btn-primary px-3 py-1.5 text-sm"

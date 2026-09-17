@@ -11,6 +11,13 @@ export type PendingListing = {
   title: string;
   priceLkr: number;
   manufactureYear: number;
+  coverImageUrl?: string | null;
+  updatedAt: string;
+  seller?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
 };
 
 export type PendingDealer = { id: string; name: string; phone: string };

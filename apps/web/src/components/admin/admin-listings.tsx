@@ -1,6 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminUser, Brand, District } from '@/lib/admin-types';
@@ -35,6 +37,7 @@ type ListingRow = {
   district?: { id: string; name: string };
   city?: { id: string; name: string };
   seller?: { id: string; email: string; firstName: string; lastName: string };
+  coverImageUrl?: string | null;
   updatedAt: string;
 };
 
@@ -97,6 +100,8 @@ function statusTone(status: string) {
 }
 
 export function AdminListings({ search = '' }: { search?: string }) {
+  const params = useParams();
+  const locale = typeof params.locale === 'string' ? params.locale : 'en';
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<ListingRow[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -359,11 +364,29 @@ export function AdminListings({ search = '' }: { search?: string }) {
                   className="border-b border-[var(--admin-border)] last:border-0"
                 >
                   <td className="px-4 py-3">
-                    <p className="font-medium text-[var(--admin-text)]">{row.title}</p>
-                    <p className="text-xs text-[var(--admin-faint)]">
-                      {row.brand?.name ?? '—'} {row.model?.name ?? ''} ·{' '}
-                      {row.manufactureYear}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)]">
+                        {row.coverImageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={row.coverImageUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center px-1 text-center text-[10px] leading-tight text-[var(--admin-faint)]">
+                            No photo
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-[var(--admin-text)]">{row.title}</p>
+                        <p className="text-xs text-[var(--admin-faint)]">
+                          {row.brand?.name ?? '—'} {row.model?.name ?? ''} ·{' '}
+                          {row.manufactureYear}
+                        </p>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-[var(--admin-muted)]">
                     {row.seller
@@ -394,7 +417,15 @@ export function AdminListings({ search = '' }: { search?: string }) {
                     {new Date(row.updatedAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/${locale}/bikes/${row.slug}`}
+                        aria-label={`View ${row.title}`}
+                        title="View listing"
+                        className="admin-btn-ghost inline-flex h-8 w-8 items-center justify-center"
+                      >
+                        <EyeIcon />
+                      </Link>
                       <button
                         type="button"
                         className="admin-btn-ghost px-3 py-1.5 text-xs"
@@ -764,5 +795,21 @@ export function AdminListings({ search = '' }: { search?: string }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }

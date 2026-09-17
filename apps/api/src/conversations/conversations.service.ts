@@ -108,6 +108,7 @@ export class ConversationsService {
         counterpart: this.toContactCard(users.get(counterpartId) ?? null),
         lastMessagePreview: last?.body?.slice(0, 140) ?? null,
         lastMessageMine: last ? last.senderUserId === userId : false,
+        unread: this.isUnread(c, last, userId),
       };
     });
   }
@@ -124,6 +125,7 @@ export class ConversationsService {
       });
     }
     this.assertParticipant(conversation, userId);
+    await this.markRead(conversation, userId);
     const messages = await this.messages.find({
       where: { conversationId: id },
       order: { createdAt: 'ASC' },
@@ -181,6 +183,16 @@ export class ConversationsService {
     }
     this.assertParticipant(conversation, senderUserId);
 
+    const previousLastAt = conversation.lastMessageAt ?? conversation.createdAt;
+    const isBuyer = senderUserId === conversation.buyerUserId;
+    if (isBuyer) {
+      if (!conversation.sellerLastReadAt) {
+        conversation.sellerLastReadAt = previousLastAt;
+      }
+    } else if (!conversation.buyerLastReadAt) {
+      conversation.buyerLastReadAt = previousLastAt;
+    }
+
     const message = await this.messages.save(
       this.messages.create({
         conversationId,
@@ -189,6 +201,8 @@ export class ConversationsService {
       }),
     );
     conversation.lastMessageAt = message.createdAt;
+    if (isBuyer) conversation.buyerLastReadAt = message.createdAt;
+    else conversation.sellerLastReadAt = message.createdAt;
     await this.conversations.save(conversation);
 
     const recipientId =
@@ -212,6 +226,32 @@ export class ConversationsService {
         mine: true,
       },
     };
+  }
+
+  private isUnread(
+    conversation: Conversation,
+    last:
+      | { senderUserId: string; createdAt: Date }
+      | undefined,
+    userId: string,
+  ) {
+    if (!last || last.senderUserId === userId) return false;
+    const readAt =
+      conversation.buyerUserId === userId
+        ? conversation.buyerLastReadAt
+        : conversation.sellerLastReadAt;
+    if (!readAt) return false;
+    return last.createdAt.getTime() > readAt.getTime();
+  }
+
+  private async markRead(conversation: Conversation, userId: string) {
+    const now = new Date();
+    if (conversation.buyerUserId === userId) {
+      conversation.buyerLastReadAt = now;
+    } else {
+      conversation.sellerLastReadAt = now;
+    }
+    await this.conversations.save(conversation);
   }
 
   private async loadUsersByIds(ids: string[]) {

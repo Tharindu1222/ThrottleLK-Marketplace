@@ -13,6 +13,9 @@ import {
 import { apiGet, apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 import { BrandLogo } from './brand-logo';
+import { CompareNavIcon } from './compare-nav-icon';
+import { headerIconButtonClass } from './header-nav-badge';
+import { LanguageSwitcher } from './language-switcher';
 import { MessagesNavIcon } from './messages-nav-icon';
 import { NotificationsBell } from './notifications-bell';
 
@@ -23,7 +26,7 @@ function AccountAvatar({
   user: AuthUser;
   size?: 'sm' | 'md';
 }) {
-  const dim = size === 'md' ? 'h-8 w-8 text-[11px]' : 'h-7 w-7 text-[10px]';
+  const dim = size === 'md' ? 'h-9 w-9 text-[11px]' : 'h-8 w-8 text-[10px]';
   const initials =
     `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase() ||
     '?';
@@ -34,14 +37,14 @@ function AccountAvatar({
       <img
         src={user.avatarUrl}
         alt=""
-        className={`${dim} shrink-0 rounded-full object-cover ring-1 ring-black/20`}
+        className={`${dim} shrink-0 rounded-full object-cover ring-2 ring-black/10`}
       />
     );
   }
 
   return (
     <span
-      className={`${dim} inline-flex shrink-0 items-center justify-center rounded-full bg-black/10 font-[family-name:var(--font-display)] tracking-wide text-foreground ring-1 ring-black/20`}
+      className={`${dim} inline-flex shrink-0 items-center justify-center rounded-full bg-black/[0.06] font-[family-name:var(--font-display)] tracking-wide text-foreground ring-2 ring-black/10`}
       aria-hidden
     >
       {initials}
@@ -113,8 +116,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     };
   }, [accountOpen]);
 
-  const other = locale === 'en' ? 'si' : 'en';
-
   async function logout() {
     const refreshToken = getRefreshToken();
     try {
@@ -149,20 +150,19 @@ export function SiteHeader({ locale }: { locale: Locale }) {
 
         <nav className="ml-6 hidden items-center gap-6 md:flex" aria-label="Main">
           <Link href={`/${locale}/bikes`} className={navLinkClass}>
-            Buy Bikes
+            {t(locale, 'browse')}
           </Link>
           <Link href={`/${locale}/sell`} className={navLinkClass}>
-            Sell a Bike
+            {t(locale, 'sell')}
           </Link>
           <Link href={`/${locale}/dealers`} className={navLinkClass}>
-            Dealers
+            {t(locale, 'dealersNav')}
           </Link>
         </nav>
 
-        <div className="ml-auto hidden items-center gap-4 md:flex">
-          <Link href={`/${other}`} className={navLinkClass}>
-            {other === 'si' ? 'සිංහල' : 'English'}
-          </Link>
+        <div className="ml-auto hidden items-center gap-1 md:flex">
+          <LanguageSwitcher locale={locale} />
+          <CompareNavIcon locale={locale} />
           {user ? (
             <>
               <MessagesNavIcon locale={locale} />
@@ -170,13 +170,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               <div className="relative" ref={accountRef}>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
+                  className={`${headerIconButtonClass} w-auto gap-1 px-1.5`}
+                  aria-label={t(locale, 'accountNav')}
                   aria-expanded={accountOpen}
                   aria-haspopup="menu"
                   onClick={() => setAccountOpen((o) => !o)}
                 >
                   <AccountAvatar user={user} />
-                  <span>Account</span>
                   <svg
                     className={`h-3.5 w-3.5 opacity-70 transition ${accountOpen ? 'rotate-180' : ''}`}
                     viewBox="0 0 20 20"
@@ -231,14 +231,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     >
                       {t(locale, 'savedListings')}
                     </Link>
-                    <Link
-                      role="menuitem"
-                      href={`/${locale}/compare`}
-                      className="block px-4 py-2.5 text-sm text-muted transition hover:bg-black/5 hover:text-foreground"
-                      onClick={() => setAccountOpen(false)}
-                    >
-                      {t(locale, 'compare')}
-                    </Link>
                     <div className="my-1 border-t border-black/10" />
                     <button
                       type="button"
@@ -251,26 +243,31 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   </div>
                 ) : null}
               </div>
-              {user.roles.includes('admin') ? (
-                <Link href={`/${locale}/admin`} className={navLinkClass}>
-                  Admin
-                </Link>
-              ) : null}
             </>
           ) : (
             <Link href={`/${locale}/login`} className={navLinkClass}>
-              Sign In
+              {t(locale, 'login')}
             </Link>
           )}
+          {user?.roles.includes('admin') ? (
+            <Link
+              href={`/${locale}/admin`}
+              className="ml-2 border-l border-black/10 pl-3 text-sm text-muted transition hover:text-foreground"
+            >
+              {t(locale, 'adminNav')}
+            </Link>
+          ) : null}
           <Link
             href={`/${locale}/sell`}
-            className="bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110"
+            className="ml-2 bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110"
           >
-            Post an Ad
+            {t(locale, 'postAnAd')}
           </Link>
         </div>
 
-        <div className="ml-auto flex items-center gap-1 md:hidden">
+        <div className="ml-auto flex items-center gap-0.5 md:hidden">
+          <LanguageSwitcher locale={locale} />
+          <CompareNavIcon locale={locale} />
           {user ? (
             <>
               <MessagesNavIcon locale={locale} />
@@ -320,21 +317,21 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               className="py-3 text-base text-foreground"
               onClick={() => setMenuOpen(false)}
             >
-              Buy Bikes
+              {t(locale, 'browse')}
             </Link>
             <Link
               href={`/${locale}/sell`}
               className="py-3 text-base text-foreground"
               onClick={() => setMenuOpen(false)}
             >
-              Sell a Bike
+              {t(locale, 'sell')}
             </Link>
             <Link
               href={`/${locale}/dealers`}
               className="py-3 text-base text-foreground"
               onClick={() => setMenuOpen(false)}
             >
-              Dealers
+              {t(locale, 'dealersNav')}
             </Link>
             <div className="my-2 border-t border-black/10" />
             {user ? (
@@ -393,7 +390,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     className="py-3 text-base text-muted"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Admin
+                    {t(locale, 'adminNav')}
                   </Link>
                 ) : null}
                 <button
@@ -410,22 +407,15 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 className="py-3 text-base text-muted"
                 onClick={() => setMenuOpen(false)}
               >
-                Sign In
+                {t(locale, 'login')}
               </Link>
             )}
-            <Link
-              href={`/${other}`}
-              className="py-3 text-base text-muted"
-              onClick={() => setMenuOpen(false)}
-            >
-              {other === 'si' ? 'සිංහල' : 'English'}
-            </Link>
             <Link
               href={`/${locale}/sell`}
               className="mt-2 inline-flex items-center justify-center bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-white"
               onClick={() => setMenuOpen(false)}
             >
-              Post an Ad
+              {t(locale, 'postAnAd')}
             </Link>
           </nav>
         </div>
