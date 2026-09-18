@@ -153,13 +153,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link href={`/${locale}/bikes`} className={navLinkClass}>
             {t(locale, 'browse')}
           </Link>
-          <AuthRequiredLink
-            locale={locale}
-            href={`/${locale}/sell`}
-            className={navLinkClass}
-          >
-            {t(locale, 'sell')}
-          </AuthRequiredLink>
           <Link href={`/${locale}/dealers`} className={navLinkClass}>
             {t(locale, 'dealersNav')}
           </Link>
@@ -317,14 +310,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             >
               {t(locale, 'browse')}
             </Link>
-            <AuthRequiredLink
-              locale={locale}
-              href={`/${locale}/sell`}
-              className="py-3 text-base text-foreground"
-              onNavigate={() => setMenuOpen(false)}
-            >
-              {t(locale, 'sell')}
-            </AuthRequiredLink>
             <Link
               href={`/${locale}/dealers`}
               className="py-3 text-base text-foreground"
