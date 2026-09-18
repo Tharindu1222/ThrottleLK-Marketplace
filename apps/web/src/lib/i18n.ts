@@ -266,6 +266,10 @@ const en: Dict = {
   postAnAd: 'Post an Ad',
   postAnAdHint:
     'List your motorbike in a few steps. Ads go to admin review before they appear publicly.',
+  loginToPostAd: 'Sign in to post an ad',
+  loginToPostAdHint:
+    'You need an account before you can list a bike on ThrottleLK.',
+  notNow: 'Not now',
   sellStepBike: 'Bike',
   sellStepSpecs: 'Specs',
   sellStepDetails: 'Details',
@@ -599,6 +603,10 @@ const si: Dict = {
   postAnAd: 'දැන්වීමක් පළ කරන්න',
   postAnAdHint:
     'පියවර කිහිපයකින් ඔබේ යතුරුපැදිය ලැයිස්තුගත කරන්න. ප්‍රසිද්ධ වීමට පෙර පරිපාලක සමාලෝචනයට යයි.',
+  loginToPostAd: 'දැන්වීමක් පළ කිරීමට පිවිසෙන්න',
+  loginToPostAdHint:
+    'ThrottleLK හි බයික් ලැයිස්තුගත කිරීමට ගිණුමක් අවශ්‍යයි.',
+  notNow: 'දැන් නැත',
   sellStepBike: 'බයික්',
   sellStepSpecs: 'විශේෂාංග',
   sellStepDetails: 'තොරතුරු',

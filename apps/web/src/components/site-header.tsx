@@ -12,6 +12,7 @@ import {
 } from '@/lib/auth';
 import { apiGet, apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
+import { AuthRequiredLink } from './auth-required-link';
 import { BrandLogo } from './brand-logo';
 import { CompareNavIcon } from './compare-nav-icon';
 import { headerIconButtonClass } from './header-nav-badge';
@@ -152,9 +153,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link href={`/${locale}/bikes`} className={navLinkClass}>
             {t(locale, 'browse')}
           </Link>
-          <Link href={`/${locale}/sell`} className={navLinkClass}>
+          <AuthRequiredLink
+            locale={locale}
+            href={`/${locale}/sell`}
+            className={navLinkClass}
+          >
             {t(locale, 'sell')}
-          </Link>
+          </AuthRequiredLink>
           <Link href={`/${locale}/dealers`} className={navLinkClass}>
             {t(locale, 'dealersNav')}
           </Link>
@@ -249,12 +254,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               {t(locale, 'login')}
             </Link>
           )}
-          <Link
+          <AuthRequiredLink
+            locale={locale}
             href={`/${locale}/sell`}
             className="ml-2 bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110"
           >
             {t(locale, 'postAnAd')}
-          </Link>
+          </AuthRequiredLink>
         </div>
 
         <div className="ml-auto flex items-center gap-0.5 md:hidden">
@@ -311,13 +317,14 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             >
               {t(locale, 'browse')}
             </Link>
-            <Link
+            <AuthRequiredLink
+              locale={locale}
               href={`/${locale}/sell`}
               className="py-3 text-base text-foreground"
-              onClick={() => setMenuOpen(false)}
+              onNavigate={() => setMenuOpen(false)}
             >
               {t(locale, 'sell')}
-            </Link>
+            </AuthRequiredLink>
             <Link
               href={`/${locale}/dealers`}
               className="py-3 text-base text-foreground"
@@ -393,13 +400,14 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 {t(locale, 'login')}
               </Link>
             )}
-            <Link
+            <AuthRequiredLink
+              locale={locale}
               href={`/${locale}/sell`}
               className="mt-2 inline-flex items-center justify-center bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-white"
-              onClick={() => setMenuOpen(false)}
+              onNavigate={() => setMenuOpen(false)}
             >
               {t(locale, 'postAnAd')}
-            </Link>
+            </AuthRequiredLink>
           </nav>
         </div>
       ) : null}

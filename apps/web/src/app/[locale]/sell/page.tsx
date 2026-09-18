@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { SellLoginGate } from '@/components/auth-required-link';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { SellForm } from './sell-form';
 
@@ -19,7 +20,9 @@ export default async function SellPage({
         </h1>
         <p className="mt-2 text-muted">{t(locale, 'postAnAdHint')}</p>
       </div>
-      <SellForm locale={locale} />
+      <SellLoginGate locale={locale}>
+        <SellForm locale={locale} />
+      </SellLoginGate>
     </main>
   );
 }

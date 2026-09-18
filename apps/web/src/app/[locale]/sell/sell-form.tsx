@@ -351,14 +351,7 @@ export function SellForm({ locale }: { locale: Locale }) {
   }
 
   if (!token) {
-    return (
-      <p className="mt-6 text-center text-muted">
-        {t(locale, 'signInRequired')}{' '}
-        <Link href={`/${locale}/login`} className="text-accent underline">
-          {t(locale, 'login')}
-        </Link>
-      </p>
-    );
+    return null;
   }
 
   if (submitted) {
