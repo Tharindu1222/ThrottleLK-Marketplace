@@ -31,6 +31,8 @@ export function LoginRequiredDialog({
   nextPath,
   onClose,
   autoRedirectMs,
+  title,
+  hint,
 }: {
   locale: Locale;
   open: boolean;
@@ -38,12 +40,16 @@ export function LoginRequiredDialog({
   onClose?: () => void;
   /** When set, navigates to login after this many ms. */
   autoRedirectMs?: number;
+  title?: string;
+  hint?: string;
 }) {
   const titleId = useId();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const loginHref = `/${locale}/login?next=${encodeURIComponent(nextPath)}`;
   const onLoginPage = pathname?.includes('/login') ?? false;
+  const dialogTitle = title ?? t(locale, 'loginToPostAd');
+  const dialogHint = hint ?? t(locale, 'loginToPostAdHint');
 
   useEffect(() => setMounted(true), []);
 
@@ -101,10 +107,10 @@ export function LoginRequiredDialog({
           id={titleId}
           className="mt-4 font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground"
         >
-          {t(locale, 'loginToPostAd')}
+          {dialogTitle}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          {t(locale, 'loginToPostAdHint')}
+          {dialogHint}
         </p>
         <div className="mt-6 flex flex-col gap-2.5">
           <Link

@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useId, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import {
@@ -9,6 +10,7 @@ import {
   type CompareItem,
 } from '@/lib/compare';
 import { t, type Locale } from '@/lib/i18n';
+import { LoginRequiredDialog } from '@/components/auth-required-link';
 import { ListingMessagePopup } from '@/components/listing-message-popup';
 
 type ListingActionItem = {
@@ -236,12 +238,17 @@ export function ListingContactBar({
   listing: ListingActionItem;
 }) {
   const dialogId = useId();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const callNumber = listing.phone?.trim() || null;
   const chatNumber = listing.whatsapp?.trim() || callNumber;
   const sellerName = listing.seller?.displayName || t(locale, 'seller');
+  const search = searchParams?.toString();
+  const nextPath = search ? `${pathname}?${search}` : pathname;
 
   useEffect(() => {
     setToken(getAccessToken());
@@ -249,10 +256,7 @@ export function ListingContactBar({
 
   function onMessageClick() {
     if (!token) {
-      const next = encodeURIComponent(
-        `${window.location.pathname}${window.location.search}`,
-      );
-      window.location.href = `/${locale}/login?next=${next}`;
+      setLoginOpen(true);
       return;
     }
     setChatOpen(true);
@@ -292,7 +296,7 @@ export function ListingContactBar({
           type="button"
           onClick={onMessageClick}
           aria-haspopup="dialog"
-          aria-expanded={chatOpen}
+          aria-expanded={chatOpen || loginOpen}
           aria-controls={chatOpen ? dialogId : undefined}
           className={`${contactBtn} border border-black/12 bg-white text-foreground hover:border-accent hover:text-accent ${
             chatOpen ? 'border-accent text-accent' : ''
@@ -302,6 +306,14 @@ export function ListingContactBar({
           <span>{t(locale, 'sendMessage')}</span>
         </button>
       </div>
+      <LoginRequiredDialog
+        locale={locale}
+        open={loginOpen}
+        nextPath={nextPath}
+        onClose={() => setLoginOpen(false)}
+        title={t(locale, 'loginToMessage')}
+        hint={t(locale, 'loginToMessageHint')}
+      />
       {chatOpen ? (
         <ListingMessagePopup
           locale={locale}

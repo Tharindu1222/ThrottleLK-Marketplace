@@ -27,6 +27,7 @@ type ConversationRow = {
   counterpart: Counterpart | null;
   lastMessagePreview: string | null;
   lastMessageMine: boolean;
+  unread?: boolean;
 };
 
 const cardClass =
@@ -151,26 +152,54 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
               row.counterpart?.fullName ||
               row.counterpart?.displayName ||
               t(locale, 'seller');
+            const unread = Boolean(row.unread);
             return (
               <Link
                 key={row.id}
                 href={`/${locale}/account/messages/${row.id}`}
-                className="flex gap-4 border-b border-black/10 px-4 py-4 transition last:border-b-0 hover:bg-surface/60 sm:px-5"
+                className={`flex gap-4 border-b border-black/10 px-4 py-4 transition last:border-b-0 hover:bg-surface/60 sm:px-5 ${
+                  unread ? 'bg-accent/[0.04]' : ''
+                }`}
               >
-                <Avatar counterpart={row.counterpart} />
+                <div className="relative shrink-0">
+                  <Avatar counterpart={row.counterpart} />
+                  {unread ? (
+                    <span
+                      className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-accent ring-2 ring-white"
+                      aria-hidden
+                    />
+                  ) : null}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground">
+                      <p
+                        className={`truncate font-[family-name:var(--font-display)] text-lg tracking-wide ${
+                          unread
+                            ? 'font-semibold text-foreground'
+                            : 'text-foreground'
+                        }`}
+                      >
                         {name}
                       </p>
                       <p className="mt-0.5 truncate text-sm text-muted">
                         {row.listingTitle}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs text-muted">
-                      {formatWhen(row.lastMessageAt, locale)}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <span
+                        className={`text-xs ${
+                          unread ? 'font-semibold text-accent' : 'text-muted'
+                        }`}
+                      >
+                        {formatWhen(row.lastMessageAt, locale)}
+                      </span>
+                      {unread ? (
+                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-bold leading-none text-white">
+                          1
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   {row.counterpart?.phone ? (
                     <p className="mt-1.5 text-sm text-foreground/80">
@@ -178,7 +207,13 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
                     </p>
                   ) : null}
                   {row.lastMessagePreview ? (
-                    <p className="mt-1.5 line-clamp-1 text-sm text-muted">
+                    <p
+                      className={`mt-1.5 line-clamp-1 text-sm ${
+                        unread
+                          ? 'font-medium text-foreground'
+                          : 'text-muted'
+                      }`}
+                    >
                       {row.lastMessageMine ? `${t(locale, 'you')}: ` : ''}
                       {row.lastMessagePreview}
                     </p>

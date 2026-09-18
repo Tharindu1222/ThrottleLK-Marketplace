@@ -190,6 +190,8 @@ const en: Dict = {
   noMessages: 'No conversations yet.',
   messageSellerHint: 'Prefer chat? Send a message on ThrottleLK.',
   loginToMessage: 'Log in to message the seller.',
+  loginToMessageHint:
+    'Sign in to send a message about this bike on ThrottleLK.',
   chatPlaceholder: 'Write a message…',
   chatEmpty: 'Ask about this bike. The seller will reply here.',
   closeChat: 'Close chat',
@@ -394,6 +396,8 @@ const si: Dict = {
   contactSeller: 'විකුණුම්කරු අමතන්න',
   sendMessage: 'පණිවිඩය යවන්න',
   loginToMessage: 'විකුණුම්කරුට පණිවිඩයක් යැවීමට පිවිසෙන්න.',
+  loginToMessageHint:
+    'මෙම බයික් ගැන පණිවිඩයක් යැවීමට ThrottleLK වෙත පිවිසෙන්න.',
   chatPlaceholder: 'පණිවිඩයක් ලියන්න…',
   chatEmpty: 'මෙම බයික් ගැන අසන්න. විකුණුම්කරු මෙහි පිළිතුරු දෙයි.',
   closeChat: 'කතාබස වසන්න',

@@ -57,8 +57,7 @@ export class DealersService {
         },
       });
     }
-    const base = slugify(input.name) || 'dealer';
-    const slug = `${base}-${Date.now().toString(36)}`;
+    const slug = await this.allocateUniqueSlug(input.name);
     const dealer = this.dealers.create({
       ownerUserId: owner.id,
       name: input.name,
@@ -88,6 +87,7 @@ export class DealersService {
       .then(async (rows) => {
         const active = rows.find((row) => row.status === 'active');
         if (active) {
+          await this.ensureSlugMatchesName(active);
           const owner = await this.usersService.findByIdOrThrow(ownerUserId);
           if (owner.roles.some((role) => role.name === 'seller')) {
             await this.promoteOwnerToDealer(owner, active);
@@ -112,6 +112,8 @@ export class DealersService {
       });
     }
     this.applyProfileFields(dealer, input);
+    // Keep public URL aligned with the showroom name
+    dealer.slug = await this.allocateUniqueSlug(dealer.name, dealer.id);
     await this.dealers.save(dealer);
     const fresh = await this.dealers.findOne({
       where: { id: dealer.id },
@@ -286,8 +288,7 @@ export class DealersService {
 
   async adminCreate(input: AdminCreateDealerInput): Promise<Dealer> {
     const owner = await this.usersService.findByIdOrThrow(input.ownerUserId);
-    const base = slugify(input.name) || 'dealer';
-    const slug = `${base}-${Date.now().toString(36)}`;
+    const slug = await this.allocateUniqueSlug(input.name);
     const status = input.status ?? 'pending';
     const dealer = this.dealers.create({
       ownerUserId: owner.id,
@@ -321,6 +322,9 @@ export class DealersService {
       dealer.ownerUserId = input.ownerUserId;
     }
     this.applyProfileFields(dealer, input);
+    if (input.name) {
+      dealer.slug = await this.allocateUniqueSlug(dealer.name, dealer.id);
+    }
 
     if (input.status) {
       dealer.status = input.status;
@@ -371,6 +375,7 @@ export class DealersService {
         error: { code: 'DEALER_NOT_FOUND', message: 'Dealer not found' },
       });
     }
+    await this.ensureSlugMatchesName(dealer);
     const owner = dealer.owner;
     const covered = this.withCover(dealer);
     const { owner: _owner, ...safe } = covered as typeof covered & {
@@ -520,5 +525,32 @@ export class DealersService {
       });
     }
     return dealer;
+  }
+
+  /** Keep public URL in sync with the showroom name. */
+  private async ensureSlugMatchesName(dealer: Dealer): Promise<void> {
+    const desired = await this.allocateUniqueSlug(dealer.name, dealer.id);
+    if (desired === dealer.slug) return;
+    dealer.slug = desired;
+    await this.dealers.save(dealer);
+  }
+
+  /** Public URL slug from showroom name; append -2, -3… on collision. */
+  private async allocateUniqueSlug(
+    name: string,
+    excludeId?: string,
+  ): Promise<string> {
+    const base = slugify(name) || 'dealer';
+    let candidate = base;
+    let n = 1;
+    for (;;) {
+      const existing = await this.dealers.findOne({
+        where: { slug: candidate },
+        select: ['id'],
+      });
+      if (!existing || existing.id === excludeId) return candidate;
+      n += 1;
+      candidate = `${base}-${n}`;
+    }
   }
 }

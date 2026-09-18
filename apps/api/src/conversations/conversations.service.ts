@@ -262,7 +262,7 @@ export class ConversationsService {
       conversation.buyerUserId === userId
         ? conversation.buyerLastReadAt
         : conversation.sellerLastReadAt;
-    if (!readAt) return false;
+    if (!readAt) return true;
     return last.createdAt.getTime() > readAt.getTime();
   }
 

@@ -72,12 +72,13 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   try {
     const dealer = await apiGet<Dealer>(`/api/v1/dealers/${slug}`);
+    const canonicalSlug = dealer.slug || slug;
     return pageMetadata({
       title: `${dealer.name} — motorcycle dealer`,
       description:
         dealer.description?.slice(0, 160) ??
         `${dealer.name} showroom on ThrottleLK`,
-      path: `/${locale}/dealers/${slug}`,
+      path: `/${locale}/dealers/${canonicalSlug}`,
     });
   } catch {
     return { title: 'Dealer not found' };
@@ -103,6 +104,11 @@ export default async function DealerShowroomPage({
     dealer = await apiGet<Dealer>(`/api/v1/dealers/${slug}`);
   } catch {
     notFound();
+  }
+
+  // Canonical URL follows the showroom name (API may have just resynced the slug).
+  if (dealer.slug && dealer.slug !== slug) {
+    redirect(`/${locale}/dealers/${dealer.slug}`);
   }
 
   const listingPage = await apiGetWithMeta<BrowseListingCard[]>(

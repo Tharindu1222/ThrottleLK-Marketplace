@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   clearSession,
+  getAccessToken,
   getRefreshToken,
   getStoredUser,
   type AuthUser,
 } from '@/lib/auth';
-import { apiSend } from '@/lib/api';
+import { apiGet, apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 
 type NavItem = {
@@ -25,7 +26,21 @@ type NavItem = {
   match: (path: string) => boolean;
   icon: ReactNode;
   dealerOnly?: boolean;
+  badgeKey?: 'messages' | 'notifications';
 };
+
+const POLL_MS = 30_000;
+
+type ConversationRow = { unread?: boolean };
+
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-bold leading-none text-white">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
 
 function IconUser() {
   return (
@@ -153,12 +168,14 @@ function navItems(locale: Locale): NavItem[] {
       labelKey: 'messages',
       match: (p) => p.includes('/account/messages'),
       icon: <IconMessages />,
+      badgeKey: 'messages',
     },
     {
       href: `${base}/notifications`,
       labelKey: 'notifications',
       match: (p) => p.includes('/account/notifications'),
       icon: <IconBell />,
+      badgeKey: 'notifications',
     },
     {
       href: `${base}/favourites`,
@@ -207,15 +224,44 @@ function SidebarAvatar({ user }: { user: AuthUser | null }) {
 export function AccountSidebar({ locale }: { locale: Locale }) {
   const pathname = usePathname() || '';
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [messageUnread, setMessageUnread] = useState(0);
+  const [notificationUnread, setNotificationUnread] = useState(0);
+
+  const refreshCounts = useCallback(async (token: string) => {
+    const [conversations, notif] = await Promise.all([
+      apiGet<ConversationRow[]>('/api/v1/conversations', {
+        token,
+        searchParams: { limit: '50' },
+      }),
+      apiGet<{ count: number }>('/api/v1/notifications/unread-count', {
+        token,
+      }),
+    ]);
+    setMessageUnread(conversations.filter((c) => c.unread).length);
+    setNotificationUnread(notif.count ?? 0);
+  }, []);
 
   useEffect(() => {
     setUser(getStoredUser());
-  }, []);
+    const token = getAccessToken();
+    if (!token) return;
+    void refreshCounts(token).catch(() => undefined);
+    const id = window.setInterval(() => {
+      void refreshCounts(token).catch(() => undefined);
+    }, POLL_MS);
+    return () => window.clearInterval(id);
+  }, [refreshCounts, pathname]);
 
   const isDealer = Boolean(user?.roles?.includes('dealer'));
   const items = navItems(locale).filter(
     (item) => !item.dealerOnly || isDealer,
   );
+
+  function badgeFor(item: NavItem) {
+    if (item.badgeKey === 'messages') return messageUnread;
+    if (item.badgeKey === 'notifications') return notificationUnread;
+    return 0;
+  }
 
   async function logout() {
     const refreshToken = getRefreshToken();
@@ -246,6 +292,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
       >
         {items.map((item) => {
           const active = item.match(pathname);
+          const count = badgeFor(item);
           return (
             <Link
               key={item.href}
@@ -260,6 +307,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
                 {item.icon}
               </span>
               {t(locale, item.labelKey)}
+              <CountBadge count={count} />
             </Link>
           );
         })}
@@ -292,6 +340,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
           <ul className="space-y-0.5">
             {items.map((item) => {
               const active = item.match(pathname);
+              const count = badgeFor(item);
               return (
                 <li key={item.href}>
                   <Link
@@ -301,6 +350,19 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
                         ? 'bg-[#eef0f3] font-medium text-foreground'
                         : 'text-muted hover:bg-[#f4f5f7] hover:text-foreground'
                     }`}
+                    aria-label={
+                      count > 0 && item.badgeKey === 'messages'
+                        ? t(locale, 'unreadMessages').replace(
+                            '{n}',
+                            String(count),
+                          )
+                        : count > 0 && item.badgeKey === 'notifications'
+                          ? t(locale, 'unreadNotifications').replace(
+                              '{n}',
+                              String(count),
+                            )
+                          : undefined
+                    }
                   >
                     <span
                       className={`h-5 w-0.5 shrink-0 rounded-full transition ${
@@ -318,6 +380,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
                       {item.icon}
                     </span>
                     <span className="truncate">{t(locale, item.labelKey)}</span>
+                    <CountBadge count={count} />
                   </Link>
                 </li>
               );
