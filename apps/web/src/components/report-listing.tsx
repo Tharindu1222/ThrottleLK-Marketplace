@@ -42,7 +42,6 @@ export function ReportListing({
       });
       setStatus(t(locale, 'reportSent'));
       setOpen(false);
-      e.currentTarget.reset();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed');
     }

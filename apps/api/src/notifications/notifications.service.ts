@@ -122,6 +122,22 @@ export class NotificationsService {
     });
   }
 
+  async listingWarning(
+    sellerId: string,
+    listing: { id: string; title: string; slug: string },
+    message: string,
+  ) {
+    return this.notifyUser({
+      userId: sellerId,
+      type: 'listing_warning',
+      title: 'Listing warning',
+      message: `"${listing.title}": ${message}`,
+      data: { listingId: listing.id, slug: listing.slug, reason: message },
+      emailSubject: 'ThrottleLK listing warning',
+      emailHtml: `<p>We received a report about your listing <strong>${listing.title}</strong>.</p><p>${message}</p><p>Please review and fix any issues. Further violations may lead to removal.</p>`,
+    });
+  }
+
   async dealerApproved(ownerUserId: string, dealer: { id: string; name: string; slug: string }) {
     return this.notifyUser({
       userId: ownerUserId,

@@ -43,4 +43,11 @@ export type AdminReport = {
   reason: string;
   description: string;
   createdAt: string;
+  listing?: {
+    id: string;
+    title: string;
+    slug: string;
+    coverImageUrl: string | null;
+    status: string;
+  } | null;
 };

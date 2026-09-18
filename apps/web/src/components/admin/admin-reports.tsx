@@ -1,20 +1,27 @@
 'use client';
 
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminReport } from '@/lib/admin-types';
+import type { Locale } from '@/lib/i18n';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import type { PaginationMeta } from '@throttlelk/types';
 
 export function AdminReports({ search = '' }: { search?: string }) {
+  const params = useParams();
+  const locale = (params?.locale as Locale) || 'en';
   const [token, setToken] = useState<string | null>(null);
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function load(access: string, pageNum = page, q = search) {
     setLoading(true);
@@ -56,6 +63,42 @@ export function AdminReports({ search = '' }: { search?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
+  async function resolve(
+    reportId: string,
+    action: 'remove_listing' | 'dismiss' | 'warn_seller',
+  ) {
+    if (!token) return;
+    if (
+      action === 'remove_listing' &&
+      !window.confirm(
+        'Remove this listing from the marketplace and close the report?',
+      )
+    ) {
+      return;
+    }
+    if (
+      action === 'warn_seller' &&
+      !window.confirm(
+        'Send a warning notification to the seller and close the report? The listing stays live.',
+      )
+    ) {
+      return;
+    }
+    setBusyId(reportId);
+    setError(null);
+    try {
+      await apiSend(`/api/v1/admin/reports/${reportId}/resolve`, {
+        token,
+        body: { action },
+      });
+      await load(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Resolve failed');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (!token) return null;
 
   return (
@@ -65,7 +108,8 @@ export function AdminReports({ search = '' }: { search?: string }) {
           Reports
         </h1>
         <p className="mt-1 text-sm text-[var(--admin-muted)]">
-          Review and resolve open listing reports.
+          Review open reports. Warn the seller, remove the listing, or dismiss
+          if everything looks fine.
         </p>
       </div>
 
@@ -84,69 +128,93 @@ export function AdminReports({ search = '' }: { search?: string }) {
               </tr>
             </thead>
             <tbody>
-              {reports.map((report) => (
-                <tr
-                  key={report.id}
-                  className="border-b border-[var(--admin-border)] last:border-0"
-                >
-                  <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
-                    {new Date(report.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-[var(--admin-text)]">
-                    {report.reason}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-[var(--admin-muted)]">
-                    {report.listingId.slice(0, 8)}…
-                  </td>
-                  <td className="max-w-xs truncate px-4 py-3 text-[var(--admin-muted)]">
-                    {report.description}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="admin-btn-primary px-3 py-1.5 text-xs"
-                        onClick={() => {
-                          void apiSend(`/api/v1/admin/reports/${report.id}/resolve`, {
-                            token,
-                            body: { status: 'actioned' },
-                          })
-                            .then(() => load(token))
-                            .catch((err) =>
-                              setError(
-                                err instanceof Error
-                                  ? err.message
-                                  : 'Resolve failed',
-                              ),
-                            );
-                        }}
-                      >
-                        Actioned
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-btn-ghost px-3 py-1.5 text-xs"
-                        onClick={() => {
-                          void apiSend(`/api/v1/admin/reports/${report.id}/resolve`, {
-                            token,
-                            body: { status: 'dismissed' },
-                          })
-                            .then(() => load(token))
-                            .catch((err) =>
-                              setError(
-                                err instanceof Error
-                                  ? err.message
-                                  : 'Dismiss failed',
-                              ),
-                            );
-                        }}
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {reports.map((report) => {
+                const listing = report.listing;
+                const listingHref = listing?.slug
+                  ? `/${locale}/bikes/${listing.slug}`
+                  : null;
+                const busy = busyId === report.id;
+                return (
+                  <tr
+                    key={report.id}
+                    className="border-b border-[var(--admin-border)] last:border-0"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-[var(--admin-text)]">
+                      {report.reason}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex max-w-xs items-center gap-3">
+                        <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)]">
+                          {listing?.coverImageUrl ? (
+                            <Image
+                              src={listing.coverImageUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-[var(--admin-text)]">
+                            {listing?.title ?? 'Listing unavailable'}
+                          </p>
+                          {listingHref ? (
+                            <Link
+                              href={listingHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[var(--admin-accent)] hover:underline"
+                            >
+                              View listing
+                            </Link>
+                          ) : (
+                            <p className="font-mono text-xs text-[var(--admin-muted)]">
+                              {report.listingId.slice(0, 8)}…
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="max-w-xs truncate px-4 py-3 text-[var(--admin-muted)]">
+                      {report.description}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={busy || !listing}
+                          className="admin-btn-primary px-3 py-1.5 text-xs disabled:opacity-50"
+                          onClick={() =>
+                            void resolve(report.id, 'remove_listing')
+                          }
+                        >
+                          Remove listing
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || !listing}
+                          className="rounded-lg border border-[var(--admin-warning)]/40 bg-[var(--admin-warning)]/10 px-3 py-1.5 text-xs font-medium text-[var(--admin-warning)] transition hover:bg-[var(--admin-warning)]/20 disabled:opacity-50"
+                          onClick={() => void resolve(report.id, 'warn_seller')}
+                        >
+                          Warn seller
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          className="admin-btn-ghost px-3 py-1.5 text-xs disabled:opacity-50"
+                          onClick={() => void resolve(report.id, 'dismiss')}
+                        >
+                          Dismiss report
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

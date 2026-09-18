@@ -798,6 +798,30 @@ export class ListingsService {
     return saved;
   }
 
+  /** Admin take-down from report queue (active / paused / pending review). */
+  async takeDownForModeration(id: string, reason: string): Promise<Listing> {
+    const listing = await this.getById(id);
+    if (!['active', 'paused', 'pending_review'].includes(listing.status)) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: `Cannot remove listing in status "${listing.status}"`,
+        },
+      });
+    }
+    listing.status = 'rejected';
+    listing.rejectionReason = reason;
+    const saved = await this.listings.save(listing);
+    this.bumpDashboard();
+    void this.notifications.listingRejected(
+      saved.sellerId,
+      { id: saved.id, title: saved.title },
+      reason,
+    );
+    return saved;
+  }
+
   private async notifyFavouritesPriceDrop(
     listing: Listing,
     oldPrice: number,

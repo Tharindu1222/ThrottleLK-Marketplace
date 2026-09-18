@@ -184,7 +184,8 @@ export const sendConversationMessageSchema = z.object({
 });
 
 export const adminResolveReportSchema = z.object({
-  status: z.enum(['actioned', 'dismissed']),
+  action: z.enum(['remove_listing', 'dismiss', 'warn_seller']),
+  note: z.string().trim().min(5).max(1000).optional(),
 });
 
 export const rejectDealerSchema = z.object({

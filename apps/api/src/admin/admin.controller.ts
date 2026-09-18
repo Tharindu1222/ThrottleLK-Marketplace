@@ -324,7 +324,7 @@ export class AdminController {
   ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.reportsService.setStatus(id, body.status),
+      data: await this.reportsService.resolve(id, body.action, body.note),
     };
   }
 

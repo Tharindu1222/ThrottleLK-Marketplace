@@ -2,16 +2,32 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { apiGet } from '@/lib/api';
+import type { AdminDashboard } from '@/lib/admin-types';
+import { getAccessToken } from '@/lib/auth';
 import type { Locale } from '@/lib/i18n';
 import { BrandLogo } from '../brand-logo';
+
+type BadgeKey = 'moderation' | 'reports';
 
 const nav = [
   {
     group: 'General',
     items: [
       { href: '', label: 'Overview', icon: OverviewIcon },
-      { href: '/moderation', label: 'Moderation', icon: ShieldIcon },
-      { href: '/reports', label: 'Reports', icon: FlagIcon },
+      {
+        href: '/moderation',
+        label: 'Moderation',
+        icon: ShieldIcon,
+        badgeKey: 'moderation' as const,
+      },
+      {
+        href: '/reports',
+        label: 'Reports',
+        icon: FlagIcon,
+        badgeKey: 'reports' as const,
+      },
     ],
   },
   {
@@ -25,6 +41,21 @@ const nav = [
   },
 ] as const;
 
+function NavCountBadge({ count, active }: { count: number; active: boolean }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={`ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none ${
+        active
+          ? 'bg-white text-[var(--admin-accent)]'
+          : 'bg-[var(--admin-accent)] text-white'
+      }`}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
 export function AdminSidebar({
   locale,
   mobileOpen,
@@ -36,6 +67,44 @@ export function AdminSidebar({
 }) {
   const pathname = usePathname();
   const base = `/${locale}/admin`;
+  const [counts, setCounts] = useState<Record<BadgeKey, number>>({
+    moderation: 0,
+    reports: 0,
+  });
+
+  const loadCounts = useCallback(async () => {
+    const token = getAccessToken();
+    if (!token) return;
+    try {
+      const dash = await apiGet<AdminDashboard>('/api/v1/admin/dashboard', {
+        token,
+      });
+      setCounts({
+        moderation: dash.pendingListings + dash.pendingDealers,
+        reports: dash.openReports,
+      });
+    } catch {
+      /* keep last known counts */
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCounts();
+    const id = window.setInterval(() => void loadCounts(), 30_000);
+    function onFocus() {
+      void loadCounts();
+    }
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [loadCounts, pathname]);
+
+  function badgeFor(key?: BadgeKey) {
+    if (!key) return 0;
+    return counts[key] ?? 0;
+  }
 
   return (
     <>
@@ -73,6 +142,9 @@ export function AdminSidebar({
                       ? pathname === base || pathname === `${base}/`
                       : pathname.startsWith(href);
                   const Icon = item.icon;
+                  const badgeKey =
+                    'badgeKey' in item ? (item.badgeKey as BadgeKey) : undefined;
+                  const count = badgeFor(badgeKey);
                   return (
                     <li key={item.href}>
                       <Link
@@ -83,9 +155,17 @@ export function AdminSidebar({
                             ? 'bg-[var(--admin-accent)] font-medium text-white shadow-[0_0_16px_rgba(225,6,0,0.25)]'
                             : 'text-[var(--admin-muted)] hover:bg-[var(--admin-surface)] hover:text-[var(--admin-text)]'
                         }`}
+                        aria-label={
+                          count > 0 && badgeKey === 'moderation'
+                            ? `Moderation, ${count} pending`
+                            : count > 0 && badgeKey === 'reports'
+                              ? `Reports, ${count} open`
+                              : undefined
+                        }
                       >
                         <Icon className="h-4 w-4 shrink-0 opacity-90" />
-                        {item.label}
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        <NavCountBadge count={count} active={active} />
                       </Link>
                     </li>
                   );

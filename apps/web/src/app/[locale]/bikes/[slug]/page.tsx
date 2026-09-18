@@ -8,6 +8,7 @@ import { listingJsonLd, pageMetadata } from '@/lib/seo';
 import { composeListingTitle } from '@/lib/listing-title';
 import { sellerProfileHref } from '@/lib/seller-href';
 import { ListingContactBar, ListingToolbar } from '@/components/listing-actions';
+import { ListingDescription } from '@/components/listing-description';
 import { ListingGallery } from '@/components/listing-gallery';
 import {
   ListingCard,
@@ -224,9 +225,7 @@ export default async function ListingDetailPage({
           <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground">
             {t(locale, 'description')}
           </h2>
-          <div className="max-w-2xl whitespace-pre-wrap text-[15px] leading-relaxed text-foreground/90">
-            {listing.description}
-          </div>
+          <ListingDescription locale={locale} text={listing.description} />
           <div className="pt-4">
             <ReportListing locale={locale} listingId={listing.id} />
           </div>
