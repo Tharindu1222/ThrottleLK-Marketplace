@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UploadedFile,
   UseGuards,
@@ -15,7 +16,9 @@ import { memoryStorage } from 'multer';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   createDealerSchema,
+  updateDealerProfileSchema,
   type CreateDealerInput,
+  type UpdateDealerProfileInput,
 } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -64,6 +67,20 @@ export class DealersController {
     return {
       success: true,
       data: await this.dealersService.listMine(user.id),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
+  @Patch('mine')
+  async updateMine(
+    @CurrentUser() user: User,
+    @Body(new ZodValidationPipe(updateDealerProfileSchema))
+    body: UpdateDealerProfileInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.updateMine(user, body),
     };
   }
 

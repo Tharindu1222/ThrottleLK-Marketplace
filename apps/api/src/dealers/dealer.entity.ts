@@ -52,6 +52,18 @@ export class Dealer {
   @Column({ type: 'varchar', length: 300, nullable: true })
   address!: string | null;
 
+  @Column({ type: 'double precision', nullable: true })
+  latitude!: number | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  longitude!: number | null;
+
+  @Column({ name: 'facebook_url', type: 'varchar', length: 500, nullable: true })
+  facebookUrl!: string | null;
+
+  @Column({ name: 'tiktok_url', type: 'varchar', length: 500, nullable: true })
+  tiktokUrl!: string | null;
+
   @Column({ name: 'district_id' })
   districtId!: string;
 

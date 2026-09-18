@@ -16,6 +16,7 @@ type NavItem = {
   href: string;
   labelKey:
     | 'accountDetails'
+    | 'dealerShowroom'
     | 'myListings'
     | 'messages'
     | 'notifications'
@@ -23,6 +24,7 @@ type NavItem = {
     | 'savedSearches';
   match: (path: string) => boolean;
   icon: ReactNode;
+  dealerOnly?: boolean;
 };
 
 function IconUser() {
@@ -47,6 +49,19 @@ function IconListings() {
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconShowroom() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-[18px] w-[18px]">
+      <path
+        d="M4.5 10.5 12 4.5l7.5 6V19a1.5 1.5 0 0 1-1.5 1.5h-3.5v-5h-5v5H6A1.5 1.5 0 0 1 4.5 19v-8.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -121,6 +136,13 @@ function navItems(locale: Locale): NavItem[] {
       icon: <IconUser />,
     },
     {
+      href: `${base}/showroom`,
+      labelKey: 'dealerShowroom',
+      match: (p) => p.includes('/account/showroom'),
+      icon: <IconShowroom />,
+      dealerOnly: true,
+    },
+    {
       href: `${base}/listings`,
       labelKey: 'myListings',
       match: (p) => p.includes('/account/listings'),
@@ -184,12 +206,16 @@ function SidebarAvatar({ user }: { user: AuthUser | null }) {
 
 export function AccountSidebar({ locale }: { locale: Locale }) {
   const pathname = usePathname() || '';
-  const items = navItems(locale);
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
     setUser(getStoredUser());
   }, []);
+
+  const isDealer = Boolean(user?.roles?.includes('dealer'));
+  const items = navItems(locale).filter(
+    (item) => !item.dealerOnly || isDealer,
+  );
 
   async function logout() {
     const refreshToken = getRefreshToken();

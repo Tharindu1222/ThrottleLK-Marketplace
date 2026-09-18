@@ -217,8 +217,10 @@ export class UsersService {
     const shop = await this.dealers.findOne({
       where: { ownerUserId: id, status: 'active' },
     });
+    const base = this.toSellerPublic(user);
     return {
-      ...this.toSellerPublic(user),
+      ...base,
+      displayName: shop?.name ?? base.displayName,
       dealerSlug: shop?.slug ?? null,
     };
   }

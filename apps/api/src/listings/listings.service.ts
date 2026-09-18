@@ -282,6 +282,10 @@ export class ListingsService {
       qb.andWhere('l.district_id = :districtId', { districtId: filters.districtId });
     }
     if (filters.dealerId) {
+      const dealer = await this.dealersService.findActiveById(filters.dealerId);
+      if (dealer) {
+        await this.dealersService.attachOrphanListings(dealer);
+      }
       qb.andWhere('l.dealer_id = :dealerId', { dealerId: filters.dealerId });
     }
     if (filters.sellerId) {
@@ -379,12 +383,16 @@ export class ListingsService {
     const sellerUser = await this.usersService
       .findByIdOrThrow(listing.sellerId)
       .catch(() => null);
-    const shop = sellerUser
-      ? await this.dealersService.findActiveOwned(sellerUser.id)
+    const shop = listing.dealerId
+      ? await this.dealersService.findActiveById(listing.dealerId)
       : null;
-    const seller = sellerUser
+    const sellerBase = sellerUser
+      ? this.usersService.toSellerPublic(sellerUser)
+      : null;
+    const seller = sellerBase
       ? {
-          ...this.usersService.toSellerPublic(sellerUser),
+          ...sellerBase,
+          displayName: shop?.name ?? sellerBase.displayName,
           dealerSlug: shop?.slug ?? null,
         }
       : null;

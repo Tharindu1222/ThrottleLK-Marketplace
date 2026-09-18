@@ -79,6 +79,83 @@ export const createDealerSchema = z.object({
   cityId: z.string().uuid(),
 });
 
+const emptyToNullUrl = z
+  .string()
+  .max(500)
+  .optional()
+  .nullable()
+  .transform((v, ctx) => {
+    if (v === undefined) return undefined;
+    if (v === null || v.trim() === '') return null;
+    const parsed = z.string().url().safeParse(v);
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid url',
+      });
+      return z.NEVER;
+    }
+    return parsed.data;
+  });
+
+const emptyToNullEmail = z
+  .string()
+  .max(254)
+  .optional()
+  .nullable()
+  .transform((v, ctx) => {
+    if (v === undefined) return undefined;
+    if (v === null || v.trim() === '') return null;
+    const parsed = z.string().email().safeParse(v);
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid email',
+      });
+      return z.NEVER;
+    }
+    return parsed.data;
+  });
+
+export const updateDealerProfileSchema = z
+  .object({
+    name: z.string().min(2).max(120).optional(),
+    description: z.string().max(5000).optional().nullable(),
+    phone: z.string().min(9).max(20).optional(),
+    whatsapp: z.string().min(9).max(20).optional().nullable(),
+    email: emptyToNullEmail,
+    website: emptyToNullUrl,
+    address: z.string().max(300).optional().nullable(),
+    districtId: z.string().uuid().optional(),
+    cityId: z.string().uuid().optional(),
+    latitude: z.number().min(-90).max(90).optional().nullable(),
+    longitude: z.number().min(-180).max(180).optional().nullable(),
+    facebookUrl: emptyToNullUrl,
+    tiktokUrl: emptyToNullUrl,
+  })
+  .superRefine((data, ctx) => {
+    const hasLat = data.latitude !== undefined && data.latitude !== null;
+    const hasLng = data.longitude !== undefined && data.longitude !== null;
+    const clearLat = data.latitude === null;
+    const clearLng = data.longitude === null;
+    if (clearLat && clearLng) return;
+    if (clearLat !== clearLng) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'latitude and longitude must both be set or both cleared',
+        path: clearLat ? ['longitude'] : ['latitude'],
+      });
+      return;
+    }
+    if (hasLat !== hasLng) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'latitude and longitude must both be provided',
+        path: hasLat ? ['longitude'] : ['latitude'],
+      });
+    }
+  });
+
 export const contactListingSchema = z.object({
   buyerName: z.string().min(2).max(120),
   buyerPhone: z.string().min(9).max(20),
@@ -248,6 +325,7 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type CreateListingInput = z.infer<typeof createListingSchema>;
 export type UpdateListingInput = z.infer<typeof updateListingSchema>;
 export type CreateDealerInput = z.infer<typeof createDealerSchema>;
+export type UpdateDealerProfileInput = z.infer<typeof updateDealerProfileSchema>;
 export type ContactListingInput = z.infer<typeof contactListingSchema>;
 export type ListingSort = z.infer<typeof listingSortSchema>;
 export type StartConversationInput = z.infer<typeof startConversationSchema>;

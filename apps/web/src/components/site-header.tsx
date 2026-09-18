@@ -249,14 +249,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               {t(locale, 'login')}
             </Link>
           )}
-          {user?.roles.includes('admin') ? (
-            <Link
-              href={`/${locale}/admin`}
-              className="ml-2 border-l border-black/10 pl-3 text-sm text-muted transition hover:text-foreground"
-            >
-              {t(locale, 'adminNav')}
-            </Link>
-          ) : null}
           <Link
             href={`/${locale}/sell`}
             className="ml-2 bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110"
@@ -384,15 +376,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 >
                   {t(locale, 'compare')}
                 </Link>
-                {user.roles.includes('admin') ? (
-                  <Link
-                    href={`/${locale}/admin`}
-                    className="py-3 text-base text-muted"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {t(locale, 'adminNav')}
-                  </Link>
-                ) : null}
                 <button
                   type="button"
                   className="py-3 text-left text-base text-muted"

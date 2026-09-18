@@ -9,6 +9,7 @@ import type {
   AdminCreateDealerInput,
   AdminUpdateDealerInput,
   CreateDealerInput,
+  UpdateDealerProfileInput,
 } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
@@ -94,6 +95,58 @@ export class DealersService {
         }
         return rows;
       });
+  }
+
+  async updateMine(
+    owner: User,
+    input: UpdateDealerProfileInput,
+  ): Promise<Dealer> {
+    const dealer = await this.findActiveOwned(owner.id);
+    if (!dealer) {
+      throw new NotFoundException({
+        success: false,
+        error: {
+          code: 'DEALER_NOT_FOUND',
+          message: 'No active dealer showroom found',
+        },
+      });
+    }
+    this.applyProfileFields(dealer, input);
+    await this.dealers.save(dealer);
+    const fresh = await this.dealers.findOne({
+      where: { id: dealer.id },
+      relations: ['images', 'district', 'city'],
+    });
+    return this.withCover(fresh!);
+  }
+
+  private applyProfileFields(
+    dealer: Dealer,
+    input: UpdateDealerProfileInput &
+      Partial<
+        Pick<
+          Dealer,
+          'latitude' | 'longitude' | 'facebookUrl' | 'tiktokUrl'
+        >
+      >,
+  ) {
+    if (input.name) dealer.name = input.name;
+    if (input.description !== undefined) {
+      dealer.description = input.description ?? null;
+    }
+    if (input.phone) dealer.phone = input.phone;
+    if (input.whatsapp !== undefined) dealer.whatsapp = input.whatsapp ?? null;
+    if (input.email !== undefined) dealer.email = input.email ?? null;
+    if (input.website !== undefined) dealer.website = input.website ?? null;
+    if (input.address !== undefined) dealer.address = input.address ?? null;
+    if (input.districtId) dealer.districtId = input.districtId;
+    if (input.cityId) dealer.cityId = input.cityId;
+    if (input.latitude !== undefined) dealer.latitude = input.latitude;
+    if (input.longitude !== undefined) dealer.longitude = input.longitude;
+    if (input.facebookUrl !== undefined) {
+      dealer.facebookUrl = input.facebookUrl;
+    }
+    if (input.tiktokUrl !== undefined) dealer.tiktokUrl = input.tiktokUrl;
   }
 
   async listPending(paging?: {
@@ -267,19 +320,7 @@ export class DealersService {
       await this.usersService.findByIdOrThrow(input.ownerUserId);
       dealer.ownerUserId = input.ownerUserId;
     }
-    if (input.name) {
-      dealer.name = input.name;
-    }
-    if (input.description !== undefined) {
-      dealer.description = input.description ?? null;
-    }
-    if (input.phone) dealer.phone = input.phone;
-    if (input.whatsapp !== undefined) dealer.whatsapp = input.whatsapp ?? null;
-    if (input.email !== undefined) dealer.email = input.email ?? null;
-    if (input.website !== undefined) dealer.website = input.website ?? null;
-    if (input.address !== undefined) dealer.address = input.address ?? null;
-    if (input.districtId) dealer.districtId = input.districtId;
-    if (input.cityId) dealer.cityId = input.cityId;
+    this.applyProfileFields(dealer, input);
 
     if (input.status) {
       dealer.status = input.status;
@@ -322,7 +363,7 @@ export class DealersService {
   async getPublicBySlug(slug: string) {
     const dealer = await this.dealers.findOne({
       where: { slug, status: 'active' },
-      relations: ['images', 'district', 'city'],
+      relations: ['images', 'district', 'city', 'owner'],
     });
     if (!dealer) {
       throw new NotFoundException({
@@ -330,7 +371,18 @@ export class DealersService {
         error: { code: 'DEALER_NOT_FOUND', message: 'Dealer not found' },
       });
     }
-    return this.withCover(dealer);
+    const owner = dealer.owner;
+    const covered = this.withCover(dealer);
+    const { owner: _owner, ...safe } = covered as typeof covered & {
+      owner?: unknown;
+    };
+    return {
+      ...safe,
+      ownerAvatarUrl: owner?.avatarUrl ?? null,
+      ownerDisplayName: owner
+        ? `${owner.firstName} ${owner.lastName}`.trim()
+        : null,
+    };
   }
 
   private withCover(dealer: Dealer) {
@@ -415,15 +467,26 @@ export class DealersService {
     });
   }
 
+  async findActiveById(id: string): Promise<Dealer | null> {
+    return this.dealers.findOne({
+      where: { id, status: 'active' },
+    });
+  }
+
   /** Approved dealers keep buyer access but are no longer private sellers. */
   async promoteOwnerToDealer(owner: User, dealer: Dealer): Promise<void> {
     let user = await this.usersService.addRole(owner, 'dealer');
     user = await this.usersService.removeRole(user, 'seller');
+    await this.attachOrphanListings(dealer);
+  }
+
+  /** Link the owner's listings that still have no dealer_id to this showroom. */
+  async attachOrphanListings(dealer: Dealer): Promise<void> {
     await this.listings
       .createQueryBuilder()
       .update(Listing)
       .set({ dealerId: dealer.id })
-      .where('seller_id = :ownerId', { ownerId: user.id })
+      .where('seller_id = :ownerId', { ownerId: dealer.ownerUserId })
       .andWhere('dealer_id IS NULL')
       .execute();
   }
