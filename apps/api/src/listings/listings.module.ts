@@ -5,6 +5,7 @@ import { FavouritesModule } from '../favourites/favourites.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
+import { ListingEngagementEvent } from './listing-engagement-event.entity';
 import { ListingImage } from './listing-image.entity';
 import { ListingImagesService } from './listing-images.service';
 import { ListingInquiry } from './listing-inquiry.entity';
@@ -14,7 +15,12 @@ import { ListingsService } from './listings.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Listing, ListingInquiry, ListingImage]),
+    TypeOrmModule.forFeature([
+      Listing,
+      ListingInquiry,
+      ListingImage,
+      ListingEngagementEvent,
+    ]),
     forwardRef(() => DealersModule),
     NotificationsModule,
     FavouritesModule,

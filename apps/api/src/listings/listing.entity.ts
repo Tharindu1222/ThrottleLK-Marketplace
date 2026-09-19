@@ -137,6 +137,21 @@ export class Listing {
   @Column({ name: 'view_count', type: 'int', default: 0 })
   viewCount!: number;
 
+  @Column({ name: 'cost_price_lkr', type: 'int', nullable: true })
+  costPriceLkr!: number | null;
+
+  @Column({ name: 'purchase_date', type: 'date', nullable: true })
+  purchaseDate!: string | null;
+
+  @Column({ name: 'sold_price_lkr', type: 'int', nullable: true })
+  soldPriceLkr!: number | null;
+
+  @Column({ name: 'phone_click_count', type: 'int', default: 0 })
+  phoneClickCount!: number;
+
+  @Column({ name: 'whatsapp_click_count', type: 'int', default: 0 })
+  whatsappClickCount!: number;
+
   @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
   publishedAt!: Date | null;
 
