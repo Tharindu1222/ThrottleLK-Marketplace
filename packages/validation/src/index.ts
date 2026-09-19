@@ -38,6 +38,13 @@ export const verifyEmailSchema = z.object({
   token: z.string().min(20).max(200),
 });
 
+const optionalPositiveInt = z.number().int().positive().optional().nullable();
+const optionalIsoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional()
+  .nullable();
+
 export const createListingSchema = z.object({
   brandId: z.string().uuid(),
   modelId: z.string().uuid(),
@@ -59,9 +66,25 @@ export const createListingSchema = z.object({
   phone: z.string().min(9).max(20),
   whatsapp: z.string().min(9).max(20).optional(),
   dealerId: z.string().uuid().optional(),
+  costPriceLkr: optionalPositiveInt,
+  purchaseDate: optionalIsoDate,
 });
 
 export const updateListingSchema = createListingSchema.partial();
+
+export const markSoldSchema = z.object({
+  soldPriceLkr: z.number().int().positive(),
+  soldAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+});
+
+export const contactClickSchema = z.object({
+  type: z.enum(['phone', 'whatsapp']),
+});
+
+export const performanceRangeSchema = z.enum(['all', '7d', '30d']).default('all');
 
 export const rejectListingSchema = z.object({
   reason: z.string().min(5).max(1000),
@@ -329,6 +352,9 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type CreateListingInput = z.infer<typeof createListingSchema>;
 export type UpdateListingInput = z.infer<typeof updateListingSchema>;
+export type MarkSoldInput = z.infer<typeof markSoldSchema>;
+export type ContactClickInput = z.infer<typeof contactClickSchema>;
+export type PerformanceRange = z.infer<typeof performanceRangeSchema>;
 export type CreateDealerInput = z.infer<typeof createDealerSchema>;
 export type UpdateDealerProfileInput = z.infer<typeof updateDealerProfileSchema>;
 export type ContactListingInput = z.infer<typeof contactListingSchema>;
