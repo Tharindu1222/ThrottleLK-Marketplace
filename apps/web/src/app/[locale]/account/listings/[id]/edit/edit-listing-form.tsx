@@ -37,6 +37,8 @@ type ListingDetail = {
   condition: string;
   phone: string | null;
   dealerId: string | null;
+  costPriceLkr?: number | null;
+  purchaseDate?: string | null;
   status: string;
 };
 
@@ -313,6 +315,9 @@ export function EditListingForm({
     });
     const title =
       composedTitle.length >= 5 ? composedTitle : `${composedTitle} bike`;
+    const costRaw = String(form.get('costPriceLkr') ?? '');
+    const purchaseRaw = String(form.get('purchaseDate') ?? '');
+    const cost = Number(costRaw);
     try {
       const updated = await apiSend<ListingDetail>(
         `/api/v1/listings/${listingId}`,
@@ -335,6 +340,17 @@ export function EditListingForm({
             transmission: String(form.get('transmission')),
             condition: String(form.get('condition')),
             phone: String(form.get('phone') || '') || undefined,
+            ...(listing.dealerId
+              ? {
+                  costPriceLkr:
+                    costRaw !== '' && Number.isInteger(cost) && cost > 0
+                      ? cost
+                      : null,
+                  purchaseDate: /^\d{4}-\d{2}-\d{2}$/.test(purchaseRaw)
+                    ? purchaseRaw
+                    : null,
+                }
+              : {}),
           },
         },
       );
@@ -436,27 +452,83 @@ export function EditListingForm({
                 className={`${fieldClass} resize-y`}
               />
             </Field>
-            <Field
-              label={t(locale, 'priceLkr')}
-              htmlFor={`${uid}-price`}
-              icon={
-                <Icon>
-                  <rect x="3" y="6" width="18" height="12" rx="2" />
-                  <circle cx="12" cy="12" r="2" />
-                  <path d="M7 12h.01M17 12h.01" />
-                </Icon>
-              }
-            >
-              <input
-                id={`${uid}-price`}
-                name="priceLkr"
-                type="number"
-                required
-                min={1}
-                defaultValue={listing.priceLkr}
-                className={fieldClass}
-              />
-            </Field>
+            <div className="grid gap-4">
+              <Field
+                label={t(locale, 'priceLkr')}
+                htmlFor={`${uid}-price`}
+                icon={
+                  <Icon>
+                    <rect x="3" y="6" width="18" height="12" rx="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <path d="M7 12h.01M17 12h.01" />
+                  </Icon>
+                }
+              >
+                <input
+                  id={`${uid}-price`}
+                  name="priceLkr"
+                  type="number"
+                  required
+                  min={1}
+                  defaultValue={listing.priceLkr}
+                  className={fieldClass}
+                />
+              </Field>
+              {listing.dealerId ? (
+                <>
+                  <Field
+                    label={t(locale, 'inventoryPurchaseDate')}
+                    htmlFor={`${uid}-purchaseDate`}
+                    optional
+                    optionalLabel={optionalLabel}
+                    icon={
+                      <Icon>
+                        <rect x="4" y="5" width="16" height="16" rx="2" />
+                        <path d="M8 3v4M16 3v4M4 11h16" />
+                      </Icon>
+                    }
+                  >
+                    <input
+                      id={`${uid}-purchaseDate`}
+                      name="purchaseDate"
+                      type="date"
+                      defaultValue={
+                        listing.purchaseDate
+                          ? String(listing.purchaseDate).slice(0, 10)
+                          : ''
+                      }
+                      className={fieldClass}
+                    />
+                  </Field>
+                  <Field
+                    label={t(locale, 'inventoryCostPrice')}
+                    htmlFor={`${uid}-costPrice`}
+                    optional
+                    optionalLabel={optionalLabel}
+                    icon={
+                      <Icon>
+                        <rect x="3" y="6" width="18" height="12" rx="2" />
+                        <circle cx="12" cy="12" r="2" />
+                        <path d="M7 12h.01M17 12h.01" />
+                      </Icon>
+                    }
+                  >
+                    <input
+                      id={`${uid}-costPrice`}
+                      name="costPriceLkr"
+                      type="number"
+                      min={1}
+                      step={1}
+                      defaultValue={listing.costPriceLkr ?? undefined}
+                      className={fieldClass}
+                    />
+                  </Field>
+                  <p className="text-xs text-muted">
+                    {t(locale, 'inventoryPrivateHint')}
+                  </p>
+                </>
+              ) : null}
+            </div>
           </div>
         </Section>
 

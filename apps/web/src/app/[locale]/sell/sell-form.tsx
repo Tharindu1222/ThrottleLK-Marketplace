@@ -36,6 +36,8 @@ type FormState = {
   transmission: string;
   mileage: string;
   priceLkr: string;
+  purchaseDate: string;
+  costPriceLkr: string;
   districtId: string;
   cityId: string;
   description: string;
@@ -67,6 +69,8 @@ const emptyForm: FormState = {
   transmission: 'manual',
   mileage: '',
   priceLkr: '',
+  purchaseDate: '',
+  costPriceLkr: '',
   districtId: '',
   cityId: '',
   description: '',
@@ -265,6 +269,7 @@ export function SellForm({ locale }: { locale: Locale }) {
   }
 
   function listingBody() {
+    const cost = Number(form.costPriceLkr);
     return {
       brandId: form.brandId,
       modelId: form.modelId,
@@ -286,6 +291,17 @@ export function SellForm({ locale }: { locale: Locale }) {
       condition: form.condition,
       phone: form.phone.trim(),
       dealerId: form.dealerId || undefined,
+      ...(form.dealerId
+        ? {
+            costPriceLkr:
+              form.costPriceLkr !== '' && Number.isInteger(cost) && cost > 0
+                ? cost
+                : null,
+            purchaseDate: /^\d{4}-\d{2}-\d{2}$/.test(form.purchaseDate)
+              ? form.purchaseDate
+              : null,
+          }
+        : {}),
     };
   }
 
@@ -615,6 +631,39 @@ export function SellForm({ locale }: { locale: Locale }) {
               onChange={(e) => setField('priceLkr', e.target.value)}
             />
           </div>
+          {dealers.length > 0 ? (
+            <>
+              <div>
+                <label className={labelClass} htmlFor="purchaseDate">
+                  {t(locale, 'inventoryPurchaseDate')}
+                </label>
+                <input
+                  id="purchaseDate"
+                  type="date"
+                  className={fieldClass}
+                  value={form.purchaseDate}
+                  onChange={(e) => setField('purchaseDate', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="costPriceLkr">
+                  {t(locale, 'inventoryCostPrice')}
+                </label>
+                <input
+                  id="costPriceLkr"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className={fieldClass}
+                  value={form.costPriceLkr}
+                  onChange={(e) => setField('costPriceLkr', e.target.value)}
+                />
+              </div>
+              <p className="sm:col-span-2 text-xs text-muted">
+                {t(locale, 'inventoryPrivateHint')}
+              </p>
+            </>
+          ) : null}
           {autoTitle ? (
             <p className="sm:col-span-2 text-sm text-muted">
               {t(locale, 'titleWillBe')}{' '}
