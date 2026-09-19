@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Favourite } from '../favourites/favourite.entity';
+import { ListingEngagementEvent } from '../listings/listing-engagement-event.entity';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StorageModule } from '../storage/storage.module';
@@ -12,7 +14,13 @@ import { DealersService } from './dealers.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Dealer, DealerImage, Listing]),
+    TypeOrmModule.forFeature([
+      Dealer,
+      DealerImage,
+      Listing,
+      ListingEngagementEvent,
+      Favourite,
+    ]),
     UsersModule,
     NotificationsModule,
     StorageModule,

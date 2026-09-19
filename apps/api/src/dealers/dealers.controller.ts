@@ -16,8 +16,10 @@ import { memoryStorage } from 'multer';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   createDealerSchema,
+  performanceRangeSchema,
   updateDealerProfileSchema,
   type CreateDealerInput,
+  type PerformanceRange,
   type UpdateDealerProfileInput,
 } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -26,7 +28,7 @@ import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { DealerImagesService } from './dealer-images.service';
-import { DealersService } from './dealers.service';
+import { DealersService, type DealerPerformance } from './dealers.service';
 
 @Controller('dealers')
 export class DealersController {
@@ -75,6 +77,19 @@ export class DealersController {
     return {
       success: true,
       data: await this.dealersService.listMine(user.id),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mine/performance')
+  async minePerformance(
+    @CurrentUser() user: User,
+    @Query('range', new ZodValidationPipe(performanceRangeSchema))
+    range: PerformanceRange,
+  ): Promise<ApiSuccess<DealerPerformance>> {
+    return {
+      success: true,
+      data: await this.dealersService.performance(user.id, range),
     };
   }
 

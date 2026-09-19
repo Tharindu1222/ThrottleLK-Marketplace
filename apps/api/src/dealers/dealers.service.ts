@@ -9,12 +9,15 @@ import type {
   AdminCreateDealerInput,
   AdminUpdateDealerInput,
   CreateDealerInput,
+  PerformanceRange,
   UpdateDealerProfileInput,
 } from '@throttlelk/validation';
-import { Repository } from 'typeorm';
+import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
+import { Favourite } from '../favourites/favourite.entity';
+import { ListingEngagementEvent } from '../listings/listing-engagement-event.entity';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
@@ -22,11 +25,31 @@ import { User } from '../users/user.entity';
 import { DealerImage } from './dealer-image.entity';
 import { Dealer } from './dealer.entity';
 
+export type DealerPerformance = {
+  range: 'all' | '7d' | '30d';
+  activeListings: number;
+  views: number;
+  phoneClicks: number;
+  whatsappClicks: number;
+  favourites: number;
+};
+
+function rangeStart(range: 'all' | '7d' | '30d'): Date | null {
+  if (range === 'all') return null;
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - (range === '7d' ? 7 : 30));
+  return d;
+}
+
 @Injectable()
 export class DealersService {
   constructor(
     @InjectRepository(Dealer) private readonly dealers: Repository<Dealer>,
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
+    @InjectRepository(ListingEngagementEvent)
+    private readonly engagementEvents: Repository<ListingEngagementEvent>,
+    @InjectRepository(Favourite)
+    private readonly favourites: Repository<Favourite>,
     private readonly usersService: UsersService,
     private readonly notifications: NotificationsService,
     private readonly cache: CacheService,
@@ -497,6 +520,78 @@ export class DealersService {
   async findActiveOwned(ownerUserId: string): Promise<Dealer | null> {
     return this.dealers.findOne({
       where: { ownerUserId, status: 'active' },
+    });
+  }
+
+  async performance(
+    ownerUserId: string,
+    range: PerformanceRange,
+  ): Promise<DealerPerformance> {
+    const dealer = await this.findActiveOwned(ownerUserId);
+    if (!dealer) {
+      throw new ForbiddenException({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'No active dealer showroom found',
+        },
+      });
+    }
+
+    const activeListings = await this.listings.count({
+      where: { dealerId: dealer.id, status: 'active' },
+    });
+
+    const listingRows = await this.listings.find({
+      where: { dealerId: dealer.id },
+      select: ['id'],
+    });
+    const ids = listingRows.map((row) => row.id);
+    if (ids.length === 0) {
+      return {
+        range,
+        activeListings,
+        views: 0,
+        phoneClicks: 0,
+        whatsappClicks: 0,
+        favourites: 0,
+      };
+    }
+
+    const start = rangeStart(range);
+    const [views, phoneClicks, whatsappClicks, favourites] = await Promise.all([
+      this.countEvents(ids, 'view', start),
+      this.countEvents(ids, 'phone', start),
+      this.countEvents(ids, 'whatsapp', start),
+      this.favourites.count({
+        where: {
+          listingId: In(ids),
+          ...(start ? { createdAt: MoreThanOrEqual(start) } : {}),
+        },
+      }),
+    ]);
+
+    return {
+      range,
+      activeListings,
+      views,
+      phoneClicks,
+      whatsappClicks,
+      favourites,
+    };
+  }
+
+  private countEvents(
+    listingIds: string[],
+    type: ListingEngagementEvent['type'],
+    start: Date | null,
+  ) {
+    return this.engagementEvents.count({
+      where: {
+        listingId: In(listingIds),
+        type,
+        ...(start ? { createdAt: MoreThanOrEqual(start) } : {}),
+      },
     });
   }
 
