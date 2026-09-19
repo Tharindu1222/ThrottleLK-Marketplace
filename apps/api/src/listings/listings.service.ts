@@ -21,6 +21,7 @@ import { DealersService } from '../dealers/dealers.service';
 import { FavouritesService } from '../favourites/favourites.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { ListingEngagementEvent } from './listing-engagement-event.entity';
 import { ListingImage } from './listing-image.entity';
 import { ListingInquiry } from './listing-inquiry.entity';
 import { Listing } from './listing.entity';
@@ -33,6 +34,8 @@ export class ListingsService {
     private readonly inquiries: Repository<ListingInquiry>,
     @InjectRepository(ListingImage)
     private readonly listingImages: Repository<ListingImage>,
+    @InjectRepository(ListingEngagementEvent)
+    private readonly engagementEvents: Repository<ListingEngagementEvent>,
     private readonly dealersService: DealersService,
     private readonly notifications: NotificationsService,
     private readonly favourites: FavouritesService,
@@ -435,6 +438,44 @@ export class ListingsService {
 
   /** Count a public detail view (skips seller’s own views). */
   async recordView(idOrSlug: string, viewer?: User | null) {
+    const listing = await this.findActiveListingForEngagement(idOrSlug);
+    if (!listing) {
+      return { recorded: false as const };
+    }
+    if (viewer?.id && viewer.id === listing.sellerId) {
+      return { recorded: false as const };
+    }
+    await this.listings.increment({ id: listing.id }, 'viewCount', 1);
+    await this.engagementEvents.save(
+      this.engagementEvents.create({ listingId: listing.id, type: 'view' }),
+    );
+    return { recorded: true as const };
+  }
+
+  async recordContactClick(
+    idOrSlug: string,
+    type: 'phone' | 'whatsapp',
+    viewer?: User | null,
+  ) {
+    const listing = await this.findActiveListingForEngagement(idOrSlug);
+    if (!listing) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
+      });
+    }
+    if (viewer?.id && viewer.id === listing.sellerId) {
+      return { recorded: false as const };
+    }
+    const column = type === 'phone' ? 'phoneClickCount' : 'whatsappClickCount';
+    await this.listings.increment({ id: listing.id }, column, 1);
+    await this.engagementEvents.save(
+      this.engagementEvents.create({ listingId: listing.id, type }),
+    );
+    return { recorded: true as const };
+  }
+
+  private async findActiveListingForEngagement(idOrSlug: string) {
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
         idOrSlug,
@@ -444,13 +485,9 @@ export class ListingsService {
       select: ['id', 'sellerId', 'status'],
     });
     if (!listing || listing.status !== 'active') {
-      return { recorded: false as const };
+      return null;
     }
-    if (viewer?.id && viewer.id === listing.sellerId) {
-      return { recorded: false as const };
-    }
-    await this.listings.increment({ id: listing.id }, 'viewCount', 1);
-    return { recorded: true as const };
+    return listing;
   }
 
   private withCover(listing: Listing) {

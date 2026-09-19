@@ -15,9 +15,11 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
+  contactClickSchema,
   contactListingSchema,
   createListingSchema,
   updateListingSchema,
+  type ContactClickInput,
   type ContactListingInput,
   type CreateListingInput,
   type UpdateListingInput,
@@ -197,6 +199,24 @@ export class ListingsController {
     return {
       success: true,
       data: await this.listingsService.recordView(id, req.user ?? null),
+    };
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @RateLimit('views')
+  @Post(':id/contact-clicks')
+  async recordContactClick(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(contactClickSchema)) body: ContactClickInput,
+    @Req() req: Request & { user?: User },
+  ): Promise<ApiSuccess<{ recorded: boolean }>> {
+    return {
+      success: true,
+      data: await this.listingsService.recordContactClick(
+        id,
+        body.type,
+        req.user ?? null,
+      ),
     };
   }
 

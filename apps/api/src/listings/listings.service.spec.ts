@@ -1,9 +1,10 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ListingsService, searchTokens } from './listings.service';
 import type { User } from '../users/user.entity';
 import type { Listing } from './listing.entity';
 
 const seller = { id: 'seller-1' } as User;
+const viewer = { id: 'buyer-1' } as User;
 
 function makeService(
   listing: Partial<Listing>,
@@ -17,6 +18,11 @@ function makeService(
     findOne: jest.fn(async () => row),
     save: jest.fn(async (saved: Listing) => saved),
     create: jest.fn((value: Listing) => value),
+    increment: jest.fn(async () => undefined),
+  };
+  const engagementEvents = {
+    create: jest.fn((value: unknown) => value),
+    save: jest.fn(async (value: unknown) => value),
   };
   const notifications = {
     listingPendingReview: jest.fn(async () => undefined),
@@ -41,13 +47,14 @@ function makeService(
     listingsRepo as never,
     { create: jest.fn(), save: jest.fn() } as never,
     {} as never,
+    engagementEvents as never,
     dealersService as never,
     notifications as never,
     { userIdsForListing: jest.fn(async () => []) } as never,
     {} as never,
     { invalidateDashboard: jest.fn() } as never,
   );
-  return { service, notifications, row, listingsRepo, dealersService };
+  return { service, notifications, row, listingsRepo, dealersService, engagementEvents };
 }
 
 describe('ListingsService status rules', () => {
@@ -175,6 +182,7 @@ describe('ListingsService.listPending', () => {
       listingsRepo as never,
       { create: jest.fn(), save: jest.fn() } as never,
       listingImagesRepo as never,
+      { create: jest.fn(), save: jest.fn() } as never,
       {} as never,
       {} as never,
       { userIdsForListing: jest.fn(async () => []) } as never,
@@ -215,6 +223,7 @@ describe('ListingsService.listMine', () => {
       listingsRepo as never,
       { create: jest.fn(), save: jest.fn() } as never,
       { createQueryBuilder: jest.fn(() => imagesQb) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
       { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
       {} as never,
       { userIdsForListing: jest.fn(async () => []) } as never,
@@ -317,5 +326,101 @@ describe('ListingsService.create dealer conversion', () => {
         dealerId: 'dealer-1',
       } as never),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
+
+describe('ListingsService.recordView', () => {
+  it('increments viewCount and inserts a view event for active listings', async () => {
+    const { service, listingsRepo, engagementEvents, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+    });
+
+    const result = await service.recordView(row.id, viewer);
+
+    expect(result).toEqual({ recorded: true });
+    expect(listingsRepo.increment).toHaveBeenCalledWith(
+      { id: 'listing-1' },
+      'viewCount',
+      1,
+    );
+    expect(engagementEvents.create).toHaveBeenCalledWith({
+      listingId: 'listing-1',
+      type: 'view',
+    });
+    expect(engagementEvents.save).toHaveBeenCalledWith({
+      listingId: 'listing-1',
+      type: 'view',
+    });
+  });
+
+  it('skips seller own views', async () => {
+    const { service, listingsRepo, engagementEvents, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+    });
+
+    const result = await service.recordView(row.id, seller);
+
+    expect(result).toEqual({ recorded: false });
+    expect(listingsRepo.increment).not.toHaveBeenCalled();
+    expect(engagementEvents.save).not.toHaveBeenCalled();
+  });
+});
+
+describe('ListingsService.recordContactClick', () => {
+  it('increments phoneClickCount and inserts phone event', async () => {
+    const { service, listingsRepo, engagementEvents, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+    });
+
+    const result = await service.recordContactClick(row.id, 'phone', viewer);
+
+    expect(result).toEqual({ recorded: true });
+    expect(listingsRepo.increment).toHaveBeenCalledWith(
+      { id: 'listing-1' },
+      'phoneClickCount',
+      1,
+    );
+    expect(engagementEvents.create).toHaveBeenCalledWith({
+      listingId: 'listing-1',
+      type: 'phone',
+    });
+    expect(engagementEvents.save).toHaveBeenCalledWith({
+      listingId: 'listing-1',
+      type: 'phone',
+    });
+  });
+
+  it('returns recorded false / throws NotFound for non-active', async () => {
+    const { service, listingsRepo, engagementEvents, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'draft',
+    });
+
+    await expect(
+      service.recordContactClick(row.id, 'phone', viewer),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(listingsRepo.increment).not.toHaveBeenCalled();
+    expect(engagementEvents.save).not.toHaveBeenCalled();
+  });
+
+  it('skips owner clicks when identifiable', async () => {
+    const { service, listingsRepo, engagementEvents, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+    });
+
+    const result = await service.recordContactClick(row.id, 'whatsapp', seller);
+
+    expect(result).toEqual({ recorded: false });
+    expect(listingsRepo.increment).not.toHaveBeenCalled();
+    expect(engagementEvents.save).not.toHaveBeenCalled();
   });
 });
