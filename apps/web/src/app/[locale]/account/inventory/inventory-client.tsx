@@ -135,7 +135,7 @@ export function InventoryClient({ locale }: { locale: Locale }) {
     try {
       const data = await apiGet<InventoryItem[]>(
         '/api/v1/dealers/mine/inventory',
-        token,
+        { token },
       );
       setItems(data);
     } catch (err) {
