@@ -96,6 +96,26 @@ function IconPerformance() {
   );
 }
 
+function IconInventory() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-[18px] w-[18px]">
+      <path
+        d="M4.5 7.5 12 3.5l7.5 4v9L12 20.5 4.5 16.5v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 12v8.5M4.5 7.5 12 12l7.5-4.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function IconMessages() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-[18px] w-[18px]">
@@ -176,6 +196,13 @@ function navItems(locale: Locale): NavItem[] {
       labelKey: 'performance',
       match: (p) => p.includes('/account/performance'),
       icon: <IconPerformance />,
+      dealerOnly: true,
+    },
+    {
+      href: `${base}/inventory`,
+      labelKey: 'inventory',
+      match: (p) => p.includes('/account/inventory'),
+      icon: <IconInventory />,
       dealerOnly: true,
     },
     {

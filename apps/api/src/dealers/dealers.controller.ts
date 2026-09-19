@@ -16,11 +16,19 @@ import { memoryStorage } from 'multer';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   createDealerSchema,
+  createInventoryItemSchema,
+  inventoryDocumentTypeSchema,
+  markSoldSchema,
   performanceRangeSchema,
   updateDealerProfileSchema,
+  updateInventoryItemSchema,
   type CreateDealerInput,
+  type CreateInventoryItemInput,
+  type InventoryDocumentType,
+  type MarkSoldInput,
   type PerformanceRange,
   type UpdateDealerProfileInput,
+  type UpdateInventoryItemInput,
 } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -29,12 +37,14 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { DealerImagesService } from './dealer-images.service';
 import { DealersService, type DealerPerformance } from './dealers.service';
+import { InventoryService } from './inventory.service';
 
 @Controller('dealers')
 export class DealersController {
   constructor(
     private readonly dealersService: DealersService,
     private readonly dealerImagesService: DealerImagesService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   @Get()
@@ -90,6 +100,104 @@ export class DealersController {
     return {
       success: true,
       data: await this.dealersService.performance(user.id, range),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mine/inventory')
+  async listInventory(
+    @CurrentUser() user: User,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.inventoryService.listMine(user),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
+  @Post('mine/inventory')
+  async createInventory(
+    @CurrentUser() user: User,
+    @Body(new ZodValidationPipe(createInventoryItemSchema))
+    body: CreateInventoryItemInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.inventoryService.create(user, body),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
+  @Patch('mine/inventory/:id')
+  async updateInventory(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateInventoryItemSchema))
+    body: UpdateInventoryItemInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.inventoryService.update(user, id, body),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
+  @Post('mine/inventory/:id/mark-sold')
+  async markInventorySold(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(markSoldSchema)) body: MarkSoldInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.inventoryService.markSold(user, id, body),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('upload')
+  @Post('mine/inventory/:id/documents/:type')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 8 * 1024 * 1024 },
+    }),
+  )
+  async uploadInventoryDocument(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Param('type', new ZodValidationPipe(inventoryDocumentTypeSchema))
+    type: InventoryDocumentType,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('expiresAt') expiresAt?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.inventoryService.uploadDocument(
+        user,
+        id,
+        type,
+        file,
+        expiresAt,
+      ),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
+  @Delete('mine/inventory/:id/documents/:type')
+  async deleteInventoryDocument(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Param('type', new ZodValidationPipe(inventoryDocumentTypeSchema))
+    type: InventoryDocumentType,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.inventoryService.deleteDocument(user, id, type),
     };
   }
 

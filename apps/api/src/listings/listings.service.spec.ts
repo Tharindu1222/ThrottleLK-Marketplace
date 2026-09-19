@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+﻿import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ListingsService, searchTokens } from './listings.service';
 import type { User } from '../users/user.entity';
 import type { Listing } from './listing.entity';
@@ -56,6 +56,7 @@ function makeService(
     } as never,
     {} as never,
     { invalidateDashboard: jest.fn() } as never,
+    { upsertFromListing: jest.fn(async () => undefined) } as never,
   );
   return { service, notifications, row, listingsRepo, dealersService, engagementEvents };
 }
@@ -194,6 +195,7 @@ describe('ListingsService.listPending', () => {
       } as never,
       {} as never,
       { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
     );
 
     const { items, meta } = await service.listPending();
@@ -238,6 +240,7 @@ describe('ListingsService.listMine', () => {
       } as never,
       {} as never,
       { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
     );
 
     const { items, meta } = await service.listMine('seller-1', {
@@ -599,6 +602,7 @@ describe('ListingsService.listMine owner extras', () => {
       favourites as never,
       {} as never,
       { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
     );
 
     const { items } = await service.listMine('seller-1');
@@ -677,6 +681,7 @@ describe('ListingsService.listMine owner extras', () => {
       } as never,
       {} as never,
       { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
     );
 
     const { items } = await service.listMine('seller-1');
@@ -736,6 +741,7 @@ describe('ListingsService.getPublicOrOwned inventory privacy', () => {
       favourites as never,
       usersService as never,
       { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
     );
     return { service, favourites };
   }

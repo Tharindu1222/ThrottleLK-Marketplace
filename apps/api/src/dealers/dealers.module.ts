@@ -8,15 +8,20 @@ import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
 import { DealerImage } from './dealer-image.entity';
 import { DealerImagesService } from './dealer-images.service';
+import { DealerInventoryItem } from './dealer-inventory-item.entity';
 import { Dealer } from './dealer.entity';
 import { DealersController } from './dealers.controller';
 import { DealersService } from './dealers.service';
+import { InventoryDocument } from './inventory-document.entity';
+import { InventoryService } from './inventory.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Dealer,
       DealerImage,
+      DealerInventoryItem,
+      InventoryDocument,
       Listing,
       ListingEngagementEvent,
       Favourite,
@@ -25,8 +30,13 @@ import { DealersService } from './dealers.service';
     NotificationsModule,
     StorageModule,
   ],
-  providers: [DealersService, DealerImagesService],
+  providers: [DealersService, DealerImagesService, InventoryService],
   controllers: [DealersController],
-  exports: [DealersService, DealerImagesService, TypeOrmModule],
+  exports: [
+    DealersService,
+    DealerImagesService,
+    InventoryService,
+    TypeOrmModule,
+  ],
 })
 export class DealersModule {}

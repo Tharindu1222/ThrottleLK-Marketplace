@@ -167,9 +167,15 @@ export async function apiUpload<T>(
   path: string,
   file: File,
   token: string,
+  extraFields?: Record<string, string>,
 ): Promise<T> {
   const form = new FormData();
   form.append('file', file);
+  if (extraFields) {
+    for (const [key, value] of Object.entries(extraFields)) {
+      form.append(key, value);
+    }
+  }
   const res = await fetch(`${resolveApiUrl()}${path}`, {
     method: 'POST',
     headers: apiHeaders({

@@ -86,6 +86,24 @@ export const contactClickSchema = z.object({
 
 export const performanceRangeSchema = z.enum(['all', '7d', '30d']).default('all');
 
+export const inventoryDocumentTypeSchema = z.enum([
+  'insurance',
+  'revenue_license',
+  'ownership_cr',
+]);
+
+export const createInventoryItemSchema = z.object({
+  title: z.string().min(2).max(160),
+  brandName: z.string().max(80).optional().nullable(),
+  modelName: z.string().max(80).optional().nullable(),
+  manufactureYear: z.number().int().min(1970).max(2100).optional().nullable(),
+  purchaseDate: optionalIsoDate,
+  costPriceLkr: optionalPositiveInt,
+  askingPriceLkr: optionalPositiveInt,
+});
+
+export const updateInventoryItemSchema = createInventoryItemSchema.partial();
+
 export const rejectListingSchema = z.object({
   reason: z.string().min(5).max(1000),
 });
@@ -355,6 +373,9 @@ export type UpdateListingInput = z.infer<typeof updateListingSchema>;
 export type MarkSoldInput = z.infer<typeof markSoldSchema>;
 export type ContactClickInput = z.infer<typeof contactClickSchema>;
 export type PerformanceRange = z.infer<typeof performanceRangeSchema>;
+export type InventoryDocumentType = z.infer<typeof inventoryDocumentTypeSchema>;
+export type CreateInventoryItemInput = z.infer<typeof createInventoryItemSchema>;
+export type UpdateInventoryItemInput = z.infer<typeof updateInventoryItemSchema>;
 export type CreateDealerInput = z.infer<typeof createDealerSchema>;
 export type UpdateDealerProfileInput = z.infer<typeof updateDealerProfileSchema>;
 export type ContactListingInput = z.infer<typeof contactListingSchema>;

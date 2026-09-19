@@ -19,6 +19,7 @@ import { slugify } from '../common/slugify';
 import { composeListingTitle } from '../common/listing-title';
 import { User } from '../users/user.entity';
 import { DealersService } from '../dealers/dealers.service';
+import { InventoryService } from '../dealers/inventory.service';
 import { FavouritesService } from '../favourites/favourites.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
@@ -42,6 +43,7 @@ export class ListingsService {
     private readonly favourites: FavouritesService,
     private readonly usersService: UsersService,
     private readonly cache: CacheService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
@@ -75,7 +77,9 @@ export class ListingsService {
       costPriceLkr: dealerId ? (input.costPriceLkr ?? null) : null,
       purchaseDate: dealerId ? (input.purchaseDate ?? null) : null,
     });
-    return this.listings.save(listing);
+    const saved = await this.listings.save(listing);
+    await this.syncInventory(saved, seller.id);
+    return saved;
   }
 
   async update(
@@ -95,7 +99,9 @@ export class ListingsService {
           Object.keys(listingFields) as (keyof typeof listingFields)[]
         ).filter((k) => listingFields[k] !== undefined);
         if (keys.length === 0) {
-          return this.listings.save(listing);
+          const saved = await this.listings.save(listing);
+          await this.syncInventory(saved, seller.id);
+          return saved;
         }
         const priceOnly = keys.every(
           (k) => k === 'priceLkr' || k === 'negotiable',
@@ -107,6 +113,7 @@ export class ListingsService {
             listing.negotiable = listingFields.negotiable;
           }
           const saved = await this.listings.save(listing);
+          await this.syncInventory(saved, seller.id);
           if (listingFields.priceLkr < oldPrice) {
             void this.notifyFavouritesPriceDrop(
               saved,
@@ -121,6 +128,7 @@ export class ListingsService {
         listing.publishedAt = null;
         listing.rejectionReason = null;
         const saved = await this.listings.save(listing);
+        await this.syncInventory(saved, seller.id);
         this.bumpDashboard();
         void this.notifications.listingPendingReview({
           id: saved.id,
@@ -142,7 +150,9 @@ export class ListingsService {
       listing.status = 'draft';
       listing.rejectionReason = null;
     }
-    return this.listings.save(listing);
+    const saved = await this.listings.save(listing);
+    await this.syncInventory(saved, seller.id);
+    return saved;
   }
 
   async submit(seller: User, id: string): Promise<Listing> {
@@ -218,6 +228,7 @@ export class ListingsService {
       ? new Date(`${input.soldAt}T12:00:00.000Z`)
       : new Date();
     const saved = await this.listings.save(listing);
+    await this.syncInventory(saved, seller.id);
     this.bumpDashboard();
     return saved;
   }
@@ -648,6 +659,12 @@ export class ListingsService {
       if (!map.has(img.listingId)) map.set(img.listingId, img.imageUrl);
     }
     return map;
+  }
+
+  private async syncInventory(listing: Listing, ownerId: string) {
+    if (listing.dealerId) {
+      await this.inventoryService.upsertFromListing(listing, ownerId);
+    }
   }
 
   private bumpDashboard() {
