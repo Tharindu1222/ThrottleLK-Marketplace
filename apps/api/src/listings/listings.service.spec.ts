@@ -34,6 +34,8 @@ function makeService(
         ? { id: extras.dealerId, status: 'active' }
         : null,
     ),
+    activeVerifiedIds: jest.fn(async () => new Set<string>()),
+    findActiveById: jest.fn(async () => null),
   };
   const service = new ListingsService(
     listingsRepo as never,
@@ -213,7 +215,7 @@ describe('ListingsService.listMine', () => {
       listingsRepo as never,
       { create: jest.fn(), save: jest.fn() } as never,
       { createQueryBuilder: jest.fn(() => imagesQb) } as never,
-      {} as never,
+      { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
       {} as never,
       { userIdsForListing: jest.fn(async () => []) } as never,
       {} as never,

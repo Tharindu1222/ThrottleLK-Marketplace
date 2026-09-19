@@ -211,6 +211,32 @@ export class DealersService {
     };
   }
 
+  async listForMap() {
+    const rows = await this.dealers
+      .createQueryBuilder('d')
+      .leftJoinAndSelect('d.district', 'district')
+      .leftJoinAndSelect('d.city', 'city')
+      .where('d.status = :status', { status: 'active' })
+      .andWhere('d.latitude IS NOT NULL')
+      .andWhere('d.longitude IS NOT NULL')
+      .andWhere('d.latitude <> 0 OR d.longitude <> 0')
+      .orderBy('d.name', 'ASC')
+      .getMany();
+
+    const withCovers = await this.attachDealerCovers(rows);
+    return withCovers.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      latitude: row.latitude as number,
+      longitude: row.longitude as number,
+      coverImageUrl: row.coverImageUrl ?? null,
+      verifiedAt: row.verifiedAt ?? null,
+      city: row.city ? { name: row.city.name } : null,
+      district: row.district ? { name: row.district.name } : null,
+    }));
+  }
+
   async listSeoSlugs(paging?: {
     page?: string | number;
     limit?: string | number;
@@ -303,8 +329,9 @@ export class DealersService {
       districtId: input.districtId,
       cityId: input.cityId,
       status,
-      verifiedAt: status === 'active' ? new Date() : null,
+      verifiedAt: null,
     });
+    this.applyVerification(dealer, status, input.verified);
     const saved = await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
     if (status === 'active') {
@@ -328,10 +355,10 @@ export class DealersService {
 
     if (input.status) {
       dealer.status = input.status;
-      if (input.status === 'active' && !dealer.verifiedAt) {
-        dealer.verifiedAt = new Date();
-      }
     }
+
+    const nextStatus = input.status ?? dealer.status;
+    this.applyVerification(dealer, nextStatus, input.verified);
 
     const saved = await this.dealers.save(dealer);
     if (input.status && input.status !== prevStatus) {
@@ -434,7 +461,7 @@ export class DealersService {
       });
     }
     dealer.status = 'active';
-    dealer.verifiedAt = new Date();
+    // Verified badge is admin-only; approval does not auto-verify.
     await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
     const owner = await this.usersService.findByIdOrThrow(dealer.ownerUserId);
@@ -456,6 +483,7 @@ export class DealersService {
       });
     }
     dealer.status = 'rejected';
+    dealer.verifiedAt = null;
     await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
     void this.notifications.dealerRejected(dealer.ownerUserId, {
@@ -476,6 +504,40 @@ export class DealersService {
     return this.dealers.findOne({
       where: { id, status: 'active' },
     });
+  }
+
+  /** Active dealers with a verified badge — for listing card enrichment. */
+  async activeVerifiedIds(ids: string[]): Promise<Set<string>> {
+    const unique = [...new Set(ids.filter(Boolean))];
+    if (unique.length === 0) return new Set();
+    const rows = await this.dealers
+      .createQueryBuilder('d')
+      .select(['d.id'])
+      .where('d.id IN (:...ids)', { ids: unique })
+      .andWhere('d.status = :status', { status: 'active' })
+      .andWhere('d.verifiedAt IS NOT NULL')
+      .getMany();
+    return new Set(rows.map((row) => row.id));
+  }
+
+  /**
+   * Admin verification toggle. Non-active dealers cannot stay verified.
+   * When `verified` is omitted and status stays active, leave `verifiedAt` as-is.
+   */
+  private applyVerification(
+    dealer: Dealer,
+    status: string,
+    verified?: boolean,
+  ) {
+    if (status !== 'active') {
+      dealer.verifiedAt = null;
+      return;
+    }
+    if (verified === true) {
+      if (!dealer.verifiedAt) dealer.verifiedAt = new Date();
+    } else if (verified === false) {
+      dealer.verifiedAt = null;
+    }
   }
 
   /** Approved dealers keep buyer access but are no longer private sellers. */

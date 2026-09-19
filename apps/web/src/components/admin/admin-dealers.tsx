@@ -45,6 +45,7 @@ type FormState = {
   districtId: string;
   cityId: string;
   status: string;
+  verified: boolean;
 };
 
 const emptyForm: FormState = {
@@ -59,6 +60,7 @@ const emptyForm: FormState = {
   districtId: '',
   cityId: '',
   status: 'pending',
+  verified: false,
 };
 
 function statusTone(status: string) {
@@ -203,6 +205,7 @@ export function AdminDealers({ search = '' }: { search?: string }) {
       districtId: row.districtId,
       cityId: row.cityId,
       status: row.status,
+      verified: Boolean(row.verifiedAt),
     });
     setEditorOpen(true);
   }
@@ -220,6 +223,7 @@ export function AdminDealers({ search = '' }: { search?: string }) {
       districtId: form.districtId,
       cityId: form.cityId,
       status: form.status,
+      verified: form.status === 'active' ? form.verified : false,
     };
   }
 
@@ -342,7 +346,33 @@ export function AdminDealers({ search = '' }: { search?: string }) {
                   className="border-b border-[var(--admin-border)] last:border-0"
                 >
                   <td className="px-4 py-3">
-                    <p className="font-medium text-[var(--admin-text)]">{row.name}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-[var(--admin-text)]">
+                        {row.name}
+                      </p>
+                      {row.status === 'active' && row.verifiedAt ? (
+                        <span
+                          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--admin-success)] text-white"
+                          title="Verified dealer"
+                        >
+                          <svg
+                            viewBox="0 0 20 20"
+                            width="12"
+                            height="12"
+                            fill="none"
+                            aria-hidden
+                          >
+                            <path
+                              d="M6.2 10.2 8.6 12.6 13.8 7.2"
+                              stroke="currentColor"
+                              strokeWidth="2.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-xs text-[var(--admin-faint)]">
                       {row.phone}
                       {row.email ? ` · ${row.email}` : ''}
@@ -580,7 +610,14 @@ export function AdminDealers({ search = '' }: { search?: string }) {
                 <select
                   className="admin-field"
                   value={form.status}
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+                  onChange={(e) => {
+                    const status = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      status,
+                      verified: status === 'active' ? f.verified : false,
+                    }));
+                  }}
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -588,6 +625,32 @@ export function AdminDealers({ search = '' }: { search?: string }) {
                     </option>
                   ))}
                 </select>
+              </label>
+              <label
+                className={`flex items-start gap-3 rounded-xl border border-[var(--admin-border)] px-3 py-3 text-sm sm:col-span-2 ${
+                  form.status !== 'active'
+                    ? 'opacity-60'
+                    : 'bg-[var(--admin-surface-2)]/40'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={form.verified}
+                  disabled={form.status !== 'active'}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, verified: e.target.checked }))
+                  }
+                />
+                <span>
+                  <span className="font-medium text-[var(--admin-text)]">
+                    Verified dealer
+                  </span>
+                  <span className="mt-0.5 block text-xs text-[var(--admin-muted)]">
+                    Show a Verified badge on the public showroom, directory, map,
+                    and listings. Only available when status is active.
+                  </span>
+                </span>
               </label>
             </div>
 

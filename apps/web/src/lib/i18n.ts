@@ -118,6 +118,8 @@ const en: Dict = {
   cc: 'Engine CC',
   sellerPrivate: 'Private',
   sellerDealer: 'Dealer',
+  verified: 'Verified',
+  verifiedDealer: 'Verified dealer',
   saveSearch: 'Save this search',
   savedSearches: 'Saved searches',
   searchSaved: 'Search saved.',
@@ -150,6 +152,16 @@ const en: Dict = {
   showroomSocial: 'Social links',
   showroomMapHint: 'Click the map to drop a pin. Drag to adjust.',
   clearMapPin: 'Clear pin',
+  fetchLiveLocation: 'Fetch live location',
+  locating: 'Locating…',
+  locationDenied:
+    'Location permission denied. Click the lock icon in the address bar → Site settings → Location → Allow, then try again.',
+  locationUnavailable:
+    'Could not get your current location. Turn on Location in Windows Settings, allow this site in the browser, then try again — or click the map to drop a pin.',
+  locationTimeout:
+    'Location request timed out. Try again, or click the map to drop a pin.',
+  locationFromAddress:
+    'GPS unavailable — placed the pin from your street address. Drag to adjust.',
   saveShowroomDetails: 'Save details',
   showroomSaved: 'Showroom details saved.',
   shopName: 'Shop name',
@@ -212,6 +224,10 @@ const en: Dict = {
   allBikes: 'All Bikes',
   brandsNav: 'Brands',
   dealersNav: 'Dealers',
+  dealersMap: 'Dealer map',
+  dealersMapView: 'Map view',
+  dealersListView: 'List view',
+  dealersMapEmpty: 'No dealers with a map location yet.',
   guidesNav: 'Guides',
   locationsNav: 'Locations',
   sellersNav: 'Sellers',
@@ -470,6 +486,16 @@ const si: Dict = {
   showroomSocial: 'සමාජ මාධ්‍ය',
   showroomMapHint: 'Pin එකක් තැබීමට සිතියම click කරන්න. ගෙන යාමට drag කරන්න.',
   clearMapPin: 'Pin එක ඉවත් කරන්න',
+  fetchLiveLocation: 'සජීවී ස්ථානය ලබාගන්න',
+  locating: 'ස්ථානය සොයමින්…',
+  locationDenied:
+    'ස්ථාන අවසරය ප්‍රතික්ෂේප විය. Address bar එකේ lock එක → Site settings → Location → Allow කර නැවත උත්සාහ කරන්න.',
+  locationUnavailable:
+    'ඔබේ වත්මන් ස්ථානය ලබාගත නොහැකි විය. Windows Location on කර, browser එකේ මෙම site එකට allow කර නැවත උත්සාහ කරන්න — නැතහොත් map එකේ click කර pin එකක් තබන්න.',
+  locationTimeout:
+    'ස්ථාන ඉල්ලීම කාලය ඉකුත් විය. නැවත උත්සාහ කරන්න, නැතහොත් map එකේ click කර pin එකක් තබන්න.',
+  locationFromAddress:
+    'GPS නොමැත — ඔබේ ලිපිනයෙන් pin එක තැබුවා. අවශ්‍ය නම් drag කර adjust කරන්න.',
   saveShowroomDetails: 'විස්තර සුරකින්න',
   showroomSaved: 'Showroom විස්තර සුරකින ලදී.',
   shopName: 'වෙළඳසැල් නම',
@@ -520,6 +546,8 @@ const si: Dict = {
   cc: 'එන්ජින් CC',
   sellerPrivate: 'පුද්ගලික',
   sellerDealer: 'ඩීලර්',
+  verified: 'සත්‍යාපිත',
+  verifiedDealer: 'සත්‍යාපිත ඩීලර්',
   saveSearch: 'මෙම සෙවුම සුරකින්න',
   savedSearches: 'සුරකින ලද සෙවුම්',
   searchSaved: 'සෙවුම සුරකින ලදී.',
@@ -541,6 +569,10 @@ const si: Dict = {
   allBikes: 'සියලු බයික්',
   brandsNav: 'වෙළඳ නාම',
   dealersNav: 'ඩීලර්ස්',
+  dealersMap: 'ඩීලර් සිතියම',
+  dealersMapView: 'සිතියම් දසුන',
+  dealersListView: 'ලැයිස්තු දසුන',
+  dealersMapEmpty: 'සිතියම් ස්ථානයක් සහිත ඩීලර්වරුන් තවම නැත.',
   guidesNav: 'මාර්ගෝපදේශ',
   locationsNav: 'ස්ථාන',
   sellersNav: 'විකුණුම්කරුවන්',

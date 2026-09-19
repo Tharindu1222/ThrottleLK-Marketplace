@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Pagination } from '@/components/pagination';
+import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { apiGetWithMeta } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { hrefWithPage, parsePageParam } from '@/lib/pagination';
@@ -13,6 +14,7 @@ type Dealer = {
   slug: string;
   address: string | null;
   coverImageUrl: string | null;
+  verifiedAt?: string | null;
   city?: { name: string } | null;
   district?: { name: string } | null;
 };
@@ -84,12 +86,20 @@ export default async function DealersIndexPage({
           </h1>
           <p className="mt-2 text-muted">Approved showrooms on ThrottleLK.</p>
         </div>
-        <Link
-          href={`/${locale}/dealers/apply`}
-          className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
-        >
-          {t(locale, 'becomeDealer')}
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/${locale}/dealers/map`}
+            className="inline-flex items-center justify-center rounded-full border border-black/15 bg-background px-5 py-2.5 text-sm font-medium transition hover:border-accent/40"
+          >
+            {t(locale, 'dealersMapView')}
+          </Link>
+          <Link
+            href={`/${locale}/dealers/apply`}
+            className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
+          >
+            {t(locale, 'becomeDealer')}
+          </Link>
+        </div>
       </div>
 
       <form
@@ -138,9 +148,14 @@ export default async function DealersIndexPage({
                   </div>
                 )}
                 <div className="p-5">
-                  <h2 className="font-[family-name:var(--font-display)] text-2xl">
-                    {dealer.name}
-                  </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-[family-name:var(--font-display)] text-2xl">
+                      {dealer.name}
+                    </h2>
+                    {dealer.verifiedAt ? (
+                      <VerifiedDealerBadge locale={locale} />
+                    ) : null}
+                  </div>
                   {location ? (
                     <p className="mt-2 text-sm text-muted">{location}</p>
                   ) : null}

@@ -73,6 +73,7 @@ describe('DealersService.approve', () => {
     const approved = await service.approve('dealer-1');
 
     expect(approved.status).toBe('active');
+    expect(approved.verifiedAt ?? null).toBeNull();
     expect(usersService.addRole).toHaveBeenCalledWith(owner, 'dealer');
     expect(usersService.removeRole).toHaveBeenCalledWith(owner, 'seller');
     expect(owner.roles.map((r) => r.name).sort()).toEqual(['buyer', 'dealer']);

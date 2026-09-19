@@ -58,6 +58,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
+  const isDealer = Boolean(user?.roles?.includes('dealer'));
 
   useEffect(() => {
     const stored = getStoredUser();
@@ -156,6 +157,9 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link href={`/${locale}/dealers`} className={navLinkClass}>
             {t(locale, 'dealersNav')}
           </Link>
+          <Link href={`/${locale}/dealers/map`} className={navLinkClass}>
+            {t(locale, 'dealersMap')}
+          </Link>
         </nav>
 
         <div className="ml-auto hidden items-center gap-1 md:flex">
@@ -229,6 +233,16 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     >
                       {t(locale, 'savedListings')}
                     </Link>
+                    {isDealer ? (
+                      <Link
+                        role="menuitem"
+                        href={`/${locale}/account/showroom`}
+                        className="block px-4 py-2.5 text-sm text-muted transition hover:bg-black/5 hover:text-foreground"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        {t(locale, 'dealerShowroom')}
+                      </Link>
+                    ) : null}
                     <div className="my-1 border-t border-black/10" />
                     <button
                       type="button"
@@ -317,6 +331,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             >
               {t(locale, 'dealersNav')}
             </Link>
+            <Link
+              href={`/${locale}/dealers/map`}
+              className="py-3 text-base text-foreground"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t(locale, 'dealersMap')}
+            </Link>
             <div className="my-2 border-t border-black/10" />
             {user ? (
               <>
@@ -361,6 +382,15 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 >
                   {t(locale, 'savedListings')}
                 </Link>
+                {isDealer ? (
+                  <Link
+                    href={`/${locale}/account/showroom`}
+                    className="py-3 pl-2 text-base text-muted"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t(locale, 'dealerShowroom')}
+                  </Link>
+                ) : null}
                 <Link
                   href={`/${locale}/compare`}
                   className="py-3 pl-2 text-base text-muted"

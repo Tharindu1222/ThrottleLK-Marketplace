@@ -25,7 +25,8 @@ export function LocaleChrome({
     );
   const isAccount = /\/(en|si)\/account(\/|$)/.test(pathname);
   const isCompare = /\/(en|si)\/compare(\/|$)/.test(pathname);
-  const showTray = !isAuth && !isAccount && !isCompare;
+  const isDealersMap = /\/(en|si)\/dealers\/map(\/|$)/.test(pathname);
+  const showTray = !isAuth && !isAccount && !isCompare && !isDealersMap;
 
   if (isAdmin) {
     return <>{children}</>;
@@ -39,7 +40,9 @@ export function LocaleChrome({
         <div className={`flex-1 ${showTray ? 'pb-20' : ''}`}>
           {children}
         </div>
-        {!isAuth && !isAccount ? <SiteFooter locale={locale} /> : null}
+        {!isAuth && !isAccount && !isDealersMap ? (
+          <SiteFooter locale={locale} />
+        ) : null}
         {showTray ? <CompareTray locale={locale} /> : null}
       </div>
     </BreadcrumbLabelProvider>

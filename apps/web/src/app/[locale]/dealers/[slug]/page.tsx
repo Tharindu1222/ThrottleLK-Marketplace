@@ -9,6 +9,7 @@ import {
   type BrowseListingCard,
 } from '@/components/listing-card';
 import { Pagination } from '@/components/pagination';
+import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { hrefWithPage, parsePageParam } from '@/lib/pagination';
@@ -370,12 +371,23 @@ export default async function DealerShowroomPage({
               </div>
 
               <div className="min-w-0 flex-1 pb-1">
-                <p className="text-[11px] font-medium tracking-[0.28em] text-accent uppercase">
-                  {t(locale, 'sellerDealer')}
+                <p
+                  className={`text-[11px] font-medium tracking-[0.28em] uppercase ${
+                    dealer.verifiedAt ? 'text-emerald-700' : 'text-accent'
+                  }`}
+                >
+                  {dealer.verifiedAt
+                    ? t(locale, 'verifiedDealer')
+                    : t(locale, 'sellerDealer')}
                 </p>
-                <h1 className="mt-0.5 font-[family-name:var(--font-display)] text-2xl leading-tight tracking-wide text-foreground sm:text-3xl lg:text-4xl">
-                  {dealer.name}
-                </h1>
+                <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                  <h1 className="font-[family-name:var(--font-display)] text-2xl leading-tight tracking-wide text-foreground sm:text-3xl lg:text-4xl">
+                    {dealer.name}
+                  </h1>
+                  {dealer.verifiedAt ? (
+                    <VerifiedDealerBadge locale={locale} />
+                  ) : null}
+                </div>
               </div>
             </div>
 

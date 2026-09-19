@@ -213,9 +213,16 @@ export class ListingsService {
       take: limit,
     });
     const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    const verifiedIds = await this.dealersService.activeVerifiedIds(
+      rows.map((row) => row.dealerId).filter((id): id is string => Boolean(id)),
+    );
     return {
       items: rows.map((row) => ({
-        ...this.toBrowseCard(row, covers.get(row.id) ?? null),
+        ...this.toBrowseCard(row, covers.get(row.id) ?? null, {
+          dealerVerified: row.dealerId
+            ? verifiedIds.has(row.dealerId)
+            : false,
+        }),
         status: row.status,
       })),
       meta: paginationMeta(total, page, limit),
@@ -348,9 +355,16 @@ export class ListingsService {
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
     const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    const verifiedIds = await this.dealersService.activeVerifiedIds(
+      rows.map((row) => row.dealerId).filter((id): id is string => Boolean(id)),
+    );
     return {
       items: rows.map((row) =>
-        this.toBrowseCard(row, covers.get(row.id) ?? null),
+        this.toBrowseCard(row, covers.get(row.id) ?? null, {
+          dealerVerified: row.dealerId
+            ? verifiedIds.has(row.dealerId)
+            : false,
+        }),
       ),
       meta: paginationMeta(total, page, limit),
     };
@@ -413,6 +427,7 @@ export class ListingsService {
       listedAt:
         (listing.publishedAt ?? listing.createdAt)?.toISOString?.() ?? null,
       sellerType: listing.dealerId ? 'dealer' : 'private',
+      dealerVerified: Boolean(shop?.verifiedAt),
       seller,
       contactHidden: false as const,
     };
@@ -451,7 +466,11 @@ export class ListingsService {
   }
 
   /** Compact public card payload for browse grids. */
-  private toBrowseCard(listing: Listing, coverImageUrl?: string | null) {
+  private toBrowseCard(
+    listing: Listing,
+    coverImageUrl?: string | null,
+    extras?: { dealerVerified?: boolean },
+  ) {
     const covered =
       coverImageUrl !== undefined
         ? coverImageUrl
@@ -479,6 +498,7 @@ export class ListingsService {
       districtName: listing.district?.name ?? null,
       cityName: listing.city?.name ?? null,
       sellerType: listing.dealerId ? 'dealer' : 'private',
+      dealerVerified: extras?.dealerVerified ?? false,
       coverImageUrl: covered,
       listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
       viewCount: listing.viewCount ?? 0,

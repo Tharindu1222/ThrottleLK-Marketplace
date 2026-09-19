@@ -2,7 +2,6 @@ node_modules
 dist
 .next
 .turbo
-.worktrees
 coverage
 .env
 .env.local

@@ -202,11 +202,15 @@ export const dealerStatusSchema = z.enum([
 export const adminCreateDealerSchema = createDealerSchema.extend({
   ownerUserId: z.string().uuid(),
   status: dealerStatusSchema.optional().default('pending'),
+  /** Admin-only verified badge; only applies when status is active. */
+  verified: z.boolean().optional(),
 });
 
 export const adminUpdateDealerSchema = createDealerSchema.partial().extend({
   ownerUserId: z.string().uuid().optional(),
   status: dealerStatusSchema.optional(),
+  /** Admin-only verified badge; only applies when status is active. */
+  verified: z.boolean().optional(),
 });
 
 export const savedSearchQuerySchema = z.object({

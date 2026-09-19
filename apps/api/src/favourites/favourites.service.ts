@@ -6,11 +6,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
+import { DealersService } from '../dealers/dealers.service';
 import { Listing } from '../listings/listing.entity';
 import { ListingImage } from '../listings/listing-image.entity';
 import { Favourite } from './favourite.entity';
 
-function toBrowseCard(listing: Listing) {
+function toBrowseCard(listing: Listing, dealerVerified: boolean) {
   const images = [...(listing.images ?? [])].sort(
     (a, b) => a.sortOrder - b.sortOrder,
   );
@@ -29,6 +30,7 @@ function toBrowseCard(listing: Listing) {
     districtName: listing.district?.name ?? null,
     cityName: listing.city?.name ?? null,
     sellerType: listing.dealerId ? 'dealer' : 'private',
+    dealerVerified,
     coverImageUrl: cover?.imageUrl ?? null,
     listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
     viewCount: listing.viewCount ?? 0,
@@ -43,6 +45,7 @@ export class FavouritesService {
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     @InjectRepository(ListingImage)
     private readonly listingImages: Repository<ListingImage>,
+    private readonly dealersService: DealersService,
   ) {}
 
   async listForUser(
@@ -69,13 +72,23 @@ export class FavouritesService {
       .take(limit);
     const [rows, total] = await qb.getManyAndCount();
     const covers = await this.coverUrls(rows.map((row) => row.listingId));
+    const verifiedIds = await this.dealersService.activeVerifiedIds(
+      rows
+        .map((row) => row.listing.dealerId)
+        .filter((id): id is string => Boolean(id)),
+    );
     return {
       items: rows.map((row) => ({
         id: row.id,
         listingId: row.listingId,
         createdAt: row.createdAt,
         listing: {
-          ...toBrowseCard(row.listing),
+          ...toBrowseCard(
+            row.listing,
+            row.listing.dealerId
+              ? verifiedIds.has(row.listing.dealerId)
+              : false,
+          ),
           coverImageUrl: covers.get(row.listingId) ?? null,
         },
       })),

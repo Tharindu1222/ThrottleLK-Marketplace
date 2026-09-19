@@ -99,6 +99,7 @@ export function DealerMapPicker({
       map.setView(latLng, Math.max(map.getZoom(), PIN_ZOOM));
     } else {
       markerRef.current.setLatLng(latLng);
+      map.setView(latLng, Math.max(map.getZoom(), PIN_ZOOM));
     }
   }, [latitude, longitude, readOnly]);
 

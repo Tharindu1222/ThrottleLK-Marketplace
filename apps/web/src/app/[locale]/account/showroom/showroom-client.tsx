@@ -104,6 +104,8 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
   const [cityId, setCityId] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationNote, setLocationNote] = useState<string | null>(null);
   const [facebookUrl, setFacebookUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
 
@@ -214,6 +216,123 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  function getCurrentPositionOnce(
+    options: PositionOptions,
+  ): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+  }
+
+  async function geocodeAddressPin(): Promise<{
+    lat: number;
+    lng: number;
+  } | null> {
+    const cityName = cities.find((c) => c.id === cityId)?.name;
+    const districtName = districts.find((d) => d.id === districtId)?.name;
+    const query = [address.trim(), cityName, districtName, 'Sri Lanka']
+      .filter(Boolean)
+      .join(', ');
+    if (!address.trim() && !cityName && !districtName) return null;
+
+    const url = new URL('https://nominatim.openstreetmap.org/search');
+    url.searchParams.set('q', query);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('limit', '1');
+    url.searchParams.set('countrycodes', 'lk');
+
+    const res = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ lat: string; lon: string }>;
+    const hit = rows[0];
+    if (!hit) return null;
+    const lat = Number(hit.lat);
+    const lng = Number(hit.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  }
+
+  async function fetchLiveLocation() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      // Still try address geocode on devices without geolocation API
+      setLocating(true);
+      setError(null);
+      setLocationNote(null);
+      try {
+        const pin = await geocodeAddressPin();
+        if (pin) {
+          setLatitude(pin.lat);
+          setLongitude(pin.lng);
+          setLocationNote(t(locale, 'locationFromAddress'));
+        } else {
+          setError(t(locale, 'locationUnavailable'));
+        }
+      } catch {
+        setError(t(locale, 'locationUnavailable'));
+      } finally {
+        setLocating(false);
+      }
+      return;
+    }
+
+    setError(null);
+    setOk(null);
+    setLocationNote(null);
+    setLocating(true);
+
+    try {
+      let pos: GeolocationPosition | null = null;
+      try {
+        pos = await getCurrentPositionOnce({
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 60_000,
+        });
+      } catch {
+        try {
+          pos = await getCurrentPositionOnce({
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 60_000,
+          });
+        } catch {
+          pos = null;
+        }
+      }
+
+      if (pos) {
+        setLatitude(pos.coords.latitude);
+        setLongitude(pos.coords.longitude);
+        return;
+      }
+
+      const pin = await geocodeAddressPin();
+      if (pin) {
+        setLatitude(pin.lat);
+        setLongitude(pin.lng);
+        setLocationNote(t(locale, 'locationFromAddress'));
+        return;
+      }
+
+      setError(t(locale, 'locationUnavailable'));
+    } catch (err) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'code' in err &&
+        (err as GeolocationPositionError).code === 1
+      ) {
+        setError(t(locale, 'locationDenied'));
+      } else {
+        setError(t(locale, 'locationUnavailable'));
+      }
+    } finally {
+      setLocating(false);
     }
   }
 
@@ -593,17 +712,33 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
                 />
               </Field>
               <p className="text-sm text-muted">{t(locale, 'showroomMapHint')}</p>
-              {latitude != null && longitude != null ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setLatitude(null);
-                    setLongitude(null);
-                  }}
-                  className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+                  onClick={() => void fetchLiveLocation()}
+                  disabled={locating || busy}
+                  className="text-sm font-medium text-accent underline-offset-2 hover:underline disabled:opacity-60"
                 >
-                  {t(locale, 'clearMapPin')}
+                  {locating
+                    ? t(locale, 'locating')
+                    : t(locale, 'fetchLiveLocation')}
                 </button>
+                {latitude != null && longitude != null ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatitude(null);
+                      setLongitude(null);
+                      setLocationNote(null);
+                    }}
+                    className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    {t(locale, 'clearMapPin')}
+                  </button>
+                ) : null}
+              </div>
+              {locationNote ? (
+                <p className="text-sm text-muted">{locationNote}</p>
               ) : null}
             </div>
             <div className="bg-zinc-50 p-3 sm:p-4">

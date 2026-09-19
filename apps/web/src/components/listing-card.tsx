@@ -16,6 +16,7 @@ import {
   toggleCompare,
   type CompareItem,
 } from '@/lib/compare';
+import { VerifiedDealerIcon } from '@/components/verified-dealer-badge';
 
 export type BrowseListingCard = {
   id: string;
@@ -31,6 +32,7 @@ export type BrowseListingCard = {
   districtName?: string | null;
   cityName?: string | null;
   sellerType?: 'dealer' | 'private' | string | null;
+  dealerVerified?: boolean;
   coverImageUrl?: string | null;
   /** ISO date when listing went live (publishedAt) or was created */
   listedAt?: string | null;
@@ -421,8 +423,12 @@ export function ListingCard({
   const location = formatLocation(listing.cityName, listing.districtName);
   const sellerLabel =
     listing.sellerType === 'dealer'
-      ? t(locale, 'sellerDealer')
+      ? listing.dealerVerified
+        ? t(locale, 'verifiedDealer')
+        : t(locale, 'sellerDealer')
       : t(locale, 'sellerPrivate');
+  const showVerifiedIcon =
+    listing.sellerType === 'dealer' && Boolean(listing.dealerVerified);
   const cardHref = href ?? `/${locale}/bikes/${listing.slug}`;
   const mileageLabel =
     listing.mileage != null
@@ -495,7 +501,10 @@ export function ListingCard({
             </span>
           </div>
         ) : (
-          <span className="absolute bottom-3 left-3 rounded-sm bg-black/70 px-2 py-1 text-[11px] font-medium tracking-wide text-white backdrop-blur-sm">
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-sm bg-black/70 px-2 py-1 text-[11px] font-medium tracking-wide text-white backdrop-blur-sm">
+            {showVerifiedIcon ? (
+              <VerifiedDealerIcon className="h-3.5 w-3.5 text-emerald-500" />
+            ) : null}
             {badge ?? sellerLabel}
           </span>
         )}

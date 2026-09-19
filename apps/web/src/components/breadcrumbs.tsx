@@ -59,6 +59,7 @@ function staticLabel(locale: Locale, segment: string): string | null {
     bikes: t(locale, 'allBikes'),
     brands: t(locale, 'brandsNav'),
     dealers: t(locale, 'dealersNav'),
+    map: t(locale, 'dealersMap'),
     sell: t(locale, 'sell'),
     compare: t(locale, 'compare'),
     guides: t(locale, 'guidesNav'),
@@ -99,7 +100,15 @@ function isLinkablePath(segments: string[]): boolean {
 
   if (path === 'dealers') return true;
   if (path === 'dealers/apply') return true;
-  if (a === 'dealers' && b && b !== 'apply' && segments.length === 2) return true;
+  if (path === 'dealers/map') return true;
+  if (
+    a === 'dealers' &&
+    b &&
+    b !== 'apply' &&
+    b !== 'map' &&
+    segments.length === 2
+  )
+    return true;
 
   if (path === 'guides') return true;
   if (a === 'guides' && b && segments.length === 2) return true;

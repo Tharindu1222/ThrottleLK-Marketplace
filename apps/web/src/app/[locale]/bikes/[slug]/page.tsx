@@ -22,6 +22,7 @@ import {
   LocationPinIcon,
   listingLocation,
 } from '@/components/listing-spec-sheet';
+import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 
 const SIMILAR_ROW_SIZE = 4;
 
@@ -51,6 +52,7 @@ type Listing = {
   districtName?: string | null;
   cityName?: string | null;
   sellerType?: 'dealer' | 'private' | string | null;
+  dealerVerified?: boolean;
   listedAt?: string | null;
   viewCount?: number;
   coverImageUrl?: string | null;
@@ -123,7 +125,9 @@ export default async function ListingDetailPage({
   const location = listingLocation(listing);
   const sellerKind =
     listing.sellerType === 'dealer'
-      ? t(locale, 'sellerDealer')
+      ? listing.dealerVerified
+        ? t(locale, 'verifiedDealer')
+        : t(locale, 'sellerDealer')
       : listing.sellerType === 'private'
         ? t(locale, 'sellerPrivate')
         : null;
@@ -170,9 +174,13 @@ export default async function ListingDetailPage({
                 {listing.condition}
               </span>
               {sellerKind ? (
-                <span className="inline-flex border border-black/12 bg-white px-2.5 py-1 text-[11px] font-medium tracking-[0.14em] text-foreground/80 uppercase">
-                  {sellerKind}
-                </span>
+                listing.dealerVerified ? (
+                  <VerifiedDealerBadge locale={locale} />
+                ) : (
+                  <span className="inline-flex border border-black/12 bg-white px-2.5 py-1 text-[11px] font-medium tracking-[0.14em] text-foreground/80 uppercase">
+                    {sellerKind}
+                  </span>
+                )
               ) : null}
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-3xl leading-[0.95] tracking-tight text-foreground sm:text-4xl">

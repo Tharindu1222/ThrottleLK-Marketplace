@@ -49,6 +49,14 @@ export class DealersController {
     return { success: true, data: items, meta };
   }
 
+  @Get('map')
+  async map(): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.listForMap(),
+    };
+  }
+
   @Get('seo-slugs')
   async seoSlugs(
     @Query('page') page?: string,
