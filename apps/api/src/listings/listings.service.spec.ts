@@ -611,4 +611,148 @@ describe('ListingsService.listMine owner extras', () => {
     expect(publicCard).not.toHaveProperty('marginLkr');
     expect(publicCard).not.toHaveProperty('marginPercent');
   });
+
+  it('listMine daysInStock is 0 when start dates are missing or invalid', async () => {
+    const imagesQb = {
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => []),
+    };
+    const listingsRepo = {
+      findAndCount: jest.fn(async () => [
+        [
+          {
+            ...ownerRow,
+            purchaseDate: null,
+            publishedAt: null,
+            createdAt: undefined,
+            soldAt: null,
+          },
+          {
+            ...ownerRow,
+            id: 'listing-2',
+            purchaseDate: 'not-a-date',
+            publishedAt: null,
+            createdAt: undefined,
+            soldAt: null,
+          },
+        ],
+        2,
+      ]),
+    };
+    const service = new ListingsService(
+      listingsRepo as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { createQueryBuilder: jest.fn(() => imagesQb) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
+      {} as never,
+      {
+        userIdsForListing: jest.fn(async () => []),
+        countsByListingIds: jest.fn(async () => new Map()),
+      } as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+
+    const { items } = await service.listMine('seller-1');
+    expect(items[0].daysInStock).toBe(0);
+    expect(items[1].daysInStock).toBe(0);
+  });
+});
+
+describe('ListingsService.getPublicOrOwned inventory privacy', () => {
+  const detailRow = {
+    id: 'listing-1',
+    sellerId: 'seller-1',
+    dealerId: 'dealer-1',
+    slug: 'honda-dio',
+    title: 'Honda Dio',
+    priceLkr: 550000,
+    status: 'active',
+    costPriceLkr: 400000,
+    purchaseDate: '2026-09-01',
+    soldPriceLkr: 500000,
+    soldAt: new Date('2026-09-11T12:00:00.000Z'),
+    phoneClickCount: 4,
+    whatsappClickCount: 2,
+    viewCount: 11,
+    manufactureYear: 2020,
+    images: [],
+    publishedAt: new Date('2026-09-01T00:00:00.000Z'),
+    createdAt: new Date('2026-09-01T00:00:00.000Z'),
+  };
+
+  function makeDetailService(row: Record<string, unknown> = detailRow) {
+    const listingsRepo = {
+      findOne: jest.fn(async () => ({ ...row })),
+    };
+    const favourites = {
+      userIdsForListing: jest.fn(async () => []),
+      countsByListingIds: jest.fn(async () => new Map([['listing-1', 7]])),
+    };
+    const usersService = {
+      findByIdOrThrow: jest.fn(async () => ({ id: 'seller-1' })),
+      toSellerPublic: jest.fn(() => ({
+        id: 'seller-1',
+        displayName: 'Seller',
+      })),
+    };
+    const dealersService = {
+      findActiveById: jest.fn(async () => null),
+      activeVerifiedIds: jest.fn(async () => new Set()),
+    };
+    const service = new ListingsService(
+      listingsRepo as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      {} as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      dealersService as never,
+      {} as never,
+      favourites as never,
+      usersService as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+    return { service, favourites };
+  }
+
+  it('getPublicOrOwned omits sensitive keys for a non-owner when inventory fields are set', async () => {
+    const { service } = makeDetailService();
+    const result = await service.getPublicOrOwned('honda-dio', {
+      id: 'buyer-1',
+    } as User);
+
+    expect(result).not.toHaveProperty('costPriceLkr');
+    expect(result).not.toHaveProperty('purchaseDate');
+    expect(result).not.toHaveProperty('soldPriceLkr');
+    expect(result).not.toHaveProperty('phoneClickCount');
+    expect(result).not.toHaveProperty('whatsappClickCount');
+    expect(result).not.toHaveProperty('favouriteCount');
+    expect(result).not.toHaveProperty('daysInStock');
+    expect(result).not.toHaveProperty('marginLkr');
+    expect(result).not.toHaveProperty('marginPercent');
+  });
+
+  it('getPublicOrOwned includes listMine owner extras for the seller', async () => {
+    const { service, favourites } = makeDetailService();
+    const result = await service.getPublicOrOwned('honda-dio', {
+      id: 'seller-1',
+    } as User);
+
+    expect(result).toMatchObject({
+      costPriceLkr: 400000,
+      purchaseDate: '2026-09-01',
+      soldPriceLkr: 500000,
+      soldAt: '2026-09-11T12:00:00.000Z',
+      phoneClickCount: 4,
+      whatsappClickCount: 2,
+      favouriteCount: 7,
+      daysInStock: 10,
+      marginLkr: 100000,
+      marginPercent: 25,
+    });
+    expect(favourites.countsByListingIds).toHaveBeenCalledWith(['listing-1']);
+  });
 });

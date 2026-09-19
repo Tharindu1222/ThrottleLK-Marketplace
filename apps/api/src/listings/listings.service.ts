@@ -251,15 +251,7 @@ export class ListingsService {
             : false,
         }),
         status: row.status,
-        costPriceLkr: row.costPriceLkr,
-        purchaseDate: row.purchaseDate,
-        soldPriceLkr: row.soldPriceLkr,
-        soldAt: row.soldAt?.toISOString() ?? null,
-        phoneClickCount: row.phoneClickCount ?? 0,
-        whatsappClickCount: row.whatsappClickCount ?? 0,
-        favouriteCount: favCounts.get(row.id) ?? 0,
-        daysInStock: this.daysInStock(row),
-        ...this.marginFields(row),
+        ...this.ownerInventoryFields(row, favCounts.get(row.id) ?? 0),
       })),
       meta: paginationMeta(total, page, limit),
     };
@@ -446,9 +438,18 @@ export class ListingsService {
           dealerSlug: shop?.slug ?? null,
         }
       : null;
+    const {
+      costPriceLkr: _costPriceLkr,
+      purchaseDate: _purchaseDate,
+      soldPriceLkr: _soldPriceLkr,
+      phoneClickCount: _phoneClickCount,
+      whatsappClickCount: _whatsappClickCount,
+      ...safeListing
+    } = this.withCover(listing);
+
     // Phone / WhatsApp are public on active listings; messaging still requires auth.
-    return {
-      ...this.withCover(listing),
+    const payload = {
+      ...safeListing,
       title: composeListingTitle({
         title: listing.title,
         brandName: listing.brand?.name,
@@ -466,6 +467,16 @@ export class ListingsService {
       dealerVerified: Boolean(shop?.verifiedAt),
       seller,
       contactHidden: false as const,
+    };
+
+    if (!isOwner && !isAdmin) {
+      return payload;
+    }
+
+    const favCounts = await this.favourites.countsByListingIds([listing.id]);
+    return {
+      ...payload,
+      ...this.ownerInventoryFields(listing, favCounts.get(listing.id) ?? 0),
     };
   }
 
@@ -535,11 +546,27 @@ export class ListingsService {
     };
   }
 
+  private ownerInventoryFields(listing: Listing, favouriteCount: number) {
+    return {
+      costPriceLkr: listing.costPriceLkr,
+      purchaseDate: listing.purchaseDate,
+      soldPriceLkr: listing.soldPriceLkr,
+      soldAt: listing.soldAt?.toISOString() ?? null,
+      phoneClickCount: listing.phoneClickCount ?? 0,
+      whatsappClickCount: listing.whatsappClickCount ?? 0,
+      favouriteCount,
+      daysInStock: this.daysInStock(listing),
+      ...this.marginFields(listing),
+    };
+  }
+
   private daysInStock(listing: Listing, asOf = new Date()): number {
-    const start =
-      listing.purchaseDate
-        ? new Date(listing.purchaseDate)
-        : listing.publishedAt ?? listing.createdAt;
+    const start = listing.purchaseDate
+      ? new Date(listing.purchaseDate)
+      : listing.publishedAt ?? listing.createdAt;
+    if (!start || Number.isNaN(new Date(start).getTime())) {
+      return 0;
+    }
     const end = listing.soldAt ?? asOf;
     return Math.max(
       0,
