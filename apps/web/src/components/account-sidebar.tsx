@@ -18,6 +18,7 @@ type NavItem = {
   labelKey:
     | 'accountDetails'
     | 'dealerShowroom'
+    | 'performance'
     | 'myListings'
     | 'messages'
     | 'notifications'
@@ -77,6 +78,19 @@ function IconShowroom() {
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconPerformance() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-[18px] w-[18px]">
+      <path
+        d="M5 16.5v-3.5M10 16.5V8M15 16.5v-5M20 16.5V5.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -155,6 +169,13 @@ function navItems(locale: Locale): NavItem[] {
       labelKey: 'dealerShowroom',
       match: (p) => p.includes('/account/showroom'),
       icon: <IconShowroom />,
+      dealerOnly: true,
+    },
+    {
+      href: `${base}/performance`,
+      labelKey: 'performance',
+      match: (p) => p.includes('/account/performance'),
+      icon: <IconPerformance />,
       dealerOnly: true,
     },
     {
