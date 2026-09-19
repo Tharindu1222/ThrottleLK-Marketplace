@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useId, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
+import { recordContactClick } from '@/lib/record-contact-click';
 import {
   getCompareItems,
   toggleCompare,
@@ -275,6 +276,7 @@ export function ListingContactBar({
         {callNumber ? (
           <a
             href={`tel:${callNumber}`}
+            onClick={() => recordContactClick(listing.id, 'phone')}
             className={`${contactBtn} bg-accent text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] hover:brightness-110`}
           >
             <PhoneIcon />
@@ -286,6 +288,7 @@ export function ListingContactBar({
             href={whatsappHref(chatNumber)}
             target="_blank"
             rel="noreferrer"
+            onClick={() => recordContactClick(listing.id, 'whatsapp')}
             className={`${contactBtn} border border-accent bg-white text-accent hover:bg-accent/5`}
           >
             <WhatsAppIcon />
