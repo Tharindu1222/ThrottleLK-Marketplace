@@ -1,7 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
+import { createPortal } from 'react-dom';
 import {
   ListingCard,
   type BrowseListingCard,
@@ -14,7 +22,40 @@ import { clampedPage, emptyMeta } from '@/lib/pagination';
 import { useUrlPage } from '@/lib/use-url-page';
 import type { PaginationMeta } from '@throttlelk/types';
 
-type Listing = BrowseListingCard & { status: string };
+type Listing = BrowseListingCard & {
+  status: string;
+  phoneClickCount?: number | null;
+  whatsappClickCount?: number | null;
+  favouriteCount?: number | null;
+  costPriceLkr?: number | null;
+  daysInStock?: number | null;
+  marginLkr?: number | null;
+  marginPercent?: number | null;
+};
+
+type SoldDialogState = {
+  listingId: string;
+  title: string;
+  askingPrice: number;
+};
+
+const fieldClass =
+  'w-full bg-background px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 focus:ring-accent';
+const labelClass = 'mb-1.5 block text-sm text-muted';
+
+function todayIsoDate() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function parseSoldPrice(value: string): number | null {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  return n;
+}
 
 function formatLkr(n: number) {
   return `Rs. ${n.toLocaleString('en-LK')}`;
@@ -81,17 +122,256 @@ function ActionIcon({ children }: { children: ReactNode }) {
   );
 }
 
+function metricBit(label: string, value: string) {
+  return `${label} ${value}`;
+}
+
+function OwnerMetrics({
+  locale,
+  listing,
+}: {
+  locale: Locale;
+  listing: Listing;
+}) {
+  const engagement: string[] = [];
+  if (listing.viewCount != null) {
+    engagement.push(
+      metricBit(
+        t(locale, 'metricViews'),
+        listing.viewCount.toLocaleString('en-LK'),
+      ),
+    );
+  }
+  if (listing.phoneClickCount != null) {
+    engagement.push(
+      metricBit(
+        t(locale, 'metricPhoneClicks'),
+        listing.phoneClickCount.toLocaleString('en-LK'),
+      ),
+    );
+  }
+  if (listing.whatsappClickCount != null) {
+    engagement.push(
+      metricBit(
+        t(locale, 'metricWhatsappClicks'),
+        listing.whatsappClickCount.toLocaleString('en-LK'),
+      ),
+    );
+  }
+  if (listing.favouriteCount != null) {
+    engagement.push(
+      metricBit(
+        t(locale, 'metricFavourites'),
+        listing.favouriteCount.toLocaleString('en-LK'),
+      ),
+    );
+  }
+
+  const inventory: string[] = [];
+  if (listing.costPriceLkr != null || listing.daysInStock != null) {
+    if (listing.daysInStock != null) {
+      inventory.push(
+        metricBit(
+          t(locale, 'daysInStock'),
+          listing.daysInStock.toLocaleString('en-LK'),
+        ),
+      );
+    }
+    if (listing.costPriceLkr != null) {
+      inventory.push(
+        metricBit(t(locale, 'inventoryCostPrice'), formatLkr(listing.costPriceLkr)),
+      );
+    }
+  }
+  if (listing.marginLkr != null) {
+    const marginValue =
+      listing.marginPercent != null
+        ? `${formatLkr(listing.marginLkr)} (${listing.marginPercent}%)`
+        : formatLkr(listing.marginLkr);
+    inventory.push(metricBit(t(locale, 'margin'), marginValue));
+  }
+
+  if (engagement.length === 0 && inventory.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-0.5 text-xs leading-snug text-muted">
+      {engagement.length > 0 ? (
+        <p className="flex flex-wrap gap-x-2.5 gap-y-0.5">
+          {engagement.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </p>
+      ) : null}
+      {inventory.length > 0 ? (
+        <p className="flex flex-wrap gap-x-2.5 gap-y-0.5">
+          {inventory.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function MarkSoldDialog({
+  locale,
+  listing,
+  busy,
+  actionError,
+  onClose,
+  onSubmit,
+}: {
+  locale: Locale;
+  listing: SoldDialogState;
+  busy: boolean;
+  actionError?: string | null;
+  onClose: () => void;
+  onSubmit: (body: { soldPriceLkr: number; soldAt?: string }) => void;
+}) {
+  const titleId = useId();
+  const priceId = useId();
+  const dateId = useId();
+  const errorId = useId();
+  const priceRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [soldPrice, setSoldPrice] = useState(String(listing.askingPrice));
+  const [soldDate, setSoldDate] = useState(todayIsoDate);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    setSoldPrice(String(listing.askingPrice));
+    setSoldDate(todayIsoDate());
+    setFormError(null);
+  }, [listing.listingId, listing.askingPrice]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    priceRef.current?.focus();
+  }, [mounted, listing.listingId]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const price = parseSoldPrice(soldPrice);
+    if (price == null) {
+      setFormError(t(locale, 'soldPriceRequired'));
+      return;
+    }
+    onSubmit({
+      soldPriceLkr: price,
+      soldAt: soldDate || undefined,
+    });
+  }
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm overflow-hidden rounded-2xl border border-black/10 bg-white p-6 text-left shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]"
+      >
+        <h2
+          id={titleId}
+          className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground"
+        >
+          {t(locale, 'markSold')}
+        </h2>
+        <p className="mt-1 truncate text-sm text-muted">{listing.title}</p>
+
+        <div className="mt-5">
+          <label className={labelClass} htmlFor={priceId}>
+            {t(locale, 'soldPrice')} *
+          </label>
+          <input
+            ref={priceRef}
+            id={priceId}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            required
+            value={soldPrice}
+            disabled={busy}
+            aria-invalid={formError || actionError ? true : undefined}
+            aria-describedby={formError || actionError ? errorId : undefined}
+            className={fieldClass}
+            onChange={(e) => {
+              setSoldPrice(e.target.value);
+              if (formError) setFormError(null);
+            }}
+          />
+        </div>
+
+        <div className="mt-4">
+          <label className={labelClass} htmlFor={dateId}>
+            {t(locale, 'soldDate')} ({t(locale, 'optional')})
+          </label>
+          <input
+            id={dateId}
+            type="date"
+            value={soldDate}
+            disabled={busy}
+            className={fieldClass}
+            onChange={(e) => setSoldDate(e.target.value)}
+          />
+        </div>
+
+        {formError || actionError ? (
+          <p id={errorId} className="mt-3 text-sm text-red-400" role="alert">
+            {formError ?? actionError}
+          </p>
+        ) : null}
+
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            disabled={busy}
+            className={btnGhost}
+            onClick={onClose}
+          >
+            {t(locale, 'cancelEdit')}
+          </button>
+          <button type="submit" disabled={busy} className={btnSolid}>
+            {busy ? t(locale, 'saving') : t(locale, 'markSold')}
+          </button>
+        </div>
+      </form>
+    </div>,
+    document.body,
+  );
+}
+
 function ListingActions({
   locale,
   listing,
   busy,
   runAction,
+  onMarkSold,
   dense = false,
 }: {
   locale: Locale;
   listing: Listing;
   busy: boolean;
   runAction: (listingId: string, path: string) => void;
+  onMarkSold: (listing: Listing) => void;
   dense?: boolean;
 }) {
   const editHref = `/${locale}/account/listings/${listing.id}/edit`;
@@ -124,9 +404,8 @@ function ListingActions({
       type="button"
       disabled={busy}
       className={btnGhost}
-      onClick={() =>
-        runAction(listing.id, `/api/v1/listings/${listing.id}/mark-sold`)
-      }
+      aria-haspopup="dialog"
+      onClick={() => onMarkSold(listing)}
     >
       <ActionIcon>
         <path d="M12 3l7 4v5c0 5-3.5 8.5-7 10-4.5-1.5-8-5-8-10V7l7-4z" />
@@ -209,6 +488,7 @@ export function MyListingsClient({
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [soldDialog, setSoldDialog] = useState<SoldDialogState | null>(null);
 
   async function load(access: string, pageNum = page) {
     setLoading(true);
@@ -238,6 +518,37 @@ export function MyListingsClient({
     setError(null);
     void apiSend(path, { token })
       .then(() => load(token, page))
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : 'Action failed'),
+      )
+      .finally(() => setBusyId(null));
+  }
+
+  function openSoldDialog(listing: Listing) {
+    setError(null);
+    setSoldDialog({
+      listingId: listing.id,
+      title: listing.title,
+      askingPrice: listing.priceLkr,
+    });
+  }
+
+  function submitSold(body: { soldPriceLkr: number; soldAt?: string }) {
+    if (!token || !soldDialog) return;
+    setBusyId(soldDialog.listingId);
+    setError(null);
+    void apiSend(`/api/v1/listings/${soldDialog.listingId}/mark-sold`, {
+      method: 'POST',
+      token,
+      body: {
+        soldPriceLkr: body.soldPriceLkr,
+        soldAt: body.soldAt,
+      },
+    })
+      .then(() => {
+        setSoldDialog(null);
+        return load(token, page);
+      })
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Action failed'),
       )
@@ -284,7 +595,9 @@ export function MyListingsClient({
         </Link>
       </div>
 
-      {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+      {error && !soldDialog ? (
+        <p className="mb-4 text-sm text-red-400">{error}</p>
+      ) : null}
 
       <div aria-busy={loading} className={loading ? 'pointer-events-none opacity-60' : undefined}>
       {listings.length === 0 ? (
@@ -317,13 +630,17 @@ export function MyListingsClient({
                   }}
                   showFavourite={false}
                   footer={
-                    <ListingActions
-                      locale={locale}
-                      listing={listing}
-                      busy={busy}
-                      runAction={runAction}
-                      dense
-                    />
+                    <div className="flex flex-col gap-2.5">
+                      <OwnerMetrics locale={locale} listing={listing} />
+                      <ListingActions
+                        locale={locale}
+                        listing={listing}
+                        busy={busy}
+                        runAction={runAction}
+                        onMarkSold={openSoldDialog}
+                        dense
+                      />
+                    </div>
                   }
                 />
               </li>
@@ -368,6 +685,9 @@ export function MyListingsClient({
                     <p className="mt-1 text-sm text-accent">
                       {formatLkr(listing.priceLkr)}
                     </p>
+                    <div className="mt-2">
+                      <OwnerMetrics locale={locale} listing={listing} />
+                    </div>
                   </div>
                 </div>
                 <ListingActions
@@ -375,6 +695,7 @@ export function MyListingsClient({
                   listing={listing}
                   busy={busy}
                   runAction={runAction}
+                  onMarkSold={openSoldDialog}
                 />
               </li>
             );
@@ -397,6 +718,19 @@ export function MyListingsClient({
         disabled={loading}
         onPage={goTo}
       />
+      {soldDialog ? (
+        <MarkSoldDialog
+          locale={locale}
+          listing={soldDialog}
+          busy={busyId === soldDialog.listingId}
+          actionError={error}
+          onClose={() => {
+            setSoldDialog(null);
+            setError(null);
+          }}
+          onSubmit={submitSold}
+        />
+      ) : null}
     </div>
   );
 }
