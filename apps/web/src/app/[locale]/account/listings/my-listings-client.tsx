@@ -133,6 +133,8 @@ function OwnerMetrics({
   locale: Locale;
   listing: Listing;
 }) {
+  if (listing.sellerType !== 'dealer') return null;
+
   const engagement: string[] = [];
   if (listing.viewCount != null) {
     engagement.push(
@@ -253,11 +255,11 @@ function MarkSoldDialog({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !busy) onClose();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [busy, onClose]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -281,7 +283,7 @@ function MarkSoldDialog({
       aria-modal="true"
       aria-labelledby={titleId}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !busy) onClose();
       }}
     >
       <form
