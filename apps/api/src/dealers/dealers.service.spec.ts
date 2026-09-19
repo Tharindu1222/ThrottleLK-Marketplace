@@ -39,6 +39,9 @@ function makeService(
       status: string;
       dealerId: string | null;
       deletedAt?: Date | null;
+      viewCount?: number;
+      phoneClickCount?: number;
+      whatsappClickCount?: number;
     }>;
     events?: Array<{ listingId: string; type: string; createdAt: Date }>;
     favourites?: Array<{ listingId: string; createdAt: Date }>;
@@ -69,7 +72,12 @@ function makeService(
     find: jest.fn(async (opts?: { where?: Record<string, unknown> }) =>
       listings
         .filter((listing) => !listing.deletedAt && matchWhere(listing, opts?.where))
-        .map((listing) => ({ id: listing.id })),
+        .map((listing) => ({
+          id: listing.id,
+          viewCount: listing.viewCount ?? 0,
+          phoneClickCount: listing.phoneClickCount ?? 0,
+          whatsappClickCount: listing.whatsappClickCount ?? 0,
+        })),
     ),
   };
   const engagementEvents = {
@@ -232,8 +240,22 @@ describe('DealersService.performance', () => {
 
     const { service } = makeService(dealer, owner, {
       listings: [
-        { id: 'listing-1', status: 'active', dealerId: 'dealer-1' },
-        { id: 'listing-sold', status: 'sold', dealerId: 'dealer-1' },
+        {
+          id: 'listing-1',
+          status: 'active',
+          dealerId: 'dealer-1',
+          viewCount: 10,
+          phoneClickCount: 0,
+          whatsappClickCount: 0,
+        },
+        {
+          id: 'listing-sold',
+          status: 'sold',
+          dealerId: 'dealer-1',
+          viewCount: 5,
+          phoneClickCount: 3,
+          whatsappClickCount: 2,
+        },
       ],
       events: [
         { listingId: 'listing-1', type: 'view', createdAt: recent },
@@ -253,9 +275,9 @@ describe('DealersService.performance', () => {
     expect(all).toEqual({
       range: 'all',
       activeListings: 1,
-      views: 2,
-      phoneClicks: 1,
-      whatsappClicks: 1,
+      views: 15,
+      phoneClicks: 3,
+      whatsappClicks: 2,
       favourites: 2,
     });
     expect(week).toEqual({
@@ -266,5 +288,37 @@ describe('DealersService.performance', () => {
       whatsappClicks: 0,
       favourites: 1,
     });
+  });
+
+  it('all uses listing lifetime counters even when events are missing', async () => {
+    const { service } = makeService(dealer, owner, {
+      listings: [
+        {
+          id: 'listing-1',
+          status: 'active',
+          dealerId: 'dealer-1',
+          viewCount: 12,
+          phoneClickCount: 4,
+          whatsappClickCount: 1,
+        },
+        {
+          id: 'listing-2',
+          status: 'sold',
+          dealerId: 'dealer-1',
+          viewCount: 8,
+          phoneClickCount: 2,
+          whatsappClickCount: 3,
+        },
+      ],
+      events: [],
+      favourites: [{ listingId: 'listing-1', createdAt: new Date() }],
+    });
+
+    const result = await service.performance('user-1', 'all');
+
+    expect(result.views).toBe(20);
+    expect(result.phoneClicks).toBe(6);
+    expect(result.whatsappClicks).toBe(4);
+    expect(result.favourites).toBe(1);
   });
 });

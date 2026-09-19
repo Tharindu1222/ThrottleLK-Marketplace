@@ -544,7 +544,7 @@ export class DealersService {
 
     const listingRows = await this.listings.find({
       where: { dealerId: dealer.id },
-      select: ['id'],
+      select: ['id', 'viewCount', 'phoneClickCount', 'whatsappClickCount'],
     });
     const ids = listingRows.map((row) => row.id);
     if (ids.length === 0) {
@@ -555,6 +555,26 @@ export class DealersService {
         phoneClicks: 0,
         whatsappClicks: 0,
         favourites: 0,
+      };
+    }
+
+    if (range === 'all') {
+      const favourites = await this.favourites.count({
+        where: { listingId: In(ids) },
+      });
+      return {
+        range,
+        activeListings,
+        views: listingRows.reduce((sum, row) => sum + (row.viewCount ?? 0), 0),
+        phoneClicks: listingRows.reduce(
+          (sum, row) => sum + (row.phoneClickCount ?? 0),
+          0,
+        ),
+        whatsappClicks: listingRows.reduce(
+          (sum, row) => sum + (row.whatsappClickCount ?? 0),
+          0,
+        ),
+        favourites,
       };
     }
 

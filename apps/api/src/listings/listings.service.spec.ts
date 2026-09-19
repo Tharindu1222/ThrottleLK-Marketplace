@@ -521,6 +521,28 @@ describe('ListingsService.create inventory', () => {
     expect(row.costPriceLkr).toBeNull();
     expect(row.purchaseDate).toBeNull();
   });
+
+  it('keeps an active dealer listing published when updating only costPriceLkr', async () => {
+    const publishedAt = new Date('2026-09-01T00:00:00.000Z');
+    const { service, notifications, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      dealerId: 'dealer-1',
+      status: 'active',
+      title: 'Honda CBR',
+      slug: 'honda-cbr',
+      priceLkr: 500000,
+      costPriceLkr: 300000,
+      publishedAt,
+    });
+
+    const saved = await service.update(seller, row.id, { costPriceLkr: 320000 });
+
+    expect(saved.status).toBe('active');
+    expect(saved.publishedAt).toEqual(publishedAt);
+    expect(saved.costPriceLkr).toBe(320000);
+    expect(notifications.listingPendingReview).not.toHaveBeenCalled();
+  });
 });
 
 describe('ListingsService.listMine owner extras', () => {

@@ -94,6 +94,9 @@ export class ListingsService {
         const keys = (
           Object.keys(listingFields) as (keyof typeof listingFields)[]
         ).filter((k) => listingFields[k] !== undefined);
+        if (keys.length === 0) {
+          return this.listings.save(listing);
+        }
         const priceOnly = keys.every(
           (k) => k === 'priceLkr' || k === 'negotiable',
         );
