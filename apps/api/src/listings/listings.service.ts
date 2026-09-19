@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type {
   ContactListingInput,
   CreateListingInput,
+  MarkSoldInput,
   UpdateListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus } from '@throttlelk/types';
@@ -71,6 +72,8 @@ export class ListingsService {
       phone: input.phone ?? seller.phone,
       whatsapp: input.whatsapp ?? null,
       status: 'draft',
+      costPriceLkr: dealerId ? (input.costPriceLkr ?? null) : null,
+      purchaseDate: dealerId ? (input.purchaseDate ?? null) : null,
     });
     return this.listings.save(listing);
   }
@@ -81,25 +84,36 @@ export class ListingsService {
     input: UpdateListingInput,
   ): Promise<Listing> {
     const listing = await this.getOwned(seller.id, id);
+    const { costPriceLkr, purchaseDate, ...listingFields } = input;
+    if (listing.dealerId) {
+      if (costPriceLkr !== undefined) listing.costPriceLkr = costPriceLkr ?? null;
+      if (purchaseDate !== undefined) listing.purchaseDate = purchaseDate ?? null;
+    }
     if (!['draft', 'rejected', 'paused', 'pending_review'].includes(listing.status)) {
       if (listing.status === 'active') {
         const keys = (
-          Object.keys(input) as (keyof UpdateListingInput)[]
-        ).filter((k) => input[k] !== undefined);
+          Object.keys(listingFields) as (keyof typeof listingFields)[]
+        ).filter((k) => listingFields[k] !== undefined);
         const priceOnly = keys.every(
           (k) => k === 'priceLkr' || k === 'negotiable',
         );
-        if (priceOnly && input.priceLkr != null) {
+        if (priceOnly && listingFields.priceLkr != null) {
           const oldPrice = listing.priceLkr;
-          listing.priceLkr = input.priceLkr;
-          if (input.negotiable != null) listing.negotiable = input.negotiable;
+          listing.priceLkr = listingFields.priceLkr;
+          if (listingFields.negotiable != null) {
+            listing.negotiable = listingFields.negotiable;
+          }
           const saved = await this.listings.save(listing);
-          if (input.priceLkr < oldPrice) {
-            void this.notifyFavouritesPriceDrop(saved, oldPrice, input.priceLkr);
+          if (listingFields.priceLkr < oldPrice) {
+            void this.notifyFavouritesPriceDrop(
+              saved,
+              oldPrice,
+              listingFields.priceLkr,
+            );
           }
           return saved;
         }
-        Object.assign(listing, input);
+        Object.assign(listing, listingFields);
         listing.status = 'pending_review';
         listing.publishedAt = null;
         listing.rejectionReason = null;
@@ -120,7 +134,7 @@ export class ListingsService {
         },
       });
     }
-    Object.assign(listing, input);
+    Object.assign(listing, listingFields);
     if (listing.status === 'rejected') {
       listing.status = 'draft';
       listing.rejectionReason = null;
@@ -183,7 +197,11 @@ export class ListingsService {
     return saved;
   }
 
-  async markSold(seller: User, id: string): Promise<Listing> {
+  async markSold(
+    seller: User,
+    id: string,
+    input: MarkSoldInput,
+  ): Promise<Listing> {
     const listing = await this.getOwned(seller.id, id);
     if (!['active', 'paused'].includes(listing.status)) {
       throw new BadRequestException({
@@ -192,7 +210,10 @@ export class ListingsService {
       });
     }
     listing.status = 'sold';
-    listing.soldAt = new Date();
+    listing.soldPriceLkr = input.soldPriceLkr;
+    listing.soldAt = input.soldAt
+      ? new Date(`${input.soldAt}T12:00:00.000Z`)
+      : new Date();
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
     return saved;
@@ -219,6 +240,9 @@ export class ListingsService {
     const verifiedIds = await this.dealersService.activeVerifiedIds(
       rows.map((row) => row.dealerId).filter((id): id is string => Boolean(id)),
     );
+    const favCounts = await this.favourites.countsByListingIds(
+      rows.map((row) => row.id),
+    );
     return {
       items: rows.map((row) => ({
         ...this.toBrowseCard(row, covers.get(row.id) ?? null, {
@@ -227,6 +251,15 @@ export class ListingsService {
             : false,
         }),
         status: row.status,
+        costPriceLkr: row.costPriceLkr,
+        purchaseDate: row.purchaseDate,
+        soldPriceLkr: row.soldPriceLkr,
+        soldAt: row.soldAt?.toISOString() ?? null,
+        phoneClickCount: row.phoneClickCount ?? 0,
+        whatsappClickCount: row.whatsappClickCount ?? 0,
+        favouriteCount: favCounts.get(row.id) ?? 0,
+        daysInStock: this.daysInStock(row),
+        ...this.marginFields(row),
       })),
       meta: paginationMeta(total, page, limit),
     };
@@ -500,6 +533,35 @@ export class ListingsService {
       images,
       coverImageUrl: cover?.imageUrl ?? null,
     };
+  }
+
+  private daysInStock(listing: Listing, asOf = new Date()): number {
+    const start =
+      listing.purchaseDate
+        ? new Date(listing.purchaseDate)
+        : listing.publishedAt ?? listing.createdAt;
+    const end = listing.soldAt ?? asOf;
+    return Math.max(
+      0,
+      Math.floor((end.getTime() - new Date(start).getTime()) / 86_400_000),
+    );
+  }
+
+  private marginFields(listing: Listing): {
+    marginLkr: number | null;
+    marginPercent: number | null;
+  } {
+    if (listing.costPriceLkr == null) {
+      return { marginLkr: null, marginPercent: null };
+    }
+    const sell =
+      listing.soldPriceLkr != null ? listing.soldPriceLkr : listing.priceLkr;
+    const marginLkr = sell - listing.costPriceLkr;
+    const marginPercent =
+      listing.costPriceLkr > 0
+        ? Math.round((marginLkr / listing.costPriceLkr) * 1000) / 10
+        : null;
+    return { marginLkr, marginPercent };
   }
 
   /** Compact public card payload for browse grids. */

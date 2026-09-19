@@ -50,7 +50,10 @@ function makeService(
     engagementEvents as never,
     dealersService as never,
     notifications as never,
-    { userIdsForListing: jest.fn(async () => []) } as never,
+    {
+      userIdsForListing: jest.fn(async () => []),
+      countsByListingIds: jest.fn(async () => new Map<string, number>()),
+    } as never,
     {} as never,
     { invalidateDashboard: jest.fn() } as never,
   );
@@ -185,7 +188,10 @@ describe('ListingsService.listPending', () => {
       { create: jest.fn(), save: jest.fn() } as never,
       {} as never,
       {} as never,
-      { userIdsForListing: jest.fn(async () => []) } as never,
+      {
+        userIdsForListing: jest.fn(async () => []),
+        countsByListingIds: jest.fn(async () => new Map<string, number>()),
+      } as never,
       {} as never,
       { invalidateDashboard: jest.fn() } as never,
     );
@@ -226,7 +232,10 @@ describe('ListingsService.listMine', () => {
       { create: jest.fn(), save: jest.fn() } as never,
       { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
       {} as never,
-      { userIdsForListing: jest.fn(async () => []) } as never,
+      {
+        userIdsForListing: jest.fn(async () => []),
+        countsByListingIds: jest.fn(async () => new Map<string, number>()),
+      } as never,
       {} as never,
       { invalidateDashboard: jest.fn() } as never,
     );
@@ -422,5 +431,184 @@ describe('ListingsService.recordContactClick', () => {
     expect(result).toEqual({ recorded: false });
     expect(listingsRepo.increment).not.toHaveBeenCalled();
     expect(engagementEvents.save).not.toHaveBeenCalled();
+  });
+});
+
+describe('ListingsService.markSold', () => {
+  it('markSold requires soldPriceLkr and sets soldPriceLkr + soldAt', async () => {
+    const { service, listingsRepo, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+    });
+
+    const result = await service.markSold(seller, row.id, {
+      soldPriceLkr: 450000,
+      soldAt: '2026-09-10',
+    });
+
+    expect(result.status).toBe('sold');
+    expect(result.soldPriceLkr).toBe(450000);
+    expect(result.soldAt).toEqual(new Date('2026-09-10T12:00:00.000Z'));
+    expect(listingsRepo.save).toHaveBeenCalled();
+  });
+});
+
+describe('ListingsService.create inventory', () => {
+  it('create stores costPriceLkr/purchaseDate only when listing has dealerId', async () => {
+    const inventory = {
+      costPriceLkr: 350000,
+      purchaseDate: '2026-08-01',
+    };
+    const dealerUser = {
+      id: 'seller-1',
+      roles: [{ name: 'buyer' }, { name: 'dealer' }],
+    } as User;
+    const privateSeller = {
+      id: 'seller-1',
+      roles: [{ name: 'buyer' }, { name: 'seller' }],
+    } as User;
+
+    const { service: dealerService, listingsRepo: dealerRepo } = makeService(
+      {},
+      { dealerId: 'dealer-1' },
+    );
+    await dealerService.create(dealerUser, {
+      ...createInput,
+      ...inventory,
+    } as never);
+
+    expect(dealerRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dealerId: 'dealer-1',
+        costPriceLkr: 350000,
+        purchaseDate: '2026-08-01',
+      }),
+    );
+
+    const { service: privateService, listingsRepo: privateRepo } = makeService(
+      {},
+    );
+    await privateService.create(privateSeller, {
+      ...createInput,
+      ...inventory,
+    } as never);
+
+    expect(privateRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dealerId: null,
+        costPriceLkr: null,
+        purchaseDate: null,
+      }),
+    );
+  });
+
+  it('update ignores costPriceLkr/purchaseDate for private listings', async () => {
+    const { service, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'draft',
+      dealerId: null,
+      costPriceLkr: null,
+      purchaseDate: null,
+    });
+
+    await service.update(seller, row.id, {
+      costPriceLkr: 100000,
+      purchaseDate: '2026-01-01',
+    });
+
+    expect(row.costPriceLkr).toBeNull();
+    expect(row.purchaseDate).toBeNull();
+  });
+});
+
+describe('ListingsService.listMine owner extras', () => {
+  const ownerRow = {
+    id: 'listing-1',
+    sellerId: 'seller-1',
+    dealerId: 'dealer-1',
+    slug: 'honda-dio',
+    title: 'Honda Dio',
+    priceLkr: 550000,
+    status: 'sold',
+    costPriceLkr: 400000,
+    purchaseDate: '2026-09-01',
+    soldPriceLkr: 500000,
+    soldAt: new Date('2026-09-11T12:00:00.000Z'),
+    phoneClickCount: 4,
+    whatsappClickCount: 2,
+    viewCount: 11,
+    manufactureYear: 2020,
+  };
+
+  it('listMine includes owner inventory fields; toBrowseCard public path does not', async () => {
+    const imagesQb = {
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => []),
+    };
+    const publicQb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(async () => [[{ ...ownerRow, status: 'active' }], 1]),
+    };
+    const listingsRepo = {
+      findAndCount: jest.fn(async () => [[{ ...ownerRow }], 1]),
+      createQueryBuilder: jest.fn(() => publicQb),
+    };
+    const favourites = {
+      userIdsForListing: jest.fn(async () => []),
+      countsByListingIds: jest.fn(async () => new Map([['listing-1', 7]])),
+    };
+    const service = new ListingsService(
+      listingsRepo as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { createQueryBuilder: jest.fn(() => imagesQb) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
+      {} as never,
+      favourites as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+
+    const { items } = await service.listMine('seller-1');
+    const [ownerCard] = items;
+
+    expect(ownerCard).toMatchObject({
+      id: 'listing-1',
+      status: 'sold',
+      costPriceLkr: 400000,
+      purchaseDate: '2026-09-01',
+      soldPriceLkr: 500000,
+      soldAt: '2026-09-11T12:00:00.000Z',
+      phoneClickCount: 4,
+      whatsappClickCount: 2,
+      favouriteCount: 7,
+      daysInStock: 10,
+      marginLkr: 100000,
+      marginPercent: 25,
+    });
+    expect(favourites.countsByListingIds).toHaveBeenCalledWith(['listing-1']);
+
+    const { items: publicItems } = await service.listPublic({});
+    const [publicCard] = publicItems;
+    expect(publicCard).not.toHaveProperty('costPriceLkr');
+    expect(publicCard).not.toHaveProperty('purchaseDate');
+    expect(publicCard).not.toHaveProperty('soldPriceLkr');
+    expect(publicCard).not.toHaveProperty('soldAt');
+    expect(publicCard).not.toHaveProperty('phoneClickCount');
+    expect(publicCard).not.toHaveProperty('whatsappClickCount');
+    expect(publicCard).not.toHaveProperty('favouriteCount');
+    expect(publicCard).not.toHaveProperty('daysInStock');
+    expect(publicCard).not.toHaveProperty('marginLkr');
+    expect(publicCard).not.toHaveProperty('marginPercent');
   });
 });

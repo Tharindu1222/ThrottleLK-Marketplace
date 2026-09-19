@@ -128,6 +128,22 @@ export class FavouritesService {
     return [...new Set(rows.map((r) => r.userId))];
   }
 
+  async countsByListingIds(ids: string[]): Promise<Map<string, number>> {
+    const map = new Map<string, number>();
+    if (ids.length === 0) return map;
+    const rows = await this.favourites
+      .createQueryBuilder('f')
+      .select('f.listing_id', 'listingId')
+      .addSelect('COUNT(*)', 'count')
+      .where('f.listing_id IN (:...ids)', { ids })
+      .groupBy('f.listing_id')
+      .getRawMany<{ listingId: string; count: string }>();
+    for (const row of rows) {
+      map.set(row.listingId, Number(row.count));
+    }
+    return map;
+  }
+
   async add(userId: string, listingId: string) {
     const listing = await this.listings.findOne({
       where: { id: listingId, status: 'active' },

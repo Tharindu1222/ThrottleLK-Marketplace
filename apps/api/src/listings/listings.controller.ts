@@ -18,10 +18,12 @@ import {
   contactClickSchema,
   contactListingSchema,
   createListingSchema,
+  markSoldSchema,
   updateListingSchema,
   type ContactClickInput,
   type ContactListingInput,
   type CreateListingInput,
+  type MarkSoldInput,
   type UpdateListingInput,
 } from '@throttlelk/validation';
 import type { Request } from 'express';
@@ -279,10 +281,11 @@ export class ListingsController {
   async markSold(
     @CurrentUser() user: User,
     @Param('id') id: string,
+    @Body(new ZodValidationPipe(markSoldSchema)) body: MarkSoldInput,
   ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.listingsService.markSold(user, id),
+      data: await this.listingsService.markSold(user, id, body),
     };
   }
 }
