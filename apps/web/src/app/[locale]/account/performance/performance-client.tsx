@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiGet, ApiRequestError } from '@/lib/api';
 import { getAccessToken, getStoredUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
@@ -61,6 +61,7 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     const access = getAccessToken();
@@ -80,16 +81,20 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
     }
 
     void (async () => {
+      const requestId = ++requestIdRef.current;
       setLoading(true);
       setError(null);
+      setData(null);
       try {
         const result = await apiGet<DealerPerformance>(
           '/api/v1/dealers/mine/performance',
           { token: access, searchParams: { range } },
         );
+        if (requestId !== requestIdRef.current) return;
         setData(result);
         setForbidden(false);
       } catch (err) {
+        if (requestId !== requestIdRef.current) return;
         if (err instanceof ApiRequestError && err.status === 403) {
           setForbidden(true);
           setData(null);
@@ -97,7 +102,9 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
           setError(err instanceof Error ? err.message : 'Failed');
         }
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     })();
   }, [range]);
