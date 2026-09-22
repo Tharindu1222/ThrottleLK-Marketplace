@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { PartListingsService } from './part-listings.service';
 
 describe('PartListingsService admin', () => {
@@ -48,8 +49,17 @@ describe('PartListingsService admin', () => {
       { findOne: jest.fn() } as never,
       { find: jest.fn() } as never,
       { find: jest.fn() } as never,
-      { findActiveOwned: jest.fn(), findById: jest.fn() } as never,
-      { partListingPendingReview: jest.fn() } as never,
+      {
+        findActiveOwned: jest.fn(),
+        adminGet: jest.fn(async () => ({ id: 'pd-1', ownerUserId: 'user-1' })),
+        ...((overrides.partsDealersService as object) ?? {}),
+      } as never,
+      {
+        partListingPendingReview: jest.fn(),
+        partListingApproved: jest.fn(),
+        partListingRejected: jest.fn(),
+        ...((overrides.notifications as object) ?? {}),
+      } as never,
       { invalidateDashboard: jest.fn() } as never,
     );
     (service as unknown as { coverUrlsByListingId: Function }).coverUrlsByListingId =
@@ -82,6 +92,67 @@ describe('PartListingsService admin', () => {
     );
     expect(result.items[0].coverImageUrl).toBe('https://cdn/x.jpg');
     expect(result.meta.total).toBe(1);
+  });
+
+  it('adminCreate validates partsDealerId exists', async () => {
+    const adminGet = jest.fn(async () => ({ id: 'pd-1', ownerUserId: 'user-1' }));
+    const { service } = buildService({ partsDealersService: { adminGet } });
+    await service.adminCreate({
+      partsDealerId: 'pd-1',
+      kind: 'spare',
+      categoryId: '00000000-0000-4000-8000-000000000001',
+      districtId: '00000000-0000-4000-8000-000000000002',
+      cityId: '00000000-0000-4000-8000-000000000003',
+      title: 'Brake pads set',
+      description: 'OEM style brake pads for multiple models here.',
+      priceLkr: 5000,
+      negotiable: true,
+      condition: 'new',
+      phone: '0771234567',
+      fitments: [{ brandId: '00000000-0000-4000-8000-000000000004' }],
+      status: 'draft',
+    });
+    expect(adminGet).toHaveBeenCalledWith('pd-1');
+  });
+
+  it('adminCreate throws when partsDealerId is missing', async () => {
+    const { service } = buildService({
+      partsDealersService: {
+        adminGet: jest.fn(async () => {
+          throw new NotFoundException({
+            success: false,
+            error: {
+              code: 'PARTS_DEALER_NOT_FOUND',
+              message: 'Parts dealer not found',
+            },
+          });
+        }),
+      },
+    });
+    await expect(
+      service.adminCreate({
+        partsDealerId: 'missing-pd',
+        kind: 'spare',
+        categoryId: '00000000-0000-4000-8000-000000000001',
+        districtId: '00000000-0000-4000-8000-000000000002',
+        cityId: '00000000-0000-4000-8000-000000000003',
+        title: 'Brake pads set',
+        description: 'OEM style brake pads for multiple models here.',
+        priceLkr: 5000,
+        negotiable: true,
+        condition: 'new',
+        phone: '0771234567',
+        fitments: [{ brandId: '00000000-0000-4000-8000-000000000004' }],
+        status: 'draft',
+      }),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('adminUpdate validates partsDealerId when changing shop', async () => {
+    const adminGet = jest.fn(async () => ({ id: 'pd-2', ownerUserId: 'user-2' }));
+    const { service } = buildService({ partsDealersService: { adminGet } });
+    await service.adminUpdate('pl-1', { partsDealerId: 'pd-2' });
+    expect(adminGet).toHaveBeenCalledWith('pd-2');
   });
 
   it('adminCreate sets partsDealerId and status', async () => {

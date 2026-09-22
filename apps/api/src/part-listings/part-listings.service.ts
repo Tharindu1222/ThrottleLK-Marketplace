@@ -752,6 +752,7 @@ export class PartListingsService {
   }
 
   async adminCreate(input: AdminCreatePartListingInput) {
+    await this.partsDealersService.adminGet(input.partsDealerId);
     await this.validateFitments(input.fitments);
     const slug = await this.allocateSlug(input.title);
     const status = input.status ?? 'draft';
@@ -793,7 +794,10 @@ export class PartListingsService {
       await this.validateFitments(fitments);
       await this.replaceFitments(listing.id, fitments);
     }
-    if (partsDealerId) listing.partsDealerId = partsDealerId;
+    if (partsDealerId) {
+      await this.partsDealersService.adminGet(partsDealerId);
+      listing.partsDealerId = partsDealerId;
+    }
     Object.assign(listing, fields);
     if (status) {
       listing.status = status;
@@ -881,16 +885,13 @@ export class PartListingsService {
     listing.rejectionReason = null;
     const saved = await this.partListings.save(listing);
     this.bumpDashboard();
-    const dealer = await this.partsDealersService.findActiveById(
-      saved.partsDealerId,
-    );
-    if (dealer) {
-      void this.notifications.listingApproved(dealer.ownerUserId, {
-        id: saved.id,
-        title: saved.title,
-        slug: saved.slug,
-      });
-    }
+    const dealer = await this.partsDealersService.adminGet(saved.partsDealerId);
+    void this.notifications.partListingApproved(dealer.ownerUserId, {
+      id: saved.id,
+      title: saved.title,
+      slug: saved.slug,
+      kind: saved.kind,
+    });
     return saved;
   }
 
@@ -909,16 +910,17 @@ export class PartListingsService {
     listing.rejectionReason = reason;
     const saved = await this.partListings.save(listing);
     this.bumpDashboard();
-    const dealer = await this.partsDealersService.findActiveById(
-      saved.partsDealerId,
+    const dealer = await this.partsDealersService.adminGet(saved.partsDealerId);
+    void this.notifications.partListingRejected(
+      dealer.ownerUserId,
+      {
+        id: saved.id,
+        title: saved.title,
+        slug: saved.slug,
+        kind: saved.kind,
+      },
+      reason,
     );
-    if (dealer) {
-      void this.notifications.listingRejected(
-        dealer.ownerUserId,
-        { id: saved.id, title: saved.title },
-        reason,
-      );
-    }
     return saved;
   }
 
