@@ -21,27 +21,41 @@ import {
   adminCreateDealerSchema,
   adminCreateListingSchema,
   adminCreateModelSchema,
+  adminCreatePartListingSchema,
+  adminCreatePartsDealerSchema,
   adminCreateUserSchema,
   adminResolveReportSchema,
   adminUpdateDealerSchema,
   adminUpdateListingSchema,
+  adminUpdatePartListingSchema,
+  adminUpdatePartsDealerSchema,
   adminUpdateUserSchema,
   adminUpdateUserStatusSchema,
+  createPartCategorySchema,
   rejectDealerSchema,
   rejectListingSchema,
+  rejectPartsDealerSchema,
+  updatePartCategorySchema,
   type AdminCreateBrandInput,
   type AdminCreateCityInput,
   type AdminCreateDistrictInput,
   type AdminCreateDealerInput,
   type AdminCreateListingInput,
   type AdminCreateModelInput,
+  type AdminCreatePartListingInput,
+  type AdminCreatePartsDealerInput,
   type AdminCreateUserInput,
   type AdminResolveReportInput,
   type AdminUpdateDealerInput,
   type AdminUpdateListingInput,
+  type AdminUpdatePartListingInput,
+  type AdminUpdatePartsDealerInput,
   type AdminUpdateUserInput,
   type AdminUpdateUserStatusInput,
+  type CreatePartCategoryInput,
   type RejectDealerInput,
+  type RejectPartsDealerInput,
+  type UpdatePartCategoryInput,
 } from '@throttlelk/validation';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -52,6 +66,11 @@ import { DealerImagesService } from '../dealers/dealer-images.service';
 import { DealersService } from '../dealers/dealers.service';
 import { ListingImagesService } from '../listings/listing-images.service';
 import { ListingsService } from '../listings/listings.service';
+import { PartCategoriesService } from '../part-listings/part-categories.service';
+import { PartListingImagesService } from '../part-listings/part-listing-images.service';
+import { PartListingsService } from '../part-listings/part-listings.service';
+import { PartsDealerImagesService } from '../parts-dealers/parts-dealer-images.service';
+import { PartsDealersService } from '../parts-dealers/parts-dealers.service';
 import { ReportsService } from '../reports/reports.service';
 import { CategoryCoverService } from '../taxonomy/category-cover.service';
 import { BrandLogoService } from '../taxonomy/brand-logo.service';
@@ -69,6 +88,11 @@ export class AdminController {
     private readonly listingImagesService: ListingImagesService,
     private readonly dealersService: DealersService,
     private readonly dealerImagesService: DealerImagesService,
+    private readonly partsDealersService: PartsDealersService,
+    private readonly partsDealerImagesService: PartsDealerImagesService,
+    private readonly partListingsService: PartListingsService,
+    private readonly partListingImagesService: PartListingImagesService,
+    private readonly partCategories: PartCategoriesService,
     private readonly reportsService: ReportsService,
     private readonly taxonomy: TaxonomyService,
     private readonly categoryCovers: CategoryCoverService,
@@ -536,6 +560,311 @@ export class AdminController {
     return {
       success: true,
       data: await this.dealersService.reject(id, body.reason),
+    };
+  }
+
+  @Get('parts-dealers')
+  async allPartsDealers(
+    @Query('status') status?: string,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.partsDealersService.listAllAdmin({
+      status,
+      q,
+      page,
+      limit,
+    });
+    return { success: true, data: items, meta };
+  }
+
+  @Get('parts-dealers/pending')
+  async pendingPartsDealers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.partsDealersService.listPending({
+      page,
+      limit,
+      q,
+    });
+    return { success: true, data: items, meta };
+  }
+
+  @Get('parts-dealers/:id')
+  async getPartsDealer(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealersService.adminGet(id),
+    };
+  }
+
+  @Post('parts-dealers')
+  async createPartsDealer(
+    @Body(new ZodValidationPipe(adminCreatePartsDealerSchema))
+    body: AdminCreatePartsDealerInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealersService.adminCreate(body),
+    };
+  }
+
+  @Patch('parts-dealers/:id')
+  async updatePartsDealer(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminUpdatePartsDealerSchema))
+    body: AdminUpdatePartsDealerInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealersService.adminUpdate(id, body),
+    };
+  }
+
+  @Delete('parts-dealers/:id')
+  async deletePartsDealer(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealersService.adminDelete(id),
+    };
+  }
+
+  @Get('parts-dealers/:id/images')
+  async listPartsDealerImages(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealerImagesService.listForPartsDealer(id),
+    };
+  }
+
+  @RateLimit('upload')
+  @Post('parts-dealers/:id/images')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadPartsDealerImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealerImagesService.uploadAsAdmin(id, file),
+    };
+  }
+
+  @Delete('parts-dealers/:id/images/:imageId')
+  async deletePartsDealerImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealerImagesService.removeAsAdmin(id, imageId),
+    };
+  }
+
+  @Post('parts-dealers/:id/approve')
+  async approvePartsDealer(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealersService.approve(id),
+    };
+  }
+
+  @Post('parts-dealers/:id/reject')
+  async rejectPartsDealer(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(rejectPartsDealerSchema))
+    body: RejectPartsDealerInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partsDealersService.reject(id, body.reason),
+    };
+  }
+
+  @Get('part-listings')
+  async listPartListings(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+    @Query('status') status?: string,
+    @Query('kind') kind?: string,
+    @Query('partsDealerId') partsDealerId?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.partListingsService.listAllAdmin({
+      page,
+      limit,
+      q,
+      status,
+      kind,
+      partsDealerId,
+    });
+    return { success: true, data: items, meta };
+  }
+
+  @Get('part-listings/pending')
+  async pendingPartListings(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const { items, meta } = await this.partListingsService.listPending({
+      page,
+      limit,
+      q,
+    });
+    return { success: true, data: items, meta };
+  }
+
+  @Get('part-listings/:id')
+  async getPartListing(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.adminGet(id),
+    };
+  }
+
+  @Post('part-listings')
+  async createPartListing(
+    @Body(new ZodValidationPipe(adminCreatePartListingSchema))
+    body: AdminCreatePartListingInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.adminCreate(body),
+    };
+  }
+
+  @Patch('part-listings/:id')
+  async updatePartListing(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminUpdatePartListingSchema))
+    body: AdminUpdatePartListingInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.adminUpdate(id, body),
+    };
+  }
+
+  @Delete('part-listings/:id')
+  async deletePartListing(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.adminDelete(id),
+    };
+  }
+
+  @Post('part-listings/:id/approve')
+  async approvePartListing(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.approve(id),
+    };
+  }
+
+  @Post('part-listings/:id/reject')
+  async rejectPartListing(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(rejectListingSchema)) body: { reason: string },
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.reject(id, body.reason),
+    };
+  }
+
+  @Get('part-listings/:id/images')
+  async listPartListingImages(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingImagesService.listForListing(id),
+    };
+  }
+
+  @RateLimit('upload')
+  @Post('part-listings/:id/images')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadPartListingImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingImagesService.uploadAsAdmin(id, file),
+    };
+  }
+
+  @Delete('part-listings/:id/images/:imageId')
+  async deletePartListingImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingImagesService.removeAsAdmin(id, imageId),
+    };
+  }
+
+  @Get('part-categories')
+  async listPartCategories(): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.partCategories.listPublic() };
+  }
+
+  @Post('part-categories')
+  async createPartCategory(
+    @Body(new ZodValidationPipe(createPartCategorySchema))
+    body: CreatePartCategoryInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partCategories.create(body),
+    };
+  }
+
+  @Patch('part-categories/:id')
+  async updatePartCategory(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updatePartCategorySchema))
+    body: UpdatePartCategoryInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partCategories.update(id, body),
+    };
+  }
+
+  @Delete('part-categories/:id')
+  async deletePartCategory(
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partCategories.remove(id),
     };
   }
 }
