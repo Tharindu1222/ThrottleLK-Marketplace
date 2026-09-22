@@ -98,6 +98,7 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
   const [busy, setBusy] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [fitmentsLoaded, setFitmentsLoaded] = useState(true);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [page, setPage] = useState(1);
   const [listMeta, setListMeta] = useState<{
@@ -245,29 +246,20 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
     return shops[0]?.id ?? '';
   }
 
-  function openCreate() {
-    setEditingId(null);
-    setFitmentModels({});
-    setForm({
-      ...emptyForm,
-      partsDealerId: defaultPartsDealerId(),
-      categoryId: categories[0]?.id ?? '',
-      districtId: districts[0]?.id ?? '',
-      fitments: [{ brandId: brands[0]?.id ?? '', modelId: '' }],
-    });
-    setEditorOpen(true);
-  }
-
-  function openEdit(row: AdminPartListing) {
-    setEditingId(row.id);
+  function formFromListing(
+    row: AdminPartListing,
+    includeFitments: boolean,
+  ): FormState {
     const fitments =
-      row.fitments && row.fitments.length > 0
+      includeFitments && row.fitments && row.fitments.length > 0
         ? row.fitments.map((f) => ({
             brandId: f.brandId,
             modelId: f.modelId ?? '',
           }))
-        : [{ brandId: brands[0]?.id ?? '', modelId: '' }];
-    setForm({
+        : includeFitments
+          ? [{ brandId: brands[0]?.id ?? '', modelId: '' }]
+          : [emptyFitment()];
+    return {
       partsDealerId: row.partsDealerId,
       kind: row.kind,
       categoryId: row.categoryId,
@@ -282,12 +274,54 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
       whatsapp: row.whatsapp ?? '',
       status: row.status,
       fitments,
+    };
+  }
+
+  function openCreate() {
+    setEditingId(null);
+    setFitmentsLoaded(true);
+    setFitmentModels({});
+    setForm({
+      ...emptyForm,
+      partsDealerId: defaultPartsDealerId(),
+      categoryId: categories[0]?.id ?? '',
+      districtId: districts[0]?.id ?? '',
+      fitments: [{ brandId: brands[0]?.id ?? '', modelId: '' }],
     });
     setEditorOpen(true);
   }
 
+  async function openEdit(row: AdminPartListing) {
+    if (!token) return;
+    setEditingId(row.id);
+    setBusy(true);
+    setError(null);
+    try {
+      const detail = await apiGet<AdminPartListing>(
+        `/api/v1/admin/part-listings/${row.id}`,
+        { token },
+      );
+      setFitmentsLoaded(true);
+      setFitmentModels({});
+      setForm(formFromListing(detail, true));
+      setEditorOpen(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `${err.message} — opened with list data; fitments not loaded.`
+          : 'Failed to load listing detail — fitments not loaded.',
+      );
+      setFitmentsLoaded(false);
+      setFitmentModels({});
+      setForm(formFromListing(row, false));
+      setEditorOpen(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function buildPayload() {
-    return {
+    const base = {
       partsDealerId: form.partsDealerId,
       kind: form.kind,
       categoryId: form.categoryId,
@@ -301,17 +335,26 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
       phone: form.phone.trim(),
       whatsapp: form.whatsapp.trim() || undefined,
       status: form.status,
-      fitments: form.fitments.map((f) => ({
-        brandId: f.brandId,
-        modelId: f.modelId || null,
-      })),
     };
+    if (!editingId || fitmentsLoaded) {
+      return {
+        ...base,
+        fitments: form.fitments.map((f) => ({
+          brandId: f.brandId,
+          modelId: f.modelId || null,
+        })),
+      };
+    }
+    return base;
   }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!token) return;
-    if (form.fitments.length < 1 || !form.fitments.some((f) => f.brandId)) {
+    if (
+      (!editingId || fitmentsLoaded) &&
+      (form.fitments.length < 1 || !form.fitments.some((f) => f.brandId))
+    ) {
       setError('At least one fitment with a brand is required.');
       return;
     }
@@ -583,7 +626,7 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                       <button
                         type="button"
                         className="admin-btn-ghost px-3 py-1.5 text-xs"
-                        onClick={() => openEdit(row)}
+                        onClick={() => void openEdit(row)}
                       >
                         Edit
                       </button>
