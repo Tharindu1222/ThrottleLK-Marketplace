@@ -165,6 +165,36 @@ export class NotificationsService {
     });
   }
 
+  async partsDealerApproved(
+    ownerUserId: string,
+    dealer: { id: string; name: string; slug: string },
+  ) {
+    return this.notifyUser({
+      userId: ownerUserId,
+      type: 'parts_dealer_approved',
+      title: 'Parts shop approved',
+      message: `"${dealer.name}" is approved. You can list spare and modified parts.`,
+      data: { partsDealerId: dealer.id, slug: dealer.slug },
+      emailSubject: 'Your ThrottleLK parts shop is approved',
+      emailHtml: `<p>Your parts shop <strong>${dealer.name}</strong> is now active.</p>`,
+    });
+  }
+
+  async partsDealerRejected(
+    ownerUserId: string,
+    dealer: { id: string; name: string; reason: string },
+  ) {
+    return this.notifyUser({
+      userId: ownerUserId,
+      type: 'parts_dealer_rejected',
+      title: 'Parts shop application rejected',
+      message: `"${dealer.name}" was rejected: ${dealer.reason}`,
+      data: { partsDealerId: dealer.id, reason: dealer.reason },
+      emailSubject: 'ThrottleLK parts shop application rejected',
+      emailHtml: `<p>Your parts shop application <strong>${dealer.name}</strong> was rejected.</p><p>Reason: ${dealer.reason}</p>`,
+    });
+  }
+
   async newMessage(
     userId: string,
     input: {
@@ -202,6 +232,110 @@ export class NotificationsService {
           data: { listingId: listing.id, slug: listing.slug },
           emailSubject: `ThrottleLK: listing pending review — ${listing.title}`,
           emailHtml: `<p>A listing <strong>${listing.title}</strong> was submitted and is waiting for admin review.</p>`,
+        }),
+      ),
+    );
+  }
+
+  async dealerPendingReview(dealer: { id: string; name: string; slug: string }) {
+    const adminIds = await this.users.findActiveAdminIds();
+    await Promise.all(
+      adminIds.map((userId) =>
+        this.notifyUser({
+          userId,
+          type: 'dealer_pending_review',
+          title: 'Dealer application pending',
+          message: `"${dealer.name}" applied as a bike dealer.`,
+          data: { dealerId: dealer.id, slug: dealer.slug },
+          emailSubject: `ThrottleLK: dealer application — ${dealer.name}`,
+          emailHtml: `<p>A dealer application for <strong>${dealer.name}</strong> is waiting for review.</p>`,
+        }),
+      ),
+    );
+  }
+
+  async partsDealerPendingReview(dealer: {
+    id: string;
+    name: string;
+    slug: string;
+  }) {
+    const adminIds = await this.users.findActiveAdminIds();
+    await Promise.all(
+      adminIds.map((userId) =>
+        this.notifyUser({
+          userId,
+          type: 'parts_dealer_pending_review',
+          title: 'Parts dealer application pending',
+          message: `"${dealer.name}" applied as a parts dealer.`,
+          data: { partsDealerId: dealer.id, slug: dealer.slug },
+          emailSubject: `ThrottleLK: parts dealer application — ${dealer.name}`,
+          emailHtml: `<p>A parts dealer application for <strong>${dealer.name}</strong> is waiting for review.</p>`,
+        }),
+      ),
+    );
+  }
+
+  async partListingApproved(
+    ownerUserId: string,
+    listing: { id: string; title: string; slug: string; kind: string },
+  ) {
+    return this.notifyUser({
+      userId: ownerUserId,
+      type: 'part_listing_approved',
+      title: 'Part listing approved',
+      message: `"${listing.title}" is now live on ThrottleLK.`,
+      data: {
+        partListingId: listing.id,
+        slug: listing.slug,
+        kind: listing.kind,
+      },
+      emailSubject: 'Your ThrottleLK part listing is live',
+      emailHtml: `<p>Your part listing <strong>${listing.title}</strong> was approved and is now public.</p>`,
+    });
+  }
+
+  async partListingRejected(
+    ownerUserId: string,
+    listing: { id: string; title: string; slug: string; kind: string },
+    reason: string,
+  ) {
+    return this.notifyUser({
+      userId: ownerUserId,
+      type: 'part_listing_rejected',
+      title: 'Part listing needs changes',
+      message: `"${listing.title}" was rejected: ${reason}`,
+      data: {
+        partListingId: listing.id,
+        slug: listing.slug,
+        kind: listing.kind,
+        reason,
+      },
+      emailSubject: 'ThrottleLK part listing rejected',
+      emailHtml: `<p>Your part listing <strong>${listing.title}</strong> was rejected.</p><p>Reason: ${reason}</p>`,
+    });
+  }
+
+  async partListingPendingReview(listing: {
+    id: string;
+    title: string;
+    slug: string;
+    kind: string;
+  }) {
+    const adminIds = await this.users.findActiveAdminIds();
+    await Promise.all(
+      adminIds.map((userId) =>
+        this.notifyUser({
+          userId,
+          type: 'part_listing_pending_review',
+          title: 'Part listing pending review',
+          message: `"${listing.title}" (${listing.kind}) is waiting for approval.`,
+          data: {
+            partListingId: listing.id,
+            slug: listing.slug,
+            kind: listing.kind,
+          },
+          emailSubject: `ThrottleLK: part listing pending — ${listing.title}`,
+          emailHtml: `<p>A part listing <strong>${listing.title}</strong> was submitted and is waiting for admin review.</p>`,
         }),
       ),
     );

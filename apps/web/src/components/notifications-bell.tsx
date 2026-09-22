@@ -20,6 +20,9 @@ export type AppNotification = {
     conversationId?: string;
     listingId?: string;
     dealerId?: string;
+    partsDealerId?: string;
+    partListingId?: string;
+    kind?: string;
   } | null;
 };
 
@@ -28,18 +31,40 @@ export function notificationHref(
   n: AppNotification,
 ): string | null {
   const data = n.dataJson;
-  if (n.type === 'listing_pending_review') {
+  if (
+    n.type === 'listing_pending_review' ||
+    n.type === 'part_listing_pending_review' ||
+    n.type === 'dealer_pending_review' ||
+    n.type === 'parts_dealer_pending_review'
+  ) {
     return `/${locale}/admin/moderation`;
+  }
+  if (
+    (n.type === 'part_listing_approved' || n.type === 'part_listing_rejected') &&
+    data?.slug
+  ) {
+    const kind = data.kind === 'modified' ? 'modified-parts' : 'spare-parts';
+    return `/${locale}/${kind}/${data.slug}`;
   }
   if (!data) return null;
   if (data.conversationId) {
     return `/${locale}/account/messages/${data.conversationId}`;
+  }
+  if (n.type.startsWith('parts_dealer_') && data.slug) {
+    return `/${locale}/parts-dealers/${data.slug}`;
+  }
+  if (n.type.startsWith('parts_dealer_')) {
+    return `/${locale}/parts-dealers/apply`;
   }
   if (n.type.startsWith('dealer_') && data.slug) {
     return `/${locale}/dealers/${data.slug}`;
   }
   if (n.type.startsWith('dealer_')) {
     return `/${locale}/dealers/apply`;
+  }
+  if (data.slug && (n.type.includes('part') || data.kind)) {
+    const kind = data.kind === 'modified' ? 'modified-parts' : 'spare-parts';
+    return `/${locale}/${kind}/${data.slug}`;
   }
   if (data.slug) {
     return `/${locale}/bikes/${data.slug}`;
