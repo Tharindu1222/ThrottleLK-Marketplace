@@ -35,5 +35,5 @@ Time:        8.454 s
 
 ## Commits
 
-1. `fix(api): validate partsDealerId on admin part listing create/update`
-2. `fix(api,web): part listing approve/reject notifications deep-link correctly`
+1. `acb598b` — fix(api): validate partsDealerId on admin part listing create/update
+2. `ee61f6a` — fix(api,web): part listing approve/reject notifications deep-link correctly
