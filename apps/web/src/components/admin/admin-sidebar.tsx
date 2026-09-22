@@ -34,7 +34,10 @@ const nav = [
     group: 'Manage',
     items: [
       { href: '/listings', label: 'Listings', icon: ListingsIcon },
+      { href: '/part-listings', label: 'Part listings', icon: ListingsIcon },
       { href: '/dealers', label: 'Dealer shops', icon: ShopIcon },
+      { href: '/parts-dealers', label: 'Parts shops', icon: PartsShopIcon },
+      { href: '/part-categories', label: 'Part categories', icon: TagIcon },
       { href: '/users', label: 'Users', icon: UsersIcon },
       { href: '/taxonomy', label: 'Taxonomy', icon: TagIcon },
     ],
@@ -80,7 +83,11 @@ export function AdminSidebar({
         token,
       });
       setCounts({
-        moderation: dash.pendingListings + dash.pendingDealers,
+        moderation:
+          dash.pendingListings +
+          dash.pendingDealers +
+          (dash.pendingPartsDealers ?? 0) +
+          (dash.pendingPartListings ?? 0),
         reports: dash.openReports,
       });
     } catch {
@@ -248,6 +255,15 @@ function ShopIcon({ className }: { className?: string }) {
       <path d="M3 9l1-5h16l1 5" />
       <path d="M3 9h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z" />
       <path d="M9 22V12h6v10" />
+    </svg>
+  );
+}
+
+function PartsShopIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" />
     </svg>
   );
 }

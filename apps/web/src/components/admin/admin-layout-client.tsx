@@ -51,6 +51,21 @@ const titles: Record<string, { title: string; subtitle: string; placeholder: str
     subtitle: 'Manage dealer shop profiles',
     placeholder: 'Search dealers…',
   },
+  'part-listings': {
+    title: 'Part listings',
+    subtitle: 'Manage spare and modified part listings',
+    placeholder: 'Search part listings…',
+  },
+  'parts-dealers': {
+    title: 'Parts shops',
+    subtitle: 'Manage parts dealer shops',
+    placeholder: 'Search parts shops…',
+  },
+  'part-categories': {
+    title: 'Part categories',
+    subtitle: 'Manage spare and modified part categories',
+    placeholder: 'Search categories…',
+  },
   taxonomy: {
     title: 'Catalog',
     subtitle: 'Categories, brands, and locations',
