@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
@@ -109,6 +109,7 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
     total: number;
     limit: number;
   } | null>(null);
+  const openEditSeqRef = useRef(0);
 
   async function loadList(
     access: string,
@@ -293,19 +294,23 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
 
   async function openEdit(row: AdminPartListing) {
     if (!token) return;
-    setEditingId(row.id);
+    const seq = ++openEditSeqRef.current;
+    const expectedId = row.id;
+    setEditingId(expectedId);
     setBusy(true);
     setError(null);
     try {
       const detail = await apiGet<AdminPartListing>(
-        `/api/v1/admin/part-listings/${row.id}`,
+        `/api/v1/admin/part-listings/${expectedId}`,
         { token },
       );
+      if (seq !== openEditSeqRef.current || detail.id !== expectedId) return;
       setFitmentsLoaded(true);
       setFitmentModels({});
       setForm(formFromListing(detail, true));
       setEditorOpen(true);
     } catch (err) {
+      if (seq !== openEditSeqRef.current) return;
       setError(
         err instanceof Error
           ? `${err.message} — opened with list data; fitments not loaded.`
@@ -316,7 +321,9 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
       setForm(formFromListing(row, false));
       setEditorOpen(true);
     } finally {
-      setBusy(false);
+      if (seq === openEditSeqRef.current) {
+        setBusy(false);
+      }
     }
   }
 
