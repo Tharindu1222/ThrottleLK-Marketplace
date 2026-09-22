@@ -832,7 +832,7 @@ export class AdminController {
 
   @Get('part-categories')
   async listPartCategories(): Promise<ApiSuccess<unknown>> {
-    return { success: true, data: await this.partCategories.listPublic() };
+    return { success: true, data: await this.partCategories.listAll() };
   }
 
   @Post('part-categories')

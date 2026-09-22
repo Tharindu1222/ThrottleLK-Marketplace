@@ -154,11 +154,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link href={`/${locale}/bikes`} className={navLinkClass}>
             {t(locale, 'browse')}
           </Link>
+          <Link href={`/${locale}/bike-parts`} className={navLinkClass}>
+            {t(locale, 'bikePartsNav')}
+          </Link>
           <Link href={`/${locale}/dealers`} className={navLinkClass}>
             {t(locale, 'dealersNav')}
-          </Link>
-          <Link href={`/${locale}/dealers/map`} className={navLinkClass}>
-            {t(locale, 'dealersMap')}
           </Link>
         </nav>
 
@@ -325,18 +325,18 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               {t(locale, 'browse')}
             </Link>
             <Link
+              href={`/${locale}/bike-parts`}
+              className="py-3 text-base text-foreground"
+              onClick={() => setMenuOpen(false)}
+            >
+              {t(locale, 'bikePartsNav')}
+            </Link>
+            <Link
               href={`/${locale}/dealers`}
               className="py-3 text-base text-foreground"
               onClick={() => setMenuOpen(false)}
             >
               {t(locale, 'dealersNav')}
-            </Link>
-            <Link
-              href={`/${locale}/dealers/map`}
-              className="py-3 text-base text-foreground"
-              onClick={() => setMenuOpen(false)}
-            >
-              {t(locale, 'dealersMap')}
             </Link>
             <div className="my-2 border-t border-black/10" />
             {user ? (

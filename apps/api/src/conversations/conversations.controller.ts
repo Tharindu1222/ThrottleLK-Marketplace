@@ -24,11 +24,13 @@ export class ConversationsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('listingId') listingId?: string,
+    @Query('partListingId') partListingId?: string,
   ): Promise<ApiSuccess<unknown>> {
     const { items, meta } = await this.conversations.listForUser(user.id, {
       page,
       limit,
       listingId,
+      partListingId,
     });
     return { success: true, data: items, meta };
   }
@@ -53,11 +55,11 @@ export class ConversationsController {
   ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.conversations.start(
-        user.id,
-        body.listingId,
-        body.message,
-      ),
+      data: await this.conversations.start(user.id, {
+        listingId: body.listingId,
+        partListingId: body.partListingId,
+        message: body.message,
+      }),
     };
   }
 

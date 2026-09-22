@@ -5,10 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import type { StartConversationInput } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PartListing } from '../part-listings/part-listing.entity';
 import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { ConversationMessage } from './conversation-message.entity';
@@ -31,11 +33,41 @@ export class ConversationsService {
     private readonly messages: Repository<ConversationMessage>,
     @InjectRepository(Listing)
     private readonly listings: Repository<Listing>,
+    @InjectRepository(PartListing)
+    private readonly partListings: Repository<PartListing>,
     private readonly notifications: NotificationsService,
     private readonly usersService: UsersService,
   ) {}
 
-  async start(buyerUserId: string, listingId: string, body: string) {
+  async start(buyerUserId: string, input: StartConversationInput) {
+    if (input.listingId) {
+      return this.startForBikeListing(
+        buyerUserId,
+        input.listingId,
+        input.message,
+      );
+    }
+    if (input.partListingId) {
+      return this.startForPartListing(
+        buyerUserId,
+        input.partListingId,
+        input.message,
+      );
+    }
+    throw new BadRequestException({
+      success: false,
+      error: {
+        code: 'SUBJECT_REQUIRED',
+        message: 'Provide listingId or partListingId',
+      },
+    });
+  }
+
+  private async startForBikeListing(
+    buyerUserId: string,
+    listingId: string,
+    body: string,
+  ) {
     const listing = await this.listings.findOne({
       where: { id: listingId, status: 'active' },
     });
@@ -62,8 +94,65 @@ export class ConversationsService {
       conversation = await this.conversations.save(
         this.conversations.create({
           listingId,
+          partListingId: null,
           buyerUserId,
           sellerUserId: listing.sellerId,
+          lastMessageAt: null,
+        }),
+      );
+    }
+
+    return this.addMessage(conversation.id, buyerUserId, body);
+  }
+
+  private async startForPartListing(
+    buyerUserId: string,
+    partListingId: string,
+    body: string,
+  ) {
+    const listing = await this.partListings.findOne({
+      where: { id: partListingId, status: 'active' },
+      relations: ['partsDealer'],
+    });
+    if (!listing) {
+      throw new NotFoundException({
+        success: false,
+        error: {
+          code: 'PART_LISTING_NOT_FOUND',
+          message: 'Part listing not found',
+        },
+      });
+    }
+    const sellerUserId = listing.partsDealer?.ownerUserId;
+    if (!sellerUserId) {
+      throw new NotFoundException({
+        success: false,
+        error: {
+          code: 'PART_LISTING_NOT_FOUND',
+          message: 'Part listing not found',
+        },
+      });
+    }
+    if (sellerUserId === buyerUserId) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'CANNOT_MESSAGE_SELF',
+          message: 'You cannot message your own listing',
+        },
+      });
+    }
+
+    let conversation = await this.conversations.findOne({
+      where: { partListingId, buyerUserId },
+    });
+    if (!conversation) {
+      conversation = await this.conversations.save(
+        this.conversations.create({
+          listingId: null,
+          partListingId,
+          buyerUserId,
+          sellerUserId,
           lastMessageAt: null,
         }),
       );
@@ -78,6 +167,7 @@ export class ConversationsService {
       page?: string | number;
       limit?: string | number;
       listingId?: string;
+      partListingId?: string;
     },
   ) {
     const { page, limit, skip } = parsePageLimit({
@@ -89,11 +179,17 @@ export class ConversationsService {
     const qb = this.conversations
       .createQueryBuilder('c')
       .leftJoinAndSelect('c.listing', 'listing')
+      .leftJoinAndSelect('c.partListing', 'partListing')
       .where('c.buyerUserId = :userId OR c.sellerUserId = :userId', { userId })
       .orderBy('c.lastMessageAt', 'DESC', 'NULLS LAST')
       .addOrderBy('c.createdAt', 'DESC');
     if (paging?.listingId) {
       qb.andWhere('c.listingId = :listingId', { listingId: paging.listingId });
+    }
+    if (paging?.partListingId) {
+      qb.andWhere('c.partListingId = :partListingId', {
+        partListingId: paging.partListingId,
+      });
     }
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
@@ -115,11 +211,10 @@ export class ConversationsService {
         const counterpartId =
           c.buyerUserId === userId ? c.sellerUserId : c.buyerUserId;
         const last = lastByConversation.get(c.id);
+        const subject = this.subjectFields(c);
         return {
           id: c.id,
-          listingId: c.listingId,
-          listingTitle: c.listing?.title ?? 'Listing',
-          listingSlug: c.listing?.slug ?? null,
+          ...subject,
           buyerUserId: c.buyerUserId,
           sellerUserId: c.sellerUserId,
           lastMessageAt: c.lastMessageAt,
@@ -138,7 +233,7 @@ export class ConversationsService {
   async getForUser(userId: string, id: string) {
     const conversation = await this.conversations.findOne({
       where: { id },
-      relations: ['listing'],
+      relations: ['listing', 'partListing'],
     });
     if (!conversation) {
       throw new NotFoundException({
@@ -163,9 +258,7 @@ export class ConversationsService {
 
     return {
       id: conversation.id,
-      listingId: conversation.listingId,
-      listingTitle: conversation.listing?.title ?? 'Listing',
-      listingSlug: conversation.listing?.slug ?? null,
+      ...this.subjectFields(conversation),
       buyerUserId: conversation.buyerUserId,
       sellerUserId: conversation.sellerUserId,
       lastMessageAt: conversation.lastMessageAt,
@@ -188,6 +281,25 @@ export class ConversationsService {
     return this.addMessage(conversationId, userId, body);
   }
 
+  private subjectFields(c: Conversation) {
+    if (c.partListingId) {
+      return {
+        listingId: null as string | null,
+        partListingId: c.partListingId,
+        listingTitle: c.partListing?.title ?? 'Part listing',
+        listingSlug: c.partListing?.slug ?? null,
+        subjectKind: 'part' as const,
+      };
+    }
+    return {
+      listingId: c.listingId,
+      partListingId: null as string | null,
+      listingTitle: c.listing?.title ?? 'Listing',
+      listingSlug: c.listing?.slug ?? null,
+      subjectKind: 'bike' as const,
+    };
+  }
+
   private async addMessage(
     conversationId: string,
     senderUserId: string,
@@ -195,7 +307,7 @@ export class ConversationsService {
   ) {
     const conversation = await this.conversations.findOne({
       where: { id: conversationId },
-      relations: ['listing'],
+      relations: ['listing', 'partListing'],
     });
     if (!conversation) {
       throw new NotFoundException({
@@ -231,9 +343,10 @@ export class ConversationsService {
       senderUserId === conversation.buyerUserId
         ? conversation.sellerUserId
         : conversation.buyerUserId;
+    const subject = this.subjectFields(conversation);
     void this.notifications.newMessage(recipientId, {
       conversationId: conversation.id,
-      listingTitle: conversation.listing?.title ?? 'Listing',
+      listingTitle: subject.listingTitle,
       preview: body,
       fromBuyer: senderUserId === conversation.buyerUserId,
     });

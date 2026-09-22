@@ -36,12 +36,14 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { ListingImagesService } from './listing-images.service';
 import { ListingsService } from './listings.service';
+import { PartListingsService } from '../part-listings/part-listings.service';
 
 @Controller('listings')
 export class ListingsController {
   constructor(
     private readonly listingsService: ListingsService,
     private readonly listingImagesService: ListingImagesService,
+    private readonly partListingsService: PartListingsService,
   ) {}
 
   @Get()
@@ -160,6 +162,23 @@ export class ListingsController {
     return {
       success: true,
       data: await this.listingImagesService.remove(user, id, imageId),
+    };
+  }
+
+  @Get(':id/related-parts')
+  async relatedParts(
+    @Param('id') id: string,
+    @Query('kind') kind?: string,
+    @Query('limit') limit?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    const parsedKind =
+      kind === 'spare' || kind === 'modified' ? kind : undefined;
+    return {
+      success: true,
+      data: await this.partListingsService.relatedForBikeListing(id, {
+        kind: parsedKind,
+        limit: limit ? Number(limit) : undefined,
+      }),
     };
   }
 

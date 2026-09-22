@@ -37,7 +37,13 @@ export class UsersService {
   ) {}
 
   async ensureRoles(): Promise<void> {
-    const names = ['buyer', 'seller', 'dealer', 'admin'] as const;
+    const names = [
+      'buyer',
+      'seller',
+      'dealer',
+      'parts_dealer',
+      'admin',
+    ] as const;
     for (const name of names) {
       const existing = await this.roles.findOne({ where: { name } });
       if (!existing) {
@@ -103,9 +109,10 @@ export class UsersService {
       user.passwordHash = await bcrypt.hash(input.password, 10);
     }
     if (input.roles) {
-      const roleNames = input.roles.includes('dealer')
-        ? input.roles.filter((name) => name !== 'seller')
-        : input.roles;
+      const roleNames =
+        input.roles.includes('dealer') || input.roles.includes('parts_dealer')
+          ? input.roles.filter((name) => name !== 'seller')
+          : input.roles;
       const roles = await this.roles.find({ where: { name: In(roleNames) } });
       if (roles.length !== roleNames.length) {
         throw new BadRequestException({

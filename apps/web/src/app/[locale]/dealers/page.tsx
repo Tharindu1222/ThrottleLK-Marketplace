@@ -38,13 +38,14 @@ export async function generateMetadata({
   const sp = await searchParams;
   const page = parsePageParam(spStr(sp, 'page'));
   const q = spStr(sp, 'q');
-  const path = hrefWithPage(`/${locale}/dealers`, { q }, page);
+  const type = spStr(sp, 'type') === 'parts' ? 'parts' : 'bike';
+  const path = hrefWithPage(`/${locale}/dealers`, { q, type }, page);
   return pageMetadata({
     title:
       page > 1
-        ? `Motorcycle dealers in Sri Lanka — page ${page}`
-        : 'Motorcycle dealers in Sri Lanka',
-    description: 'Browse approved dealer showrooms on ThrottleLK.',
+        ? `Dealers in Sri Lanka — page ${page}`
+        : 'Bike dealers and parts dealers in Sri Lanka',
+    description: 'Browse approved bike showrooms and parts shops on ThrottleLK.',
     path,
   });
 }
@@ -61,9 +62,24 @@ export default async function DealersIndexPage({
   const locale = raw as Locale;
   const sp = await searchParams;
   const q = spStr(sp, 'q');
+  const type = spStr(sp, 'type') === 'parts' ? 'parts' : 'bike';
   const page = parsePageParam(spStr(sp, 'page'));
+  const apiPath =
+    type === 'parts' ? '/api/v1/parts-dealers' : '/api/v1/dealers';
+  const detailBase =
+    type === 'parts'
+      ? `/${locale}/parts-dealers`
+      : `/${locale}/dealers`;
+  const applyHref =
+    type === 'parts'
+      ? `/${locale}/parts-dealers/apply`
+      : `/${locale}/dealers/apply`;
+  const mapHref =
+    type === 'parts'
+      ? `/${locale}/parts-dealers/map`
+      : `/${locale}/dealers/map`;
 
-  const dealerPage = await apiGetWithMeta<Dealer[]>('/api/v1/dealers', {
+  const dealerPage = await apiGetWithMeta<Dealer[]>(apiPath, {
     searchParams: { q, page: String(page), limit: '20' },
   }).catch(() => ({ data: [] as Dealer[], meta: undefined }));
 
@@ -71,8 +87,17 @@ export default async function DealersIndexPage({
   const pager = dealerPage.meta;
 
   if (pager && pager.total > 0 && pager.page > pager.totalPages) {
-    redirect(hrefWithPage(`/${locale}/dealers`, { q }, pager.totalPages));
+    redirect(
+      hrefWithPage(`/${locale}/dealers`, { q, type }, pager.totalPages),
+    );
   }
+
+  const tabClass = (active: boolean) =>
+    `rounded-full px-4 py-2 text-sm font-medium transition ${
+      active
+        ? 'bg-foreground text-white'
+        : 'border border-black/15 bg-background hover:border-accent/40'
+    }`;
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -82,24 +107,41 @@ export default async function DealersIndexPage({
             id="dealer-results"
             className="font-[family-name:var(--font-display)] text-4xl tracking-wide"
           >
-            Dealers
+            {t(locale, 'dealersNav')}
           </h1>
-          <p className="mt-2 text-muted">Approved showrooms on ThrottleLK.</p>
+          <p className="mt-2 text-muted">{t(locale, 'dealersHubSubtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href={`/${locale}/dealers/map`}
+            href={mapHref}
             className="inline-flex items-center justify-center rounded-full border border-black/15 bg-background px-5 py-2.5 text-sm font-medium transition hover:border-accent/40"
           >
             {t(locale, 'dealersMapView')}
           </Link>
           <Link
-            href={`/${locale}/dealers/apply`}
+            href={applyHref}
             className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
           >
-            {t(locale, 'becomeDealer')}
+            {type === 'parts'
+              ? t(locale, 'becomePartsDealer')
+              : t(locale, 'becomeDealer')}
           </Link>
         </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Link
+          href={hrefWithPage(`/${locale}/dealers`, { q, type: 'bike' }, 1)}
+          className={tabClass(type === 'bike')}
+        >
+          {t(locale, 'bikeDealersTab')}
+        </Link>
+        <Link
+          href={hrefWithPage(`/${locale}/dealers`, { q, type: 'parts' }, 1)}
+          className={tabClass(type === 'parts')}
+        >
+          {t(locale, 'partsDealersTab')}
+        </Link>
       </div>
 
       <form
@@ -107,6 +149,7 @@ export default async function DealersIndexPage({
         action={`/${locale}/dealers`}
         className="mt-8 flex flex-wrap gap-2"
       >
+        <input type="hidden" name="type" value={type} />
         <input
           name="q"
           defaultValue={q}
@@ -123,7 +166,11 @@ export default async function DealersIndexPage({
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {dealers.length === 0 ? (
-          <p className="text-muted">No approved dealers yet.</p>
+          <p className="text-muted">
+            {type === 'parts'
+              ? t(locale, 'noPartsDealersYet')
+              : t(locale, 'noBikeDealersYet')}
+          </p>
         ) : (
           dealers.map((dealer) => {
             const location = [dealer.city?.name, dealer.district?.name]
@@ -132,7 +179,7 @@ export default async function DealersIndexPage({
             return (
               <Link
                 key={dealer.id}
-                href={`/${locale}/dealers/${dealer.slug}`}
+                href={`${detailBase}/${dealer.slug}`}
                 className="overflow-hidden border border-black/10 bg-surface/40 hover:border-accent/40"
               >
                 {dealer.coverImageUrl ? (
@@ -182,7 +229,7 @@ export default async function DealersIndexPage({
           pageOfTemplate={t(locale, 'pageOf')}
           showingTemplate={t(locale, 'showingRange')}
           hrefForPage={(next) =>
-            hrefWithPage(`/${locale}/dealers`, { q }, next)
+            hrefWithPage(`/${locale}/dealers`, { q, type }, next)
           }
         />
       ) : null}

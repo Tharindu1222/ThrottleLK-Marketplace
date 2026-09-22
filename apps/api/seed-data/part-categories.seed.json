@@ -1,0 +1,175 @@
+[
+  {
+    "name": "Engine & Performance",
+    "subcategories": [
+      "Engine Parts",
+      "Pistons & Rings",
+      "Cylinder & Cylinder Head",
+      "Carburetors",
+      "Fuel Injection Parts",
+      "Air Filters",
+      "Performance Filters",
+      "Spark Plugs",
+      "CDI / ECU",
+      "Performance Kits"
+    ]
+  },
+  {
+    "name": "Exhaust Systems",
+    "subcategories": [
+      "Stock Exhausts",
+      "Modified Exhausts",
+      "Performance Exhausts",
+      "Exhaust Pipes",
+      "Mufflers & Silencers",
+      "Exhaust Accessories"
+    ]
+  },
+  {
+    "name": "Brakes",
+    "subcategories": [
+      "Brake Pads",
+      "Brake Discs & Rotors",
+      "Brake Calipers",
+      "Brake Shoes",
+      "Brake Levers",
+      "Brake Lines",
+      "Brake Master Cylinders"
+    ]
+  },
+  {
+    "name": "Suspension & Steering",
+    "subcategories": [
+      "Front Forks",
+      "Rear Shocks",
+      "Steering Parts",
+      "Handlebar Components",
+      "Suspension Accessories"
+    ]
+  },
+  {
+    "name": "Wheels & Tyres",
+    "subcategories": [
+      "Tyres",
+      "Alloy Wheels & Rims",
+      "Spokes",
+      "Wheel Hubs",
+      "Tubes",
+      "Wheel Bearings",
+      "Valve Accessories"
+    ]
+  },
+  {
+    "name": "Transmission & Drive",
+    "subcategories": [
+      "Chains",
+      "Sprockets",
+      "Chain & Sprocket Kits",
+      "Clutch Parts",
+      "Gearbox Parts",
+      "CVT Parts",
+      "Drive Belts"
+    ]
+  },
+  {
+    "name": "Electrical & Lighting",
+    "subcategories": [
+      "Headlights",
+      "Tail Lights",
+      "Indicators",
+      "LED Lights",
+      "Batteries",
+      "Horns",
+      "Wiring & Cables",
+      "Switches",
+      "Speedometers & Digital Meters",
+      "Ignition Parts"
+    ]
+  },
+  {
+    "name": "Body & Exterior",
+    "subcategories": [
+      "Fairings",
+      "Mudguards",
+      "Fuel Tanks",
+      "Side Covers",
+      "Seats",
+      "Mirrors",
+      "Number Plate Holders",
+      "Windshields",
+      "Body Panels"
+    ]
+  },
+  {
+    "name": "Controls & Foot Controls",
+    "subcategories": [
+      "Handlebars",
+      "Grips",
+      "Brake & Clutch Levers",
+      "Foot Pegs",
+      "Gear Levers",
+      "Throttle Parts",
+      "Bar Ends",
+      "Pedals"
+    ]
+  },
+  {
+    "name": "Modified & Custom Parts",
+    "subcategories": [
+      "Custom Body Kits",
+      "Custom Seats",
+      "Custom Handlebars",
+      "Racing Footrests",
+      "Crash Guards",
+      "Frame Sliders",
+      "Custom Mirrors",
+      "Custom Lights",
+      "Decorative Parts",
+      "Racing Parts"
+    ]
+  },
+  {
+    "name": "Bike Electronics",
+    "subcategories": [
+      "USB Chargers",
+      "Phone Holders",
+      "GPS Devices",
+      "Alarm Systems",
+      "GPS Trackers",
+      "Cameras",
+      "Bluetooth Accessories"
+    ]
+  },
+  {
+    "name": "Maintenance & Service Parts",
+    "subcategories": [
+      "Oil Filters",
+      "Air Filters",
+      "Bearings",
+      "Cables",
+      "Gaskets",
+      "Oil Seals",
+      "Nuts & Bolts",
+      "Service Kits"
+    ]
+  },
+  {
+    "name": "Rider Accessories",
+    "subcategories": [
+      "Helmets",
+      "Gloves",
+      "Riding Jackets",
+      "Riding Boots",
+      "Rain Gear",
+      "Riding Bags",
+      "Protective Gear"
+    ]
+  },
+  {
+    "name": "Other Parts",
+    "subcategories": [
+      "Universal Parts",
+      "Miscellaneous Parts"
+    ]
+  }
+]

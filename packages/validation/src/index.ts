@@ -252,7 +252,7 @@ export const createPartListingSchema = z.object({
   condition: z.enum(['new', 'used', 'reconditioned']),
   phone: z.string().min(9).max(20),
   whatsapp: z.string().min(9).max(20).optional(),
-  fitments: z.array(partListingFitmentSchema).min(1).max(50),
+  fitments: z.array(partListingFitmentSchema).min(0).max(50),
 });
 
 export const updatePartListingSchema = createPartListingSchema.partial();
@@ -281,6 +281,7 @@ export const updatePartsDealerProfileSchema = updateDealerProfileSchema;
 
 export const createPartCategorySchema = z.object({
   name: z.string().min(1).max(80),
+  parentId: z.string().uuid().nullable().optional(),
 });
 
 export const updatePartCategorySchema = createPartCategorySchema.partial();

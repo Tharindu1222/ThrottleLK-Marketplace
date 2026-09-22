@@ -191,13 +191,15 @@ export function AuthRequiredLink({
 export function SellLoginGate({
   locale,
   children,
+  nextPath,
 }: {
   locale: Locale;
   children: ReactNode;
+  nextPath?: string;
 }) {
   const { ready, loggedIn } = useIsLoggedIn();
   const pathname = usePathname();
-  const nextPath = `/${locale}/sell`;
+  const redirectTo = nextPath ?? `/${locale}/sell`;
 
   if (!ready) {
     return (
@@ -213,7 +215,7 @@ export function SellLoginGate({
       <LoginRequiredDialog
         locale={locale}
         open
-        nextPath={nextPath}
+        nextPath={redirectTo}
         autoRedirectMs={1800}
       />
     );

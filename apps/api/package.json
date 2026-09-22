@@ -8,6 +8,7 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "seed:bike-catalog": "ts-node -r dotenv/config scripts/seed-bike-catalog.ts",
+    "seed:part-categories": "ts-node -r dotenv/config scripts/seed-part-categories.ts",
     "migration:run": "typeorm-ts-node-commonjs -d src/data-source.ts migration:run",
     "migration:revert": "typeorm-ts-node-commonjs -d src/data-source.ts migration:revert",
     "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings=0",

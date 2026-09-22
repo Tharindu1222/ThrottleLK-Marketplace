@@ -9,11 +9,25 @@ export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
     { label: 'Active listings', value: dash.activeListings, color: COLORS[0] },
     { label: 'Pending listings', value: dash.pendingListings, color: COLORS[1] },
     { label: 'Pending dealers', value: dash.pendingDealers, color: COLORS[2] },
+    {
+      label: 'Pending parts dealers',
+      value: dash.pendingPartsDealers ?? 0,
+      color: COLORS[4],
+    },
+    {
+      label: 'Pending part listings',
+      value: dash.pendingPartListings ?? 0,
+      color: '#2563eb',
+    },
     { label: 'Open reports', value: dash.openReports, color: COLORS[3] },
   ];
   const total = slices.reduce((sum, s) => sum + s.value, 0) || 1;
   const queueLoad =
-    dash.pendingListings + dash.pendingDealers + dash.openReports;
+    dash.pendingListings +
+    dash.pendingDealers +
+    (dash.pendingPartsDealers ?? 0) +
+    (dash.pendingPartListings ?? 0) +
+    dash.openReports;
   const capacityScore = Math.max(0, Math.min(1000, 1000 - queueLoad * 40));
   const riskLabel =
     capacityScore >= 750 ? 'Healthy' : capacityScore >= 500 ? 'Watch' : 'Busy';

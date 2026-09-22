@@ -60,6 +60,20 @@ export function AdminOverview({ locale }: { locale: Locale }) {
       iconBg: 'bg-[var(--admin-danger)]/15 text-[var(--admin-danger)]',
     },
     {
+      label: 'Pending parts dealers',
+      value: dash.pendingPartsDealers ?? 0,
+      href: `/${locale}/admin/moderation`,
+      tint: 'bg-[var(--admin-danger)]/10 text-[var(--admin-danger)]',
+      iconBg: 'bg-[var(--admin-danger)]/15 text-[var(--admin-danger)]',
+    },
+    {
+      label: 'Pending part listings',
+      value: dash.pendingPartListings ?? 0,
+      href: `/${locale}/admin/moderation`,
+      tint: 'bg-[var(--admin-info)]/10 text-[var(--admin-info)]',
+      iconBg: 'bg-[var(--admin-info)]/15 text-[var(--admin-info)]',
+    },
+    {
       label: 'Open reports',
       value: dash.openReports,
       href: `/${locale}/admin/reports`,
@@ -79,7 +93,7 @@ export function AdminOverview({ locale }: { locale: Locale }) {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <Link
             key={card.label}

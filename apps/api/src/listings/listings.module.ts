@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DealersModule } from '../dealers/dealers.module';
 import { FavouritesModule } from '../favourites/favourites.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PartListingsModule } from '../part-listings/part-listings.module';
 import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
 import { ListingEngagementEvent } from './listing-engagement-event.entity';
@@ -22,6 +23,7 @@ import { ListingsService } from './listings.service';
       ListingEngagementEvent,
     ]),
     forwardRef(() => DealersModule),
+    forwardRef(() => PartListingsModule),
     NotificationsModule,
     FavouritesModule,
     StorageModule,

@@ -14,6 +14,7 @@ import {
   ListingCard,
   type BrowseListingCard,
 } from '@/components/listing-card';
+import { PartCard, type BrowsePartCard } from '@/components/part-card';
 import { ListingViewTracker } from '@/components/listing-view-tracker';
 import { ReportListing } from '@/components/report-listing';
 import { BreadcrumbLabels } from '@/components/breadcrumbs';
@@ -157,6 +158,24 @@ export default async function ListingDetailPage({
     ? `/${locale}/bikes?brandId=${encodeURIComponent(listing.brandId)}`
     : `/${locale}/bikes`;
 
+  let relatedSpare: BrowsePartCard[] = [];
+  let relatedModified: BrowsePartCard[] = [];
+  try {
+    const [spare, modified] = await Promise.all([
+      apiGet<BrowsePartCard[]>(`/api/v1/listings/${listing.id}/related-parts`, {
+        searchParams: { kind: 'spare', limit: '4' },
+      }),
+      apiGet<BrowsePartCard[]>(`/api/v1/listings/${listing.id}/related-parts`, {
+        searchParams: { kind: 'modified', limit: '4' },
+      }),
+    ]);
+    relatedSpare = spare;
+    relatedModified = modified;
+  } catch {
+    relatedSpare = [];
+    relatedModified = [];
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
       <BreadcrumbLabels labels={{ [slug]: heading }} />
@@ -258,6 +277,48 @@ export default async function ListingDetailPage({
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {similarRow.map((item) => (
               <ListingCard key={item.id} locale={locale} listing={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {relatedSpare.length > 0 ? (
+        <section className="mt-14 border-t border-black/10 pt-10">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
+              {t(locale, 'compatibleSpareParts')}
+            </h2>
+            <Link
+              href={`/${locale}/bike-parts?kind=spare&brandId=${encodeURIComponent(listing.brandId ?? '')}&modelId=${encodeURIComponent(listing.modelId ?? '')}`}
+              className="inline-flex items-center justify-center rounded-full border border-black/15 px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground transition hover:border-accent hover:text-accent"
+            >
+              {t(locale, 'seeMore')}
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {relatedSpare.map((item) => (
+              <PartCard key={item.id} locale={locale} part={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {relatedModified.length > 0 ? (
+        <section className="mt-14 border-t border-black/10 pt-10">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
+              {t(locale, 'compatibleModifiedParts')}
+            </h2>
+            <Link
+              href={`/${locale}/bike-parts?kind=modified&brandId=${encodeURIComponent(listing.brandId ?? '')}&modelId=${encodeURIComponent(listing.modelId ?? '')}`}
+              className="inline-flex items-center justify-center rounded-full border border-black/15 px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground transition hover:border-accent hover:text-accent"
+            >
+              {t(locale, 'seeMore')}
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {relatedModified.map((item) => (
+              <PartCard key={item.id} locale={locale} part={item} />
             ))}
           </div>
         </section>

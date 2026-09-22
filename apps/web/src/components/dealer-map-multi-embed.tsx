@@ -20,12 +20,14 @@ export function DealerMapMultiEmbed({
   viewShowroomLabel,
   verifiedLabel,
   className,
+  pathPrefix,
 }: {
   dealers: DealerMapPin[];
   locale: string;
   viewShowroomLabel: string;
   verifiedLabel: string;
   className?: string;
+  pathPrefix?: string;
 }) {
   return (
     <DealerMapMulti
@@ -34,6 +36,7 @@ export function DealerMapMultiEmbed({
       viewShowroomLabel={viewShowroomLabel}
       verifiedLabel={verifiedLabel}
       className={className}
+      pathPrefix={pathPrefix}
     />
   );
 }

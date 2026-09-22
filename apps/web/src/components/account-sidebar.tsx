@@ -19,6 +19,10 @@ type NavItem = {
     | 'accountDetails'
     | 'dealerShowroom'
     | 'performance'
+    | 'inventory'
+    | 'partsShowroom'
+    | 'partsPerformance'
+    | 'partsListings'
     | 'myListings'
     | 'messages'
     | 'notifications'
@@ -27,6 +31,7 @@ type NavItem = {
   match: (path: string) => boolean;
   icon: ReactNode;
   dealerOnly?: boolean;
+  partsDealerOnly?: boolean;
   badgeKey?: 'messages' | 'notifications';
 };
 
@@ -187,14 +192,16 @@ function navItems(locale: Locale): NavItem[] {
     {
       href: `${base}/showroom`,
       labelKey: 'dealerShowroom',
-      match: (p) => p.includes('/account/showroom'),
+      match: (p) =>
+        p.includes('/account/showroom') && !p.includes('parts-showroom'),
       icon: <IconShowroom />,
       dealerOnly: true,
     },
     {
       href: `${base}/performance`,
       labelKey: 'performance',
-      match: (p) => p.includes('/account/performance'),
+      match: (p) =>
+        p.includes('/account/performance') && !p.includes('parts-performance'),
       icon: <IconPerformance />,
       dealerOnly: true,
     },
@@ -206,9 +213,30 @@ function navItems(locale: Locale): NavItem[] {
       dealerOnly: true,
     },
     {
+      href: `${base}/parts-showroom`,
+      labelKey: 'partsShowroom',
+      match: (p) => p.includes('/account/parts-showroom'),
+      icon: <IconShowroom />,
+      partsDealerOnly: true,
+    },
+    {
+      href: `${base}/parts-performance`,
+      labelKey: 'partsPerformance',
+      match: (p) => p.includes('/account/parts-performance'),
+      icon: <IconPerformance />,
+      partsDealerOnly: true,
+    },
+    {
+      href: `${base}/parts-listings`,
+      labelKey: 'partsListings',
+      match: (p) => p.includes('/account/parts-listings'),
+      icon: <IconListings />,
+      partsDealerOnly: true,
+    },
+    {
       href: `${base}/listings`,
       labelKey: 'myListings',
-      match: (p) => p.includes('/account/listings'),
+      match: (p) => p.includes('/account/listings') && !p.includes('parts-listings'),
       icon: <IconListings />,
     },
     {
@@ -301,9 +329,12 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
   }, [refreshCounts, pathname]);
 
   const isDealer = Boolean(user?.roles?.includes('dealer'));
-  const items = navItems(locale).filter(
-    (item) => !item.dealerOnly || isDealer,
-  );
+  const isPartsDealer = Boolean(user?.roles?.includes('parts_dealer'));
+  const items = navItems(locale).filter((item) => {
+    if (item.dealerOnly && !isDealer) return false;
+    if (item.partsDealerOnly && !isPartsDealer) return false;
+    return true;
+  });
 
   function badgeFor(item: NavItem) {
     if (item.badgeKey === 'messages') return messageUnread;

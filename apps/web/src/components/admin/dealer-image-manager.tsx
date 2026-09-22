@@ -15,9 +15,12 @@ type DealerImage = {
 export function DealerImageManager({
   dealerId,
   onChange,
+  apiBase = '/api/v1/admin/dealers',
 }: {
   dealerId: string;
   onChange?: () => void;
+  /** Admin image API prefix, e.g. `/api/v1/admin/dealers` or `/api/v1/admin/parts-dealers`. */
+  apiBase?: string;
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [images, setImages] = useState<DealerImage[]>([]);
@@ -26,7 +29,7 @@ export function DealerImageManager({
 
   async function load(access: string) {
     setImages(
-      await apiGet<DealerImage[]>(`/api/v1/admin/dealers/${dealerId}/images`, {
+      await apiGet<DealerImage[]>(`${apiBase}/${dealerId}/images`, {
         token: access,
       }),
     );
@@ -43,7 +46,8 @@ export function DealerImageManager({
     void load(access).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to load images'),
     );
-  }, [dealerId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dealerId, apiBase]);
 
   if (!token) return null;
 
@@ -67,10 +71,10 @@ export function DealerImageManager({
               type="button"
               className="mt-1 text-[11px] text-[var(--admin-muted)] underline hover:text-[var(--admin-danger)]"
               onClick={() => {
-                void apiSend(
-                  `/api/v1/admin/dealers/${dealerId}/images/${image.id}`,
-                  { method: 'DELETE', token },
-                )
+                void apiSend(`${apiBase}/${dealerId}/images/${image.id}`, {
+                  method: 'DELETE',
+                  token,
+                })
                   .then(() => afterMutation(token))
                   .catch((err) =>
                     setError(
@@ -100,7 +104,7 @@ export function DealerImageManager({
               void (async () => {
                 try {
                   await apiUpload(
-                    `/api/v1/admin/dealers/${dealerId}/images`,
+                    `${apiBase}/${dealerId}/images`,
                     file,
                     token,
                   );
@@ -117,10 +121,10 @@ export function DealerImageManager({
             }}
           />
         </label>
-      ) : (
-        <p className="text-sm text-[var(--admin-muted)]">Maximum 1 photo reached.</p>
-      )}
-      {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
+      ) : null}
+      {error ? (
+        <p className="text-sm text-[var(--admin-danger)]">{error}</p>
+      ) : null}
     </div>
   );
 }

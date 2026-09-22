@@ -45,12 +45,15 @@ export function DealerMapMulti({
   viewShowroomLabel,
   verifiedLabel,
   className = '',
+  pathPrefix = 'dealers',
 }: {
   dealers: DealerMapPin[];
   locale: string;
   viewShowroomLabel: string;
   verifiedLabel: string;
   className?: string;
+  /** URL segment under locale, e.g. `dealers` or `parts-dealers`. */
+  pathPrefix?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -102,7 +105,7 @@ export function DealerMapMulti({
       const location = [dealer.city?.name, dealer.district?.name]
         .filter(Boolean)
         .join(', ');
-      const href = `/${locale}/dealers/${encodeURIComponent(dealer.slug)}`;
+      const href = `/${locale}/${pathPrefix}/${encodeURIComponent(dealer.slug)}`;
       const cover =
         dealer.coverImageUrl != null && dealer.coverImageUrl !== ''
           ? `<img src="${escapeHtml(dealer.coverImageUrl)}" alt="" width="200" height="125" style="display:block;width:200px;height:125px;object-fit:cover;border-radius:4px;margin-bottom:8px" loading="lazy" />`
@@ -141,7 +144,7 @@ export function DealerMapMulti({
     return () => {
       layer.remove();
     };
-  }, [dealers, locale, viewShowroomLabel, verifiedLabel]);
+  }, [dealers, locale, viewShowroomLabel, verifiedLabel, pathPrefix]);
 
   return (
     <div

@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
 import { Dealer } from '../dealers/dealer.entity';
 import { Listing } from '../listings/listing.entity';
+import { PartListing } from '../part-listings/part-listing.entity';
+import { PartsDealer } from '../parts-dealers/parts-dealer.entity';
 import { Report } from '../reports/report.entity';
 import { UsersService } from '../users/users.service';
 
@@ -12,6 +14,10 @@ export class AdminService {
   constructor(
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     @InjectRepository(Dealer) private readonly dealers: Repository<Dealer>,
+    @InjectRepository(PartsDealer)
+    private readonly partsDealers: Repository<PartsDealer>,
+    @InjectRepository(PartListing)
+    private readonly partListings: Repository<PartListing>,
     @InjectRepository(Report) private readonly reports: Repository<Report>,
     private readonly users: UsersService,
     private readonly cache: CacheService,
@@ -23,6 +29,8 @@ export class AdminService {
       activeListings: number;
       pendingListings: number;
       pendingDealers: number;
+      pendingPartsDealers: number;
+      pendingPartListings: number;
       openReports: number;
     }>(this.cache.keys.dashboard);
     if (cached) return cached;
@@ -31,12 +39,16 @@ export class AdminService {
       activeListings,
       pendingListings,
       pendingDealers,
+      pendingPartsDealers,
+      pendingPartListings,
       openReports,
     ] = await Promise.all([
       this.users.countUsers(),
       this.listings.count({ where: { status: 'active' } }),
       this.listings.count({ where: { status: 'pending_review' } }),
       this.dealers.count({ where: { status: 'pending' } }),
+      this.partsDealers.count({ where: { status: 'pending' } }),
+      this.partListings.count({ where: { status: 'pending_review' } }),
       this.reports.count({ where: { status: 'open' } }),
     ]);
     const data = {
@@ -44,6 +56,8 @@ export class AdminService {
       activeListings,
       pendingListings,
       pendingDealers,
+      pendingPartsDealers,
+      pendingPartListings,
       openReports,
     };
     await this.cache.set(this.cache.keys.dashboard, data, 60);

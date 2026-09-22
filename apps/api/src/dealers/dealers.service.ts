@@ -97,6 +97,11 @@ export class DealersService {
     });
     const saved = await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
+    void this.notifications.dealerPendingReview({
+      id: saved.id,
+      name: saved.name,
+      slug: saved.slug,
+    });
     return saved;
   }
 

@@ -15,7 +15,12 @@ import { AdminPartListingImageManager } from './admin-part-listing-image-manager
 import { Pagination } from '@/components/pagination';
 import { clampedPage } from '@/lib/pagination';
 
-type PartCategory = { id: string; name: string };
+type PartCategory = {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  parentName?: string | null;
+};
 type Model = { id: string; name: string };
 type City = { id: string; name: string };
 type FitmentForm = { brandId: string; modelId: string };
@@ -758,11 +763,30 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                   }
                 >
                   <option value="">Category</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  {(() => {
+                    const parentIds = new Set(
+                      categories
+                        .map((c) => c.parentId)
+                        .filter((id): id is string => Boolean(id)),
+                    );
+                    const leaves = categories.filter((c) => !parentIds.has(c.id));
+                    const groups = new Map<string, PartCategory[]>();
+                    for (const c of leaves) {
+                      const key = c.parentName ?? 'Other';
+                      const list = groups.get(key) ?? [];
+                      list.push(c);
+                      groups.set(key, list);
+                    }
+                    return [...groups.entries()].map(([group, items]) => (
+                      <optgroup key={group} label={group}>
+                        {items.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ));
+                  })()}
                 </select>
               </label>
               <label className="space-y-1 text-sm sm:col-span-2">

@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
-import type { PendingDealer, PendingListing } from '@/lib/admin-types';
+import type {
+  PendingDealer,
+  PendingListing,
+  PendingPartListing,
+} from '@/lib/admin-types';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import type { PaginationMeta } from '@throttlelk/types';
 
@@ -30,16 +34,30 @@ function formatSubmittedAt(iso: string) {
 export function AdminModeration({ search = '' }: { search?: string }) {
   const [token, setToken] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingListing[]>([]);
+  const [partListings, setPartListings] = useState<PendingPartListing[]>([]);
   const [dealers, setDealers] = useState<PendingDealer[]>([]);
+  const [partsDealers, setPartsDealers] = useState<PendingDealer[]>([]);
   const [listingMeta, setListingMeta] = useState<PaginationMeta>(emptyMeta);
+  const [partListingMeta, setPartListingMeta] =
+    useState<PaginationMeta>(emptyMeta);
   const [dealerMeta, setDealerMeta] = useState<PaginationMeta>(emptyMeta);
+  const [partsDealerMeta, setPartsDealerMeta] =
+    useState<PaginationMeta>(emptyMeta);
   const [listingPage, setListingPage] = useState(1);
+  const [partListingPage, setPartListingPage] = useState(1);
   const [dealerPage, setDealerPage] = useState(1);
+  const [partsDealerPage, setPartsDealerPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
+  const [partRejectId, setPartRejectId] = useState<string | null>(null);
   const [dealerRejectId, setDealerRejectId] = useState<string | null>(null);
+  const [partsDealerRejectId, setPartsDealerRejectId] = useState<string | null>(
+    null,
+  );
   const [reason, setReason] = useState('');
+  const [partReason, setPartReason] = useState('');
   const [dealerReason, setDealerReason] = useState('');
+  const [partsDealerReason, setPartsDealerReason] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function loadListings(access: string, pageNum: number, q: string) {
@@ -63,6 +81,27 @@ export function AdminModeration({ search = '' }: { search?: string }) {
     if (meta) setListingMeta(meta);
   }
 
+  async function loadPartListings(access: string, pageNum: number, q: string) {
+    const { data, meta } = await apiGetWithMeta<PendingPartListing[]>(
+      '/api/v1/admin/part-listings/pending',
+      {
+        token: access,
+        searchParams: {
+          page: String(pageNum),
+          limit: '20',
+          q: q || undefined,
+        },
+      },
+    );
+    const clamp = clampedPage(meta, data.length);
+    if (clamp != null && clamp !== pageNum) {
+      setPartListingPage(clamp);
+      return;
+    }
+    setPartListings(data);
+    if (meta) setPartListingMeta(meta);
+  }
+
   async function loadDealers(access: string, pageNum: number, q: string) {
     const { data, meta } = await apiGetWithMeta<PendingDealer[]>(
       '/api/v1/admin/dealers/pending',
@@ -84,12 +123,35 @@ export function AdminModeration({ search = '' }: { search?: string }) {
     if (meta) setDealerMeta(meta);
   }
 
+  async function loadPartsDealers(access: string, pageNum: number, q: string) {
+    const { data, meta } = await apiGetWithMeta<PendingDealer[]>(
+      '/api/v1/admin/parts-dealers/pending',
+      {
+        token: access,
+        searchParams: {
+          page: String(pageNum),
+          limit: '20',
+          q: q || undefined,
+        },
+      },
+    );
+    const clamp = clampedPage(meta, data.length);
+    if (clamp != null && clamp !== pageNum) {
+      setPartsDealerPage(clamp);
+      return;
+    }
+    setPartsDealers(data);
+    if (meta) setPartsDealerMeta(meta);
+  }
+
   async function load(access: string) {
     setLoading(true);
     try {
       await Promise.all([
         loadListings(access, listingPage, search),
+        loadPartListings(access, partListingPage, search),
         loadDealers(access, dealerPage, search),
+        loadPartsDealers(access, partsDealerPage, search),
       ]);
     } finally {
       setLoading(false);
@@ -98,7 +160,9 @@ export function AdminModeration({ search = '' }: { search?: string }) {
 
   useEffect(() => {
     setListingPage(1);
+    setPartListingPage(1);
     setDealerPage(1);
+    setPartsDealerPage(1);
   }, [search]);
 
   useEffect(() => {
@@ -108,14 +172,16 @@ export function AdminModeration({ search = '' }: { search?: string }) {
     setLoading(true);
     void Promise.all([
       loadListings(access, listingPage, search),
+      loadPartListings(access, partListingPage, search),
       loadDealers(access, dealerPage, search),
+      loadPartsDealers(access, partsDealerPage, search),
     ])
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Failed to load'),
       )
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listingPage, dealerPage, search]);
+  }, [listingPage, partListingPage, dealerPage, partsDealerPage, search]);
 
   if (!token) return null;
 
@@ -138,7 +204,9 @@ export function AdminModeration({ search = '' }: { search?: string }) {
         </h2>
         <div className="mt-4 space-y-3">
           {pending.length === 0 ? (
-            <p className="text-sm text-[var(--admin-muted)]">No listings waiting for review.</p>
+            <p className="text-sm text-[var(--admin-muted)]">
+              No listings waiting for review.
+            </p>
           ) : (
             pending.map((listing) => (
               <div
@@ -186,13 +254,16 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                       type="button"
                       className="admin-btn-primary px-3 py-1.5 text-sm"
                       onClick={() => {
-                        void apiSend(`/api/v1/admin/listings/${listing.id}/approve`, {
-                          token,
-                        })
+                        void apiSend(
+                          `/api/v1/admin/listings/${listing.id}/approve`,
+                          { token },
+                        )
                           .then(() => load(token))
                           .catch((err) =>
                             setError(
-                              err instanceof Error ? err.message : 'Approve failed',
+                              err instanceof Error
+                                ? err.message
+                                : 'Approve failed',
                             ),
                           );
                       }}
@@ -227,17 +298,19 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                           setError('Reason must be at least 5 characters');
                           return;
                         }
-                        void apiSend(`/api/v1/admin/listings/${listing.id}/reject`, {
-                          token,
-                          body: { reason },
-                        })
+                        void apiSend(
+                          `/api/v1/admin/listings/${listing.id}/reject`,
+                          { token, body: { reason } },
+                        )
                           .then(() => {
                             setRejectId(null);
                             return load(token);
                           })
                           .catch((err) =>
                             setError(
-                              err instanceof Error ? err.message : 'Reject failed',
+                              err instanceof Error
+                                ? err.message
+                                : 'Reject failed',
                             ),
                           );
                       }}
@@ -266,11 +339,154 @@ export function AdminModeration({ search = '' }: { search?: string }) {
 
       <section className="admin-card p-5">
         <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
+          Pending part listings
+        </h2>
+        <div className="mt-4 space-y-3">
+          {partListings.length === 0 ? (
+            <p className="text-sm text-[var(--admin-muted)]">
+              No part listings waiting for review.
+            </p>
+          ) : (
+            partListings.map((listing) => (
+              <div
+                key={listing.id}
+                className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)]/60 p-4"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)] sm:h-20 sm:w-28">
+                      {listing.coverImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={listing.coverImageUrl}
+                          alt={listing.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center px-2 text-center text-[11px] text-[var(--admin-faint)]">
+                          No photo
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-[var(--admin-text)]">
+                        {listing.title}
+                      </h3>
+                      <p className="text-sm text-[var(--admin-muted)]">
+                        Rs. {listing.priceLkr.toLocaleString('en-LK')} ·{' '}
+                        {listing.kind}
+                      </p>
+                      {listing.partsDealer ? (
+                        <p className="mt-1 text-sm text-[var(--admin-text)]">
+                          Shop: {listing.partsDealer.name}
+                        </p>
+                      ) : null}
+                      {listing.updatedAt ? (
+                        <p className="text-xs text-[var(--admin-faint)]">
+                          <time dateTime={listing.updatedAt}>
+                            Submitted {formatSubmittedAt(listing.updatedAt)}
+                          </time>
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 sm:shrink-0">
+                    <button
+                      type="button"
+                      className="admin-btn-primary px-3 py-1.5 text-sm"
+                      onClick={() => {
+                        void apiSend(
+                          `/api/v1/admin/part-listings/${listing.id}/approve`,
+                          { token },
+                        )
+                          .then(() => load(token))
+                          .catch((err) =>
+                            setError(
+                              err instanceof Error
+                                ? err.message
+                                : 'Approve failed',
+                            ),
+                          );
+                      }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn-ghost px-3 py-1.5 text-sm"
+                      onClick={() => {
+                        setPartRejectId(listing.id);
+                        setPartReason('');
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+                {partRejectId === listing.id ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <input
+                      value={partReason}
+                      onChange={(e) => setPartReason(e.target.value)}
+                      placeholder="Rejection reason"
+                      className="admin-field min-w-[240px] flex-1"
+                    />
+                    <button
+                      type="button"
+                      className="rounded-xl bg-[var(--admin-danger)] px-3 py-2 text-sm font-medium text-white"
+                      onClick={() => {
+                        if (partReason.trim().length < 5) {
+                          setError('Reason must be at least 5 characters');
+                          return;
+                        }
+                        void apiSend(
+                          `/api/v1/admin/part-listings/${listing.id}/reject`,
+                          { token, body: { reason: partReason } },
+                        )
+                          .then(() => {
+                            setPartRejectId(null);
+                            return load(token);
+                          })
+                          .catch((err) =>
+                            setError(
+                              err instanceof Error
+                                ? err.message
+                                : 'Reject failed',
+                            ),
+                          );
+                      }}
+                    >
+                      Confirm reject
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ))
+          )}
+        </div>
+        <Pagination
+          variant="admin"
+          page={partListingMeta.page}
+          totalPages={partListingMeta.totalPages}
+          hasPreviousPage={partListingMeta.hasPreviousPage}
+          hasNextPage={partListingMeta.hasNextPage}
+          total={partListingMeta.total}
+          limit={partListingMeta.limit}
+          disabled={loading}
+          scroll={false}
+          onPage={setPartListingPage}
+        />
+      </section>
+
+      <section className="admin-card p-5">
+        <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
           Pending dealers
         </h2>
         <div className="mt-4 space-y-3">
           {dealers.length === 0 ? (
-            <p className="text-sm text-[var(--admin-muted)]">No dealer applications waiting.</p>
+            <p className="text-sm text-[var(--admin-muted)]">
+              No dealer applications waiting.
+            </p>
           ) : (
             dealers.map((dealer) => (
               <div
@@ -279,17 +495,22 @@ export function AdminModeration({ search = '' }: { search?: string }) {
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-[var(--admin-text)]">{dealer.name}</h3>
-                    <p className="text-sm text-[var(--admin-muted)]">{dealer.phone}</p>
+                    <h3 className="font-semibold text-[var(--admin-text)]">
+                      {dealer.name}
+                    </h3>
+                    <p className="text-sm text-[var(--admin-muted)]">
+                      {dealer.phone}
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       className="admin-btn-primary px-3 py-1.5 text-sm"
                       onClick={() => {
-                        void apiSend(`/api/v1/admin/dealers/${dealer.id}/approve`, {
-                          token,
-                        })
+                        void apiSend(
+                          `/api/v1/admin/dealers/${dealer.id}/approve`,
+                          { token },
+                        )
                           .then(() => load(token))
                           .catch((err) =>
                             setError(
@@ -330,10 +551,10 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                           setError('Reason must be at least 5 characters');
                           return;
                         }
-                        void apiSend(`/api/v1/admin/dealers/${dealer.id}/reject`, {
-                          token,
-                          body: { reason: dealerReason },
-                        })
+                        void apiSend(
+                          `/api/v1/admin/dealers/${dealer.id}/reject`,
+                          { token, body: { reason: dealerReason } },
+                        )
                           .then(() => {
                             setDealerRejectId(null);
                             return load(token);
@@ -366,6 +587,118 @@ export function AdminModeration({ search = '' }: { search?: string }) {
           disabled={loading}
           scroll={false}
           onPage={setDealerPage}
+        />
+      </section>
+
+      <section className="admin-card p-5">
+        <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
+          Pending parts dealers
+        </h2>
+        <div className="mt-4 space-y-3">
+          {partsDealers.length === 0 ? (
+            <p className="text-sm text-[var(--admin-muted)]">
+              No parts dealer applications waiting.
+            </p>
+          ) : (
+            partsDealers.map((dealer) => (
+              <div
+                key={dealer.id}
+                className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)]/60 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-[var(--admin-text)]">
+                      {dealer.name}
+                    </h3>
+                    <p className="text-sm text-[var(--admin-muted)]">
+                      {dealer.phone}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="admin-btn-primary px-3 py-1.5 text-sm"
+                      onClick={() => {
+                        void apiSend(
+                          `/api/v1/admin/parts-dealers/${dealer.id}/approve`,
+                          { token },
+                        )
+                          .then(() => load(token))
+                          .catch((err) =>
+                            setError(
+                              err instanceof Error
+                                ? err.message
+                                : 'Parts dealer approve failed',
+                            ),
+                          );
+                      }}
+                    >
+                      Approve parts dealer
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn-ghost px-3 py-1.5 text-sm"
+                      onClick={() => {
+                        setPartsDealerRejectId(dealer.id);
+                        setPartsDealerReason('');
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+                {partsDealerRejectId === dealer.id ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <input
+                      value={partsDealerReason}
+                      onChange={(e) => setPartsDealerReason(e.target.value)}
+                      placeholder="Rejection reason"
+                      className="admin-field min-w-[240px] flex-1"
+                    />
+                    <button
+                      type="button"
+                      className="rounded-xl bg-[var(--admin-danger)] px-3 py-2 text-sm font-medium text-white"
+                      onClick={() => {
+                        if (partsDealerReason.trim().length < 5) {
+                          setError('Reason must be at least 5 characters');
+                          return;
+                        }
+                        void apiSend(
+                          `/api/v1/admin/parts-dealers/${dealer.id}/reject`,
+                          { token, body: { reason: partsDealerReason } },
+                        )
+                          .then(() => {
+                            setPartsDealerRejectId(null);
+                            return load(token);
+                          })
+                          .catch((err) =>
+                            setError(
+                              err instanceof Error
+                                ? err.message
+                                : 'Parts dealer reject failed',
+                            ),
+                          );
+                      }}
+                    >
+                      Confirm reject
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ))
+          )}
+        </div>
+        <Pagination
+          variant="admin"
+          page={partsDealerMeta.page}
+          totalPages={partsDealerMeta.totalPages}
+          hasPreviousPage={partsDealerMeta.hasPreviousPage}
+          hasNextPage={partsDealerMeta.hasNextPage}
+          total={partsDealerMeta.total}
+          limit={partsDealerMeta.limit}
+          disabled={loading}
+          scroll={false}
+          onPage={setPartsDealerPage}
         />
       </section>
     </div>

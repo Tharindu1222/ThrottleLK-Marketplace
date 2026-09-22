@@ -7,14 +7,18 @@ type Brand = { slug: string };
 type District = { slug: string };
 type ListingSlug = { slug: string; sellerId?: string; updatedAt?: string };
 type DealerSlug = { slug: string };
+type PartSlug = { slug: string; kind?: string; updatedAt?: string | null };
 
-async function fetchAllPages<T>(path: string): Promise<T[]> {
+async function fetchAllPages<T>(
+  path: string,
+  extra?: Record<string, string | undefined>,
+): Promise<T[]> {
   const all: T[] = [];
   let page = 1;
   let hasNext = true;
   while (hasNext) {
     const { data, meta } = await apiGetWithMeta<T[]>(path, {
-      searchParams: { page: String(page), limit: '100' },
+      searchParams: { page: String(page), limit: '100', ...extra },
     });
     all.push(...(data ?? []));
     hasNext = Boolean(meta?.hasNextPage);
@@ -40,6 +44,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.7,
     },
+    {
+      url: absoluteUrl('/en/parts-dealers'),
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: absoluteUrl('/en/spare-parts'),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+    {
+      url: absoluteUrl('/en/modified-parts'),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
   ];
 
   for (const guide of guides) {
@@ -52,11 +71,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   try {
-    const [brands, districts, listings, dealers] = await Promise.all([
+    const [
+      brands,
+      districts,
+      listings,
+      dealers,
+      partsDealers,
+      spareParts,
+      modifiedParts,
+    ] = await Promise.all([
       apiGet<Brand[]>('/api/v1/brands'),
       apiGet<District[]>('/api/v1/locations/districts'),
       fetchAllPages<ListingSlug>('/api/v1/listings/seo-slugs'),
       fetchAllPages<DealerSlug>('/api/v1/dealers/seo-slugs'),
+      fetchAllPages<DealerSlug>('/api/v1/parts-dealers/seo-slugs'),
+      fetchAllPages<PartSlug>('/api/v1/part-listings/seo-slugs', {
+        kind: 'spare',
+      }),
+      fetchAllPages<PartSlug>('/api/v1/part-listings/seo-slugs', {
+        kind: 'modified',
+      }),
     ]);
 
     for (const brand of brands) {
@@ -78,6 +112,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: absoluteUrl(`/en/dealers/${dealer.slug}`),
         changeFrequency: 'daily',
         priority: 0.65,
+      });
+    }
+    for (const dealer of partsDealers) {
+      base.push({
+        url: absoluteUrl(`/en/parts-dealers/${dealer.slug}`),
+        changeFrequency: 'daily',
+        priority: 0.65,
+      });
+    }
+    for (const part of spareParts) {
+      base.push({
+        url: absoluteUrl(`/en/spare-parts/${part.slug}`),
+        changeFrequency: 'daily',
+        priority: 0.55,
+        lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,
+      });
+    }
+    for (const part of modifiedParts) {
+      base.push({
+        url: absoluteUrl(`/en/modified-parts/${part.slug}`),
+        changeFrequency: 'daily',
+        priority: 0.55,
+        lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,
       });
     }
 
