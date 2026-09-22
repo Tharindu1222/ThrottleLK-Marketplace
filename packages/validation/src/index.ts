@@ -215,10 +215,75 @@ export const listingSortSchema = z.enum([
   'year_asc',
 ]);
 
-export const startConversationSchema = z.object({
-  listingId: z.string().uuid(),
-  message: z.string().min(1).max(2000),
+export const startConversationSchema = z
+  .object({
+    listingId: z.string().uuid().optional(),
+    partListingId: z.string().uuid().optional(),
+    message: z.string().min(1).max(2000),
+  })
+  .superRefine((data, ctx) => {
+    const hasListing = Boolean(data.listingId);
+    const hasPart = Boolean(data.partListingId);
+    if (hasListing === hasPart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide exactly one of listingId or partListingId',
+        path: ['listingId'],
+      });
+    }
+  });
+
+export const partListingKindSchema = z.enum(['spare', 'modified']);
+
+export const partListingFitmentSchema = z.object({
+  brandId: z.string().uuid(),
+  modelId: z.string().uuid().optional().nullable(),
 });
+
+export const createPartListingSchema = z.object({
+  kind: partListingKindSchema,
+  categoryId: z.string().uuid(),
+  districtId: z.string().uuid(),
+  cityId: z.string().uuid(),
+  title: z.string().min(5).max(160),
+  description: z.string().min(20).max(10000),
+  priceLkr: z.number().int().positive(),
+  negotiable: z.boolean().default(true),
+  condition: z.enum(['new', 'used', 'reconditioned']),
+  phone: z.string().min(9).max(20),
+  whatsapp: z.string().min(9).max(20).optional(),
+  fitments: z.array(partListingFitmentSchema).min(1).max(50),
+});
+
+export const updatePartListingSchema = createPartListingSchema.partial();
+
+export const adminCreatePartListingSchema = createPartListingSchema.extend({
+  partsDealerId: z.string().uuid(),
+  status: listingStatusSchema.optional().default('draft'),
+});
+
+export const adminUpdatePartListingSchema = createPartListingSchema
+  .partial()
+  .extend({
+    partsDealerId: z.string().uuid().optional(),
+    status: listingStatusSchema.optional(),
+  });
+
+export const partListingSortSchema = z.enum([
+  'newest',
+  'oldest',
+  'price_asc',
+  'price_desc',
+]);
+
+export const createPartsDealerSchema = createDealerSchema;
+export const updatePartsDealerProfileSchema = updateDealerProfileSchema;
+
+export const createPartCategorySchema = z.object({
+  name: z.string().min(1).max(80),
+});
+
+export const updatePartCategorySchema = createPartCategorySchema.partial();
 
 export const sendConversationMessageSchema = z.object({
   message: z.string().min(1).max(2000),
@@ -232,6 +297,8 @@ export const adminResolveReportSchema = z.object({
 export const rejectDealerSchema = z.object({
   reason: z.string().min(5).max(1000),
 });
+
+export const rejectPartsDealerSchema = rejectDealerSchema;
 
 export const dealerStatusSchema = z.enum([
   'pending',
@@ -253,6 +320,9 @@ export const adminUpdateDealerSchema = createDealerSchema.partial().extend({
   /** Admin-only verified badge; only applies when status is active. */
   verified: z.boolean().optional(),
 });
+
+export const adminCreatePartsDealerSchema = adminCreateDealerSchema;
+export const adminUpdatePartsDealerSchema = adminUpdateDealerSchema;
 
 export const savedSearchQuerySchema = z.object({
   q: z.string().max(200).optional(),
@@ -316,7 +386,13 @@ export const adminUpdateUserStatusSchema = z.object({
   status: z.enum(['active', 'suspended']),
 });
 
-export const userRoleNameSchema = z.enum(['buyer', 'seller', 'dealer', 'admin']);
+export const userRoleNameSchema = z.enum([
+  'buyer',
+  'seller',
+  'dealer',
+  'parts_dealer',
+  'admin',
+]);
 
 export const adminCreateUserSchema = registerSchema.extend({
   roles: z.array(userRoleNameSchema).min(1),
@@ -402,4 +478,27 @@ export type AdminCreateUserInput = z.infer<typeof adminCreateUserSchema>;
 export type AdminUpdateUserInput = z.infer<typeof adminUpdateUserSchema>;
 export type AdminCreateListingInput = z.infer<typeof adminCreateListingSchema>;
 export type AdminUpdateListingInput = z.infer<typeof adminUpdateListingSchema>;
+export type AdminCreatePartListingInput = z.infer<
+  typeof adminCreatePartListingSchema
+>;
+export type AdminUpdatePartListingInput = z.infer<
+  typeof adminUpdatePartListingSchema
+>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type PartListingKind = z.infer<typeof partListingKindSchema>;
+export type CreatePartListingInput = z.infer<typeof createPartListingSchema>;
+export type UpdatePartListingInput = z.infer<typeof updatePartListingSchema>;
+export type PartListingSort = z.infer<typeof partListingSortSchema>;
+export type CreatePartsDealerInput = z.infer<typeof createPartsDealerSchema>;
+export type UpdatePartsDealerProfileInput = z.infer<
+  typeof updatePartsDealerProfileSchema
+>;
+export type AdminCreatePartsDealerInput = z.infer<
+  typeof adminCreatePartsDealerSchema
+>;
+export type AdminUpdatePartsDealerInput = z.infer<
+  typeof adminUpdatePartsDealerSchema
+>;
+export type RejectPartsDealerInput = z.infer<typeof rejectPartsDealerSchema>;
+export type CreatePartCategoryInput = z.infer<typeof createPartCategorySchema>;
+export type UpdatePartCategoryInput = z.infer<typeof updatePartCategorySchema>;
