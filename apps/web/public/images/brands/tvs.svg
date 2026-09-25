@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="375" height="160">
+  <defs>
+    <circle r="17" id="c" />
+  </defs>
+  <use x="264" y="80.5" fill="#31982b" xlink:href="#c" />
+  <use x="22" y="22" xlink:href="#c" />
+  <use x="61" y="22" xlink:href="#c" />
+  <use x="100" y="22" xlink:href="#c" />
+  <use x="139" y="22" xlink:href="#c" />
+  <use x="178" y="22" xlink:href="#c" />
+  <use x="217" y="22" xlink:href="#c" />
+  <use x="314" y="22" xlink:href="#c" />
+  <use x="353" y="22" xlink:href="#c" />
+  <use x="61" y="61" xlink:href="#c" />
+  <use x="61" y="100" xlink:href="#c" />
+  <use x="61" y="139" xlink:href="#c" />
+  <use x="139" y="61" xlink:href="#c" />
+  <use x="139" y="100" xlink:href="#c" />
+  <use x="139" y="139" xlink:href="#c" />
+  <use x="178" y="80.5" xlink:href="#c" />
+  <use x="217" y="80.5" xlink:href="#c" />
+  <use x="178" y="139" xlink:href="#c" />
+  <use x="217" y="139" xlink:href="#c" />
+  <use x="314" y="139" xlink:href="#c" />
+  <use x="353" y="139" xlink:href="#c" />
+  <use x="244" y="50" xlink:href="#c" />
+  <use x="285" y="50" xlink:href="#c" />
+  <use x="244" y="113" xlink:href="#c" />
+  <use x="285" y="113" xlink:href="#c" />
+</svg>

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { HomeBrandGrid, type HomeBrand } from './home-brand-grid';
-import { shouldShowDiscover } from '@/lib/home-shop';
+import { HOME_SHELL, shouldShowDiscover } from '@/lib/home-shop';
 import { t, type Locale } from '@/lib/i18n';
 
 type District = { id: string; name: string; slug: string };
@@ -18,7 +18,7 @@ export function HomeDiscover({
 
   return (
     <section
-      className="mx-auto max-w-6xl px-5 pt-14 pb-20 sm:px-6 lg:px-8"
+      className={`${HOME_SHELL} pt-14 pb-20`}
       aria-labelledby="home-discover"
       data-reveal
     >
@@ -29,7 +29,7 @@ export function HomeDiscover({
         {t(locale, 'homeDiscoverTitle')}
       </h2>
 
-      <div className="mt-8 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
+      <div className="mt-8 space-y-12">
         {brands.length > 0 ? (
           <div>
             <h3 className="text-lg font-semibold text-foreground">

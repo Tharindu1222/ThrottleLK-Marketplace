@@ -68,9 +68,29 @@ const POPULAR_BRAND_LOGO_FILE: Record<string, string> = {
   triumph: 'triumph.svg',
 };
 
+const LOCAL_BRAND_LOGO_FILE: Record<string, string> = {
+  ...POPULAR_BRAND_LOGO_FILE,
+  'bmw-motorrad': 'bmw.svg',
+  yezdi: 'yezdi.png',
+};
+
 export function popularBrandLogoSrc(name: string): string | null {
   const file = POPULAR_BRAND_LOGO_FILE[name.trim().toLowerCase()];
   return file ? `/images/brands/${file}` : null;
+}
+
+export function brandLogoSrc(brand: {
+  name: string;
+  slug: string;
+  logoUrl?: string | null;
+}): string {
+  const uploaded = brand.logoUrl?.trim();
+  if (uploaded) return uploaded;
+  const file =
+    LOCAL_BRAND_LOGO_FILE[brand.slug] ??
+    LOCAL_BRAND_LOGO_FILE[brand.name.trim().toLowerCase()] ??
+    `${brand.slug}.svg`;
+  return `/images/brands/${file}`;
 }
 
 export function pickPopularHomeBrands<

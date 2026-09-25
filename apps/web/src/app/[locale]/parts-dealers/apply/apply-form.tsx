@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import { OwnedDealerStatus } from '@/components/owned-dealer-status';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { pickOwnedDealer } from '@/lib/owned-dealer';
 
 type Option = { id: string; name: string };
 type Dealer = {
@@ -23,13 +25,31 @@ const areaClass =
 const cardClass =
   'overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-18px_rgba(0,0,0,0.22)]';
 
-function statusLabel(status: string) {
-  return status.replace(/_/g, ' ');
+function ApplyIntro({
+  locale,
+  title,
+  hint,
+}: {
+  locale: Locale;
+  title: 'becomePartsDealer' | 'yourPartsDealer';
+  hint: 'becomePartsDealerHint' | 'becomeDealerExistingHint';
+}) {
+  return (
+    <div className="mb-8">
+      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
+        {t(locale, title)}
+      </h1>
+      <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">
+        {t(locale, hint)}
+      </p>
+    </div>
+  );
 }
 
 export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
   const [token, setToken] = useState<string | null>(null);
   const [mine, setMine] = useState<Dealer[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [districts, setDistricts] = useState<Option[]>([]);
   const [cities, setCities] = useState<Option[]>([]);
   const [districtId, setDistrictId] = useState('');
@@ -40,7 +60,10 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
-    if (!access) return;
+    if (!access) {
+      setLoaded(true);
+      return;
+    }
     void Promise.all([
       apiGet<Dealer[]>('/api/v1/parts-dealers/mine', { token: access }),
       apiGet<Option[]>('/api/v1/locations/districts'),
@@ -51,7 +74,8 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Failed to load'),
-      );
+      )
+      .finally(() => setLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -64,56 +88,59 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
     ).then(setCities);
   }, [districtId]);
 
-  if (!token) {
+  if (!loaded) {
     return (
-      <div className={`${cardClass} p-6 sm:p-8`}>
-        <p className="text-sm text-muted">{t(locale, 'dealerApplyLogin')}</p>
-        <Link
-          href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/parts-dealers/apply`)}`}
-          className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
-        >
-          {t(locale, 'login')}
-        </Link>
-      </div>
+      <>
+        <ApplyIntro
+          locale={locale}
+          title="becomePartsDealer"
+          hint="becomePartsDealerHint"
+        />
+        <div
+          className={`${cardClass} h-48 animate-pulse bg-black/[0.04]`}
+          aria-busy="true"
+        />
+      </>
     );
   }
 
-  if (mine.length > 0) {
-    const dealer = mine[0];
-    const pending = dealer.status !== 'active';
+  if (!token) {
     return (
-      <div className={`${cardClass} p-6 sm:p-8`}>
-        <p className="text-[11px] tracking-[0.14em] text-muted uppercase">
-          {t(locale, 'dealerStatus')}
-        </p>
-        <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
-          {dealer.name}
-        </h2>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span
-            className={`inline-flex border px-2.5 py-1 text-[11px] tracking-wide uppercase ${
-              pending
-                ? 'border-amber-600/20 bg-amber-50 text-amber-900'
-                : 'border-emerald-600/20 bg-emerald-50 text-emerald-800'
-            }`}
-          >
-            {statusLabel(dealer.status)}
-          </span>
-        </div>
-        {pending ? (
-          <p className="mt-4 text-sm text-muted">
-            {t(locale, 'dealerPendingHint')}
-          </p>
-        ) : (
+      <>
+        <ApplyIntro
+          locale={locale}
+          title="becomePartsDealer"
+          hint="becomePartsDealerHint"
+        />
+        <div className={`${cardClass} p-6 sm:p-8`}>
+          <p className="text-sm text-muted">{t(locale, 'dealerApplyLogin')}</p>
           <Link
-            href={`/${locale}/parts-dealers/${dealer.slug}`}
-            className="mt-5 inline-flex items-center justify-center rounded-full border border-black/15 px-5 py-2.5 text-sm text-foreground transition hover:border-accent hover:text-accent"
+            href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/parts-dealers/apply`)}`}
+            className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
           >
-            {t(locale, 'viewShowroom')}
+            {t(locale, 'login')}
           </Link>
-        )}
-        {ok ? <p className="mt-4 text-sm text-foreground">{ok}</p> : null}
-      </div>
+        </div>
+      </>
+    );
+  }
+
+  const owned = pickOwnedDealer(mine);
+  if (owned) {
+    return (
+      <>
+        <ApplyIntro
+          locale={locale}
+          title="yourPartsDealer"
+          hint="becomeDealerExistingHint"
+        />
+        <OwnedDealerStatus
+          locale={locale}
+          kind="parts"
+          dealer={owned}
+          ok={ok}
+        />
+      </>
     );
   }
 
@@ -147,6 +174,12 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
   }
 
   return (
+    <>
+      <ApplyIntro
+        locale={locale}
+        title="becomePartsDealer"
+        hint="becomePartsDealerHint"
+      />
     <form onSubmit={onSubmit} className={`${cardClass} p-6 sm:p-8`}>
       <div className="grid gap-5">
         <label className="grid gap-1.5">
@@ -269,5 +302,6 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </div>
     </form>
+    </>
   );
 }

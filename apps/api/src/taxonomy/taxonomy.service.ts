@@ -15,6 +15,7 @@ import {
   INTERNAL_CATEGORY_SEEDS,
 } from './category-map';
 import { District } from './district.entity';
+import { SRI_LANKA_DISTRICT_SEEDS } from './sri-lanka-districts';
 
 @Injectable()
 export class TaxonomyService implements OnModuleInit {
@@ -42,30 +43,34 @@ export class TaxonomyService implements OnModuleInit {
       }
     }
 
-    if ((await this.districts.count()) === 0) {
-      const locationSeed: Record<string, string[]> = {
-        Colombo: ['Colombo', 'Dehiwala', 'Moratuwa', 'Maharagama'],
-        Gampaha: ['Gampaha', 'Negombo', 'Kelaniya'],
-        Kandy: ['Kandy', 'Peradeniya'],
-        Galle: ['Galle', 'Hikkaduwa'],
-      };
-      for (const [districtName, cityNames] of Object.entries(locationSeed)) {
-        const district = await this.districts.save(
-          this.districts.create({
-            name: districtName,
-            slug: slugify(districtName),
+    let locationsChanged = false;
+    for (const { name: districtName, cities: cityNames } of SRI_LANKA_DISTRICT_SEEDS) {
+      const slug = slugify(districtName);
+      let district = await this.districts.findOne({ where: { slug } });
+      if (!district) {
+        district = await this.districts.save(
+          this.districts.create({ name: districtName, slug }),
+        );
+        locationsChanged = true;
+      }
+      for (const cityName of cityNames) {
+        const citySlug = `${slug}-${slugify(cityName)}`;
+        const existingCity = await this.cities.findOne({
+          where: { slug: citySlug },
+        });
+        if (existingCity) continue;
+        await this.cities.save(
+          this.cities.create({
+            name: cityName,
+            slug: citySlug,
+            districtId: district.id,
           }),
         );
-        await this.cities.save(
-          cityNames.map((name) =>
-            this.cities.create({
-              name,
-              slug: `${slugify(districtName)}-${slugify(name)}`,
-              districtId: district.id,
-            }),
-          ),
-        );
+        locationsChanged = true;
       }
+    }
+    if (locationsChanged) {
+      void this.cache.invalidateTaxonomy();
     }
 
     // Minimal brands only if empty — full catalogue via `npm run seed:bike-catalog`
