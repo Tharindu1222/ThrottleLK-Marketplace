@@ -37,6 +37,7 @@ export type BrowseListingCard = {
   /** ISO date when listing went live (publishedAt) or was created */
   listedAt?: string | null;
   viewCount?: number | null;
+  isTop?: boolean;
 };
 
 function OverlayTip({
@@ -508,6 +509,11 @@ export function ListingCard({
           aria-hidden
           className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 via-black/20 to-transparent"
         />
+        {listing.isTop ? (
+          <span className="absolute top-3 right-3 z-[2] rounded-sm bg-accent px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-white uppercase">
+            {t(locale, 'homeTopBadge')}
+          </span>
+        ) : null}
         {statusBadge ? (
           <div className="pointer-events-none absolute top-0 left-0 z-[2] h-[6.25rem] w-[6.25rem] overflow-hidden">
             <span

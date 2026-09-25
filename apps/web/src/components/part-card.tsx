@@ -25,6 +25,7 @@ export type BrowsePartCard = {
   coverImageUrl?: string | null;
   listedAt?: string | null;
   viewCount?: number | null;
+  isTop?: boolean;
 };
 
 function formatLkr(n: number) {
@@ -266,9 +267,16 @@ export function PartCard({
           </div>
         )}
         <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
-          <span className="inline-flex rounded-sm bg-black/70 px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-white uppercase">
-            {kindLabel(locale, part.kind)}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex rounded-sm bg-black/70 px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-white uppercase">
+              {kindLabel(locale, part.kind)}
+            </span>
+            {part.isTop ? (
+              <span className="inline-flex rounded-sm bg-accent px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-white uppercase">
+                {t(locale, 'homeTopBadge')}
+              </span>
+            ) : null}
+          </div>
           <div className="flex items-center gap-1.5">
             {statusBadge ? (
               <span

@@ -319,6 +319,12 @@ function ListingActions({
           {viewBtn}
           {pauseBtn}
           {soldBtn}
+          <Link
+            href={`/${locale}/account/parts-listings/${listing.id}/promote`}
+            className={btnGhost}
+          >
+            <span className="truncate">{t(locale, 'promoteListing')}</span>
+          </Link>
         </>
       ) : null}
       {listing.status === 'paused' ? (

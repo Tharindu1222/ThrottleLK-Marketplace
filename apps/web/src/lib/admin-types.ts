@@ -5,6 +5,7 @@ export type AdminDashboard = {
   pendingDealers: number;
   pendingPartsDealers: number;
   pendingPartListings: number;
+  pendingPromoRequests?: number;
   openReports: number;
 };
 

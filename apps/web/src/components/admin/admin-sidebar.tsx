@@ -9,7 +9,7 @@ import { getAccessToken } from '@/lib/auth';
 import type { Locale } from '@/lib/i18n';
 import { BrandLogo } from '../brand-logo';
 
-type BadgeKey = 'moderation' | 'reports';
+type BadgeKey = 'moderation' | 'reports' | 'promos';
 
 const nav = [
   {
@@ -37,6 +37,12 @@ const nav = [
       { href: '/part-listings', label: 'Part listings', icon: ListingsIcon },
       { href: '/dealers', label: 'Dealer shops', icon: ShopIcon },
       { href: '/parts-dealers', label: 'Parts shops', icon: PartsShopIcon },
+      {
+        href: '/homepage-ads',
+        label: 'Homepage ads',
+        icon: AdsIcon,
+        badgeKey: 'promos' as const,
+      },
       { href: '/part-categories', label: 'Part categories', icon: TagIcon },
       { href: '/users', label: 'Users', icon: UsersIcon },
       { href: '/taxonomy', label: 'Taxonomy', icon: TagIcon },
@@ -73,6 +79,7 @@ export function AdminSidebar({
   const [counts, setCounts] = useState<Record<BadgeKey, number>>({
     moderation: 0,
     reports: 0,
+    promos: 0,
   });
 
   const loadCounts = useCallback(async () => {
@@ -89,6 +96,7 @@ export function AdminSidebar({
           (dash.pendingPartsDealers ?? 0) +
           (dash.pendingPartListings ?? 0),
         reports: dash.openReports,
+        promos: dash.pendingPromoRequests ?? 0,
       });
     } catch {
       /* keep last known counts */
@@ -167,7 +175,9 @@ export function AdminSidebar({
                             ? `Moderation, ${count} pending`
                             : count > 0 && badgeKey === 'reports'
                               ? `Reports, ${count} open`
-                              : undefined
+                              : count > 0 && badgeKey === 'promos'
+                                ? `Homepage ads, ${count} pending`
+                                : undefined
                         }
                       >
                         <Icon className="h-4 w-4 shrink-0 opacity-90" />
@@ -264,6 +274,16 @@ function PartsShopIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" />
+    </svg>
+  );
+}
+
+function AdsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 5h16v6H4z" />
+      <path d="M8 15h8" />
+      <path d="M10 19h4" />
     </svg>
   );
 }

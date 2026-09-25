@@ -6,6 +6,7 @@ import { Dealer } from '../dealers/dealer.entity';
 import { Listing } from '../listings/listing.entity';
 import { PartListing } from '../part-listings/part-listing.entity';
 import { PartsDealer } from '../parts-dealers/parts-dealer.entity';
+import { PromoRequest } from '../promotions/promo-request.entity';
 import { Report } from '../reports/report.entity';
 import { UsersService } from '../users/users.service';
 
@@ -19,6 +20,8 @@ export class AdminService {
     @InjectRepository(PartListing)
     private readonly partListings: Repository<PartListing>,
     @InjectRepository(Report) private readonly reports: Repository<Report>,
+    @InjectRepository(PromoRequest)
+    private readonly promoRequests: Repository<PromoRequest>,
     private readonly users: UsersService,
     private readonly cache: CacheService,
   ) {}
@@ -31,6 +34,7 @@ export class AdminService {
       pendingDealers: number;
       pendingPartsDealers: number;
       pendingPartListings: number;
+      pendingPromoRequests: number;
       openReports: number;
     }>(this.cache.keys.dashboard);
     if (cached) return cached;
@@ -41,6 +45,7 @@ export class AdminService {
       pendingDealers,
       pendingPartsDealers,
       pendingPartListings,
+      pendingPromoRequests,
       openReports,
     ] = await Promise.all([
       this.users.countUsers(),
@@ -49,6 +54,7 @@ export class AdminService {
       this.dealers.count({ where: { status: 'pending' } }),
       this.partsDealers.count({ where: { status: 'pending' } }),
       this.partListings.count({ where: { status: 'pending_review' } }),
+      this.promoRequests.count({ where: { status: 'pending' } }),
       this.reports.count({ where: { status: 'open' } }),
     ]);
     const data = {
@@ -58,6 +64,7 @@ export class AdminService {
       pendingDealers,
       pendingPartsDealers,
       pendingPartListings,
+      pendingPromoRequests,
       openReports,
     };
     await this.cache.set(this.cache.keys.dashboard, data, 60);

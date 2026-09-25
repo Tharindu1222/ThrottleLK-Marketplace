@@ -8,6 +8,7 @@ import { PartListing } from '../part-listings/part-listing.entity';
 import { PartListingsModule } from '../part-listings/part-listings.module';
 import { PartsDealer } from '../parts-dealers/parts-dealer.entity';
 import { PartsDealersModule } from '../parts-dealers/parts-dealers.module';
+import { PromoRequest } from '../promotions/promo-request.entity';
 import { Report } from '../reports/report.entity';
 import { ReportsModule } from '../reports/reports.module';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
@@ -30,6 +31,7 @@ import { AdminService } from './admin.service';
       PartsDealer,
       PartListing,
       Report,
+      PromoRequest,
     ]),
   ],
   controllers: [AdminController],

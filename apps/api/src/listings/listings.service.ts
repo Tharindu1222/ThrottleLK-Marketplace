@@ -12,7 +12,7 @@ import type {
   UpdateListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus } from '@throttlelk/types';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
@@ -603,6 +603,27 @@ export class ListingsService {
         ? Math.round((marginLkr / listing.costPriceLkr) * 1000) / 10
         : null;
     return { marginLkr, marginPercent };
+  }
+
+  async browseCardsByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const rows = await this.listings.find({
+      where: { id: In(ids), status: 'active' as ListingStatus },
+      relations: ['brand', 'model', 'district', 'city'],
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const covers = await this.coverUrlsByListingId(ids);
+    const verifiedIds = await this.dealersService.activeVerifiedIds(
+      rows.map((row) => row.dealerId).filter((id): id is string => Boolean(id)),
+    );
+    return ids
+      .map((id) => byId.get(id))
+      .filter((row): row is Listing => Boolean(row))
+      .map((row) =>
+        this.toBrowseCard(row, covers.get(row.id) ?? null, {
+          dealerVerified: row.dealerId ? verifiedIds.has(row.dealerId) : false,
+        }),
+      );
   }
 
   /** Compact public card payload for browse grids. */

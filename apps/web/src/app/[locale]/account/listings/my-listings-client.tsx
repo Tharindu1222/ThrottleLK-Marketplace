@@ -431,6 +431,9 @@ function ListingActions({
           {viewBtn}
           {editBtn}
           {soldBtn}
+          <Link href={`/${locale}/account/listings/${listing.id}/promote`} className={btnGhost}>
+            <span className="truncate">{t(locale, 'promoteListing')}</span>
+          </Link>
         </>
       ) : null}
 

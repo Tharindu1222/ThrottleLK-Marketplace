@@ -341,6 +341,59 @@ export class NotificationsService {
     );
   }
 
+  async promoApproved(
+    userId: string,
+    listing: {
+      title: string;
+      endsAt: Date;
+      listingId: string | null;
+      partListingId: string | null;
+    },
+  ) {
+    const until = listing.endsAt.toLocaleDateString('en-LK', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    return this.notifyUser({
+      userId,
+      type: 'promo_approved',
+      title: 'Homepage ad approved',
+      message: `"${listing.title}" is on the homepage until ${until}.`,
+      data: {
+        listingId: listing.listingId,
+        partListingId: listing.partListingId,
+        endsAt: listing.endsAt.toISOString(),
+      },
+      emailSubject: 'Your listing is on the ThrottleLK homepage',
+      emailHtml: `<p><strong>${listing.title}</strong> is on the homepage until ${until}.</p>`,
+    });
+  }
+
+  async promoRejected(
+    userId: string,
+    listing: {
+      title: string;
+      reason: string;
+      listingId: string | null;
+      partListingId: string | null;
+    },
+  ) {
+    return this.notifyUser({
+      userId,
+      type: 'promo_rejected',
+      title: 'Homepage ad request rejected',
+      message: `"${listing.title}" was rejected: ${listing.reason}`,
+      data: {
+        listingId: listing.listingId,
+        partListingId: listing.partListingId,
+        reason: listing.reason,
+      },
+      emailSubject: 'ThrottleLK homepage request rejected',
+      emailHtml: `<p>Your homepage request for <strong>${listing.title}</strong> was rejected.</p><p>Reason: ${listing.reason}</p>`,
+    });
+  }
+
   async priceDrop(
     userId: string,
     listing: { id: string; title: string; slug: string },

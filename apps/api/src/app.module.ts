@@ -16,6 +16,7 @@ import { FavouritesModule } from './favourites/favourites.module';
 import { HealthModule } from './health/health.module';
 import { ListingsModule } from './listings/listings.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PromotionsModule } from './promotions/promotions.module';
 import { PartListingsModule } from './part-listings/part-listings.module';
 import { PartsDealersModule } from './parts-dealers/parts-dealers.module';
 import { ReportsModule } from './reports/reports.module';
@@ -91,6 +92,7 @@ const skipDb = process.env.SKIP_DB === 'true';
     ReportsModule,
     ConversationsModule,
     NotificationsModule,
+    PromotionsModule,
     StorageModule,
     AdminModule,
     SeedModule,

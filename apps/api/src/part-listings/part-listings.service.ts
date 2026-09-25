@@ -924,6 +924,29 @@ export class PartListingsService {
     return saved;
   }
 
+  async browseCardsByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const rows = await this.partListings.find({
+      where: { id: In(ids), status: 'active' as ListingStatus },
+      relations: ['category', 'district', 'city', 'partsDealer', 'fitments'],
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const covers = await this.coverUrlsByListingId(ids);
+    const verifiedIds = await this.partsDealersService.activeVerifiedIds(
+      rows.map((row) => row.partsDealerId),
+    );
+    return ids
+      .map((id) => byId.get(id))
+      .filter((row): row is PartListing => Boolean(row))
+      .map((row) =>
+        this.toBrowseCard(
+          row,
+          covers.get(row.id) ?? null,
+          verifiedIds.has(row.partsDealerId),
+        ),
+      );
+  }
+
   private toBrowseCard(
     listing: PartListing,
     coverImageUrl: string | null,

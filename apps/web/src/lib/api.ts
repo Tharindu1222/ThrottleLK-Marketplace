@@ -191,4 +191,21 @@ export async function apiUpload<T>(
   return json.data;
 }
 
+export async function apiBlob(path: string, token: string): Promise<Blob> {
+  const res = await fetch(`${resolveApiUrl()}${path}`, {
+    headers: apiHeaders({ Authorization: `Bearer ${token}` }),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    let body: ApiErrorBody | null = null;
+    try {
+      body = (await res.json()) as ApiErrorBody;
+    } catch {
+      body = null;
+    }
+    throwApiError(path, res.status, body);
+  }
+  return res.blob();
+}
+
 export { resolveApiUrl };

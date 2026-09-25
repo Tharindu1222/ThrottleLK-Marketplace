@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -73,7 +74,10 @@ export class StorageService {
     };
   }
 
-  private rethrowR2(err: unknown, action: 'upload' | 'delete'): never {
+  private rethrowR2(
+    err: unknown,
+    action: 'upload' | 'delete' | 'download',
+  ): never {
     const code =
       err && typeof err === 'object' && 'Code' in err
         ? String((err as { Code?: string }).Code)
@@ -124,6 +128,26 @@ export class StorageService {
       storageKey,
       publicUrl: `${publicUrl}/${storageKey}`,
     };
+  }
+
+  async getObject(
+    storageKey: string,
+  ): Promise<{ buffer: Buffer; contentType: string | null }> {
+    const { client, bucket } = this.requireR2();
+    try {
+      const out = await client.send(
+        new GetObjectCommand({ Bucket: bucket, Key: storageKey }),
+      );
+      const bytes = out.Body
+        ? await out.Body.transformToByteArray()
+        : new Uint8Array();
+      return {
+        buffer: Buffer.from(bytes),
+        contentType: out.ContentType ?? null,
+      };
+    } catch (err) {
+      this.rethrowR2(err, 'download');
+    }
   }
 
   async deleteObject(storageKey: string): Promise<void> {

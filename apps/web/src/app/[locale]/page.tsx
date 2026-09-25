@@ -8,8 +8,7 @@ import { HomeShop } from '@/components/home/home-shop';
 import type { HomeBrand } from '@/components/home/home-brand-grid';
 import type { BrowseListingCard } from '@/components/listing-card';
 import type { BrowsePartCard } from '@/components/part-card';
-import { apiGet, apiGetWithMeta } from '@/lib/api';
-import { pickPreviewItems } from '@/lib/home-preview';
+import { apiGet } from '@/lib/api';
 import { isLocale, type Locale } from '@/lib/i18n';
 
 const HomeScrollReveals = dynamic(
@@ -44,25 +43,21 @@ export default async function HomePage({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
 
-  const [brands, districts, listingsPage, spareParts, modifiedParts] =
-    await Promise.all([
-      apiGet<HomeBrand[]>('/api/v1/brands').catch(() => [] as HomeBrand[]),
-      apiGet<District[]>('/api/v1/locations/districts').catch(
-        () => [] as District[],
-      ),
-      apiGetWithMeta<BrowseListingCard[]>('/api/v1/listings', {
-        searchParams: { limit: '8', sort: 'newest' },
-      }).catch(() => ({ data: [] as BrowseListingCard[], meta: undefined })),
-      apiGet<BrowsePartCard[]>('/api/v1/spare-parts', {
-        searchParams: { limit: '8', sort: 'newest' },
-      }).catch(() => [] as BrowsePartCard[]),
-      apiGet<BrowsePartCard[]>('/api/v1/modified-parts', {
-        searchParams: { limit: '8', sort: 'newest' },
-      }).catch(() => [] as BrowsePartCard[]),
-    ]);
+  const [brands, districts, preview] = await Promise.all([
+    apiGet<HomeBrand[]>('/api/v1/brands').catch(() => [] as HomeBrand[]),
+    apiGet<District[]>('/api/v1/locations/districts').catch(
+      () => [] as District[],
+    ),
+    apiGet<{ bikes: BrowseListingCard[]; parts: BrowsePartCard[] }>(
+      '/api/v1/home/marketplace-preview',
+    ).catch(() => ({
+      bikes: [] as BrowseListingCard[],
+      parts: [] as BrowsePartCard[],
+    })),
+  ]);
 
-  const previewBikes = listingsPage.data.slice(0, 8);
-  const previewParts = pickPreviewItems(spareParts, modifiedParts, 8);
+  const previewBikes = preview.bikes.slice(0, 8);
+  const previewParts = preview.parts.slice(0, 8);
 
   return (
     <main>

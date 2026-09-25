@@ -383,6 +383,92 @@ export const adminCreateCitySchema = z.object({
   name: z.string().min(1).max(80),
 });
 
+export const promoSubjectTypeSchema = z.enum(['bike', 'part']);
+
+export const createPromoPackageSchema = z.object({
+  kind: promoSubjectTypeSchema,
+  name: z.string().trim().min(1).max(80),
+  durationDays: z.number().int().min(1).max(365),
+  priceLkr: z.number().int().min(0),
+  sortOrder: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updatePromoPackageSchema = createPromoPackageSchema.partial();
+
+export const createPromoBankAccountSchema = z.object({
+  bankName: z.string().trim().min(1).max(80),
+  accountName: z.string().trim().min(1).max(120),
+  accountNumber: z.string().trim().min(1).max(40),
+  branch: z.string().trim().max(80).optional().nullable(),
+  isDefault: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updatePromoBankAccountSchema = createPromoBankAccountSchema.partial();
+
+export const updatePromoSettingsSchema = z.object({
+  whatsapp: z.string().trim().max(20).optional().nullable(),
+});
+
+export const createPromoRequestMetaSchema = z
+  .object({
+    packageId: z.string().uuid(),
+    listingId: z.string().uuid().optional(),
+    partListingId: z.string().uuid().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasListing = Boolean(data.listingId);
+    const hasPart = Boolean(data.partListingId);
+    if (hasListing === hasPart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide exactly one of listingId or partListingId',
+        path: ['listingId'],
+      });
+    }
+  });
+
+export const rejectPromoRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(500),
+});
+
+export const adminPlaceHomepageSchema = z
+  .object({
+    subjectType: promoSubjectTypeSchema,
+    listingId: z.string().uuid().optional(),
+    partListingId: z.string().uuid().optional(),
+    durationDays: z.number().int().min(1).max(365).optional(),
+    endsAt: z.string().datetime().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.subjectType === 'bike' && !data.listingId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'listingId is required',
+        path: ['listingId'],
+      });
+    }
+    if (data.subjectType === 'part' && !data.partListingId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'partListingId is required',
+        path: ['partListingId'],
+      });
+    }
+    if (data.durationDays == null && !data.endsAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'durationDays or endsAt is required',
+        path: ['durationDays'],
+      });
+    }
+  });
+
+export const adminUpdatePlacementSchema = z.object({
+  endsAt: z.string().datetime(),
+});
+
 export const adminUpdateUserStatusSchema = z.object({
   status: z.enum(['active', 'suspended']),
 });
@@ -503,3 +589,21 @@ export type AdminUpdatePartsDealerInput = z.infer<
 export type RejectPartsDealerInput = z.infer<typeof rejectPartsDealerSchema>;
 export type CreatePartCategoryInput = z.infer<typeof createPartCategorySchema>;
 export type UpdatePartCategoryInput = z.infer<typeof updatePartCategorySchema>;
+export type PromoSubjectType = z.infer<typeof promoSubjectTypeSchema>;
+export type CreatePromoPackageInput = z.infer<typeof createPromoPackageSchema>;
+export type UpdatePromoPackageInput = z.infer<typeof updatePromoPackageSchema>;
+export type CreatePromoBankAccountInput = z.infer<
+  typeof createPromoBankAccountSchema
+>;
+export type UpdatePromoBankAccountInput = z.infer<
+  typeof updatePromoBankAccountSchema
+>;
+export type UpdatePromoSettingsInput = z.infer<typeof updatePromoSettingsSchema>;
+export type CreatePromoRequestMetaInput = z.infer<
+  typeof createPromoRequestMetaSchema
+>;
+export type RejectPromoRequestInput = z.infer<typeof rejectPromoRequestSchema>;
+export type AdminPlaceHomepageInput = z.infer<typeof adminPlaceHomepageSchema>;
+export type AdminUpdatePlacementInput = z.infer<
+  typeof adminUpdatePlacementSchema
+>;
