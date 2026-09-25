@@ -1,4 +1,5 @@
 import type { PaginationMeta } from '@throttlelk/types';
+import { resolveMapLocation } from './map-location';
 
 export type DealerKind = 'bike' | 'parts';
 export type DealerDirectoryType = 'all' | DealerKind;
@@ -26,6 +27,53 @@ export function dealerTypeQuery(
   type: DealerDirectoryType,
 ): string | undefined {
   return type === 'all' ? undefined : type;
+}
+
+export type DealerMapPinInput = {
+  id: string;
+  name: string;
+  slug: string;
+  latitude: number;
+  longitude: number;
+  coverImageUrl?: string | null;
+  verifiedAt?: string | null;
+  city?: { name: string } | null;
+  district?: { name: string } | null;
+  approximate?: boolean;
+};
+
+export type DealerMapPinCard = DealerMapPinInput & { kind: DealerKind };
+
+export function mergeDealerMapPins(
+  bikes: DealerMapPinInput[],
+  parts: DealerMapPinInput[],
+): DealerMapPinCard[] {
+  return [
+    ...bikes.map((dealer) => ({ ...dealer, kind: 'bike' as const })),
+    ...parts.map((dealer) => ({ ...dealer, kind: 'parts' as const })),
+  ];
+}
+
+export function dealerMapHref(
+  locale: string,
+  kind: DealerKind,
+  slug: string,
+): string {
+  const prefix = kind === 'parts' ? 'parts-dealers' : 'dealers';
+  return `/${locale}/${prefix}/${encodeURIComponent(slug)}`;
+}
+
+export function pinFromDealer(
+  dealer: DealerMapPinInput,
+): DealerMapPinInput | null {
+  const loc = resolveMapLocation(dealer);
+  if (!loc) return null;
+  return {
+    ...dealer,
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    approximate: loc.approximate,
+  };
 }
 
 export function mergeDealerCards(

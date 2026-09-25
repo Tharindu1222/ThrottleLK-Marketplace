@@ -19,6 +19,8 @@ export function DealerMapMultiEmbed({
   locale,
   viewShowroomLabel,
   verifiedLabel,
+  approximateLabel,
+  kindLabels,
   className,
   pathPrefix,
 }: {
@@ -26,6 +28,8 @@ export function DealerMapMultiEmbed({
   locale: string;
   viewShowroomLabel: string;
   verifiedLabel: string;
+  approximateLabel?: string;
+  kindLabels?: { bike: string; parts: string };
   className?: string;
   pathPrefix?: string;
 }) {
@@ -35,6 +39,8 @@ export function DealerMapMultiEmbed({
       locale={locale}
       viewShowroomLabel={viewShowroomLabel}
       verifiedLabel={verifiedLabel}
+      approximateLabel={approximateLabel}
+      kindLabels={kindLabels}
       className={className}
       pathPrefix={pathPrefix}
     />

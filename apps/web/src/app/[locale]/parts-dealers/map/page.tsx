@@ -74,11 +74,16 @@ export default async function PartsDealersMapPage({
       ) : (
         <div className="relative min-h-[420px] flex-1 border-t border-black/10">
           <DealerMapMultiEmbed
-            dealers={dealers}
+            dealers={dealers.map((dealer) => ({ ...dealer, kind: 'parts' as const }))}
             locale={locale}
             pathPrefix="parts-dealers"
             viewShowroomLabel={t(locale, 'viewShowroom')}
             verifiedLabel={t(locale, 'verified')}
+            approximateLabel={t(locale, 'approximateLocation')}
+            kindLabels={{
+              bike: t(locale, 'bikeDealersTab'),
+              parts: t(locale, 'partsDealersTab'),
+            }}
             className="absolute inset-0 h-full min-h-[420px] border-0"
           />
         </div>

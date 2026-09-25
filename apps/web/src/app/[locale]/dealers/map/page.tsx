@@ -2,21 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DealerMapMultiEmbed } from '@/components/dealer-map-multi-embed';
-import { apiGet } from '@/lib/api';
+import { apiGetWithMeta } from '@/lib/api';
+import {
+  mergeDealerMapPins,
+  pinFromDealer,
+  type DealerMapPinInput,
+} from '@/lib/dealer-directory';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
-
-type MapDealer = {
-  id: string;
-  name: string;
-  slug: string;
-  latitude: number;
-  longitude: number;
-  coverImageUrl: string | null;
-  verifiedAt?: string | null;
-  city?: { name: string } | null;
-  district?: { name: string } | null;
-};
 
 export async function generateMetadata({
   params,
@@ -25,9 +18,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return pageMetadata({
-    title: 'Dealer map — motorcycle showrooms in Sri Lanka',
+    title: 'Dealer map — bike, parts, and modified shops in Sri Lanka',
     description:
-      'See approved ThrottleLK dealers on the map and open their showrooms.',
+      'See approved ThrottleLK bike dealers and parts shops on the map and open their showrooms.',
     path: `/${locale}/dealers/map`,
   });
 }
@@ -41,8 +34,17 @@ export default async function DealersMapPage({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
 
-  const dealers = await apiGet<MapDealer[]>('/api/v1/dealers/map').catch(
-    () => [] as MapDealer[],
+  const [bikes, parts] = await Promise.all([
+    apiGetWithMeta<DealerMapPinInput[]>('/api/v1/dealers', {
+      searchParams: { page: '1', limit: '100' },
+    }).catch(() => ({ data: [] as DealerMapPinInput[] })),
+    apiGetWithMeta<DealerMapPinInput[]>('/api/v1/parts-dealers', {
+      searchParams: { page: '1', limit: '100' },
+    }).catch(() => ({ data: [] as DealerMapPinInput[] })),
+  ]);
+  const dealers = mergeDealerMapPins(
+    bikes.data.map(pinFromDealer).filter((row) => row != null),
+    parts.data.map(pinFromDealer).filter((row) => row != null),
   );
 
   return (
@@ -52,6 +54,19 @@ export default async function DealersMapPage({
           <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide sm:text-3xl">
             {t(locale, 'dealersMap')}
           </h1>
+          <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden />
+              {t(locale, 'bikeDealersTab')}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                className="h-2.5 w-2.5 rounded-full bg-teal-700"
+                aria-hidden
+              />
+              {t(locale, 'partsDealersTab')}
+            </span>
+          </p>
         </div>
         <Link
           href={`/${locale}/dealers`}
@@ -78,6 +93,11 @@ export default async function DealersMapPage({
             locale={locale}
             viewShowroomLabel={t(locale, 'viewShowroom')}
             verifiedLabel={t(locale, 'verified')}
+            approximateLabel={t(locale, 'approximateLocation')}
+            kindLabels={{
+              bike: t(locale, 'bikeDealersTab'),
+              parts: t(locale, 'partsDealersTab'),
+            }}
             className="absolute inset-0 h-full min-h-[420px] border-0"
           />
         </div>

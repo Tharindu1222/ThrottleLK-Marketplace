@@ -121,10 +121,7 @@ export default async function DealersIndexPage({
     );
   }
 
-  const mapHref =
-    type === 'parts'
-      ? `/${locale}/parts-dealers/map`
-      : `/${locale}/dealers/map`;
+  const mapHref = `/${locale}/dealers/map`;
 
   const tabClass = (active: boolean) =>
     `rounded-full px-4 py-2 text-sm font-medium transition ${

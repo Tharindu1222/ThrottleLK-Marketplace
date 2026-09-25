@@ -14,6 +14,7 @@ import type {
 } from '@throttlelk/validation';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
+import { resolveMapLocation } from '../common/map-location';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
 import { Favourite } from '../favourites/favourite.entity';
@@ -245,24 +246,28 @@ export class DealersService {
       .leftJoinAndSelect('d.district', 'district')
       .leftJoinAndSelect('d.city', 'city')
       .where('d.status = :status', { status: 'active' })
-      .andWhere('d.latitude IS NOT NULL')
-      .andWhere('d.longitude IS NOT NULL')
-      .andWhere('d.latitude <> 0 OR d.longitude <> 0')
       .orderBy('d.name', 'ASC')
       .getMany();
 
     const withCovers = await this.attachDealerCovers(rows);
-    return withCovers.map((row) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      latitude: row.latitude as number,
-      longitude: row.longitude as number,
-      coverImageUrl: row.coverImageUrl ?? null,
-      verifiedAt: row.verifiedAt ?? null,
-      city: row.city ? { name: row.city.name } : null,
-      district: row.district ? { name: row.district.name } : null,
-    }));
+    return withCovers
+      .map((row) => {
+        const loc = resolveMapLocation(row);
+        if (!loc) return null;
+        return {
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          approximate: loc.approximate,
+          coverImageUrl: row.coverImageUrl ?? null,
+          verifiedAt: row.verifiedAt ?? null,
+          city: row.city ? { name: row.city.name } : null,
+          district: row.district ? { name: row.district.name } : null,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null);
   }
 
   async listSeoSlugs(paging?: {

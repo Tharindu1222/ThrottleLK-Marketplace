@@ -3,20 +3,10 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { dealerMapHref } from '@/lib/dealer-directory';
 
 const LK_CENTER: L.LatLngExpression = [7.8731, 80.7718];
 const DEFAULT_ZOOM = 7;
-
-const markerIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl:
-    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
 
 export type DealerMapPin = {
   id: string;
@@ -28,6 +18,8 @@ export type DealerMapPin = {
   verifiedAt?: string | null;
   city?: { name: string } | null;
   district?: { name: string } | null;
+  kind?: 'bike' | 'parts';
+  approximate?: boolean;
 };
 
 function escapeHtml(value: string) {
@@ -39,11 +31,24 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#39;');
 }
 
+function pinIcon(kind: 'bike' | 'parts' | undefined) {
+  const color = kind === 'parts' ? '#0f766e' : '#e10600';
+  return L.divIcon({
+    className: '',
+    iconSize: [28, 36],
+    iconAnchor: [14, 34],
+    popupAnchor: [0, -28],
+    html: `<span style="display:block;width:18px;height:18px;margin:0 auto;border-radius:999px;background:${color};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)"></span><span style="display:block;width:0;height:0;margin:-2px auto 0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid ${color}"></span>`,
+  });
+}
+
 export function DealerMapMulti({
   dealers,
   locale,
   viewShowroomLabel,
   verifiedLabel,
+  approximateLabel,
+  kindLabels,
   className = '',
   pathPrefix = 'dealers',
 }: {
@@ -51,8 +56,10 @@ export function DealerMapMulti({
   locale: string;
   viewShowroomLabel: string;
   verifiedLabel: string;
+  approximateLabel?: string;
+  kindLabels?: { bike: string; parts: string };
   className?: string;
-  /** URL segment under locale, e.g. `dealers` or `parts-dealers`. */
+  /** Fallback URL segment when a pin has no kind. */
   pathPrefix?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -105,7 +112,11 @@ export function DealerMapMulti({
       const location = [dealer.city?.name, dealer.district?.name]
         .filter(Boolean)
         .join(', ');
-      const href = `/${locale}/${pathPrefix}/${encodeURIComponent(dealer.slug)}`;
+      const href = dealer.kind
+        ? dealerMapHref(locale, dealer.kind, dealer.slug)
+        : `/${locale}/${pathPrefix}/${encodeURIComponent(dealer.slug)}`;
+      const kindLabel =
+        dealer.kind && kindLabels ? kindLabels[dealer.kind] : '';
       const cover =
         dealer.coverImageUrl != null && dealer.coverImageUrl !== ''
           ? `<img src="${escapeHtml(dealer.coverImageUrl)}" alt="" width="200" height="125" style="display:block;width:200px;height:125px;object-fit:cover;border-radius:4px;margin-bottom:8px" loading="lazy" />`
@@ -113,6 +124,11 @@ export function DealerMapMulti({
       const html = `
         <div style="width:200px;font:14px/1.4 system-ui,sans-serif">
           ${cover}
+          ${
+            kindLabel
+              ? `<div style="margin-bottom:4px;font-size:11px;font-weight:600;letter-spacing:.02em;color:${dealer.kind === 'parts' ? '#0f766e' : '#e10600'}">${escapeHtml(kindLabel)}</div>`
+              : ''
+          }
           <strong>${escapeHtml(dealer.name)}</strong>
           ${
             dealer.verifiedAt
@@ -120,13 +136,18 @@ export function DealerMapMulti({
               : ''
           }
           ${location ? `<div style="margin-top:4px;opacity:.7">${escapeHtml(location)}</div>` : ''}
+          ${
+            dealer.approximate && approximateLabel
+              ? `<div style="margin-top:4px;font-size:12px;opacity:.65">${escapeHtml(approximateLabel)}</div>`
+              : ''
+          }
           <a href="${href}" style="display:inline-block;margin-top:8px;color:#e10600;font-weight:600;text-decoration:none">
             ${escapeHtml(viewShowroomLabel)}
           </a>
         </div>
       `;
 
-      L.marker(latLng, { icon: markerIcon })
+      L.marker(latLng, { icon: pinIcon(dealer.kind) })
         .bindPopup(html, { maxWidth: 240 })
         .addTo(layer);
     }
@@ -144,7 +165,15 @@ export function DealerMapMulti({
     return () => {
       layer.remove();
     };
-  }, [dealers, locale, viewShowroomLabel, verifiedLabel, pathPrefix]);
+  }, [
+    dealers,
+    locale,
+    viewShowroomLabel,
+    verifiedLabel,
+    approximateLabel,
+    kindLabels,
+    pathPrefix,
+  ]);
 
   return (
     <div
