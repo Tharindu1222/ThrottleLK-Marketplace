@@ -1,17 +1,20 @@
 import type { Metadata } from 'next';
-import { Barlow_Condensed, DM_Sans } from 'next/font/google';
+import { DM_Sans, Outfit } from 'next/font/google';
 import './globals.css';
-
-const display = Barlow_Condensed({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-display',
-});
 
 const sans = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '700'],
-  variable: '--font-sans',
+  variable: '--font-dm',
+  display: 'swap',
+  adjustFontFallback: true,
+});
+
+const display = Outfit({
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+  variable: '--font-outfit',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -34,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${sans.variable} antialiased`}>
+      <body className={`${sans.className} ${sans.variable} ${display.variable}`}>
         {children}
       </body>
     </html>

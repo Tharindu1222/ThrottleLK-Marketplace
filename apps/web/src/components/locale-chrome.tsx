@@ -26,6 +26,7 @@ export function LocaleChrome({
   const isAccount = /\/(en|si)\/account(\/|$)/.test(pathname);
   const isCompare = /\/(en|si)\/compare(\/|$)/.test(pathname);
   const isDealersMap = /\/(en|si)\/dealers\/map(\/|$)/.test(pathname);
+  const isHome = /^\/(en|si)\/?$/.test(pathname);
   const showTray = !isAuth && !isAccount && !isCompare && !isDealersMap;
 
   if (isAdmin) {
@@ -36,7 +37,9 @@ export function LocaleChrome({
     <BreadcrumbLabelProvider>
       <div className="flex min-h-screen flex-col">
         <SiteHeader locale={locale} />
-        {!isAuth && !isAccount ? <SiteBreadcrumbs locale={locale} /> : null}
+        {!isAuth && !isAccount && !isHome ? (
+          <SiteBreadcrumbs locale={locale} />
+        ) : null}
         <div className={`flex-1 ${showTray ? 'pb-20' : ''}`}>
           {children}
         </div>

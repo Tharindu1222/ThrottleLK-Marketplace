@@ -50,6 +50,7 @@ export function PartBrowseFilters({
     maxPrice?: string;
     condition?: string;
     sort?: string;
+    kind?: string;
   };
   hiddenFields?: Record<string, string>;
 }) {
@@ -66,7 +67,8 @@ export function PartBrowseFilters({
           initial.districtId ||
           initial.minPrice ||
           initial.maxPrice ||
-          initial.condition,
+          initial.condition ||
+          initial.kind,
       ),
     [initial],
   );
@@ -116,6 +118,16 @@ export function PartBrowseFilters({
           placeholder={t(locale, 'searchPlaceholder')}
           className={fieldClass}
         />
+        <select
+          name="kind"
+          defaultValue={initial.kind ?? ''}
+          aria-label={t(locale, 'partKindFilter')}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'allPartsNav')}</option>
+          <option value="spare">{t(locale, 'sparePartsNav')}</option>
+          <option value="modified">{t(locale, 'modifiedPartsNav')}</option>
+        </select>
         <select
           name="categoryId"
           defaultValue={initial.categoryId ?? ''}

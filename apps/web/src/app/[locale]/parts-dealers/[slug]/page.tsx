@@ -98,8 +98,9 @@ export default async function DealerShowroomPage({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
   const sp = await searchParams;
-  const kindRaw = typeof sp.kind === 'string' ? sp.kind : 'spare';
-  const kind = kindRaw === 'modified' ? 'modified' : 'spare';
+  const kindRaw = typeof sp.kind === 'string' ? sp.kind : undefined;
+  const kind =
+    kindRaw === 'spare' || kindRaw === 'modified' ? kindRaw : undefined;
   const pageRaw = sp.page;
   const page = parsePageParam(typeof pageRaw === 'string' ? pageRaw : undefined);
 
@@ -112,14 +113,25 @@ export default async function DealerShowroomPage({
 
   // Canonical URL follows the showroom name (API may have just resynced the slug).
   if (dealer.slug && dealer.slug !== slug) {
-    redirect(`/${locale}/parts-dealers/${dealer.slug}?kind=${kind}`);
+    redirect(
+      hrefWithPage(
+        `/${locale}/parts-dealers/${dealer.slug}`,
+        { kind },
+        page,
+      ),
+    );
   }
 
-  const catalogPath =
-    kind === 'modified' ? '/api/v1/modified-parts' : '/api/v1/spare-parts';
-  const listingPage = await apiGetWithMeta<BrowsePartCard[]>(catalogPath, {
-    searchParams: { partsDealerId: dealer.id, page: String(page) },
-  });
+  const listingPage = await apiGetWithMeta<BrowsePartCard[]>(
+    '/api/v1/part-listings',
+    {
+      searchParams: {
+        partsDealerId: dealer.id,
+        kind,
+        page: String(page),
+      },
+    },
+  );
   const listings = listingPage.data;
   const pager = listingPage.meta;
   if (pager && pager.total > 0 && pager.page > pager.totalPages) {
@@ -644,24 +656,53 @@ export default async function DealerShowroomPage({
             Parts in this shop
           </h2>
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div
+            className="mt-4 flex flex-wrap gap-2"
+            role="group"
+            aria-label={t(locale, 'partKindFilter')}
+          >
             <Link
-              href={`/${locale}/parts-dealers/${slug}?kind=spare`}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${
+              href={hrefWithPage(
+                `/${locale}/parts-dealers/${slug}`,
+                { kind: undefined },
+                1,
+              )}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                !kind
+                  ? 'bg-foreground text-white'
+                  : 'border border-black/15 bg-background hover:border-accent/40'
+              }`}
+              aria-current={!kind ? 'page' : undefined}
+            >
+              {t(locale, 'allPartsNav')}
+            </Link>
+            <Link
+              href={hrefWithPage(
+                `/${locale}/parts-dealers/${slug}`,
+                { kind: 'spare' },
+                1,
+              )}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 kind === 'spare'
                   ? 'bg-foreground text-white'
-                  : 'border border-black/15 bg-background'
+                  : 'border border-black/15 bg-background hover:border-accent/40'
               }`}
+              aria-current={kind === 'spare' ? 'page' : undefined}
             >
               {t(locale, 'spareTab')}
             </Link>
             <Link
-              href={`/${locale}/parts-dealers/${slug}?kind=modified`}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${
+              href={hrefWithPage(
+                `/${locale}/parts-dealers/${slug}`,
+                { kind: 'modified' },
+                1,
+              )}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 kind === 'modified'
                   ? 'bg-foreground text-white'
-                  : 'border border-black/15 bg-background'
+                  : 'border border-black/15 bg-background hover:border-accent/40'
               }`}
+              aria-current={kind === 'modified' ? 'page' : undefined}
             >
               {t(locale, 'modifiedTab')}
             </Link>
@@ -670,8 +711,14 @@ export default async function DealerShowroomPage({
           <div className="mt-6 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {listings.length === 0 ? (
               <p className="text-muted sm:col-span-2 lg:col-span-3">
-                No active {kind === 'modified' ? 'modified' : 'spare'} parts in
-                this shop yet.
+                {t(
+                  locale,
+                  kind === 'modified'
+                    ? 'noShopModifiedPartsYet'
+                    : kind === 'spare'
+                      ? 'noShopSparePartsYet'
+                      : 'noShopPartsYet',
+                )}
               </p>
             ) : (
               listings.map((listing) => (

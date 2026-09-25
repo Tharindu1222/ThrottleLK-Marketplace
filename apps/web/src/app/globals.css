@@ -18,14 +18,22 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-surface: var(--surface);
-  --font-sans: var(--font-sans);
-  --font-display: var(--font-display);
+  --font-sans: var(--font-dm), "Noto Sans Sinhala", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), var(--font-dm), "Noto Sans Sinhala", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  font-synthesis: none;
+  text-rendering: auto;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  letter-spacing: 0;
+  word-spacing: 0;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100vh;
 }
 

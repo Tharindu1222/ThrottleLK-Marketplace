@@ -16,12 +16,12 @@ export function HomeBrandGrid({
   brands: HomeBrand[];
 }) {
   return (
-    <ul className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+    <ul className="mt-5 grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-5">
       {brands.map((brand) => (
         <li key={brand.id}>
           <Link
             href={`/${locale}/bikes?brandId=${brand.id}`}
-            className="group flex h-14 flex-col items-center justify-center border border-black/12 bg-white px-2 py-1.5 transition hover:border-accent sm:h-16"
+            className="group flex h-[4.25rem] flex-col items-center justify-center rounded-xl bg-white px-2 py-1.5 ring-1 ring-black/8 transition hover:ring-accent"
             title={brand.name}
           >
             {brand.logoUrl ? (

@@ -21,6 +21,12 @@ function spStr(
   return typeof v === 'string' ? v : undefined;
 }
 
+function parseKind(
+  value: string | undefined,
+): 'spare' | 'modified' | undefined {
+  return value === 'spare' || value === 'modified' ? value : undefined;
+}
+
 function filterStateFrom(
   sp: Record<string, string | string[] | undefined>,
 ) {
@@ -34,6 +40,7 @@ function filterStateFrom(
     maxPrice: spStr(sp, 'maxPrice'),
     condition: spStr(sp, 'condition'),
     sort: spStr(sp, 'sort'),
+    kind: parseKind(spStr(sp, 'kind')),
   };
 }
 
@@ -47,8 +54,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const sp = await searchParams;
   const page = parsePageParam(spStr(sp, 'page'));
-  const kind = spStr(sp, 'kind') === 'modified' ? 'modified' : 'spare';
-  const filters = { ...filterStateFrom(sp), kind };
+  const filters = filterStateFrom(sp);
   return pageMetadata({
     title:
       page > 1
@@ -71,15 +77,12 @@ export default async function BikePartsPage({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
   const sp = await searchParams;
-  const kind = spStr(sp, 'kind') === 'modified' ? 'modified' : 'spare';
   const filterState = filterStateFrom(sp);
   const page = parsePageParam(spStr(sp, 'page'));
-  const query = { ...filterState, kind };
-  const apiPath =
-    kind === 'modified' ? '/api/v1/modified-parts' : '/api/v1/spare-parts';
+  const query = filterState;
 
   const [result, brands, districts, categories] = await Promise.all([
-    apiGetWithMeta<BrowsePartCard[]>(apiPath, {
+    apiGetWithMeta<BrowsePartCard[]>('/api/v1/part-listings', {
       searchParams: {
         ...filterState,
         page: String(page),
@@ -118,10 +121,26 @@ export default async function BikePartsPage({
       </h1>
       <p className="mt-2 text-muted">{t(locale, 'bikePartsSubtitle')}</p>
 
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label={t(locale, 'partKindFilter')}>
         <Link
-          href={hrefWithPage(`/${locale}/bike-parts`, { ...filterState, kind: 'spare' }, 1)}
-          className={tabClass(kind === 'spare')}
+          href={hrefWithPage(
+            `/${locale}/bike-parts`,
+            { ...filterState, kind: undefined },
+            1,
+          )}
+          className={tabClass(!filterState.kind)}
+          aria-current={!filterState.kind ? 'page' : undefined}
+        >
+          {t(locale, 'allPartsNav')}
+        </Link>
+        <Link
+          href={hrefWithPage(
+            `/${locale}/bike-parts`,
+            { ...filterState, kind: 'spare' },
+            1,
+          )}
+          className={tabClass(filterState.kind === 'spare')}
+          aria-current={filterState.kind === 'spare' ? 'page' : undefined}
         >
           {t(locale, 'sparePartsNav')}
         </Link>
@@ -131,7 +150,8 @@ export default async function BikePartsPage({
             { ...filterState, kind: 'modified' },
             1,
           )}
-          className={tabClass(kind === 'modified')}
+          className={tabClass(filterState.kind === 'modified')}
+          aria-current={filterState.kind === 'modified' ? 'page' : undefined}
         >
           {t(locale, 'modifiedPartsNav')}
         </Link>
@@ -140,13 +160,13 @@ export default async function BikePartsPage({
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
         <aside className="space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
           <PartBrowseFilters
+            key={filterState.kind ?? 'all'}
             locale={locale}
             actionPath={`/${locale}/bike-parts`}
             brands={brands}
             districts={districts}
             categories={categories}
             initial={filterState}
-            hiddenFields={{ kind }}
           />
         </aside>
 

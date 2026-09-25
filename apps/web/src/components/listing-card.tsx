@@ -64,7 +64,7 @@ function OverlayTip({
 }
 
 function formatLkr(n: number) {
-  return `Rs. ${n.toLocaleString('en-LK')}`;
+  return `Rs. ${n.toLocaleString('en-US')}`;
 }
 
 function formatLocation(city?: string | null, district?: string | null) {
@@ -79,15 +79,17 @@ function formatListedAt(iso: string, locale: Locale): string {
   if (Number.isNaN(date.getTime())) return '';
 
   const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startThat = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
+  const startToday = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
   );
-  const diffDays = Math.round(
-    (startToday.getTime() - startThat.getTime()) / 86_400_000,
+  const startThat = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
   );
+  const diffDays = Math.round((startToday - startThat) / 86_400_000);
 
   if (diffDays <= 0) return t(locale, 'postedToday');
   if (diffDays === 1) return t(locale, 'postedYesterday');
@@ -95,10 +97,21 @@ function formatListedAt(iso: string, locale: Locale): string {
     return t(locale, 'postedDaysAgo').replace('{n}', String(diffDays));
   }
 
-  const formatted = date.toLocaleDateString(
-    locale === 'si' ? 'si-LK' : 'en-LK',
-    { day: 'numeric', month: 'short', year: 'numeric' },
-  );
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  const formatted = `${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
   return t(locale, 'postedOn').replace('{date}', formatted);
 }
 
@@ -403,6 +416,7 @@ export function ListingCard({
   statusBadge,
   showFavourite = true,
   footer,
+  headingLevel = 'h2',
   onFavouriteChange,
 }: {
   locale: Locale;
@@ -412,8 +426,10 @@ export function ListingCard({
   statusBadge?: { label: string; status: string };
   showFavourite?: boolean;
   footer?: ReactNode;
+  headingLevel?: 'h2' | 'h3';
   onFavouriteChange?: (listingId: string, favourited: boolean) => void;
 }) {
+  const TitleTag = headingLevel;
   const displayTitle = composeListingTitle({
     title: listing.title,
     brandName: listing.brandName,
@@ -432,7 +448,7 @@ export function ListingCard({
   const cardHref = href ?? `/${locale}/bikes/${listing.slug}`;
   const mileageLabel =
     listing.mileage != null
-      ? `${listing.mileage.toLocaleString('en-LK')} km`
+      ? `${listing.mileage.toLocaleString('en-US')} km`
       : null;
   const ccLabel =
     listing.engineCc != null ? `${listing.engineCc} cc` : null;
@@ -445,7 +461,7 @@ export function ListingCard({
         ? t(locale, 'viewsOne')
         : t(locale, 'views').replace(
             '{n}',
-            listing.viewCount.toLocaleString('en-LK'),
+            listing.viewCount.toLocaleString('en-US'),
           )
       : null;
 
@@ -531,9 +547,9 @@ export function ListingCard({
         }`}
       >
         <div className="min-w-0">
-          <h2 className="line-clamp-2 font-[family-name:var(--font-display)] text-[1.05rem] leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent">
+          <TitleTag className="line-clamp-2 font-[family-name:var(--font-display)] text-[1.05rem] leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent">
             {displayTitle}
-          </h2>
+          </TitleTag>
           <p className="mt-1 font-[family-name:var(--font-display)] text-xl leading-none tracking-wide text-accent">
             {formatLkr(listing.priceLkr)}
           </p>

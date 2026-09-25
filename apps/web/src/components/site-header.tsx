@@ -53,7 +53,14 @@ function AccountAvatar({
   );
 }
 
-export function SiteHeader({ locale }: { locale: Locale }) {
+export function SiteHeader({
+  locale,
+  tone = 'light',
+}: {
+  locale: Locale;
+  tone?: 'light' | 'dark';
+}) {
+  const dark = tone === 'dark';
   const [user, setUser] = useState<AuthUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -136,18 +143,28 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     }
   }
 
-  const navLinkClass =
-    'text-sm text-muted transition hover:text-foreground';
+  const navLinkClass = dark
+    ? 'text-sm tracking-normal text-white/70 transition hover:text-white'
+    : 'text-sm tracking-normal text-muted transition hover:text-foreground';
+  const iconWrapClass = dark
+    ? '[&_button]:text-white/80 [&_button]:hover:bg-white/10 [&_button]:hover:text-white [&_a]:text-white/80 [&_a]:hover:bg-white/10 [&_a]:hover:text-white'
+    : '';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/10 bg-background/95">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-6 sm:h-[4.25rem]">
+    <header
+      className={
+        dark
+          ? 'sticky top-0 z-40 border-b border-white/10 bg-black'
+          : 'sticky top-0 z-40 border-b border-black/10 bg-background/95'
+      }
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-6 sm:h-[4.25rem]">
         <Link
           href={`/${locale}`}
           className="shrink-0"
           aria-label={t(locale, 'brand')}
         >
-          <BrandLogo size="header" />
+          <BrandLogo size="header" tone={dark ? 'white' : 'black'} />
         </Link>
 
         <nav className="ml-6 hidden items-center gap-6 md:flex" aria-label="Main">
@@ -162,7 +179,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
         </nav>
 
-        <div className="ml-auto hidden items-center gap-1 md:flex">
+        <div className={`ml-auto hidden items-center gap-1 md:flex ${iconWrapClass}`}>
           <LanguageSwitcher locale={locale} />
           <CompareNavIcon locale={locale} />
           {user ? (
@@ -264,13 +281,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <AuthRequiredLink
             locale={locale}
             href={`/${locale}/sell`}
-            className="ml-2 bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110"
+            className="ml-2 bg-accent px-4 py-2.5 text-sm font-semibold tracking-normal text-white transition hover:brightness-110"
           >
             {t(locale, 'postAnAd')}
           </AuthRequiredLink>
         </div>
 
-        <div className="ml-auto flex items-center gap-0.5 md:hidden">
+        <div className={`ml-auto flex items-center gap-0.5 md:hidden ${iconWrapClass}`}>
           <LanguageSwitcher locale={locale} />
           <CompareNavIcon locale={locale} />
           {user ? (
@@ -281,7 +298,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           ) : null}
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center border border-black/15 text-foreground"
+            className={
+              dark
+                ? 'inline-flex min-h-11 min-w-11 items-center justify-center border border-white/20 text-white'
+                : 'inline-flex min-h-11 min-w-11 items-center justify-center border border-black/15 text-foreground'
+            }
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((o) => !o)}
@@ -418,7 +439,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <AuthRequiredLink
               locale={locale}
               href={`/${locale}/sell`}
-              className="mt-2 inline-flex items-center justify-center bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-white"
+              className="mt-2 inline-flex items-center justify-center bg-accent px-4 py-3 text-sm font-semibold tracking-normal text-white"
               onNavigate={() => setMenuOpen(false)}
             >
               {t(locale, 'postAnAd')}

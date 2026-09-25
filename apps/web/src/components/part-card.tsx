@@ -59,10 +59,21 @@ function formatListedAt(iso: string, locale: Locale): string {
     return t(locale, 'postedDaysAgo').replace('{n}', String(diffDays));
   }
 
-  const formatted = date.toLocaleDateString(
-    locale === 'si' ? 'si-LK' : 'en-LK',
-    { day: 'numeric', month: 'short', year: 'numeric' },
-  );
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  const formatted = `${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
   return t(locale, 'postedOn').replace('{date}', formatted);
 }
 

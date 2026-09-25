@@ -1,12 +1,15 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
+import { HomeDiscover } from '@/components/home/home-discover';
 import { HomeHero } from '@/components/home/home-hero';
-import { BikeCategoryGrid } from '@/components/home/bike-category-grid';
-import { HeroCategoriesBridge } from '@/components/home/hero-categories-bridge';
-import { HomeBrandGrid } from '@/components/home/home-brand-grid';
-import { apiGet } from '@/lib/api';
+import { HomeMarketplacePreview } from '@/components/home/home-marketplace-preview';
+import { HomeShop } from '@/components/home/home-shop';
+import type { HomeBrand } from '@/components/home/home-brand-grid';
+import type { BrowseListingCard } from '@/components/listing-card';
+import type { BrowsePartCard } from '@/components/part-card';
+import { apiGet, apiGetWithMeta } from '@/lib/api';
+import { pickPreviewItems } from '@/lib/home-preview';
 import { isLocale, type Locale } from '@/lib/i18n';
 
 const HomeScrollReveals = dynamic(
@@ -16,12 +19,6 @@ const HomeScrollReveals = dynamic(
     ),
 );
 
-type Brand = {
-  id: string;
-  name: string;
-  slug: string;
-  logoUrl?: string | null;
-};
 type District = { id: string; name: string; slug: string };
 
 export async function generateMetadata({
@@ -47,56 +44,42 @@ export default async function HomePage({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
 
-  const [brands, districts] = await Promise.all([
-    apiGet<Brand[]>('/api/v1/brands').catch(() => [] as Brand[]),
-    apiGet<District[]>('/api/v1/locations/districts').catch(
-      () => [] as District[],
-    ),
-  ]);
+  const [brands, districts, listingsPage, spareParts, modifiedParts] =
+    await Promise.all([
+      apiGet<HomeBrand[]>('/api/v1/brands').catch(() => [] as HomeBrand[]),
+      apiGet<District[]>('/api/v1/locations/districts').catch(
+        () => [] as District[],
+      ),
+      apiGetWithMeta<BrowseListingCard[]>('/api/v1/listings', {
+        searchParams: { limit: '8', sort: 'newest' },
+      }).catch(() => ({ data: [] as BrowseListingCard[], meta: undefined })),
+      apiGet<BrowsePartCard[]>('/api/v1/spare-parts', {
+        searchParams: { limit: '8', sort: 'newest' },
+      }).catch(() => [] as BrowsePartCard[]),
+      apiGet<BrowsePartCard[]>('/api/v1/modified-parts', {
+        searchParams: { limit: '8', sort: 'newest' },
+      }).catch(() => [] as BrowsePartCard[]),
+    ]);
+
+  const previewBikes = listingsPage.data.slice(0, 8);
+  const previewParts = pickPreviewItems(spareParts, modifiedParts, 8);
 
   return (
     <main>
-      <HeroCategoriesBridge
-        hero={<HomeHero locale={locale} />}
-        categories={<BikeCategoryGrid locale={locale} />}
-      />
+      <HomeHero locale={locale} districts={districts} brands={brands} />
+      <HomeShop locale={locale} brands={brands} />
 
       <HomeScrollReveals>
-        <section className="mx-auto max-w-6xl px-6 pb-20">
-          <div className="border-t border-black/10 pt-12" data-reveal>
-            <p className="mb-2 text-xs tracking-[0.35em] text-accent uppercase">
-              Discover
-            </p>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
-              Browse by brand
-            </h2>
-            <p className="mt-2 text-sm text-muted">
-              Explore motorbikes from makers popular across Sri Lanka.
-            </p>
-            <HomeBrandGrid locale={locale} brands={brands} />
-          </div>
-
-          <div className="mt-12" data-reveal>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
-              Browse by district
-            </h2>
-            <p className="mt-2 text-sm text-muted">
-              Find motorbikes listed near you.
-            </p>
-            <ul className="mt-5 flex flex-wrap gap-2">
-              {districts.map((district) => (
-                <li key={district.id}>
-                  <Link
-                    href={`/${locale}/bikes?districtId=${district.id}`}
-                    className="inline-block border border-black/12 px-3 py-1.5 text-sm text-muted transition hover:border-accent hover:text-foreground"
-                  >
-                    {district.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
+        <HomeMarketplacePreview
+          locale={locale}
+          bikes={previewBikes}
+          parts={previewParts}
+        />
+        <HomeDiscover
+          locale={locale}
+          brands={brands}
+          districts={districts}
+        />
       </HomeScrollReveals>
     </main>
   );
