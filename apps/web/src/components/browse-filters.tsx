@@ -19,6 +19,7 @@ const SORTS = [
   { value: 'mileage_desc', labelKey: 'sortMileageDesc' },
   { value: 'year_desc', labelKey: 'sortYearDesc' },
   { value: 'year_asc', labelKey: 'sortYearAsc' },
+  { value: 'popular', labelKey: 'sortPopular' },
 ] as const;
 
 export type BrowseFilterState = {
@@ -32,6 +33,8 @@ export type BrowseFilterState = {
   maxPrice?: string;
   minYear?: string;
   maxYear?: string;
+  minRegistrationYear?: string;
+  maxRegistrationYear?: string;
   minMileage?: string;
   maxMileage?: string;
   minEngineCc?: string;
@@ -79,6 +82,8 @@ export function BrowseFilters({
           initial.maxPrice ||
           initial.minYear ||
           initial.maxYear ||
+          initial.minRegistrationYear ||
+          initial.maxRegistrationYear ||
           initial.minMileage ||
           initial.maxMileage ||
           initial.minEngineCc ||
@@ -276,6 +281,22 @@ export function BrowseFilters({
             name="maxYear"
             defaultValue={initial.maxYear}
             placeholder={t(locale, 'maxYear')}
+            className={fieldClass}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="minRegistrationYear"
+            defaultValue={initial.minRegistrationYear}
+            placeholder={t(locale, 'minRegYear')}
+            aria-label={t(locale, 'minRegYear')}
+            className={fieldClass}
+          />
+          <input
+            name="maxRegistrationYear"
+            defaultValue={initial.maxRegistrationYear}
+            placeholder={t(locale, 'maxRegYear')}
+            aria-label={t(locale, 'maxRegYear')}
             className={fieldClass}
           />
         </div>

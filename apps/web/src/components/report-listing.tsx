@@ -66,26 +66,34 @@ export function ReportListing({
       ) : (
         <form onSubmit={onSubmit} className="grid max-w-md gap-3">
           <p className="text-sm text-muted">{t(locale, 'reportListing')}</p>
-          <select
-            name="reason"
-            required
-            className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
-          >
-            <option value="spam">Spam</option>
-            <option value="fraud">Fraud / scam</option>
-            <option value="wrong_info">Wrong information</option>
-            <option value="inappropriate">Inappropriate</option>
-            <option value="duplicate">Duplicate</option>
-            <option value="other">Other</option>
-          </select>
-          <textarea
-            name="description"
-            required
-            minLength={10}
-            rows={3}
-            placeholder={t(locale, 'reportDetails')}
-            className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
-          />
+          <label className="grid gap-1 text-sm">
+            <span>{t(locale, 'reportReasonLabel')}</span>
+            <select
+              name="reason"
+              required
+              className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
+            >
+              <option value="spam">{t(locale, 'reportReasonSpam')}</option>
+              <option value="fraud">{t(locale, 'reportReasonFraud')}</option>
+              <option value="wrong_info">{t(locale, 'reportReasonWrong')}</option>
+              <option value="inappropriate">
+                {t(locale, 'reportReasonInappropriate')}
+              </option>
+              <option value="duplicate">{t(locale, 'reportReasonDuplicate')}</option>
+              <option value="other">{t(locale, 'reportReasonOther')}</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>{t(locale, 'reportDetails')}</span>
+            <textarea
+              name="description"
+              required
+              minLength={10}
+              rows={3}
+              placeholder={t(locale, 'reportDetails')}
+              className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
+            />
+          </label>
           <div className="flex gap-2">
             <button
               type="submit"
@@ -98,7 +106,7 @@ export function ReportListing({
               className="text-sm text-muted underline"
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t(locale, 'cancel')}
             </button>
           </div>
           {!token ? (

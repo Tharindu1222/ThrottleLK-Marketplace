@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BikesBrowse } from '@/components/bikes-browse';
 import { apiGet } from '@/lib/api';
-import { isLocale, type Locale } from '@/lib/i18n';
+import { isLocale, t, type Locale } from '@/lib/i18n';
 import { parsePageParam } from '@/lib/pagination';
+import { isFacetedSearch } from '@/lib/search-index';
 import { pageMetadata } from '@/lib/seo';
 
 type Model = {
@@ -23,19 +24,23 @@ function pageFrom(
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string; modelSlug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { locale, slug, modelSlug } = await params;
+  const sp = await searchParams;
   try {
     const model = await apiGet<Model>(`/api/v1/models/${modelSlug}`);
     const brandName = model.brand?.name ?? slug;
     const brandSlug = model.brand?.slug ?? slug;
     return pageMetadata({
       title: `${brandName} ${model.name} for sale in Sri Lanka`,
-      description: `Find ${brandName} ${model.name} bikes on ThrottleLK — prices, specs, and seller contact.`,
+      description: `Find ${brandName} ${model.name} bikes on ThrottleLK — current asking prices from sellers.`,
       path: `/${locale}/brands/${brandSlug}/${model.slug}`,
       locale,
+      robots: isFacetedSearch(sp) ? { index: false, follow: true } : undefined,
     });
   } catch {
     return { title: 'Model not found' };
@@ -71,6 +76,9 @@ export default async function ModelPage({
     <BikesBrowse
       locale={locale}
       heading={`${brandName} ${model.name}`}
+      intro={t(locale, 'modelLandingIntro')}
+      faqTitle={t(locale, 'modelLandingFaqTitle')}
+      faqItems={[t(locale, 'modelLandingFaq1'), t(locale, 'modelLandingFaq2')]}
       filterState={{ brandId: model.brandId, modelId: model.id }}
       page={pageFrom(sp)}
       listPath={`/${locale}/brands/${slug}/${model.slug}`}

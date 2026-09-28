@@ -764,6 +764,28 @@ describe('ListingsService.getPublicOrOwned inventory privacy', () => {
     expect(result).not.toHaveProperty('marginPercent');
   });
 
+  it('lets guests view sold listings and hides contact', async () => {
+    const { service } = makeDetailService({
+      ...detailRow,
+      status: 'sold',
+      phone: '0771234567',
+      whatsapp: '0771234567',
+    });
+    const result = await service.getPublicOrOwned('honda-dio', null);
+
+    expect(result.status).toBe('sold');
+    expect(result.contactHidden).toBe(true);
+    expect(result.phone).toBeNull();
+    expect(result.whatsapp).toBeNull();
+  });
+
+  it('still hides paused listings from guests', async () => {
+    const { service } = makeDetailService({ ...detailRow, status: 'paused' });
+    await expect(service.getPublicOrOwned('honda-dio', null)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
   it('getPublicOrOwned includes listMine owner extras for the seller', async () => {
     const { service, favourites } = makeDetailService();
     const result = await service.getPublicOrOwned('honda-dio', {
@@ -830,6 +852,47 @@ describe('ListingsService launch hardening', () => {
     expect(clauses.some((sql) => sql.includes('dealer_id IS NULL'))).toBe(true);
     expect(clauses.some((sql) => sql.includes('homepage_placements'))).toBe(true);
     expect(clauses.some((sql) => sql.includes('mileage'))).toBe(true);
+  });
+
+  it('excludes listings that are past expires_at', async () => {
+    const publicQb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(async () => [[], 0]),
+    };
+    const service = new ListingsService(
+      { createQueryBuilder: jest.fn(() => publicQb) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { createQueryBuilder: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn(async () => []),
+      })) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
+      {} as never,
+      { countsByListingIds: jest.fn(async () => new Map()) } as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
+    );
+
+    await service.listPublic({
+      minRegistrationYear: 2018,
+      maxRegistrationYear: 2024,
+      sort: 'popular',
+    });
+
+    const clauses = publicQb.andWhere.mock.calls.map((call) => String(call[0]));
+    expect(clauses.some((sql) => sql.includes('expires_at'))).toBe(true);
+    expect(clauses.some((sql) => sql.includes('registration_year'))).toBe(true);
+    expect(publicQb.orderBy).toHaveBeenCalledWith('l.viewCount', 'DESC');
   });
 
   it('renews an expired listing and sets a new expiry', async () => {

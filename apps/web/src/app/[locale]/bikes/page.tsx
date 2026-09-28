@@ -15,7 +15,7 @@ function spStr(
   return typeof v === 'string' ? v : undefined;
 }
 
-export function filterStateFrom(
+function filterStateFrom(
   sp: Record<string, string | string[] | undefined>,
 ): BrowseFilterState {
   return {
@@ -29,6 +29,8 @@ export function filterStateFrom(
     maxPrice: spStr(sp, 'maxPrice'),
     minYear: spStr(sp, 'minYear'),
     maxYear: spStr(sp, 'maxYear'),
+    minRegistrationYear: spStr(sp, 'minRegistrationYear'),
+    maxRegistrationYear: spStr(sp, 'maxRegistrationYear'),
     minMileage: spStr(sp, 'minMileage'),
     maxMileage: spStr(sp, 'maxMileage'),
     minEngineCc: spStr(sp, 'minEngineCc'),

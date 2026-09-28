@@ -59,6 +59,8 @@ export class ListingsController {
     @Query('maxPrice') maxPrice?: string,
     @Query('minYear') minYear?: string,
     @Query('maxYear') maxYear?: string,
+    @Query('minRegistrationYear') minRegistrationYear?: string,
+    @Query('maxRegistrationYear') maxRegistrationYear?: string,
     @Query('minMileage') minMileage?: string,
     @Query('maxMileage') maxMileage?: string,
     @Query('minEngineCc') minEngineCc?: string,
@@ -86,6 +88,12 @@ export class ListingsController {
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       minYear: minYear ? Number(minYear) : undefined,
       maxYear: maxYear ? Number(maxYear) : undefined,
+      minRegistrationYear: minRegistrationYear
+        ? Number(minRegistrationYear)
+        : undefined,
+      maxRegistrationYear: maxRegistrationYear
+        ? Number(maxRegistrationYear)
+        : undefined,
       minMileage: minMileage ? Number(minMileage) : undefined,
       maxMileage: maxMileage ? Number(maxMileage) : undefined,
       minEngineCc: minEngineCc ? Number(minEngineCc) : undefined,

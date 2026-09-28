@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { IsNull, Not, Repository } from 'typeorm';
+import { IsNull, Not, QueryFailedError, Repository } from 'typeorm';
 import type {
   CreateInventoryItemInput,
   InventoryDocumentType,
@@ -22,6 +22,15 @@ import {
   type InventoryDocumentType as DocType,
 } from './inventory-document.entity';
 import { DealersService } from './dealers.service';
+
+function isListingIdConflict(err: unknown): boolean {
+  if (!(err instanceof QueryFailedError)) return false;
+  const driver = err.driverError as { code?: string; constraint?: string };
+  return (
+    driver?.code === '23505' &&
+    driver?.constraint === 'UQ_dealer_inventory_listing_id'
+  );
+}
 
 const DOC_TYPES: DocType[] = ['insurance', 'revenue_license', 'ownership_cr'];
 const ALLOWED_MIME = new Set([
@@ -127,51 +136,37 @@ export class InventoryService {
     const existing = await this.items.findOne({
       where: { listingId: listing.id },
     });
-    const title =
-      listing.title?.trim() ||
-      [listing.brand?.name, listing.model?.name, listing.manufactureYear]
-        .filter(Boolean)
-        .join(' ') ||
-      'Listing';
-
     if (existing) {
-      existing.title = title;
-      existing.askingPriceLkr = listing.priceLkr;
-      if (listing.brand?.name) existing.brandName = listing.brand.name;
-      if (listing.model?.name) existing.modelName = listing.model.name;
-      if (listing.manufactureYear)
-        existing.manufactureYear = listing.manufactureYear;
-      if (listing.costPriceLkr != null && existing.costPriceLkr == null) {
-        existing.costPriceLkr = listing.costPriceLkr;
-      }
-      if (listing.purchaseDate && !existing.purchaseDate) {
-        existing.purchaseDate = listing.purchaseDate;
-      }
-      if (listing.status === 'sold') {
-        existing.soldAt = listing.soldAt ?? existing.soldAt ?? new Date();
-        existing.soldPriceLkr =
-          listing.soldPriceLkr ?? existing.soldPriceLkr ?? listing.priceLkr;
-      }
+      this.applyListing(existing, listing);
       await this.items.save(existing);
       return;
     }
 
-    await this.items.save(
-      this.items.create({
-        dealerId: listing.dealerId,
-        ownerUserId,
-        title,
-        brandName: listing.brand?.name ?? null,
-        modelName: listing.model?.name ?? null,
-        manufactureYear: listing.manufactureYear ?? null,
-        purchaseDate: listing.purchaseDate ?? null,
-        costPriceLkr: listing.costPriceLkr ?? null,
-        askingPriceLkr: listing.priceLkr,
-        soldPriceLkr: listing.soldPriceLkr ?? null,
-        soldAt: listing.soldAt ?? null,
-        listingId: listing.id,
-      }),
-    );
+    const created = this.items.create({
+      dealerId: listing.dealerId,
+      ownerUserId,
+      title: this.listingTitle(listing),
+      brandName: listing.brand?.name ?? null,
+      modelName: listing.model?.name ?? null,
+      manufactureYear: listing.manufactureYear ?? null,
+      purchaseDate: listing.purchaseDate ?? null,
+      costPriceLkr: listing.costPriceLkr ?? null,
+      askingPriceLkr: listing.priceLkr,
+      soldPriceLkr: listing.soldPriceLkr ?? null,
+      soldAt: listing.soldAt ?? null,
+      listingId: listing.id,
+    });
+    try {
+      await this.items.save(created);
+    } catch (err) {
+      if (!isListingIdConflict(err)) throw err;
+      const raced = await this.items.findOne({
+        where: { listingId: listing.id },
+      });
+      if (!raced) throw err;
+      this.applyListing(raced, listing);
+      await this.items.save(raced);
+    }
   }
 
   async uploadDocument(
@@ -283,6 +278,35 @@ export class InventoryService {
     }
     await this.documents.remove(doc);
     return this.toDto(await this.reload(id));
+  }
+
+  private listingTitle(listing: Listing) {
+    return (
+      listing.title?.trim() ||
+      [listing.brand?.name, listing.model?.name, listing.manufactureYear]
+        .filter(Boolean)
+        .join(' ') ||
+      'Listing'
+    );
+  }
+
+  private applyListing(item: DealerInventoryItem, listing: Listing) {
+    item.title = this.listingTitle(listing);
+    item.askingPriceLkr = listing.priceLkr;
+    if (listing.brand?.name) item.brandName = listing.brand.name;
+    if (listing.model?.name) item.modelName = listing.model.name;
+    if (listing.manufactureYear) item.manufactureYear = listing.manufactureYear;
+    if (listing.costPriceLkr != null && item.costPriceLkr == null) {
+      item.costPriceLkr = listing.costPriceLkr;
+    }
+    if (listing.purchaseDate && !item.purchaseDate) {
+      item.purchaseDate = listing.purchaseDate;
+    }
+    if (listing.status === 'sold') {
+      item.soldAt = listing.soldAt ?? item.soldAt ?? new Date();
+      item.soldPriceLkr =
+        listing.soldPriceLkr ?? item.soldPriceLkr ?? listing.priceLkr;
+    }
   }
 
   private async backfillFromListings(dealerId: string, ownerUserId: string) {

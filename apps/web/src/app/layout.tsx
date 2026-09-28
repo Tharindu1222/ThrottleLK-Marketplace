@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { DM_Sans, Outfit } from 'next/font/google';
 import './globals.css';
 
@@ -30,14 +31,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = (await headers()).get('x-throttlelk-locale') === 'si' ? 'si' : 'en';
   return (
-    <html lang="en">
-      <body className={`${sans.className} ${sans.variable} ${display.variable}`}>
+    <html lang={locale} suppressHydrationWarning>
+      <body
+        className={`${sans.className} ${sans.variable} ${display.variable}`}
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

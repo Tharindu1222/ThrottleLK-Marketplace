@@ -19,6 +19,10 @@ export async function BikesBrowse({
   filterState,
   page,
   heading,
+  intro,
+  faqTitle,
+  faqItems,
+  emptyHint,
   listPath,
   pagerState,
 }: {
@@ -26,6 +30,10 @@ export async function BikesBrowse({
   filterState: BrowseFilterState;
   page: number;
   heading?: string;
+  intro?: string;
+  faqTitle?: string;
+  faqItems?: string[];
+  emptyHint?: string;
   listPath: string;
   pagerState?: BrowseFilterState;
 }) {
@@ -61,6 +69,7 @@ export async function BikesBrowse({
       >
         {heading ?? t(locale, 'browse')}
       </h1>
+      {intro ? <p className="mt-3 max-w-3xl text-muted">{intro}</p> : null}
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
         <aside className="space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
@@ -83,7 +92,7 @@ export async function BikesBrowse({
           <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {listings.length === 0 ? (
               <p className="text-muted sm:col-span-2 xl:col-span-3">
-                {t(locale, 'noListings')}
+                {emptyHint ?? t(locale, 'noListings')}
               </p>
             ) : (
               listings.map((listing) => (
@@ -113,6 +122,18 @@ export async function BikesBrowse({
           ) : null}
         </div>
       </div>
+      {faqTitle && faqItems?.length ? (
+        <section className="mt-12 max-w-3xl border-t border-black/10 pt-8">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">
+            {faqTitle}
+          </h2>
+          <div className="mt-4 space-y-3 text-sm leading-relaxed text-foreground/90">
+            {faqItems.map((item) => (
+              <p key={item}>{item}</p>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

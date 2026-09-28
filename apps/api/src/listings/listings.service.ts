@@ -307,6 +307,8 @@ export class ListingsService {
     maxPrice?: number;
     minYear?: number;
     maxYear?: number;
+    minRegistrationYear?: number;
+    maxRegistrationYear?: number;
     minMileage?: number;
     maxMileage?: number;
     minEngineCc?: number;
@@ -334,7 +336,10 @@ export class ListingsService {
       .leftJoinAndSelect('l.model', 'model')
       .leftJoinAndSelect('l.district', 'district')
       .leftJoinAndSelect('l.city', 'city')
-      .where('l.status = :status', { status: 'active' });
+      .where('l.status = :status', { status: 'active' })
+      .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
+        now: new Date(),
+      });
 
     if (filters.brandId) qb.andWhere('l.brand_id = :brandId', { brandId: filters.brandId });
     if (filters.modelId) qb.andWhere('l.model_id = :modelId', { modelId: filters.modelId });
@@ -412,6 +417,16 @@ export class ListingsService {
     if (filters.maxYear != null) {
       qb.andWhere('l.manufacture_year <= :maxYear', { maxYear: filters.maxYear });
     }
+    if (filters.minRegistrationYear != null) {
+      qb.andWhere('l.registration_year >= :minRegistrationYear', {
+        minRegistrationYear: filters.minRegistrationYear,
+      });
+    }
+    if (filters.maxRegistrationYear != null) {
+      qb.andWhere('l.registration_year <= :maxRegistrationYear', {
+        maxRegistrationYear: filters.maxRegistrationYear,
+      });
+    }
     if (filters.condition) {
       qb.andWhere('l.condition = :condition', { condition: filters.condition });
     }
@@ -447,6 +462,9 @@ export class ListingsService {
         break;
       case 'year_desc':
         qb.orderBy('l.manufactureYear', 'DESC');
+        break;
+      case 'popular':
+        qb.orderBy('l.viewCount', 'DESC');
         break;
       case 'newest':
       default:
@@ -489,7 +507,9 @@ export class ListingsService {
     }
     const isOwner = viewer?.id === listing.sellerId;
     const isAdmin = viewer?.roles?.some((r) => r.name === 'admin');
-    if (listing.status !== 'active' && !isOwner && !isAdmin) {
+    const publiclyVisible =
+      listing.status === 'active' || listing.status === 'sold';
+    if (!publiclyVisible && !isOwner && !isAdmin) {
       throw new NotFoundException({
         success: false,
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
@@ -521,6 +541,7 @@ export class ListingsService {
       ...safeListing
     } = this.withCover(listing);
 
+    const sold = listing.status === 'sold';
     // Phone / WhatsApp are public on active listings; messaging still requires auth.
     const payload = {
       ...safeListing,
@@ -540,7 +561,9 @@ export class ListingsService {
       sellerType: listing.dealerId ? 'dealer' : 'private',
       dealerVerified: Boolean(shop?.verifiedAt),
       seller,
-      contactHidden: false as const,
+      phone: sold && !isOwner && !isAdmin ? null : listing.phone,
+      whatsapp: sold && !isOwner && !isAdmin ? null : listing.whatsapp,
+      contactHidden: sold && !isOwner && !isAdmin,
     };
 
     if (!isOwner && !isAdmin) {

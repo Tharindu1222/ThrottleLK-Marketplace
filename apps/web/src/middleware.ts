@@ -25,7 +25,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  const locale =
+    locales.find(
+      (item) => pathname === `/${item}` || pathname.startsWith(`/${item}/`),
+    ) ?? defaultLocale;
+  const headers = new Headers(request.headers);
+  headers.set('x-throttlelk-locale', locale);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

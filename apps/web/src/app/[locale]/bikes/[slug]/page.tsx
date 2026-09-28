@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
-import { listingJsonLd, pageMetadata } from '@/lib/seo';
+import { breadcrumbJsonLd, listingJsonLd, pageMetadata } from '@/lib/seo';
 import { composeListingTitle } from '@/lib/listing-title';
 import { sellerProfileHref } from '@/lib/seller-href';
 import { ListingContactBar, ListingToolbar } from '@/components/listing-actions';
@@ -42,6 +42,7 @@ type Listing = {
   condition: string;
   colour: string | null;
   negotiable?: boolean;
+  status?: string | null;
   phone: string | null;
   whatsapp: string | null;
   contactHidden?: boolean;
@@ -94,10 +95,14 @@ export async function generateMetadata({
     const listing = await apiGet<Listing>(`/api/v1/listings/${slug}`, {
       token: await listingViewerToken(),
     });
+    const sold = listing.status === 'sold';
     return pageMetadata({
-      title: `${displayTitle(listing)} — Rs. ${listing.priceLkr.toLocaleString('en-LK')}`,
+      title: sold
+        ? `${displayTitle(listing)} — sold`
+        : `${displayTitle(listing)} — Rs. ${listing.priceLkr.toLocaleString('en-LK')}`,
       description: listing.description.slice(0, 160),
       path: `/${locale}/bikes/${slug}`,
+      locale,
     });
   } catch {
     return { title: 'Listing not found' };
@@ -133,12 +138,14 @@ export default async function ListingDetailPage({
         ? t(locale, 'sellerPrivate')
         : null;
 
+  const sold = listing.status === 'sold';
   const jsonLd = listingJsonLd({
     title: heading,
     description: listing.description,
     priceLkr: listing.priceLkr,
     slug: listing.slug,
     locale,
+    status: listing.status,
   });
 
   let similarAll: BrowseListingCard[] = [];
@@ -188,11 +195,27 @@ export default async function ListingDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd(locale, [
+              { name: t(locale, 'browse'), path: `/${locale}/bikes` },
+              { name: heading, path: `/${locale}/bikes/${slug}` },
+            ]),
+          ),
+        }}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch lg:gap-x-10 lg:gap-y-8">
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-5 md:grid-cols-[minmax(0,1fr)_minmax(20rem,36rem)] md:gap-x-8 lg:col-span-2">
           <div className="min-w-0 space-y-3 md:row-span-2">
             <div className="flex flex-wrap items-center gap-2">
+              {sold ? (
+                <span className="inline-flex border border-black/20 bg-black px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] text-white uppercase">
+                  {t(locale, 'soldBadge')}
+                </span>
+              ) : null}
               <span className="inline-flex border border-accent/25 bg-accent/5 px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] text-accent uppercase">
                 {listing.condition}
               </span>
@@ -211,12 +234,21 @@ export default async function ListingDetailPage({
             </h1>
             <p className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-accent">
               {formatLkr(listing.priceLkr)}
-              {listing.negotiable ? (
+              {sold ? (
+                <span className="ml-2 align-middle text-sm font-sans font-normal tracking-normal text-muted">
+                  · {t(locale, 'soldAskingPrice')}
+                </span>
+              ) : listing.negotiable ? (
                 <span className="ml-2 align-middle text-sm font-sans font-normal tracking-normal text-muted">
                   · {t(locale, 'negotiable')}
                 </span>
               ) : null}
             </p>
+            {sold ? (
+              <p className="max-w-xl text-sm text-muted">
+                {t(locale, 'soldListingHint')}
+              </p>
+            ) : null}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
               {location ? (
                 <span className="inline-flex items-center gap-1.5">
@@ -238,9 +270,11 @@ export default async function ListingDetailPage({
             </div>
           </div>
           <ListingToolbar locale={locale} listing={listing} />
-          <div className="col-span-2 md:col-span-1 md:col-start-2 md:self-center">
-            <ListingContactBar locale={locale} listing={listing} />
-          </div>
+          {!sold && !listing.contactHidden ? (
+            <div className="col-span-2 md:col-span-1 md:col-start-2 md:self-center">
+              <ListingContactBar locale={locale} listing={listing} />
+            </div>
+          ) : null}
         </header>
 
         <ListingGallery
@@ -267,7 +301,7 @@ export default async function ListingDetailPage({
         <section className="mt-14 border-t border-black/10 pt-10">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
-              {t(locale, 'similarListings')}
+              {sold ? t(locale, 'similarActiveListings') : t(locale, 'similarListings')}
             </h2>
             {hasMoreSimilar ? (
               <Link

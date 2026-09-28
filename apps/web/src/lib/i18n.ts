@@ -317,9 +317,6 @@ const en: Dict = {
   approximateLocation: 'Approximate location',
   partsDealersMap: 'Parts shop map',
   partsDealersMapEmpty: 'No parts shops with a map location yet.',
-  becomePartsDealer: 'Become a parts dealer',
-  becomePartsDealerHint:
-    'Create a ThrottleLK parts showroom. Admin approval is required before it goes public.',
   partsDealershipName: 'Parts shop name',
   aboutPartsDealership: 'About your parts shop',
   partsDealerApplyLogin: 'Sign in to apply as a parts dealer.',
@@ -327,12 +324,9 @@ const en: Dict = {
     'Waiting for admin approval before your parts showroom goes public.',
   partsDealerApplicationSubmitted:
     'Parts dealer application submitted for review.',
-  partsShowroom: 'Parts showroom',
   partsShowroomHint:
     'Update your public parts shop profile, cover photo, and map pin.',
-  partsListings: 'My parts',
   partsListingsHint: 'Manage spare and modified part listings for your shop.',
-  partsPerformance: 'Parts performance',
   partsPerformanceSubtitle:
     'Views, contact clicks, and favourites across your part listings.',
   sparePartsTitle: 'Spare parts',
@@ -347,7 +341,6 @@ const en: Dict = {
   spareTab: 'Spare parts',
   modifiedTab: 'Modified parts',
   noPartsYet: 'No parts listed yet.',
-  noPartsDealersYet: 'No approved parts shops yet.',
   compatibleSpareParts: 'Compatible spare parts',
   compatibleModifiedParts: 'Compatible modified parts',
   allPartsNav: 'All parts',
@@ -692,9 +685,6 @@ const en: Dict = {
   sellerTypeDealer: 'Dealer',
   featuredOnly: 'Featured only',
   negotiableOnly: 'Negotiable only',
-  conditionNew: 'New',
-  conditionUsed: 'Used',
-  conditionReconditioned: 'Reconditioned',
   notifyNewMatches: 'Email me when a new bike matches',
   alertsOn: 'Alerts on',
   alertsOff: 'Alerts off',
@@ -702,6 +692,52 @@ const en: Dict = {
   renewListing: 'Renew listing',
   expiresOn: 'Expires {date}',
   adminAudit: 'Audit log',
+  soldBadge: 'Sold',
+  soldAskingPrice: 'last asking price',
+  soldListingHint:
+    'This motorcycle has been marked sold. The page stays up so buyers can compare similar active listings.',
+  similarActiveListings: 'Similar bikes still for sale',
+  aboutNav: 'About',
+  contactNav: 'Contact',
+  aboutTitle: 'About ThrottleLK',
+  aboutLead:
+    'ThrottleLK is a motorcycle-first marketplace for Sri Lanka. Buyers discover bikes, scooters and parts. Private sellers and approved dealers advertise structured inventory.',
+  aboutBody1:
+    'Sales, inspections, payments and ownership transfer happen outside the platform — usually by phone, WhatsApp or in-app message. Advertised prices are asking prices, not official valuations.',
+  aboutBody2:
+    'The public site is available in English and Sinhala. Administrators review listings and dealer applications before they go live.',
+  contactTitle: 'Contact',
+  contactLead:
+    'ThrottleLK does not sell motorcycles. Use listing pages to contact a seller or dealer. Use the report button on a listing if something looks wrong.',
+  contactSupportEmail: 'Support email',
+  contactNoEmail:
+    'A public support email is not published yet. Report a suspicious listing from its page, or use the marketplace rules for seller and buyer expectations.',
+  contactGuides: 'Buying guides',
+  notFoundTitle: 'Page not found',
+  notFoundHint: 'That address is not a ThrottleLK page. Browse bikes or return home.',
+  notFoundHome: 'Go home',
+  minRegYear: 'Min registration year',
+  maxRegYear: 'Max registration year',
+  sortPopular: 'Most viewed',
+  reportReasonLabel: 'Reason',
+  reportReasonSpam: 'Spam',
+  reportReasonFraud: 'Fraud / scam',
+  reportReasonWrong: 'Wrong information',
+  reportReasonInappropriate: 'Inappropriate',
+  reportReasonDuplicate: 'Duplicate',
+  reportReasonOther: 'Other',
+  modelLandingIntro:
+    'Current asking prices from sellers on ThrottleLK. Compare year, mileage and location, then contact the seller outside the platform.',
+  modelLandingFaqTitle: 'Buying this model',
+  modelLandingFaq1:
+    'ThrottleLK shows advertised prices only. Confirm papers, condition and the final price in person before you pay.',
+  modelLandingFaq2:
+    'Filter by year, mileage and district, then open similar listings if this page has no active stock today.',
+  locationEmptyHint:
+    'No active bikes in this district right now. The page stays available so you can return when new listings appear.',
+  guidesTitle: 'Motorcycle buying guides',
+  guidesLead:
+    'Practical advice for Sri Lankan riders — buying, selling, and choosing the right bike.',
 };
 
 const si: Dict = {
@@ -976,9 +1012,6 @@ const si: Dict = {
   approximateLocation: 'ආසන්න ස්ථානය',
   partsDealersMap: 'පාර්ට්ස් සිතියම',
   partsDealersMapEmpty: 'සිතියම් පිහිටීමක් සහිත පාර්ට්ස් වෙළඳසැල් නැත.',
-  becomePartsDealer: 'පාර්ට්ස් ඩීලර් වන්න',
-  becomePartsDealerHint:
-    'ThrottleLK පාර්ට්ස් showroom එකක් සාදන්න. ප්‍රසිද්ධ වීමට පෙර පරිපාලක අනුමැතිය අවශ්‍යයි.',
   partsDealershipName: 'පාර්ට්ස් වෙළඳසැලේ නම',
   aboutPartsDealership: 'ඔබේ පාර්ට්ස් වෙළඳසැල ගැන',
   partsDealerApplyLogin: 'පාර්ට්ස් ඩීලර් ලෙස අයදුම් කිරීමට පිවිසෙන්න.',
@@ -986,12 +1019,9 @@ const si: Dict = {
     'ඔබේ පාර්ට්ස් showroom ප්‍රසිද්ධ වීමට පෙර පරිපාලක අනුමැතිය බලාපොරොත්තුවෙන්.',
   partsDealerApplicationSubmitted:
     'පාර්ට්ස් ඩීලර් අයදුම්පත සමාලෝචනය සඳහා ඉදිරිපත් කෙරිණි.',
-  partsShowroom: 'පාර්ට්ස් showroom',
   partsShowroomHint:
     'ඔබේ ප්‍රසිද්ධ පාර්ට්ස් වෙළඳසැලේ පැතිකඩ, කවර ඡායාරූපය සහ සිතියම් පින් යාවත්කාලීන කරන්න.',
-  partsListings: 'මගේ කොටස්',
   partsListingsHint: 'ඔබේ වෙළඳසැලේ spare සහ modified කොටස් කළමනාකරණය කරන්න.',
-  partsPerformance: 'පාර්ට්ස් කාර්ය සාධනය',
   partsPerformanceSubtitle:
     'ඔබේ කොටස් ලැයිස්තු හරහා බැලීම්, සම්බන්ධතා ක්ලික් සහ ප්‍රියතම.',
   sparePartsTitle: 'අමතර කොටස්',
@@ -1006,7 +1036,6 @@ const si: Dict = {
   spareTab: 'අමතර කොටස්',
   modifiedTab: 'වෙනස් කළ කොටස්',
   noPartsYet: 'තවම කොටස් ලැයිස්තුගත කර නැත.',
-  noPartsDealersYet: 'තවම අනුමත පාර්ට්ස් වෙළඳසැල් නැත.',
   compatibleSpareParts: 'ගැලපෙන අමතර කොටස්',
   compatibleModifiedParts: 'ගැලපෙන වෙනස් කළ කොටස්',
   allPartsNav: 'සියලු කොටස්',
@@ -1306,9 +1335,6 @@ const si: Dict = {
   sellerTypeDealer: "ඩීලර්",
   featuredOnly: "විශේෂිත පමණයි",
   negotiableOnly: "සාකච්ඡා කළ හැකි පමණයි",
-  conditionNew: "අලුත්",
-  conditionUsed: "පාවිච්චි කළ",
-  conditionReconditioned: "නැවත සකස් කළ",
   notifyNewMatches: "නව බයික්කක් ගැලපෙන විට ඊමේල් කරන්න",
   alertsOn: "ඇඟවීම් ඇත",
   alertsOff: "ඇඟවීම් නැත",

@@ -9,6 +9,8 @@ const FACET_KEYS = [
   'maxPrice',
   'minYear',
   'maxYear',
+  'minRegistrationYear',
+  'maxRegistrationYear',
   'condition',
   'fuelType',
   'transmission',

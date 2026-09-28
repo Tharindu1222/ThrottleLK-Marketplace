@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { guides } from '@/content/guides';
-import { isLocale, type Locale } from '@/lib/i18n';
+import { isLocale, t, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
 
 export async function generateMetadata({
@@ -12,10 +12,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return pageMetadata({
-    title: 'Motorcycle buying guides for Sri Lanka',
-    description:
-      'Practical guides for buying and selling motorcycles and scooters in Sri Lanka.',
+    title: isLocale(locale) ? t(locale, 'guidesTitle') : 'Guides',
+    description: isLocale(locale)
+      ? t(locale, 'guidesLead')
+      : 'Practical guides for buying and selling motorcycles in Sri Lanka.',
     path: `/${locale}/guides`,
+    locale,
   });
 }
 
@@ -31,12 +33,9 @@ export default async function GuidesIndexPage({
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
-        Guides
+        {t(locale, 'guidesTitle')}
       </h1>
-      <p className="mt-2 max-w-2xl text-muted">
-        Practical advice for Sri Lankan riders — buying, selling, and choosing
-        the right bike.
-      </p>
+      <p className="mt-2 max-w-2xl text-muted">{t(locale, 'guidesLead')}</p>
       <div className="mt-10 grid gap-6 md:grid-cols-2">
         {guides.map((guide) => (
           <Link

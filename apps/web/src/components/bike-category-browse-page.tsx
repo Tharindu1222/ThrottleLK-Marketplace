@@ -37,4 +37,5 @@ export async function BikeCategoryBrowsePage({
     redirect(`/${raw}/bikes?categoryId=${matched.id}`);
   }
   redirect(`/${raw}/bikes`);
+  return null;
 }

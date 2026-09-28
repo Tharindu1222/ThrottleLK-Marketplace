@@ -4,6 +4,9 @@ import { t, type Locale } from '@/lib/i18n';
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const links = [
+    { href: `/${locale}/about`, key: 'aboutNav' as const },
+    { href: `/${locale}/contact`, key: 'contactNav' as const },
+    { href: `/${locale}/guides`, key: 'contactGuides' as const },
     { href: `/${locale}/terms`, key: 'legalTermsLink' as const },
     { href: `/${locale}/privacy`, key: 'legalPrivacyLink' as const },
     { href: `/${locale}/rules`, key: 'legalRulesLink' as const },
@@ -14,7 +17,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       <BrandLogo size="footer" tone="white" />
       <p className="sr-only">{t(locale, 'brand')}</p>
       <nav
-        aria-label={t(locale, 'legalRulesLink')}
+        aria-label={t(locale, 'aboutNav')}
         className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2"
       >
         {links.map((link) => (

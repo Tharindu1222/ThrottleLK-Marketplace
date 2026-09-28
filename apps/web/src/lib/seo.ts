@@ -15,18 +15,24 @@ export function pageMetadata(input: {
 }): Metadata {
   const url = absoluteUrl(input.path);
   const locale = input.locale === 'si' ? 'si_LK' : 'en_LK';
+  const title = `${input.title} | ThrottleLK`;
   return {
     title: input.title,
     description: input.description,
     alternates: { canonical: url },
     robots: input.robots,
     openGraph: {
-      title: `${input.title} | ThrottleLK`,
+      title,
       description: input.description,
       url,
       siteName: 'ThrottleLK',
       locale,
       type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: input.description,
     },
   };
 }
@@ -37,7 +43,9 @@ export function listingJsonLd(listing: {
   priceLkr: number;
   slug: string;
   locale: string;
+  status?: string | null;
 }) {
+  const sold = listing.status === 'sold';
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -47,8 +55,36 @@ export function listingJsonLd(listing: {
       '@type': 'Offer',
       priceCurrency: 'LKR',
       price: listing.priceLkr,
-      availability: 'https://schema.org/InStock',
+      availability: sold
+        ? 'https://schema.org/SoldOut'
+        : 'https://schema.org/InStock',
       url: absoluteUrl(`/${listing.locale}/bikes/${listing.slug}`),
     },
+  };
+}
+
+export function websiteJsonLd(locale: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'ThrottleLK',
+    url: absoluteUrl(`/${locale}`),
+    inLanguage: locale === 'si' ? 'si-LK' : 'en-LK',
+  };
+}
+
+export function breadcrumbJsonLd(
+  locale: string,
+  items: Array<{ name: string; path: string }>,
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path.startsWith('/') ? item.path : `/${locale}${item.path}`),
+    })),
   };
 }

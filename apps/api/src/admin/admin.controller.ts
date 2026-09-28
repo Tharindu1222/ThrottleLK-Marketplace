@@ -422,14 +422,14 @@ export class AdminController {
 
   @Patch('users/:id/status')
   async userStatus(
+    @CurrentUser() actor: User,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(adminUpdateUserStatusSchema))
     body: AdminUpdateUserStatusInput,
   ): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.users.setStatus(id, body.status),
-    };
+    const data = await this.users.setStatus(id, body.status);
+    await this.audit.record(actor, 'user.status', 'user', id, body.status);
+    return { success: true, data };
   }
 
   @Get('brands')

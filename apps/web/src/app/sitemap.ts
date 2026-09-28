@@ -54,6 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       loc(locale, '/parts-dealers', { changeFrequency: 'daily', priority: 0.7 }),
       loc(locale, '/spare-parts', { changeFrequency: 'hourly', priority: 0.8 }),
       loc(locale, '/modified-parts', { changeFrequency: 'hourly', priority: 0.8 }),
+      loc(locale, '/about', { changeFrequency: 'monthly', priority: 0.4 }),
+      loc(locale, '/contact', { changeFrequency: 'yearly', priority: 0.3 }),
       loc(locale, '/terms', { changeFrequency: 'yearly', priority: 0.3 }),
       loc(locale, '/privacy', { changeFrequency: 'yearly', priority: 0.3 }),
       loc(locale, '/rules', { changeFrequency: 'yearly', priority: 0.3 }),
