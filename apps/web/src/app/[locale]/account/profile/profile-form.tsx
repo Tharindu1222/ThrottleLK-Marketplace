@@ -228,8 +228,6 @@ export function ProfileForm({ locale }: { locale: Locale }) {
       avatarUrl: updated.avatarUrl ?? null,
     };
     saveSession({
-      accessToken: token,
-      refreshToken: localStorage.getItem('throttlelk_refresh') ?? '',
       user: next,
     });
   }

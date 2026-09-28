@@ -1,7 +1,5 @@
 'use client';
 
-const ACCESS_KEY = 'throttlelk_access';
-const REFRESH_KEY = 'throttlelk_refresh';
 const USER_KEY = 'throttlelk_user';
 
 export type AuthUser = {
@@ -15,47 +13,31 @@ export type AuthUser = {
   avatarUrl?: string | null;
 };
 
-function writeAccessCookie(token: string) {
-  document.cookie = `${ACCESS_KEY}=${encodeURIComponent(token)}; Path=/; SameSite=Lax`;
-}
-
-function clearAccessCookie() {
-  document.cookie = `${ACCESS_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
-}
-
-export function saveSession(data: {
-  accessToken: string;
-  refreshToken: string;
-  user: AuthUser;
-}) {
-  localStorage.setItem(ACCESS_KEY, data.accessToken);
-  localStorage.setItem(REFRESH_KEY, data.refreshToken);
+export function saveSession(data: { user: AuthUser }) {
   localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-  writeAccessCookie(data.accessToken);
+  window.dispatchEvent(new Event('throttlelk-session'));
+}
+
+/** HttpOnly cookies hold JWTs. A stored user is only a UI hint. */
+export function getAccessToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return getStoredUser() ? 'cookie' : null;
 }
 
 export function getRefreshToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(REFRESH_KEY);
+  return getAccessToken();
 }
 
 export function clearSession() {
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(USER_KEY);
-  clearAccessCookie();
+  localStorage.removeItem('throttlelk_access');
+  localStorage.removeItem('throttlelk_refresh');
+  window.dispatchEvent(new Event('throttlelk-session'));
 }
 
-/** Copies the stored access token into a cookie so server pages can view non-public listings. */
 export function syncAccessCookie() {
-  const token = getAccessToken();
-  if (token) writeAccessCookie(token);
-  else clearAccessCookie();
-}
-
-export function getAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(ACCESS_KEY);
+  // Tokens are HttpOnly; nothing to copy into JS-visible cookies. ASVS 3.3.4
 }
 
 export function getStoredUser(): AuthUser | null {
@@ -68,3 +50,5 @@ export function getStoredUser(): AuthUser | null {
     return null;
   }
 }
+
+export const ACCESS_COOKIE_NAMES = ['__Host-tlk_access', 'tlk_access'] as const;

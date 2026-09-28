@@ -22,8 +22,6 @@ export function RegisterForm({ locale }: { locale: Locale }) {
     const form = new FormData(e.currentTarget);
     try {
       const data = await apiSend<{
-        accessToken: string;
-        refreshToken: string;
         user: AuthUser;
       }>('/api/v1/auth/register', {
         body: {
@@ -34,7 +32,7 @@ export function RegisterForm({ locale }: { locale: Locale }) {
           password: String(form.get('password')),
         },
       });
-      saveSession(data);
+      saveSession({ user: data.user });
       window.location.href = `/${locale}/sell`;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Register failed');

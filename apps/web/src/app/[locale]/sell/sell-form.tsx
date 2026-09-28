@@ -7,9 +7,11 @@ import {
   SearchableCombobox,
   type ComboboxOption,
 } from '@/components/searchable-combobox';
+import { VerifyEmailCallout } from '@/components/verify-email-callout';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { listingRequestMessage } from '@/lib/listing-errors';
 
 type Option = { id: string; name: string; slug?: string };
 type CatalogModel = {
@@ -338,7 +340,7 @@ export function SellForm({ locale }: { locale: Locale }) {
         }
         setStep(4);
       } catch (err) {
-        setError(err instanceof Error ? err.message : t(locale, 'saveListingFailed'));
+        setError(listingRequestMessage(err, locale, 'saveListingFailed'));
       } finally {
         setBusy(false);
       }
@@ -360,7 +362,7 @@ export function SellForm({ locale }: { locale: Locale }) {
       await apiSend(`/api/v1/listings/${listingId}/submit`, { token: token! });
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t(locale, 'submitFailed'));
+      setError(listingRequestMessage(err, locale, 'submitFailed'));
     } finally {
       setBusy(false);
     }
@@ -391,6 +393,7 @@ export function SellForm({ locale }: { locale: Locale }) {
 
   return (
     <div className="mx-auto mt-8 max-w-2xl">
+      <VerifyEmailCallout locale={locale} />
       <ol
         className="mb-8 flex flex-wrap justify-center gap-2"
         aria-label={t(locale, 'sellFormSteps')}

@@ -1,8 +1,8 @@
 import type { ApiSuccess, ApiErrorBody, PaginationMeta } from '@throttlelk/types';
 
 /**
- * Prefer NEXT_PUBLIC_API_URL in the browser; on the server allow
- * API_INTERNAL_URL / API_URL overrides (e.g. future container SSR).
+ * Browser uses same-origin `/api/v1` so HttpOnly cookies are included.
+ * Server talks to the API process and forwards the access cookie as Bearer.
  */
 function resolveApiUrl(): string {
   if (typeof window === 'undefined') {
@@ -13,7 +13,7 @@ function resolveApiUrl(): string {
       'http://localhost:3001'
     );
   }
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  return '';
 }
 
 export class ApiRequestError extends Error {
@@ -25,10 +25,6 @@ export class ApiRequestError extends Error {
   }
 }
 
-const ACCESS_KEY = 'throttlelk_access';
-const REFRESH_KEY = 'throttlelk_refresh';
-const USER_KEY = 'throttlelk_user';
-
 const AUTH_NO_REDIRECT_CODES = new Set([
   'INVALID_CREDENTIALS',
   'ACCOUNT_DISABLED',
@@ -36,12 +32,11 @@ const AUTH_NO_REDIRECT_CODES = new Set([
 
 function clearClientSession() {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
-  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem('throttlelk_user');
+  localStorage.removeItem('throttlelk_access');
+  localStorage.removeItem('throttlelk_refresh');
 }
 
-/** On browser 401s (expired/invalid session), send user to login. */
 function redirectToLoginIfUnauthorized(
   path: string,
   status: number,
@@ -82,6 +77,20 @@ function apiHeaders(extra?: Record<string, string>): Record<string, string> {
   return headers;
 }
 
+function bearerHeader(token?: string): Record<string, string> {
+  if (token && token !== 'cookie') {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+}
+
+async function serverAccessCookie(): Promise<string | undefined> {
+  if (typeof window !== 'undefined') return undefined;
+  const { cookies } = await import('next/headers');
+  const jar = await cookies();
+  return jar.get('__Host-tlk_access')?.value ?? jar.get('tlk_access')?.value;
+}
+
 function throwApiError(
   path: string,
   status: number,
@@ -91,27 +100,58 @@ function throwApiError(
   throw new ApiRequestError(status, body);
 }
 
-export async function apiGet<T>(
-  path: string,
-  init?: { token?: string; searchParams?: Record<string, string | undefined> },
-): Promise<T> {
-  const base = resolveApiUrl();
-  const url = new URL(path.startsWith('http') ? path : `${base}${path}`);
-  if (init?.searchParams) {
-    for (const [key, value] of Object.entries(init.searchParams)) {
-      if (value) url.searchParams.set(key, value);
-    }
-  }
-  const res = await fetch(url, {
-    headers: apiHeaders(
-      init?.token ? { Authorization: `Bearer ${init.token}` } : undefined,
-    ),
-    cache: 'no-store',
-  });
+async function parseJson<T>(path: string, res: Response): Promise<ApiSuccess<T>> {
   const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
   if (!res.ok || !('success' in json) || !json.success) {
     throwApiError(path, res.status, json as ApiErrorBody);
   }
+  return json;
+}
+
+async function authorizedHeaders(
+  token?: string,
+  extra?: Record<string, string>,
+): Promise<Record<string, string>> {
+  const fromArg = bearerHeader(token);
+  if (fromArg.Authorization) {
+    return apiHeaders({ ...extra, ...fromArg });
+  }
+  const cookieToken = await serverAccessCookie();
+  return apiHeaders({
+    ...extra,
+    ...bearerHeader(cookieToken),
+  });
+}
+
+function requestUrl(
+  path: string,
+  searchParams?: Record<string, string | undefined>,
+): string {
+  const url = (() => {
+    if (path.startsWith('http')) return new URL(path);
+    if (typeof window === 'undefined') {
+      return new URL(`${resolveApiUrl()}${path}`);
+    }
+    return new URL(path, window.location.origin);
+  })();
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (value) url.searchParams.set(key, value);
+    }
+  }
+  return url.toString();
+}
+
+export async function apiGet<T>(
+  path: string,
+  init?: { token?: string; searchParams?: Record<string, string | undefined> },
+): Promise<T> {
+  const res = await fetch(requestUrl(path, init?.searchParams), {
+    headers: await authorizedHeaders(init?.token),
+    cache: 'no-store',
+    credentials: 'include',
+  });
+  const json = await parseJson<T>(path, res);
   return json.data;
 }
 
@@ -119,23 +159,12 @@ export async function apiGetWithMeta<T>(
   path: string,
   init?: { token?: string; searchParams?: Record<string, string | undefined> },
 ): Promise<{ data: T; meta?: PaginationMeta }> {
-  const base = resolveApiUrl();
-  const url = new URL(path.startsWith('http') ? path : `${base}${path}`);
-  if (init?.searchParams) {
-    for (const [key, value] of Object.entries(init.searchParams)) {
-      if (value) url.searchParams.set(key, value);
-    }
-  }
-  const res = await fetch(url, {
-    headers: apiHeaders(
-      init?.token ? { Authorization: `Bearer ${init.token}` } : undefined,
-    ),
+  const res = await fetch(requestUrl(path, init?.searchParams), {
+    headers: await authorizedHeaders(init?.token),
     cache: 'no-store',
+    credentials: 'include',
   });
-  const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
-  if (!res.ok || !('success' in json) || !json.success) {
-    throwApiError(path, res.status, json as ApiErrorBody);
-  }
+  const json = await parseJson<T>(path, res);
   return { data: json.data, meta: json.meta as PaginationMeta | undefined };
 }
 
@@ -147,19 +176,16 @@ export async function apiSend<T>(
     token?: string;
   },
 ): Promise<T> {
-  const res = await fetch(`${resolveApiUrl()}${path}`, {
+  const res = await fetch(requestUrl(path), {
     method: options.method ?? 'POST',
-    headers: apiHeaders({
+    headers: await authorizedHeaders(options.token, {
       'Content-Type': 'application/json',
-      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
     }),
     body: options.body ? JSON.stringify(options.body) : undefined,
     cache: 'no-store',
+    credentials: 'include',
   });
-  const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
-  if (!res.ok || !('success' in json) || !json.success) {
-    throwApiError(path, res.status, json as ApiErrorBody);
-  }
+  const json = await parseJson<T>(path, res);
   return json.data;
 }
 
@@ -176,25 +202,22 @@ export async function apiUpload<T>(
       form.append(key, value);
     }
   }
-  const res = await fetch(`${resolveApiUrl()}${path}`, {
+  const res = await fetch(requestUrl(path), {
     method: 'POST',
-    headers: apiHeaders({
-      Authorization: `Bearer ${token}`,
-    }),
+    headers: await authorizedHeaders(token),
     body: form,
     cache: 'no-store',
+    credentials: 'include',
   });
-  const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
-  if (!res.ok || !('success' in json) || !json.success) {
-    throwApiError(path, res.status, json as ApiErrorBody);
-  }
+  const json = await parseJson<T>(path, res);
   return json.data;
 }
 
 export async function apiBlob(path: string, token: string): Promise<Blob> {
-  const res = await fetch(`${resolveApiUrl()}${path}`, {
-    headers: apiHeaders({ Authorization: `Bearer ${token}` }),
+  const res = await fetch(requestUrl(path), {
+    headers: await authorizedHeaders(token),
     cache: 'no-store',
+    credentials: 'include',
   });
   if (!res.ok) {
     let body: ApiErrorBody | null = null;

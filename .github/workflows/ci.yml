@@ -6,6 +6,34 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Fail on critical advisories
+        run: npm audit --audit-level=critical
+      - name: Report high advisories
+        run: |
+          if ! npm audit --audit-level=high; then
+            echo "::warning::High npm advisories remain (Next currently vendors PostCSS). Do not force Next 16."
+          fi
+
   build-test:
     runs-on: ubuntu-latest
     steps:
@@ -25,3 +53,31 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:3001
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
         run: npm run build -w @throttlelk/web
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Playwright smoke
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        run: npm run test:e2e
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint, audit, build-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_REF: main
+        run: |
+          if [ -z "$DEPLOY_HOST" ]; then
+            echo "DEPLOY_HOST secret is not set. Skipping remote deploy."
+            echo "See docs/ops/production-topology.md"
+            exit 0
+          fi
+          bash infrastructure/scripts/deploy.sh

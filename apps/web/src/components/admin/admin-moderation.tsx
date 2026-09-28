@@ -9,6 +9,7 @@ import type {
   PendingListing,
   PendingPartListing,
 } from '@/lib/admin-types';
+import { t } from '@/lib/i18n';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import type { PaginationMeta } from '@throttlelk/types';
 
@@ -29,6 +30,32 @@ function formatSubmittedAt(iso: string) {
     hour: 'numeric',
     minute: '2-digit',
   });
+}
+
+const DUPLICATE_REASON_KEYS = {
+  same_seller_model_year: 'duplicateSameSellerModelYear',
+  same_phone_model: 'duplicateSamePhoneModel',
+  same_title: 'duplicateSameTitle',
+  similar_title: 'duplicateSimilarTitle',
+} as const;
+
+function DuplicateSignals({ listing }: { listing: PendingListing }) {
+  const signals = listing.duplicateSignals ?? [];
+  if (signals.length === 0) return null;
+  const reasons = [...new Set(signals.flatMap((row) => row.reasons))];
+  return (
+    <div className="mt-2 rounded-lg border border-[var(--admin-warning)]/40 bg-[var(--admin-warning)]/10 px-2.5 py-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--admin-warning)]">
+        {t('en', 'duplicateSignals')}
+        {listing.duplicateCount ? ` · ${listing.duplicateCount}` : ''}
+      </p>
+      <ul className="mt-1 space-y-0.5 text-xs text-[var(--admin-text)]">
+        {reasons.map((reason) => (
+          <li key={reason}>{t('en', DUPLICATE_REASON_KEYS[reason])}</li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export function AdminModeration({ search = '' }: { search?: string }) {
@@ -247,6 +274,7 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                           </time>
                         </p>
                       ) : null}
+                      <DuplicateSignals listing={listing} />
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 sm:shrink-0">

@@ -13,6 +13,7 @@ import type {
   MarkSoldInput,
   UpdateInventoryItemInput,
 } from '@throttlelk/validation';
+import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
 import { StorageService } from '../storage/storage.service';
 import { Listing } from '../listings/listing.entity';
 import { User } from '../users/user.entity';
@@ -192,6 +193,20 @@ export class InventoryService {
         },
       });
     }
+    const isPdf = file.mimetype === 'application/pdf';
+    if (isPdf) {
+      if (!file.buffer?.subarray(0, 4).toString('ascii').startsWith('%PDF')) {
+        throw new BadRequestException({
+          success: false,
+          error: {
+            code: 'INVALID_TYPE',
+            message: 'PDF contents do not match the file type',
+          },
+        });
+      }
+    } else {
+      assertSafeImageFile(file);
+    }
     if (file.size > MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -212,14 +227,15 @@ export class InventoryService {
       }
     }
 
-    const ext =
-      file.mimetype === 'application/pdf'
-        ? 'pdf'
-        : file.mimetype === 'image/png'
-          ? 'png'
-          : file.mimetype === 'image/webp'
-            ? 'webp'
-            : 'jpg';
+    const ext = isPdf
+      ? 'pdf'
+      : extensionForMime(
+          file.mimetype === 'image/png'
+            ? 'image/png'
+            : file.mimetype === 'image/webp'
+              ? 'image/webp'
+              : 'image/jpeg',
+        );
     const storageKey = `inventory/${item.id}/${type}-${randomUUID()}.${ext}`;
     const stored = await this.storage.putObject(
       storageKey,

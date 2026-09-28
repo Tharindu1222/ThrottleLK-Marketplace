@@ -9,6 +9,7 @@ import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { LocationPinIcon } from '@/components/listing-spec-sheet';
 import { PartViewTracker } from '@/components/part-view-tracker';
 import { apiGet } from '@/lib/api';
+import { readAccessCookie } from '@/lib/session-cookie';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
 
@@ -42,7 +43,7 @@ type PartDetail = {
 };
 
 async function viewerToken() {
-  const raw = (await cookies()).get('throttlelk_access')?.value;
+  const raw = readAccessCookie(await cookies());
   return raw ? decodeURIComponent(raw) : undefined;
 }
 

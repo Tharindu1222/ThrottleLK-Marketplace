@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   clearSession,
   getAccessToken,
-  getRefreshToken,
   getStoredUser,
   saveSession,
   type AuthUser,
@@ -72,32 +71,34 @@ export function SiteHeader({
     const stored = getStoredUser();
     setUser(stored);
 
-    const token = getAccessToken();
-    if (!token) return;
-
-    void apiGet<AuthUser>('/api/v1/users/me', { token })
+    void apiGet<AuthUser>('/api/v1/users/me')
       .then((me) => {
         setUser(me);
-        const refresh = getRefreshToken();
-        if (refresh) {
-          saveSession({
-            accessToken: token,
-            refreshToken: refresh,
-            user: {
-              id: me.id,
-              firstName: me.firstName,
-              lastName: me.lastName,
-              email: me.email,
-              phone: me.phone,
-              roles: me.roles,
-              emailVerifiedAt: me.emailVerifiedAt,
-              avatarUrl: me.avatarUrl ?? null,
-            },
-          });
-        }
+        saveSession({
+          user: {
+            id: me.id,
+            firstName: me.firstName,
+            lastName: me.lastName,
+            email: me.email,
+            phone: me.phone,
+            roles: me.roles,
+            emailVerifiedAt: me.emailVerifiedAt,
+            avatarUrl: me.avatarUrl ?? null,
+          },
+        });
       })
       .catch(() => {
-        // keep stored user if refresh fails
+        void apiSend<{ user: AuthUser }>('/api/v1/auth/refresh', { body: {} })
+          .then((data) => {
+            setUser(data.user);
+            saveSession({ user: data.user });
+          })
+          .catch(() => {
+            if (!stored) {
+              clearSession();
+              setUser(null);
+            }
+          });
       });
   }, []);
 
@@ -127,13 +128,8 @@ export function SiteHeader({
   }, [accountOpen]);
 
   async function logout() {
-    const refreshToken = getRefreshToken();
     try {
-      if (refreshToken) {
-        await apiSend('/api/v1/auth/logout', {
-          body: { refreshToken },
-        });
-      }
+      await apiSend('/api/v1/auth/logout', { body: {} });
     } catch {
       // clear local session anyway
     } finally {

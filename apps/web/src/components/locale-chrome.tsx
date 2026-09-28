@@ -9,6 +9,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { CompareTray } from '@/components/compare-tray';
 import type { Locale } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
 
 export function LocaleChrome({
   locale,
@@ -30,17 +31,33 @@ export function LocaleChrome({
   const showTray = !isAuth && !isAccount && !isCompare && !isDealersMap;
 
   if (isAdmin) {
-    return <>{children}</>;
+    return (
+      <>
+        <a
+          href="#main-content"
+          className="skip-link"
+        >
+          {t(locale, 'skipToContent')}
+        </a>
+        <div id="main-content">{children}</div>
+      </>
+    );
   }
 
   return (
     <BreadcrumbLabelProvider>
       <div className="flex min-h-screen flex-col">
+        <a
+          href="#main-content"
+          className="skip-link"
+        >
+          {t(locale, 'skipToContent')}
+        </a>
         <SiteHeader locale={locale} />
         {!isAuth && !isAccount && !isHome ? (
           <SiteBreadcrumbs locale={locale} />
         ) : null}
-        <div className={`flex-1 ${showTray ? 'pb-20' : ''}`}>
+        <div id="main-content" className={`flex-1 ${showTray ? 'pb-20' : ''}`}>
           {children}
         </div>
         {!isAuth && !isAccount && !isDealersMap ? (

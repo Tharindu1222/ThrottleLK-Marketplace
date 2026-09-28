@@ -41,7 +41,11 @@ export async function LegalDocumentPage({
       <p className="mt-4 text-lg text-muted">
         {t(locale, page.descriptionKey as I18nKey)}
       </p>
-      <p className="mt-3 text-sm text-muted">{t(locale, 'legalReviewHint')}</p>
+      <p className="mt-3 text-sm text-muted">
+        {process.env.NEXT_PUBLIC_LEGAL_REVIEW_SIGNED === 'true'
+          ? t(locale, 'legalReviewSigned')
+          : t(locale, 'legalReviewPending')}
+      </p>
       <div className="mt-10 space-y-10">
         {page.sections.map((section) => (
           <section key={section.headingKey}>

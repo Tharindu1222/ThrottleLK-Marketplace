@@ -78,7 +78,16 @@ export default async function ModelPage({
       heading={`${brandName} ${model.name}`}
       intro={t(locale, 'modelLandingIntro')}
       faqTitle={t(locale, 'modelLandingFaqTitle')}
-      faqItems={[t(locale, 'modelLandingFaq1'), t(locale, 'modelLandingFaq2')]}
+      faqItems={[
+        {
+          question: t(locale, 'modelLandingFaq1Q'),
+          answer: t(locale, 'modelLandingFaq1'),
+        },
+        {
+          question: t(locale, 'modelLandingFaq2Q'),
+          answer: t(locale, 'modelLandingFaq2'),
+        },
+      ]}
       filterState={{ brandId: model.brandId, modelId: model.id }}
       page={pageFrom(sp)}
       listPath={`/${locale}/brands/${slug}/${model.slug}`}

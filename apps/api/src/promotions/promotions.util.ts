@@ -1,3 +1,5 @@
+import { assertSafeImageBuffer } from '../common/image-bytes';
+
 export const SLIP_MAX_BYTES = 5 * 1024 * 1024;
 
 export const SLIP_MIMES = new Set([
@@ -46,6 +48,7 @@ export function interleaveIds(
 export function assertSlipFile(file?: {
   mimetype: string;
   size: number;
+  buffer?: Buffer;
 }): void {
   if (!file) {
     throw new Error('FILE_REQUIRED');
@@ -55,6 +58,15 @@ export function assertSlipFile(file?: {
   }
   if (file.size > SLIP_MAX_BYTES) {
     throw new Error('FILE_TOO_LARGE');
+  }
+  if (file.buffer?.length) {
+    if (file.mimetype === 'application/pdf') {
+      if (!file.buffer.subarray(0, 4).toString('ascii').startsWith('%PDF')) {
+        throw new Error('INVALID_TYPE');
+      }
+    } else {
+      assertSafeImageBuffer(file.buffer, file.mimetype);
+    }
   }
 }
 

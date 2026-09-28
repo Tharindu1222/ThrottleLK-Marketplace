@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BikesBrowse } from '@/components/bikes-browse';
 import { apiGet } from '@/lib/api';
-import { isLocale, type Locale } from '@/lib/i18n';
+import { isLocale, t, type Locale } from '@/lib/i18n';
 import { parsePageParam } from '@/lib/pagination';
 import { isFacetedSearch } from '@/lib/search-index';
 import { pageMetadata } from '@/lib/seo';
@@ -29,7 +29,7 @@ export async function generateMetadata({
     const brand = await apiGet<Brand>(`/api/v1/brands/${slug}`);
     return pageMetadata({
       title: `${brand.name} motorcycles for sale in Sri Lanka`,
-      description: `Browse used and new ${brand.name} bikes and scooters on ThrottleLK.`,
+      description: `Browse used and new ${brand.name} bikes and scooters on ThrottleLK. Compare year, mileage and district asking prices.`,
       path: `/${locale}/brands/${brand.slug}`,
       locale,
       robots: isFacetedSearch(sp) ? { index: false, follow: true } : undefined,
@@ -62,6 +62,18 @@ export default async function BrandPage({
     <BikesBrowse
       locale={locale}
       heading={`${brand.name}`}
+      intro={t(locale, 'brandLandingIntro')}
+      faqTitle={t(locale, 'brandLandingFaqTitle')}
+      faqItems={[
+        {
+          question: t(locale, 'brandLandingFaq1Q'),
+          answer: t(locale, 'brandLandingFaq1'),
+        },
+        {
+          question: t(locale, 'brandLandingFaq2Q'),
+          answer: t(locale, 'brandLandingFaq2'),
+        },
+      ]}
       filterState={{ brandId: brand.id }}
       page={pageFrom(sp)}
       listPath={`/${locale}/brands/${brand.slug}`}

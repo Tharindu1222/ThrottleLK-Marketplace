@@ -6,11 +6,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
+import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
 import { StorageService } from '../storage/storage.service';
 import { PUBLIC_CATEGORY_SLUGS } from './category-map';
 import { Category } from './category.entity';
 
-const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 5 * 1024 * 1024;
 
 @Injectable()
@@ -44,15 +44,7 @@ export class CategoryCoverService {
         error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
       });
     }
-    if (!ALLOWED.has(file.mimetype)) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'INVALID_TYPE',
-          message: 'Only JPEG, PNG, or WebP images are allowed',
-        },
-      });
-    }
+    const mime = assertSafeImageFile(file);
     if (file.size > MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -64,17 +56,12 @@ export class CategoryCoverService {
       await this.storage.deleteObject(category.coverStorageKey).catch(() => undefined);
     }
 
-    const ext =
-      file.mimetype === 'image/png'
-        ? 'png'
-        : file.mimetype === 'image/webp'
-          ? 'webp'
-          : 'jpg';
+    const ext = extensionForMime(mime);
     const storageKey = `categories/${categoryId}/${randomUUID()}.${ext}`;
     const stored = await this.storage.putObject(
       storageKey,
       file.buffer,
-      file.mimetype,
+      mime,
     );
 
     category.coverStorageKey = stored.storageKey;

@@ -17,6 +17,7 @@ import type {
   VerifyEmailInput,
 } from '@throttlelk/validation';
 import { EmailService } from '../notifications/email.service';
+import { requireJwtSecrets } from '../common/jwt-secrets';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
 import { AuthToken, type AuthTokenType } from './auth-token.entity';
@@ -74,14 +75,25 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
+  private jwtSecrets() {
+    return requireJwtSecrets({
+      NODE_ENV: this.config.get<string>('NODE_ENV') ?? process.env.NODE_ENV,
+      JWT_ACCESS_SECRET:
+        this.config.get<string>('JWT_ACCESS_SECRET') ??
+        process.env.JWT_ACCESS_SECRET,
+      JWT_REFRESH_SECRET:
+        this.config.get<string>('JWT_REFRESH_SECRET') ??
+        process.env.JWT_REFRESH_SECRET,
+    });
+  }
+
   async refresh(refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync<{
         sub: string;
         email: string;
       }>(refreshToken, {
-        secret:
-          this.config.get<string>('JWT_REFRESH_SECRET') ?? 'change-me-refresh',
+        secret: this.jwtSecrets().refresh,
       });
       const session = await this.sessions.findOne({
         where: { tokenHash: this.hashToken(refreshToken) },
@@ -234,13 +246,13 @@ export class AuthService {
 
   private async issueTokens(user: User) {
     const payload = { sub: user.id, email: user.email, jti: randomUUID() };
+    const secrets = this.jwtSecrets();
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET') ?? 'change-me-access',
+      secret: secrets.access,
       expiresIn: '15m',
     });
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret:
-        this.config.get<string>('JWT_REFRESH_SECRET') ?? 'change-me-refresh',
+      secret: secrets.refresh,
       expiresIn: '7d',
     });
     await this.sessions.save(

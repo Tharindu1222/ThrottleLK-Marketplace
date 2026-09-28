@@ -728,13 +728,36 @@ const en: Dict = {
   reportReasonOther: 'Other',
   modelLandingIntro:
     'Current asking prices from sellers on ThrottleLK. Compare year, mileage and location, then contact the seller outside the platform.',
-  modelLandingFaqTitle: 'Buying this model',
-  modelLandingFaq1:
-    'ThrottleLK shows advertised prices only. Confirm papers, condition and the final price in person before you pay.',
-  modelLandingFaq2:
-    'Filter by year, mileage and district, then open similar listings if this page has no active stock today.',
   locationEmptyHint:
     'No active bikes in this district right now. The page stays available so you can return when new listings appear.',
+  skipToContent: 'Skip to main content',
+  verifyEmailToList:
+    'Verify your email before you can publish a listing. Check your inbox or resend the link from your profile.',
+  brandLandingIntro:
+    'Current asking prices for this brand on ThrottleLK. Compare year, mileage and district, then contact the seller outside the platform.',
+  brandLandingFaqTitle: 'Buying this brand',
+  brandLandingFaq1Q: 'Are these the final sale prices?',
+  brandLandingFaq1:
+    'ThrottleLK shows advertised prices only. Confirm papers, condition and the final price in person before you pay.',
+  brandLandingFaq2Q: 'How do I compare bikes from this brand?',
+  brandLandingFaq2:
+    'Open a model page for a tighter comparison, or filter this brand by year and location.',
+  modelLandingFaqTitle: 'Buying this model',
+  modelLandingFaq1Q: 'Are asking prices guaranteed?',
+  modelLandingFaq1:
+    'ThrottleLK shows advertised prices only. Confirm papers, condition and the final price in person before you pay.',
+  modelLandingFaq2Q: 'What if this model has no live listings?',
+  modelLandingFaq2:
+    'Filter by year, mileage and district, then open similar listings if this page has no active stock today.',
+  legalReviewPending:
+    'These pages are product copy pending lawyer / owner sign-off. They are not the final legal contract.',
+  legalReviewSigned:
+    'Owner review recorded. Confirm any later copy changes with counsel before treating this as the live contract.',
+  duplicateSignals: 'Possible duplicates',
+  duplicateSameSellerModelYear: 'Same seller, model and year',
+  duplicateSamePhoneModel: 'Same phone and model',
+  duplicateSameTitle: 'Same title',
+  duplicateSimilarTitle: 'Similar title',
   guidesTitle: 'Motorcycle buying guides',
   guidesLead:
     'Practical advice for Sri Lankan riders — buying, selling, and choosing the right bike.',
@@ -1342,6 +1365,34 @@ const si: Dict = {
   renewListing: "නැවත පළ කරන්න",
   expiresOn: "{date} දක්වා වලංගුයි",
   adminAudit: "විගණන ලොග්",
+  skipToContent: 'ප්‍රධාන අන්තර්ගතයට යන්න',
+  verifyEmailToList:
+    'ලැයිස්තුවක් පළ කිරීමට පෙර ඔබේ ඊමේල් එක තහවුරු කරන්න. Inbox එක බලන්න හෝ profile එකෙන් නැවත යවන්න.',
+  brandLandingIntro:
+    'මෙම බ්‍රෑන්ඩ් එකේ විකුණුම්කරුවන්ගේ ඉල්ලුම් මිල. වසර, කිලෝමීටර් සහ දිස්ත්‍රික්කය සසඳා, ගනුදෙනුව වේදිකාවෙන් පිටත සම්පූර්ණ කරන්න.',
+  brandLandingFaqTitle: 'මෙම බ්‍රෑන්ඩ් එක මිලදී ගැනීම',
+  brandLandingFaq1Q: 'මේ මිල අවසාන විකුණුම් මිලද?',
+  brandLandingFaq1:
+    'ThrottleLK පෙන්වන්නේ ඉල්ලුම් මිල පමණි. ලියාපදිංචි පත්‍ර, තත්ත්වය සහ අවසාන මිල පුද්ගලිකව තහවුරු කරන්න.',
+  brandLandingFaq2Q: 'මෙම බ්‍රෑන්ඩ් එකේ බයික් සසඳන්නේ කෙසේද?',
+  brandLandingFaq2:
+    'වඩා තද සංසන්දනයක් සඳහා මාදිලි පිටුවක් විවෘත කරන්න, නැතහොත් වසර සහ ස්ථානය අනුව පෙරහන් කරන්න.',
+  modelLandingFaqTitle: 'මෙම මාදිලිය මිලදී ගැනීම',
+  modelLandingFaq1Q: 'ඉල්ලුම් මිල සහතිකද?',
+  modelLandingFaq1:
+    'ThrottleLK පෙන්වන්නේ ඉල්ලුම් මිල පමණි. ලියාපදිංචි පත්‍ර, තත්ත්වය සහ අවසාන මිල පුද්ගලිකව තහවුරු කරන්න.',
+  modelLandingFaq2Q: 'මෙම මාදිලියට දැන් ලැයිස්තු නැත්නම්?',
+  modelLandingFaq2:
+    'වසර, කිලෝමීටර් සහ දිස්ත්‍රික්කයෙන් පෙරහන් කරන්න. අද ක්‍රියාකාරී තොගයක් නැත්නම් සමාන ලැයිස්තු බලන්න.',
+  legalReviewPending:
+    'මෙම පිටු නීතිඥ / හිමිකරු අනුමැතිය එනතුරු නිෂ්පාදන පිටපතකි. අවසාන ගිවිසුමක් නොවේ.',
+  legalReviewSigned:
+    'හිමිකරු සමාලෝචනය සටහන් විය. පසුව පිටපත් වෙනස් කිරීම් නීතිඥයෙකු සමඟ තහවුරු කරන්න.',
+  duplicateSignals: 'බොහෝ විට අනුපිටපත්',
+  duplicateSameSellerModelYear: 'එකම විකුණුම්කරු, මාදිලිය සහ වසර',
+  duplicateSamePhoneModel: 'එකම දුරකථනය සහ මාදිලිය',
+  duplicateSameTitle: 'එකම මාතෘකාව',
+  duplicateSimilarTitle: 'සමාන මාතෘකාව',
 };
 
 const tables: Record<Locale, Dict> = { en, si };

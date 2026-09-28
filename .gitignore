@@ -17,3 +17,9 @@ uploads
 apps/api/uploads
 .worktrees
 .superpowers
+.cursorrules
+.docs
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DataSource } from 'typeorm';
+import { requireJwtSecrets } from './common/jwt-secrets';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/api-exception.filter';
 
@@ -23,6 +24,7 @@ async function applyPendingMigrations(app: NestExpressApplication) {
 }
 
 async function bootstrap() {
+  requireJwtSecrets(process.env);
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   await applyPendingMigrations(app);
   app.use(

@@ -3,7 +3,7 @@ import { ListingsService, searchTokens } from './listings.service';
 import type { User } from '../users/user.entity';
 import type { Listing } from './listing.entity';
 
-const seller = { id: 'seller-1' } as User;
+const seller = { id: 'seller-1', emailVerifiedAt: new Date() } as User;
 const viewer = { id: 'buyer-1' } as User;
 
 function makeService(
@@ -166,6 +166,7 @@ describe('ListingsService.listPending', () => {
       andWhere: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => []),
       getManyAndCount: jest.fn(async () => [[pendingRow], 1]),
     };
     const imagesQb = {
@@ -212,6 +213,8 @@ describe('ListingsService.listPending', () => {
     });
     expect(row.seller).not.toHaveProperty('passwordHash');
     expect(row.updatedAt).toEqual(submittedAt);
+    expect(row.duplicateSignals).toEqual([]);
+    expect(row.duplicateCount).toBe(0);
     expect(meta).toMatchObject({ page: 1, limit: 20, total: 1 });
   });
 });
@@ -295,9 +298,27 @@ const createInput = {
 };
 
 describe('ListingsService.create dealer conversion', () => {
+  it('rejects listing create when email is not verified', async () => {
+    const unverified = {
+      id: 'seller-1',
+      emailVerifiedAt: null,
+      roles: [{ name: 'buyer' }, { name: 'seller' }],
+    } as User;
+    const { service } = makeService({});
+
+    await expect(
+      service.create(unverified, createInput as never),
+    ).rejects.toMatchObject({
+      response: {
+        error: { code: 'EMAIL_UNVERIFIED' },
+      },
+    });
+  });
+
   it('keeps private-seller listings unattached to a dealer', async () => {
     const privateSeller = {
       id: 'seller-1',
+      emailVerifiedAt: new Date(),
       roles: [{ name: 'buyer' }, { name: 'seller' }],
     } as User;
     const { service, listingsRepo } = makeService({});
@@ -312,6 +333,7 @@ describe('ListingsService.create dealer conversion', () => {
   it('forces approved dealers to list under their showroom', async () => {
     const dealerUser = {
       id: 'seller-1',
+      emailVerifiedAt: new Date(),
       roles: [{ name: 'buyer' }, { name: 'dealer' }],
     } as User;
     const { service, listingsRepo } = makeService(
@@ -329,6 +351,7 @@ describe('ListingsService.create dealer conversion', () => {
   it('rejects a private seller trying to list under a dealer', async () => {
     const privateSeller = {
       id: 'seller-1',
+      emailVerifiedAt: new Date(),
       roles: [{ name: 'buyer' }, { name: 'seller' }],
     } as User;
     const { service } = makeService({});
@@ -466,10 +489,12 @@ describe('ListingsService.create inventory', () => {
     };
     const dealerUser = {
       id: 'seller-1',
+      emailVerifiedAt: new Date(),
       roles: [{ name: 'buyer' }, { name: 'dealer' }],
     } as User;
     const privateSeller = {
       id: 'seller-1',
+      emailVerifiedAt: new Date(),
       roles: [{ name: 'buyer' }, { name: 'seller' }],
     } as User;
 

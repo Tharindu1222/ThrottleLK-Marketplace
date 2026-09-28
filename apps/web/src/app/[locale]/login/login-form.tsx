@@ -22,8 +22,6 @@ export function LoginForm({ locale }: { locale: Locale }) {
     const form = new FormData(e.currentTarget);
     try {
       const data = await apiSend<{
-        accessToken: string;
-        refreshToken: string;
         user: AuthUser;
       }>('/api/v1/auth/login', {
         body: {
@@ -31,7 +29,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
           password: String(form.get('password')),
         },
       });
-      saveSession(data);
+      saveSession({ user: data.user });
       const next = new URLSearchParams(window.location.search).get('next');
       const safeNext =
         next && next.startsWith(`/${locale}/`) && !next.includes('//')

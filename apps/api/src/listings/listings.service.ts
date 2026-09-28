@@ -30,6 +30,7 @@ import { ListingInquiry } from './listing-inquiry.entity';
 import { computeExpiresAt } from './listing-expiry';
 import { Listing } from './listing.entity';
 import { SavedSearchesService } from '../saved-searches/saved-searches.service';
+import { duplicateReasons } from './duplicate-signals';
 
 @Injectable()
 export class ListingsService {
@@ -51,6 +52,7 @@ export class ListingsService {
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
+    this.assertEmailVerified(seller);
     const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
     const baseSlug = slugify(input.title) || 'listing';
     const slug = `${baseSlug}-${Date.now().toString(36)}`;
@@ -160,6 +162,7 @@ export class ListingsService {
   }
 
   async submit(seller: User, id: string): Promise<Listing> {
+    this.assertEmailVerified(seller);
     const listing = await this.getOwned(seller.id, id);
     if (!['draft', 'rejected'].includes(listing.status)) {
       throw new BadRequestException({
@@ -861,14 +864,19 @@ export class ListingsService {
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
     const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    const signals = await Promise.all(
+      rows.map((row) => this.duplicateSignals(row)),
+    );
     return {
-      items: rows.map((row) => ({
+      items: rows.map((row, index) => ({
         id: row.id,
         title: row.title,
         priceLkr: row.priceLkr,
         manufactureYear: row.manufactureYear,
         updatedAt: row.updatedAt,
         coverImageUrl: covers.get(row.id) ?? null,
+        duplicateCount: signals[index]?.length ?? 0,
+        duplicateSignals: signals[index] ?? [],
         seller: row.seller
           ? {
               id: row.seller.id,
@@ -937,7 +945,8 @@ export class ListingsService {
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
       });
     }
-    return this.withCover(listing);
+    const duplicateSignals = await this.duplicateSignals(listing);
+    return { ...this.withCover(listing), duplicateSignals };
   }
 
   async adminCreate(input: {
@@ -1188,6 +1197,65 @@ export class ListingsService {
           ),
         ),
     );
+  }
+
+  private assertEmailVerified(seller: User) {
+    if (!seller.emailVerifiedAt) {
+      throw new ForbiddenException({
+        success: false,
+        error: {
+          code: 'EMAIL_UNVERIFIED',
+          message: 'Verify your email before creating listings',
+        },
+      });
+    }
+  }
+
+  async duplicateSignals(listing: Listing) {
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const qb = this.listings
+      .createQueryBuilder('l')
+      .where('l.id != :id', { id: listing.id })
+      .andWhere('l.status IN (:...statuses)', {
+        statuses: ['draft', 'pending_review', 'active', 'paused'],
+      })
+      .andWhere('l.created_at > :since', { since })
+      .andWhere(
+        '((l.seller_id = :sellerId AND l.model_id = :modelId) OR (l.model_id = :modelId AND l.phone = :phone) OR LOWER(l.title) = LOWER(:title))',
+        {
+          sellerId: listing.sellerId,
+          modelId: listing.modelId,
+          phone: listing.phone ?? '',
+          title: listing.title,
+        },
+      )
+      .take(20);
+    const others = await qb.getMany();
+    return others
+      .map((other) => ({
+        listingId: other.id,
+        title: other.title,
+        status: other.status,
+        reasons: duplicateReasons(
+          {
+            id: listing.id,
+            sellerId: listing.sellerId,
+            modelId: listing.modelId,
+            manufactureYear: listing.manufactureYear,
+            phone: listing.phone,
+            title: listing.title,
+          },
+          {
+            id: other.id,
+            sellerId: other.sellerId,
+            modelId: other.modelId,
+            manufactureYear: other.manufactureYear,
+            phone: other.phone,
+            title: other.title,
+          },
+        ),
+      }))
+      .filter((row) => row.reasons.length > 0);
   }
 
   private async resolveListingDealerId(

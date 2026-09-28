@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useId, useState } from 'react';
 import { PartListingImageManager } from '@/components/part-listing-image-manager';
+import { VerifyEmailCallout } from '@/components/verify-email-callout';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { listingRequestMessage } from '@/lib/listing-errors';
 
 type Option = { id: string; name: string };
 type CategoryOption = Option & {
@@ -273,9 +275,7 @@ export function NewPartListingForm({
         }
         setStep(3);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : t(locale, 'saveListingFailed'),
-        );
+        setError(listingRequestMessage(err, locale, 'saveListingFailed'));
       } finally {
         setBusy(false);
       }
@@ -309,7 +309,7 @@ export function NewPartListingForm({
       });
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t(locale, 'submitFailed'));
+      setError(listingRequestMessage(err, locale, 'submitFailed'));
     } finally {
       setBusy(false);
     }
@@ -353,6 +353,7 @@ export function NewPartListingForm({
 
   return (
     <div className="mt-6 w-full">
+      <VerifyEmailCallout locale={locale} />
       {isEdit && status === 'active' ? (
         <p className="mb-4 text-sm text-muted">{t(locale, 'editReviewHint')}</p>
       ) : null}

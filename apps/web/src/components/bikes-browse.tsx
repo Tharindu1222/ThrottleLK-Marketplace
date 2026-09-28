@@ -9,6 +9,7 @@ import { SaveSearchButton } from '@/components/save-search-button';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 import { hrefWithPage } from '@/lib/pagination';
+import { faqPageJsonLd } from '@/lib/seo';
 
 type Brand = { id: string; name: string; slug: string };
 type District = { id: string; name: string; slug: string };
@@ -32,7 +33,7 @@ export async function BikesBrowse({
   heading?: string;
   intro?: string;
   faqTitle?: string;
-  faqItems?: string[];
+  faqItems?: Array<{ question: string; answer: string }>;
   emptyHint?: string;
   listPath: string;
   pagerState?: BrowseFilterState;
@@ -124,14 +125,23 @@ export async function BikesBrowse({
       </div>
       {faqTitle && faqItems?.length ? (
         <section className="mt-12 max-w-3xl border-t border-black/10 pt-8">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(faqPageJsonLd(faqItems)),
+            }}
+          />
           <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">
             {faqTitle}
           </h2>
-          <div className="mt-4 space-y-3 text-sm leading-relaxed text-foreground/90">
+          <dl className="mt-4 space-y-5 text-sm leading-relaxed text-foreground/90">
             {faqItems.map((item) => (
-              <p key={item}>{item}</p>
+              <div key={item.question}>
+                <dt className="font-medium text-foreground">{item.question}</dt>
+                <dd className="mt-1 text-muted">{item.answer}</dd>
+              </div>
             ))}
-          </div>
+          </dl>
         </section>
       ) : null}
     </main>

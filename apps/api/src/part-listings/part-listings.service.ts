@@ -59,6 +59,15 @@ export class PartListingsService {
   ) {}
 
   async create(owner: User, input: CreatePartListingInput): Promise<any> {
+    if (!owner.emailVerifiedAt) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'EMAIL_UNVERIFIED',
+          message: 'Verify your email before creating listings',
+        },
+      });
+    }
     if (!owner.roles?.some((r) => r.name === 'parts_dealer')) {
       throw new BadRequestException({
         success: false,

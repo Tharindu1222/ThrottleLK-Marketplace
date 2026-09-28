@@ -16,6 +16,18 @@ export type PendingListing = {
   manufactureYear: number;
   coverImageUrl?: string | null;
   updatedAt: string;
+  duplicateCount?: number;
+  duplicateSignals?: Array<{
+    listingId: string;
+    title: string;
+    status: string;
+    reasons: Array<
+      | 'same_seller_model_year'
+      | 'same_phone_model'
+      | 'same_title'
+      | 'similar_title'
+    >;
+  }>;
   seller?: {
     id: string;
     firstName: string;

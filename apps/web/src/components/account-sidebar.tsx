@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   clearSession,
   getAccessToken,
-  getRefreshToken,
   getStoredUser,
   type AuthUser,
 } from '@/lib/auth';
@@ -343,13 +342,8 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
   }
 
   async function logout() {
-    const refreshToken = getRefreshToken();
     try {
-      if (refreshToken) {
-        await apiSend('/api/v1/auth/logout', {
-          body: { refreshToken },
-        });
-      }
+      await apiSend('/api/v1/auth/logout', { body: {} });
     } catch {
       // clear anyway
     } finally {

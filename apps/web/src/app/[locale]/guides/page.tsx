@@ -47,9 +47,11 @@ export default async function GuidesIndexPage({
               {guide.publishedAt}
             </p>
             <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-wide">
-              {guide.title}
+              {locale === 'si' ? guide.titleSi : guide.title}
             </h2>
-            <p className="mt-3 text-sm text-muted">{guide.description}</p>
+            <p className="mt-3 text-sm text-muted">
+              {locale === 'si' ? guide.descriptionSi : guide.description}
+            </p>
           </Link>
         ))}
       </div>

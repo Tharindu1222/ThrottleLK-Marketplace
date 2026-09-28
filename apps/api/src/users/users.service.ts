@@ -16,13 +16,13 @@ import type {
 } from '@throttlelk/validation';
 import { Listing } from '../listings/listing.entity';
 import { CacheService } from '../common/cache.service';
+import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { Dealer } from '../dealers/dealer.entity';
 import { StorageService } from '../storage/storage.service';
 import { Role } from './role.entity';
 import { User } from './user.entity';
 
-const AVATAR_ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 @Injectable()
@@ -264,15 +264,7 @@ export class UsersService {
         error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
       });
     }
-    if (!AVATAR_ALLOWED.has(file.mimetype)) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'INVALID_TYPE',
-          message: 'Only JPEG, PNG, or WebP images are allowed',
-        },
-      });
-    }
+    const mime = assertSafeImageFile(file);
     if (file.size > AVATAR_MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -286,17 +278,12 @@ export class UsersService {
         .catch(() => undefined);
     }
 
-    const ext =
-      file.mimetype === 'image/png'
-        ? 'png'
-        : file.mimetype === 'image/webp'
-          ? 'webp'
-          : 'jpg';
+    const ext = extensionForMime(mime);
     const storageKey = `avatars/${user.id}/${randomUUID()}.${ext}`;
     const stored = await this.storage.putObject(
       storageKey,
       file.buffer,
-      file.mimetype,
+      mime,
     );
 
     user.avatarStorageKey = stored.storageKey;

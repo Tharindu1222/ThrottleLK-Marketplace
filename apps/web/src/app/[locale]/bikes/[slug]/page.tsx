@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { apiGet } from '@/lib/api';
+import { readAccessCookie } from '@/lib/session-cookie';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { breadcrumbJsonLd, listingJsonLd, pageMetadata } from '@/lib/seo';
 import { composeListingTitle } from '@/lib/listing-title';
@@ -68,7 +69,7 @@ type Listing = {
 };
 
 async function listingViewerToken() {
-  const raw = (await cookies()).get('throttlelk_access')?.value;
+  const raw = readAccessCookie(await cookies());
   return raw ? decodeURIComponent(raw) : undefined;
 }
 

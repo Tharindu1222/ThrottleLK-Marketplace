@@ -12,6 +12,7 @@
     "build": "npm run build -w @throttlelk/types -w @throttlelk/validation -w @throttlelk/api -w @throttlelk/web",
     "lint": "npm run lint -w @throttlelk/web -w @throttlelk/api",
     "test": "npm run test -w @throttlelk/api -w @throttlelk/validation",
+    "test:e2e": "playwright test",
     "smoke:api": "powershell -File scripts/smoke-api.ps1",
     "docker:up": "powershell -NoProfile -Command \"if (-not (Test-Path .env)) { Copy-Item .env.example .env }; docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up -d\"",
     "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
@@ -19,5 +20,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
   }
 }

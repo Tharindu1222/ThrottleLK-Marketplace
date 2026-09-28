@@ -55,6 +55,7 @@ function makeService(dealer: Partial<PartsDealer> | null, owner: User) {
   const notifications = {
     partsDealerApproved: jest.fn(),
     partsDealerRejected: jest.fn(),
+    partsDealerPendingReview: jest.fn(),
   };
   const service = new PartsDealersService(
     partsDealersRepo as never,

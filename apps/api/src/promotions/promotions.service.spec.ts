@@ -118,7 +118,7 @@ describe('PromotionsService.createRequest', () => {
     mimetype: 'application/pdf',
     size: 1000,
     originalname: 'slip.pdf',
-    buffer: Buffer.from('pdf'),
+    buffer: Buffer.from('%PDF-1.4'),
   } as Express.Multer.File;
 
   it('creates a pending request when listing is active and no live placement exists', async () => {
