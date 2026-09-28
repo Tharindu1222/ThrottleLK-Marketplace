@@ -7,14 +7,17 @@ import {
   authPrimaryBtnClass,
   authSecondaryBtnClass,
 } from '@/components/auth/auth-shell';
+import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { apiCodeMessage } from '@/lib/listing-errors';
 import { safeNextPath } from '@/lib/safe-next';
 
 export function RegisterForm({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,13 +34,17 @@ export function RegisterForm({ locale }: { locale: Locale }) {
           email: String(form.get('email')),
           phone: String(form.get('phone') || '') || undefined,
           password: String(form.get('password')),
+          captchaToken: captchaToken || undefined,
         },
       });
       saveSession({ user: data.user });
       const next = new URLSearchParams(window.location.search).get('next');
       window.location.href = safeNextPath(next, locale, `/${locale}/account`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Register failed');
+      setError(
+        apiCodeMessage(err, locale) ??
+          (err instanceof Error ? err.message : 'Register failed'),
+      );
       setBusy(false);
     }
   }
@@ -98,6 +105,7 @@ export function RegisterForm({ locale }: { locale: Locale }) {
           className={authFieldClass}
         />
       </label>
+      <TurnstileField onToken={setCaptchaToken} />
 
       <div className="mt-1 flex flex-col gap-3 sm:flex-row">
         <button type="submit" disabled={busy} className={authPrimaryBtnClass}>

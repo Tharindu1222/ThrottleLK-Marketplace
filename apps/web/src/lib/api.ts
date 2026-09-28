@@ -28,6 +28,8 @@ export class ApiRequestError extends Error {
 const AUTH_NO_REDIRECT_CODES = new Set([
   'INVALID_CREDENTIALS',
   'ACCOUNT_DISABLED',
+  'CAPTCHA_REQUIRED',
+  'CAPTCHA_FAILED',
 ]);
 
 function clearClientSession() {

@@ -18,6 +18,7 @@ import { CacheService } from '../common/cache.service';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
 import { composeListingTitle } from '../common/listing-title';
+import { assertEmailVerified } from '../common/email-verified';
 import { User } from '../users/user.entity';
 import { DealersService } from '../dealers/dealers.service';
 import { InventoryService } from '../dealers/inventory.service';
@@ -55,7 +56,7 @@ export class ListingsService {
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
-    this.assertEmailVerified(seller);
+    assertEmailVerified(seller, 'creating listings');
     this.assertCanSell(seller);
     await this.taxonomy?.assertListingTaxonomy(input);
     const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
@@ -183,7 +184,7 @@ export class ListingsService {
   }
 
   async submit(seller: User, id: string): Promise<Listing> {
-    this.assertEmailVerified(seller);
+    assertEmailVerified(seller, 'creating listings');
     const listing = await this.getOwned(seller.id, id);
     if (!['draft', 'rejected'].includes(listing.status)) {
       throw new BadRequestException({
@@ -986,11 +987,15 @@ export class ListingsService {
     const [rows, total] = await qb.getManyAndCount();
     const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
     return {
-      items: rows.map((row) => ({
-        ...row,
-        images: [],
-        coverImageUrl: covers.get(row.id) ?? null,
-      })),
+      items: rows.map((row) => {
+        const { seller, ...rest } = row;
+        return {
+          ...rest,
+          images: [],
+          coverImageUrl: covers.get(row.id) ?? null,
+          seller: seller ? this.usersService.toPublic(seller) : null,
+        };
+      }),
       meta: paginationMeta(total, page, limit),
     };
   }
@@ -1007,7 +1012,13 @@ export class ListingsService {
       });
     }
     const duplicateSignals = await this.duplicateSignals(listing);
-    return { ...this.withCover(listing), duplicateSignals };
+    const covered = this.withCover(listing);
+    const { seller, ...rest } = covered;
+    return {
+      ...rest,
+      seller: seller ? this.usersService.toPublic(seller) : null,
+      duplicateSignals,
+    };
   }
 
   async adminCreate(input: {
@@ -1268,18 +1279,6 @@ export class ListingsService {
           ),
         ),
     );
-  }
-
-  private assertEmailVerified(seller: User) {
-    if (!seller.emailVerifiedAt) {
-      throw new ForbiddenException({
-        success: false,
-        error: {
-          code: 'EMAIL_UNVERIFIED',
-          message: 'Verify your email before creating listings',
-        },
-      });
-    }
   }
 
   private assertCanSell(seller: User) {

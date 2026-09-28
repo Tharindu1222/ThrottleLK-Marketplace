@@ -9,7 +9,18 @@ import {
   dealerWhatsappHref,
   formatDealerLocation,
   formatStreetAddress,
+  safeHttpUrl,
 } from './dealer-showroom';
+
+describe('safeHttpUrl', () => {
+  it('keeps http and https links and drops other schemes', () => {
+    assert.equal(safeHttpUrl('https://islandmotors.lk'), 'https://islandmotors.lk');
+    assert.equal(safeHttpUrl('http://example.com/path'), 'http://example.com/path');
+    assert.equal(safeHttpUrl('javascript:alert(1)'), null);
+    assert.equal(safeHttpUrl('data:text/html,x'), null);
+    assert.equal(safeHttpUrl(null), null);
+  });
+});
 
 describe('formatDealerLocation', () => {
   it('joins city and district once, skipping empties', () => {

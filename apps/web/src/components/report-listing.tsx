@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { apiCodeMessage } from '@/lib/listing-errors';
 import { loginHref } from '@/lib/login-href';
 
 export function ReportListing({
@@ -20,6 +22,7 @@ export function ReportListing({
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState('');
   const nextPath =
     typeof window === 'undefined'
       ? `/${locale}`
@@ -47,12 +50,16 @@ export function ReportListing({
           ...(partListingId ? { partListingId } : {}),
           reason: String(form.get('reason')),
           description: String(form.get('description')),
+          captchaToken: captchaToken || undefined,
         },
       });
       setStatus(t(locale, 'reportSent'));
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed');
+      setError(
+        apiCodeMessage(err, locale) ??
+          (err instanceof Error ? err.message : 'Failed'),
+      );
     }
   }
 
@@ -103,6 +110,7 @@ export function ReportListing({
               className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
             />
           </label>
+          <TurnstileField onToken={setCaptchaToken} />
           <div className="flex gap-2">
             <button
               type="submit"

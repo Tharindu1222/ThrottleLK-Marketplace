@@ -17,6 +17,7 @@ import type {
 import { Listing } from '../listings/listing.entity';
 import { CacheService } from '../common/cache.service';
 import { assertSafeImageFile } from '../common/image-bytes';
+import { hashPassword } from '../common/password-hash';
 import {
   deletePublicMarketplaceImage,
   storePublicMarketplaceImage,
@@ -70,7 +71,7 @@ export class UsersService {
     }
 
     const roles = await this.roles.find({ where: { name: In(roleNames) } });
-    const passwordHash = await bcrypt.hash(input.password, 10);
+    const passwordHash = await hashPassword(input.password);
     const user = this.users.create({
       firstName: input.firstName,
       lastName: input.lastName,
@@ -114,7 +115,7 @@ export class UsersService {
     if (input.phone !== undefined) user.phone = input.phone;
     if (input.status) user.status = input.status;
     if (input.password) {
-      user.passwordHash = await bcrypt.hash(input.password, 10);
+      user.passwordHash = await hashPassword(input.password);
       await this.revokeRefreshSessions(user.id);
     }
     if (input.roles) {
@@ -209,7 +210,7 @@ export class UsersService {
       email: user.email,
       phone: user.phone,
       avatarUrl: user.avatarUrl,
-      roles: user.roles.map((r) => r.name),
+      roles: (user.roles ?? []).map((r) => r.name),
       status: user.status,
       emailVerifiedAt: user.emailVerifiedAt,
       createdAt: user.createdAt,
@@ -251,9 +252,10 @@ export class UsersService {
     if (input.phone !== undefined) user.phone = input.phone;
 
     if (input.newPassword) {
+      const currentHash = await this.loadPasswordHash(user.id);
       const ok = await bcrypt.compare(
         input.currentPassword ?? '',
-        user.passwordHash,
+        currentHash,
       );
       if (!ok) {
         throw new BadRequestException({
@@ -264,10 +266,33 @@ export class UsersService {
           },
         });
       }
-      user.passwordHash = await bcrypt.hash(input.newPassword, 10);
+      user.passwordHash = await hashPassword(input.newPassword);
     }
 
-    return this.toPublic(await this.users.save(user));
+    const saved = await this.users.save(user);
+    if (input.newPassword) {
+      await this.revokeRefreshSessions(user.id);
+    }
+    return this.toPublic(saved);
+  }
+
+  private async loadPasswordHash(userId: string): Promise<string> {
+    const row = await this.users
+      .createQueryBuilder('user')
+      .select('user.id')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id', { id: userId })
+      .getOne();
+    if (!row?.passwordHash) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_PASSWORD',
+          message: 'Current password is incorrect',
+        },
+      });
+    }
+    return row.passwordHash;
   }
 
   async uploadAvatar(user: User, file?: Express.Multer.File) {
@@ -312,7 +337,7 @@ export class UsersService {
 
   async setPassword(userId: string, password: string) {
     const user = await this.findByIdOrThrow(userId);
-    user.passwordHash = await bcrypt.hash(password, 10);
+    user.passwordHash = await hashPassword(password);
     const saved = await this.users.save(user);
     await this.revokeRefreshSessions(userId);
     return saved;

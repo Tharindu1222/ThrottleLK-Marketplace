@@ -17,6 +17,7 @@ import type {
   UpdatePromoSettingsInput,
 } from '@throttlelk/validation';
 import { CacheService } from '../common/cache.service';
+import { assertEmailVerified } from '../common/email-verified';
 import { Listing } from '../listings/listing.entity';
 import { ListingsService } from '../listings/listings.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -157,6 +158,7 @@ export class PromotionsService {
     meta: CreatePromoRequestMetaInput,
     file?: Express.Multer.File,
   ) {
+    assertEmailVerified(seller, 'requesting a homepage ad');
     this.wrapSlip(file);
     const subjectType: PromoSubjectType = meta.listingId ? 'bike' : 'part';
     const listingId = meta.listingId ?? null;
@@ -341,7 +343,27 @@ export class PromotionsService {
       .leftJoinAndSelect('r.partListing', 'partListing')
       .orderBy('r.createdAt', 'DESC');
     if (status) qb.andWhere('r.status = :status', { status });
-    return qb.getMany();
+    const rows = await qb.getMany();
+    return rows.map((row) => {
+      const { slipStorageKey: _slipStorageKey, seller, ...rest } = row;
+      return {
+        ...rest,
+        seller: seller
+          ? {
+              id: seller.id,
+              firstName: seller.firstName,
+              lastName: seller.lastName,
+              email: seller.email,
+              phone: seller.phone,
+              avatarUrl: seller.avatarUrl,
+              roles: (seller.roles ?? []).map((role) => role.name),
+              status: seller.status,
+              emailVerifiedAt: seller.emailVerifiedAt,
+              createdAt: seller.createdAt,
+            }
+          : null,
+      };
+    });
   }
 
   async listLivePlacements() {

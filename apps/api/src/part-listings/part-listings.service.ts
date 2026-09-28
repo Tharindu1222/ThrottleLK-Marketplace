@@ -15,6 +15,7 @@ import type {
 import type { ListingStatus, PartListingKind } from '@throttlelk/types';
 import { In, IsNull, LessThanOrEqual, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
+import { assertEmailVerified } from '../common/email-verified';
 import { preferredCoverUrl } from '../common/image-variants';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
@@ -64,15 +65,7 @@ export class PartListingsService {
   ) {}
 
   async create(owner: User, input: CreatePartListingInput): Promise<any> {
-    if (!owner.emailVerifiedAt) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'EMAIL_UNVERIFIED',
-          message: 'Verify your email before creating listings',
-        },
-      });
-    }
+    assertEmailVerified(owner, 'creating listings');
     if (!owner.roles?.some((r) => r.name === 'parts_dealer')) {
       throw new BadRequestException({
         success: false,

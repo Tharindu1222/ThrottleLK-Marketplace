@@ -762,6 +762,9 @@ const en: Dict = {
   guidesTitle: 'Motorcycle buying guides',
   guidesLead:
     'Practical advice for Sri Lankan riders — buying, selling, and choosing the right bike.',
+  verifyEmailFirst:
+    'Verify your email first. Check your inbox or resend the link from your profile.',
+  captchaFailed: 'Please complete the CAPTCHA and try again.',
 };
 
 const si: Dict = {
@@ -1395,6 +1398,9 @@ const si: Dict = {
   duplicateSamePhoneModel: 'එකම දුරකථනය සහ මාදිලිය',
   duplicateSameTitle: 'එකම මාතෘකාව',
   duplicateSimilarTitle: 'සමාන මාතෘකාව',
+  verifyEmailFirst:
+    'මුලින්ම ඊමේල් එක තහවුරු කරන්න. Inbox එක බලන්න හෝ profile එකෙන් නැවත යවන්න.',
+  captchaFailed: 'CAPTCHA එක සම්පූර්ණ කර නැවත උත්සාහ කරන්න.',
 };
 
 const tables: Record<Locale, Dict> = { en, si };

@@ -14,3 +14,13 @@ export function listingRequestMessage(
   }
   return err instanceof Error ? err.message : t(locale, fallbackKey);
 }
+
+export function apiCodeMessage(err: unknown, locale: Locale): string | null {
+  if (!(err instanceof ApiRequestError)) return null;
+  const code = err.body?.error?.code;
+  if (code === 'EMAIL_UNVERIFIED') return t(locale, 'verifyEmailFirst');
+  if (code === 'CAPTCHA_REQUIRED' || code === 'CAPTCHA_FAILED') {
+    return t(locale, 'captchaFailed');
+  }
+  return null;
+}

@@ -21,6 +21,7 @@ import {
   readCookie,
 } from '../common/auth-cookies';
 import { RateLimit } from '../common/rate-limit';
+import { assertRequestCaptcha } from '../common/turnstile';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { CurrentUser } from './current-user.decorator';
@@ -34,9 +35,11 @@ export class AuthController {
   @RateLimit('auth')
   @Post('register')
   async register(
+    @Req() req: Request,
     @Body(new ZodValidationPipe(registerSchema)) body: RegisterInput,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiSuccess<{ user: unknown }>> {
+    await assertRequestCaptcha(req, body.captchaToken);
     const data = await this.authService.register(body);
     this.setAuthCookies(res, data.accessToken, data.refreshToken);
     return { success: true, data: { user: data.user } };
@@ -45,9 +48,11 @@ export class AuthController {
   @RateLimit('login')
   @Post('login')
   async login(
+    @Req() req: Request,
     @Body(new ZodValidationPipe(loginSchema)) body: LoginInput,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiSuccess<{ user: unknown }>> {
+    await assertRequestCaptcha(req, body.captchaToken);
     const data = await this.authService.login(body);
     this.setAuthCookies(res, data.accessToken, data.refreshToken);
     return { success: true, data: { user: data.user } };
@@ -88,9 +93,11 @@ export class AuthController {
   @RateLimit('auth')
   @Post('forgot-password')
   async forgotPassword(
+    @Req() req: Request,
     @Body(new ZodValidationPipe(forgotPasswordSchema))
     body: ForgotPasswordInput,
   ): Promise<ApiSuccess<unknown>> {
+    await assertRequestCaptcha(req, body.captchaToken);
     return {
       success: true,
       data: await this.authService.forgotPassword(body),

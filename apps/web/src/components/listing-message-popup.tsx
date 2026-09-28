@@ -13,6 +13,7 @@ import { createPortal } from 'react-dom';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { apiCodeMessage } from '@/lib/listing-errors';
 
 type ChatMessage = {
   id: string;
@@ -204,7 +205,10 @@ export function ListingMessagePopup({
       }
       setDraft('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed');
+      setError(
+        apiCodeMessage(err, locale) ??
+          (err instanceof Error ? err.message : 'Failed'),
+      );
     } finally {
       setSending(false);
     }

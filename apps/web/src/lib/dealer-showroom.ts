@@ -104,3 +104,14 @@ export function dealerMemberYear(createdAt?: string): number | null {
   const year = new Date(createdAt).getFullYear();
   return Number.isFinite(year) ? year : null;
 }
+
+export function safeHttpUrl(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    return value.trim();
+  } catch {
+    return null;
+  }
+}

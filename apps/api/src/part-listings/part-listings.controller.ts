@@ -32,6 +32,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { RateLimit } from '../common/rate-limit';
+import { assertRequestCaptcha } from '../common/turnstile';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { PartCategoriesService } from './part-categories.service';
@@ -196,8 +197,10 @@ export class PartListingsController {
   @Post(':id/contact')
   async contact(
     @Param('id') id: string,
+    @Req() req: Request,
     @Body(new ZodValidationPipe(contactListingSchema)) body: ContactListingInput,
   ): Promise<ApiSuccess<unknown>> {
+    await assertRequestCaptcha(req, body.captchaToken);
     const inquiry = await this.partListingsService.contact(id, body);
     return {
       success: true,

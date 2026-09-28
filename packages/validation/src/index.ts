@@ -12,21 +12,26 @@ export const listingStatusSchema = z.enum([
 
 export const localeSchema = z.enum(['en', 'si']);
 
+const captchaTokenSchema = z.string().min(1).max(2048).optional();
+
 export const registerSchema = z.object({
   firstName: z.string().min(1).max(80),
   lastName: z.string().min(1).max(80),
   email: z.string().email(),
   phone: z.string().min(9).max(20).optional(),
   password: z.string().min(8).max(128),
+  captchaToken: captchaTokenSchema,
 });
 
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
+  captchaToken: captchaTokenSchema,
 });
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email(),
+  captchaToken: captchaTokenSchema,
 });
 
 export const resetPasswordSchema = z.object({
@@ -108,13 +113,25 @@ export const rejectListingSchema = z.object({
   reason: z.string().min(5).max(1000),
 });
 
+const httpUrl = z
+  .string()
+  .url()
+  .refine((value) => {
+    try {
+      const protocol = new URL(value).protocol;
+      return protocol === 'https:' || protocol === 'http:';
+    } catch {
+      return false;
+    }
+  }, 'URL must be http or https');
+
 export const createDealerSchema = z.object({
   name: z.string().min(2).max(120),
   description: z.string().max(5000).optional(),
   phone: z.string().min(9).max(20),
   whatsapp: z.string().min(9).max(20).optional(),
   email: z.string().email().optional(),
-  website: z.string().url().optional(),
+  website: httpUrl.optional(),
   address: z.string().max(300).optional(),
   districtId: z.string().uuid(),
   cityId: z.string().uuid(),
@@ -128,7 +145,7 @@ const emptyToNullUrl = z
   .transform((v, ctx) => {
     if (v === undefined) return undefined;
     if (v === null || v.trim() === '') return null;
-    const parsed = z.string().url().safeParse(v);
+    const parsed = httpUrl.safeParse(v);
     if (!parsed.success) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -202,6 +219,7 @@ export const contactListingSchema = z.object({
   buyerPhone: z.string().min(9).max(20),
   buyerEmail: z.string().email().optional(),
   message: z.string().min(10).max(2000),
+  captchaToken: captchaTokenSchema,
 });
 
 export const listingSortSchema = z.enum([
@@ -374,6 +392,7 @@ export const createReportSchema = z
       'other',
     ]),
     description: z.string().min(10).max(2000),
+    captchaToken: captchaTokenSchema,
   })
   .superRefine((data, ctx) => {
     const hasListing = Boolean(data.listingId);

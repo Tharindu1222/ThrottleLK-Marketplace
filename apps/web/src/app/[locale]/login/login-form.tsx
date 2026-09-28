@@ -7,15 +7,18 @@ import {
   authPrimaryBtnClass,
   authSecondaryBtnClass,
 } from '@/components/auth/auth-shell';
+import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { apiCodeMessage } from '@/lib/listing-errors';
 import { safeNextPath } from '@/lib/safe-next';
 
 export function LoginForm({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [registerHref, setRegisterHref] = useState(`/${locale}/register`);
+  const [captchaToken, setCaptchaToken] = useState('');
 
   useEffect(() => {
     const next = new URLSearchParams(window.location.search).get('next');
@@ -38,13 +41,17 @@ export function LoginForm({ locale }: { locale: Locale }) {
         body: {
           email: String(form.get('email')),
           password: String(form.get('password')),
+          captchaToken: captchaToken || undefined,
         },
       });
       saveSession({ user: data.user });
       const next = new URLSearchParams(window.location.search).get('next');
       window.location.href = safeNextPath(next, locale);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(
+        apiCodeMessage(err, locale) ??
+          (err instanceof Error ? err.message : 'Login failed'),
+      );
       setBusy(false);
     }
   }
@@ -100,6 +107,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
           />
         </div>
       </label>
+      <TurnstileField onToken={setCaptchaToken} />
 
       <p className="text-center text-sm">
         <Link
@@ -114,10 +122,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
         <button type="submit" disabled={busy} className={authPrimaryBtnClass}>
           {busy ? '…' : t(locale, 'login').toUpperCase()}
         </button>
-        <Link
-          href={registerHref}
-          className={authSecondaryBtnClass}
-        >
+        <Link href={registerHref} className={authSecondaryBtnClass}>
           {t(locale, 'register').toUpperCase()}
         </Link>
       </div>

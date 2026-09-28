@@ -11,6 +11,7 @@ import {
   dealerWhatsappHref,
   formatDealerLocation,
   formatStreetAddress,
+  safeHttpUrl,
   type DealerShowroom,
 } from '@/lib/dealer-showroom';
 import { t, type Locale } from '@/lib/i18n';
@@ -88,28 +89,31 @@ export function DealerShowroomProfile({
       value: dealer.email,
     });
   }
-  if (dealer.website) {
+  const website = safeHttpUrl(dealer.website);
+  if (website) {
     contacts.push({
       key: 'website',
-      href: dealer.website,
+      href: website,
       label: t(locale, 'websiteUrl'),
-      value: dealer.website.replace(/^https?:\/\//, ''),
+      value: website.replace(/^https?:\/\//, ''),
       external: true,
     });
   }
-  if (dealer.facebookUrl) {
+  const facebook = safeHttpUrl(dealer.facebookUrl);
+  if (facebook) {
     contacts.push({
       key: 'facebook',
-      href: dealer.facebookUrl,
+      href: facebook,
       label: t(locale, 'socialFacebook'),
       value: t(locale, 'visitFacebook'),
       external: true,
     });
   }
-  if (dealer.tiktokUrl) {
+  const tiktok = safeHttpUrl(dealer.tiktokUrl);
+  if (tiktok) {
     contacts.push({
       key: 'tiktok',
-      href: dealer.tiktokUrl,
+      href: tiktok,
       label: t(locale, 'socialTiktok'),
       value: t(locale, 'visitTiktok'),
       external: true,

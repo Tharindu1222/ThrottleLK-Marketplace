@@ -322,3 +322,25 @@ describe('DealersService.performance', () => {
     expect(result.favourites).toBe(1);
   });
 });
+
+describe('DealersService.create email verification', () => {
+  it('rejects unverified owners before creating a shop', async () => {
+    const owner = {
+      id: 'user-1',
+      emailVerifiedAt: null,
+      roles: [role('buyer'), role('seller')],
+    } as User;
+    const { service } = makeService(null, owner);
+
+    await expect(
+      service.create(owner, {
+        name: 'Island Motos',
+        phone: '0771234567',
+        districtId: '11111111-1111-4111-8111-111111111111',
+        cityId: '22222222-2222-4222-8222-222222222222',
+      }),
+    ).rejects.toMatchObject({
+      response: { error: { code: 'EMAIL_UNVERIFIED' } },
+    });
+  });
+});

@@ -10,6 +10,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { resolveObjectBucket } from './object-bucket';
 
 export type StoredObject = {
   storageKey: string;
@@ -116,6 +117,28 @@ export class StorageService {
     },
   ): Promise<StoredObject> {
     const { client, bucket, publicUrl } = this.requireR2();
+    let target: { bucket: string; exposePublicUrl: boolean };
+    try {
+      target = resolveObjectBucket({
+        publicBucket: bucket,
+        privateBucket: this.read('R2_PRIVATE_BUCKET'),
+        access: options?.access,
+        production:
+          (this.config.get<string>('NODE_ENV') ?? process.env.NODE_ENV) ===
+          'production',
+      });
+    } catch (err) {
+      throw new ServiceUnavailableException({
+        success: false,
+        error: {
+          code: 'R2_PRIVATE_BUCKET_REQUIRED',
+          message:
+            err instanceof Error
+              ? err.message
+              : 'R2_PRIVATE_BUCKET must be set for private uploads',
+        },
+      });
+    }
     const cacheControl =
       options?.access === 'private'
         ? undefined
@@ -123,7 +146,7 @@ export class StorageService {
     try {
       await client.send(
         new PutObjectCommand({
-          Bucket: bucket,
+          Bucket: target.bucket,
           Key: storageKey,
           Body: buffer,
           ContentType: contentType,
@@ -135,8 +158,7 @@ export class StorageService {
     }
     return {
       storageKey,
-      publicUrl:
-        options?.access === 'private' ? '' : `${publicUrl}/${storageKey}`,
+      publicUrl: target.exposePublicUrl ? `${publicUrl}/${storageKey}` : '',
     };
   }
 
@@ -144,33 +166,55 @@ export class StorageService {
     storageKey: string,
   ): Promise<{ buffer: Buffer; contentType: string | null }> {
     const { client, bucket } = this.requireR2();
-    try {
-      const out = await client.send(
-        new GetObjectCommand({ Bucket: bucket, Key: storageKey }),
-      );
-      const bytes = out.Body
-        ? await out.Body.transformToByteArray()
-        : new Uint8Array();
-      return {
-        buffer: Buffer.from(bytes),
-        contentType: out.ContentType ?? null,
-      };
-    } catch (err) {
-      this.rethrowR2(err, 'download');
+    const buckets = this.readBuckets(bucket);
+    let lastError: unknown;
+    for (const target of buckets) {
+      try {
+        const out = await client.send(
+          new GetObjectCommand({ Bucket: target, Key: storageKey }),
+        );
+        const bytes = out.Body
+          ? await out.Body.transformToByteArray()
+          : new Uint8Array();
+        return {
+          buffer: Buffer.from(bytes),
+          contentType: out.ContentType ?? null,
+        };
+      } catch (err) {
+        lastError = err;
+      }
     }
+    this.rethrowR2(lastError, 'download');
   }
 
   async deleteObject(storageKey: string): Promise<void> {
     const { client, bucket } = this.requireR2();
-    try {
-      await client.send(
-        new DeleteObjectCommand({
-          Bucket: bucket,
-          Key: storageKey,
-        }),
-      );
-    } catch (err) {
-      this.rethrowR2(err, 'delete');
+    const buckets = this.readBuckets(bucket);
+    let deleted = false;
+    let lastError: unknown;
+    for (const target of buckets) {
+      try {
+        await client.send(
+          new DeleteObjectCommand({
+            Bucket: target,
+            Key: storageKey,
+          }),
+        );
+        deleted = true;
+      } catch (err) {
+        lastError = err;
+      }
     }
+    if (!deleted) {
+      this.rethrowR2(lastError, 'delete');
+    }
+  }
+
+  private readBuckets(publicBucket: string): string[] {
+    const privateBucket = this.read('R2_PRIVATE_BUCKET');
+    if (privateBucket && privateBucket !== publicBucket) {
+      return [privateBucket, publicBucket];
+    }
+    return [publicBucket];
   }
 }

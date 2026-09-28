@@ -221,6 +221,68 @@ describe('ListingsService.listPending', () => {
   });
 });
 
+describe('ListingsService.listAllAdmin', () => {
+  it('does not serialize seller passwordHash', async () => {
+    const adminRow = {
+      id: 'listing-1',
+      title: 'Honda Activa',
+      seller: {
+        id: 'seller-1',
+        firstName: 'Nimal',
+        lastName: 'Perera',
+        email: 'nimal@example.com',
+        passwordHash: '$2b$10$not-a-real-hash',
+        roles: [{ name: 'seller' }],
+        status: 'active',
+        phone: '0770000000',
+        avatarUrl: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        emailVerifiedAt: new Date('2026-01-02T00:00:00.000Z'),
+      },
+    };
+    const listingsQb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(async () => [[adminRow], 1]),
+    };
+    const imagesQb = {
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => []),
+    };
+    const usersService = {
+      toPublic: jest.fn((user: { id: string; passwordHash?: string }) => {
+        const { passwordHash: _passwordHash, ...safe } = user;
+        return safe;
+      }),
+    };
+    const service = new ListingsService(
+      { createQueryBuilder: jest.fn(() => listingsQb) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { createQueryBuilder: jest.fn(() => imagesQb) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      {} as never,
+      {} as never,
+      {
+        userIdsForListing: jest.fn(async () => []),
+        countsByListingIds: jest.fn(async () => new Map<string, number>()),
+      } as never,
+      usersService as never,
+      { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
+    );
+
+    const { items } = await service.listAllAdmin();
+    expect(items[0].seller).not.toHaveProperty('passwordHash');
+    expect(usersService.toPublic).toHaveBeenCalled();
+  });
+});
+
 describe('ListingsService.listMine', () => {
   it('pages with skip/take and returns meta', async () => {
     const listingsRepo = {

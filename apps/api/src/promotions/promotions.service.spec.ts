@@ -2,7 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PromotionsService } from './promotions.service';
 import type { User } from '../users/user.entity';
 
-const seller = { id: 'seller-1' } as User;
+const seller = { id: 'seller-1', emailVerifiedAt: new Date() } as User;
 const admin = { id: 'admin-1' } as User;
 
 function makeService(overrides?: {
@@ -41,6 +41,7 @@ function makeService(overrides?: {
     findOne: jest.fn(async () => overrides?.pending ?? null),
     create: jest.fn((v: unknown) => v),
     save: jest.fn(async (v: unknown) => ({ id: 'req-1', ...(v as object) })),
+    createQueryBuilder: jest.fn(),
   };
   const placements = {
     findOne: jest.fn(async () => overrides?.live ?? null),
@@ -156,6 +157,20 @@ describe('PromotionsService.createRequest', () => {
         file,
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects an unverified seller', async () => {
+    const { service, requests } = makeService();
+    await expect(
+      service.createRequest(
+        { id: 'seller-1', emailVerifiedAt: null } as User,
+        { packageId: 'pkg-1', listingId: 'listing-1' },
+        file,
+      ),
+    ).rejects.toMatchObject({
+      response: { error: { code: 'EMAIL_UNVERIFIED' } },
+    });
+    expect(requests.save).not.toHaveBeenCalled();
   });
 
   it('rejects when there is no default bank account', async () => {
@@ -285,5 +300,45 @@ describe('PromotionsService helpers', () => {
     await expect(service.approve(admin, 'missing')).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+});
+
+describe('PromotionsService.listRequests', () => {
+  it('omits passwordHash and slipStorageKey from admin payloads', async () => {
+    const { service, requests } = makeService();
+    const row = {
+      id: 'req-1',
+      slipStorageKey: 'promo-slips/secret.pdf',
+      seller: {
+        id: 'seller-1',
+        firstName: 'Nimal',
+        lastName: 'Perera',
+        email: 'nimal@example.com',
+        passwordHash: '$2b$10$secret',
+        roles: [{ name: 'seller' }],
+        status: 'active',
+        phone: null,
+        avatarUrl: null,
+        createdAt: new Date(),
+        emailVerifiedAt: null,
+      },
+      package: { id: 'pkg-1' },
+      bankAccount: { id: 'bank-1' },
+      listing: { id: 'listing-1', title: 'Honda' },
+    };
+    requests.createQueryBuilder = jest.fn(() => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => [row]),
+    }));
+
+    const items = await service.listRequests();
+    expect(items[0]).not.toHaveProperty('slipStorageKey');
+    expect(items[0].seller).not.toHaveProperty('passwordHash');
+    expect(items[0].seller).toMatchObject({
+      id: 'seller-1',
+      email: 'nimal@example.com',
+    });
   });
 });

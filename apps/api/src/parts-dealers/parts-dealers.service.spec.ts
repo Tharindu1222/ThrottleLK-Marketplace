@@ -73,6 +73,7 @@ describe('PartsDealersService.create', () => {
   it('allows create when owner already has bike dealer role', async () => {
     const owner = {
       id: 'user-1',
+      emailVerifiedAt: new Date(),
       roles: [role('buyer'), role('dealer')],
     } as User;
     const { service, partsDealersRepo } = makeService(null, owner);
@@ -88,9 +89,31 @@ describe('PartsDealersService.create', () => {
     expect(partsDealersRepo.save).toHaveBeenCalled();
   });
 
+  it('rejects unverified owners before creating a shop', async () => {
+    const owner = {
+      id: 'user-1',
+      emailVerifiedAt: null,
+      roles: [role('buyer'), role('dealer')],
+    } as User;
+    const { service, partsDealersRepo } = makeService(null, owner);
+
+    await expect(
+      service.create(owner, {
+        name: 'Parts Hub',
+        phone: '0771234567',
+        districtId: '11111111-1111-4111-8111-111111111111',
+        cityId: '22222222-2222-4222-8222-222222222222',
+      }),
+    ).rejects.toMatchObject({
+      response: { error: { code: 'EMAIL_UNVERIFIED' } },
+    });
+    expect(partsDealersRepo.save).not.toHaveBeenCalled();
+  });
+
   it('blocks create when owner already has parts_dealer role', async () => {
     const owner = {
       id: 'user-1',
+      emailVerifiedAt: new Date(),
       roles: [role('buyer'), role('parts_dealer')],
     } as User;
     const { service } = makeService(null, owner);

@@ -14,6 +14,7 @@ import type {
 } from '@throttlelk/validation';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
+import { assertEmailVerified } from '../common/email-verified';
 import { resolveMapLocation } from '../common/map-location';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
@@ -57,6 +58,7 @@ export class DealersService {
   ) {}
 
   async create(owner: User, input: CreateDealerInput): Promise<Dealer> {
+    assertEmailVerified(owner, 'applying as a dealer');
     if (owner.roles.some((role) => role.name === 'dealer')) {
       throw new BadRequestException({
         success: false,
@@ -326,7 +328,7 @@ export class DealersService {
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
     return {
-      items: rows.map((row) => this.withCover(row)),
+      items: rows.map((row) => this.toAdminDealer(this.withCover(row))),
       meta: paginationMeta(total, page, limit),
     };
   }
@@ -342,10 +344,18 @@ export class DealersService {
         error: { code: 'DEALER_NOT_FOUND', message: 'Dealer not found' },
       });
     }
-    return this.withCover(dealer);
+    return this.toAdminDealer(this.withCover(dealer));
   }
 
-  async adminCreate(input: AdminCreateDealerInput): Promise<Dealer> {
+  private toAdminDealer(dealer: Dealer & { coverImageUrl: string | null }) {
+    const { owner, ...rest } = dealer;
+    return {
+      ...rest,
+      owner: owner ? this.usersService.toPublic(owner) : owner,
+    };
+  }
+
+  async adminCreate(input: AdminCreateDealerInput) {
     const owner = await this.usersService.findByIdOrThrow(input.ownerUserId);
     const slug = await this.allocateUniqueSlug(input.name);
     const status = input.status ?? 'pending';
@@ -373,7 +383,7 @@ export class DealersService {
     return this.adminGet(saved.id);
   }
 
-  async adminUpdate(id: string, input: AdminUpdateDealerInput): Promise<Dealer> {
+  async adminUpdate(id: string, input: AdminUpdateDealerInput) {
     const dealer = await this.getById(id);
     const prevStatus = dealer.status;
 

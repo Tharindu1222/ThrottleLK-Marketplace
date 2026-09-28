@@ -14,6 +14,7 @@ import type {
 } from '@throttlelk/validation';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
+import { assertEmailVerified } from '../common/email-verified';
 import { resolveMapLocation } from '../common/map-location';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
@@ -59,6 +60,7 @@ export class PartsDealersService {
   ) {}
 
   async create(owner: User, input: CreatePartsDealerInput): Promise<PartsDealer> {
+    assertEmailVerified(owner, 'applying as a parts dealer');
     if (owner.roles.some((role) => role.name === 'parts_dealer')) {
       throw new BadRequestException({
         success: false,
@@ -329,7 +331,7 @@ export class PartsDealersService {
     const counts = await this.partsCountsByDealerId(rows.map((r) => r.id));
     return {
       items: rows.map((row) => ({
-        ...this.withCover(row),
+        ...this.toAdminPartsDealer(this.withCover(row)),
         partsCount: counts.get(row.id) ?? 0,
       })),
       meta: paginationMeta(total, page, limit),
@@ -350,7 +352,7 @@ export class PartsDealersService {
         },
       });
     }
-    const covered = this.withCover(dealer);
+    const covered = this.toAdminPartsDealer(this.withCover(dealer));
     const counts = await this.partsCountsByDealerId([dealer.id]);
     const byStatusRows: Array<{ status: string; count: string }> =
       await this.partListings
@@ -372,7 +374,7 @@ export class PartsDealersService {
     };
   }
 
-  async adminCreate(input: AdminCreatePartsDealerInput): Promise<PartsDealer> {
+  async adminCreate(input: AdminCreatePartsDealerInput) {
     const owner = await this.usersService.findByIdOrThrow(input.ownerUserId);
     const slug = await this.allocateUniqueSlug(input.name);
     const status = input.status ?? 'pending';
@@ -403,7 +405,7 @@ export class PartsDealersService {
   async adminUpdate(
     id: string,
     input: AdminUpdatePartsDealerInput,
-  ): Promise<PartsDealer> {
+  ) {
     const dealer = await this.getById(id);
     const prevStatus = dealer.status;
 
@@ -500,6 +502,16 @@ export class PartsDealersService {
       map.set(row.partsDealerId, Number(row.count));
     }
     return map;
+  }
+
+  private toAdminPartsDealer(
+    dealer: PartsDealer & { coverImageUrl: string | null },
+  ) {
+    const { owner, ...rest } = dealer;
+    return {
+      ...rest,
+      owner: owner ? this.usersService.toPublic(owner) : owner,
+    };
   }
 
   private withCover(dealer: PartsDealer) {

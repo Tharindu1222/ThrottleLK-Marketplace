@@ -6,6 +6,7 @@ import { OwnedDealerStatus } from '@/components/owned-dealer-status';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { apiCodeMessage } from '@/lib/listing-errors';
 import { pickOwnedDealer } from '@/lib/owned-dealer';
 
 type Option = { id: string; name: string };
@@ -167,7 +168,10 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
       setMine([dealer]);
       setOk(t(locale, 'dealerApplicationSubmitted'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed');
+      setError(
+        apiCodeMessage(err, locale) ??
+          (err instanceof Error ? err.message : 'Failed'),
+      );
     } finally {
       setBusy(false);
     }

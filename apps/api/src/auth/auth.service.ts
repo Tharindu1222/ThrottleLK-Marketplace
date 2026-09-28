@@ -22,6 +22,7 @@ import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
 import { AuthToken, type AuthTokenType } from './auth-token.entity';
 import { RefreshSession } from './refresh-session.entity';
+import { classifyRefreshSession } from './refresh-reuse';
 
 @Injectable()
 export class AuthService {
@@ -102,12 +103,15 @@ export class AuthService {
       const session = await this.sessions.findOne({
         where: { tokenHash: this.hashToken(refreshToken) },
       });
-      if (
-        !session ||
-        session.revokedAt ||
-        session.expiresAt.getTime() < Date.now() ||
-        session.userId !== payload.sub
-      ) {
+      const verdict = classifyRefreshSession({
+        session,
+        payloadSub: payload.sub,
+      });
+      if (verdict === 'reuse' && session) {
+        await this.usersService.revokeRefreshSessions(session.userId);
+        throw new Error('session reuse');
+      }
+      if (verdict !== 'ok' || !session) {
         throw new Error('session invalid');
       }
       const revoked = await this.sessions
@@ -118,7 +122,8 @@ export class AuthService {
         .andWhere('revoked_at IS NULL')
         .execute();
       if (!revoked.affected) {
-        throw new Error('session invalid');
+        await this.usersService.revokeRefreshSessions(session.userId);
+        throw new Error('session reuse');
       }
       const user = await this.usersService.findByIdOrThrow(payload.sub);
       if (user.status !== 'active') {

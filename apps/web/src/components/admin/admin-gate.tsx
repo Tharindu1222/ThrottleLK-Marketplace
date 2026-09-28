@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { getAccessToken, syncAccessCookie, type AuthUser } from '@/lib/auth';
-import type { Locale } from '@/lib/i18n';
 import { loginHref } from '@/lib/login-href';
+import type { Locale } from '@/lib/i18n';
 
 export function AdminGate({
   locale,

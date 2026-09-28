@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { StartConversationInput } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
+import { assertEmailVerified } from '../common/email-verified';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PartListing } from '../part-listings/part-listing.entity';
@@ -40,6 +41,8 @@ export class ConversationsService {
   ) {}
 
   async start(buyerUserId: string, input: StartConversationInput) {
+    const buyer = await this.usersService.findByIdOrThrow(buyerUserId);
+    assertEmailVerified(buyer, 'starting a conversation');
     if (input.listingId) {
       return this.startForBikeListing(
         buyerUserId,
