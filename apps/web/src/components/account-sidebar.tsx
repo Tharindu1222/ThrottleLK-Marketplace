@@ -2,37 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   clearSession,
   getAccessToken,
   getStoredUser,
+  saveSession,
   type AuthUser,
 } from '@/lib/auth';
 import { apiGet, apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
-
-type NavItem = {
-  href: string;
-  labelKey:
-    | 'accountDetails'
-    | 'dealerShowroom'
-    | 'performance'
-    | 'inventory'
-    | 'partsShowroom'
-    | 'partsPerformance'
-    | 'partsListings'
-    | 'myListings'
-    | 'messages'
-    | 'notifications'
-    | 'savedListings'
-    | 'savedSearches';
-  match: (path: string) => boolean;
-  icon: ReactNode;
-  dealerOnly?: boolean;
-  partsDealerOnly?: boolean;
-  badgeKey?: 'messages' | 'notifications';
-};
+import {
+  flattenAccountNav,
+  visibleAccountNavSections,
+  type AccountNavItemDef,
+} from '@/lib/account-nav';
 
 const POLL_MS = 30_000;
 
@@ -179,92 +163,30 @@ function IconSearch() {
   );
 }
 
-function navItems(locale: Locale): NavItem[] {
-  const base = `/${locale}/account`;
-  return [
-    {
-      href: `${base}/profile`,
-      labelKey: 'accountDetails',
-      match: (p) => p.includes('/account/profile'),
-      icon: <IconUser />,
-    },
-    {
-      href: `${base}/showroom`,
-      labelKey: 'dealerShowroom',
-      match: (p) =>
-        p.includes('/account/showroom') && !p.includes('parts-showroom'),
-      icon: <IconShowroom />,
-      dealerOnly: true,
-    },
-    {
-      href: `${base}/performance`,
-      labelKey: 'performance',
-      match: (p) =>
-        p.includes('/account/performance') && !p.includes('parts-performance'),
-      icon: <IconPerformance />,
-      dealerOnly: true,
-    },
-    {
-      href: `${base}/inventory`,
-      labelKey: 'inventory',
-      match: (p) => p.includes('/account/inventory'),
-      icon: <IconInventory />,
-      dealerOnly: true,
-    },
-    {
-      href: `${base}/parts-showroom`,
-      labelKey: 'partsShowroom',
-      match: (p) => p.includes('/account/parts-showroom'),
-      icon: <IconShowroom />,
-      partsDealerOnly: true,
-    },
-    {
-      href: `${base}/parts-performance`,
-      labelKey: 'partsPerformance',
-      match: (p) => p.includes('/account/parts-performance'),
-      icon: <IconPerformance />,
-      partsDealerOnly: true,
-    },
-    {
-      href: `${base}/parts-listings`,
-      labelKey: 'partsListings',
-      match: (p) => p.includes('/account/parts-listings'),
-      icon: <IconListings />,
-      partsDealerOnly: true,
-    },
-    {
-      href: `${base}/listings`,
-      labelKey: 'myListings',
-      match: (p) => p.includes('/account/listings') && !p.includes('parts-listings'),
-      icon: <IconListings />,
-    },
-    {
-      href: `${base}/messages`,
-      labelKey: 'messages',
-      match: (p) => p.includes('/account/messages'),
-      icon: <IconMessages />,
-      badgeKey: 'messages',
-    },
-    {
-      href: `${base}/notifications`,
-      labelKey: 'notifications',
-      match: (p) => p.includes('/account/notifications'),
-      icon: <IconBell />,
-      badgeKey: 'notifications',
-    },
-    {
-      href: `${base}/favourites`,
-      labelKey: 'savedListings',
-      match: (p) => p.includes('/account/favourites'),
-      icon: <IconHeart />,
-    },
-    {
-      href: `${base}/saved-searches`,
-      labelKey: 'savedSearches',
-      match: (p) => p.includes('/account/saved-searches'),
-      icon: <IconSearch />,
-    },
-  ];
+function navIcon(id: AccountNavItemDef['id']) {
+  switch (id) {
+    case 'profile':
+      return <IconUser />;
+    case 'listings':
+    case 'partsListings':
+      return <IconListings />;
+    case 'showroom':
+    case 'partsShowroom':
+      return <IconShowroom />;
+    case 'performance':
+    case 'partsPerformance':
+      return <IconPerformance />;
+    case 'inventory':
+      return <IconInventory />;
+    case 'messages':
+      return <IconMessages />;
+    case 'notifications':
+      return <IconBell />;
+    case 'favourites':
+      return <IconHeart />;
+    case 'savedSearches':
+      return <IconSearch />;
+  }
 }
 
 function SidebarAvatar({ user }: { user: AuthUser | null }) {
@@ -320,6 +242,14 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
     setUser(getStoredUser());
     const token = getAccessToken();
     if (!token) return;
+
+    void apiGet<AuthUser>('/api/v1/users/me', { token })
+      .then((me) => {
+        setUser(me);
+        saveSession({ user: me });
+      })
+      .catch(() => undefined);
+
     void refreshCounts(token).catch(() => undefined);
     const id = window.setInterval(() => {
       void refreshCounts(token).catch(() => undefined);
@@ -329,16 +259,30 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
 
   const isDealer = Boolean(user?.roles?.includes('dealer'));
   const isPartsDealer = Boolean(user?.roles?.includes('parts_dealer'));
-  const items = navItems(locale).filter((item) => {
-    if (item.dealerOnly && !isDealer) return false;
-    if (item.partsDealerOnly && !isPartsDealer) return false;
-    return true;
-  });
+  const roles = { isDealer, isPartsDealer };
+  const sections = visibleAccountNavSections(roles);
+  const items = flattenAccountNav(roles);
 
-  function badgeFor(item: NavItem) {
+  function itemHref(item: AccountNavItemDef) {
+    return `/${locale}/account${item.hrefSuffix}`;
+  }
+
+  function badgeFor(item: AccountNavItemDef) {
     if (item.badgeKey === 'messages') return messageUnread;
     if (item.badgeKey === 'notifications') return notificationUnread;
     return 0;
+  }
+
+  function unreadName(item: AccountNavItemDef, count: number) {
+    if (count <= 0) return undefined;
+    const label = t(locale, item.labelKey);
+    if (item.badgeKey === 'messages') {
+      return `${label}. ${t(locale, 'unreadMessages').replace('{n}', String(count))}`;
+    }
+    if (item.badgeKey === 'notifications') {
+      return `${label}. ${t(locale, 'unreadNotifications').replace('{n}', String(count))}`;
+    }
+    return undefined;
   }
 
   async function logout() {
@@ -357,8 +301,11 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
     : t(locale, 'accountNav');
 
   return (
-    <aside className="flex flex-col gap-3 px-4 pt-4 lg:sticky lg:top-[4.25rem] lg:h-[calc(100svh-4.25rem)] lg:w-[260px] lg:shrink-0 lg:gap-0 lg:self-start lg:px-0 lg:pt-0 xl:w-[280px]">
-      {/* Mobile chips */}
+    <aside
+      data-account-nav="grouped"
+      className="flex flex-col gap-3 px-4 pt-4 lg:sticky lg:top-[4.25rem] lg:h-[calc(100svh-4.25rem)] lg:w-[260px] lg:shrink-0 lg:gap-0 lg:self-start lg:px-0 lg:pt-0 xl:w-[280px]"
+    >
+      {/* Mobile chips — same order as desktop, no section titles */}
       <nav
         aria-label={t(locale, 'accountNav')}
         className="flex gap-2 overflow-x-auto pb-1 lg:hidden"
@@ -368,8 +315,10 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
           const count = badgeFor(item);
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.id}
+              href={itemHref(item)}
+              aria-current={active ? 'page' : undefined}
+              aria-label={unreadName(item, count)}
               className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm whitespace-nowrap transition ${
                 active
                   ? 'border-black/20 bg-white text-accent shadow-[0_1px_0_rgba(0,0,0,0.06)]'
@@ -377,7 +326,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
               }`}
             >
               <span className={active ? 'text-accent' : 'text-muted'}>
-                {item.icon}
+                {navIcon(item.id)}
               </span>
               {t(locale, item.labelKey)}
               <CountBadge count={count} />
@@ -402,63 +351,65 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        <p className="shrink-0 px-4 pt-4 pb-1 text-[10px] tracking-[0.2em] text-muted uppercase">
-          {t(locale, 'accountNav')}
-        </p>
-
         <nav
           aria-label={t(locale, 'accountNav')}
           className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
         >
-          <ul className="space-y-0.5">
-            {items.map((item) => {
-              const active = item.match(pathname);
-              const count = badgeFor(item);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition ${
-                      active
-                        ? 'bg-[#eef0f3] font-medium text-foreground'
-                        : 'text-muted hover:bg-[#f4f5f7] hover:text-foreground'
-                    }`}
-                    aria-label={
-                      count > 0 && item.badgeKey === 'messages'
-                        ? t(locale, 'unreadMessages').replace(
-                            '{n}',
-                            String(count),
-                          )
-                        : count > 0 && item.badgeKey === 'notifications'
-                          ? t(locale, 'unreadNotifications').replace(
-                              '{n}',
-                              String(count),
-                            )
-                          : undefined
-                    }
-                  >
-                    <span
-                      className={`h-5 w-0.5 shrink-0 rounded-full transition ${
-                        active
-                          ? 'bg-accent'
-                          : 'bg-transparent group-hover:bg-black/20'
-                      }`}
-                      aria-hidden
-                    />
-                    <span
-                      className={`shrink-0 ${
-                        active ? 'text-accent' : 'text-muted group-hover:text-foreground'
-                      }`}
-                    >
-                      {item.icon}
-                    </span>
-                    <span className="truncate">{t(locale, item.labelKey)}</span>
-                    <CountBadge count={count} />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          {sections.map((section) => (
+            <div key={section.id} className="pt-3 first:pt-2">
+              <h2
+                id={`account-nav-${section.id}`}
+                className="px-2 pb-1 text-[10px] font-medium tracking-[0.2em] text-muted uppercase"
+              >
+                {t(locale, section.labelKey)}
+              </h2>
+              <ul
+                aria-labelledby={`account-nav-${section.id}`}
+                className="space-y-0.5"
+              >
+                {section.items.map((item) => {
+                  const active = item.match(pathname);
+                  const count = badgeFor(item);
+                  return (
+                    <li key={item.id}>
+                      <Link
+                        href={itemHref(item)}
+                        aria-current={active ? 'page' : undefined}
+                        className={`group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition ${
+                          active
+                            ? 'bg-[#eef0f3] font-medium text-foreground'
+                            : 'text-muted hover:bg-[#f4f5f7] hover:text-foreground'
+                        }`}
+                        aria-label={unreadName(item, count)}
+                      >
+                        <span
+                          className={`h-5 w-0.5 shrink-0 rounded-full transition ${
+                            active
+                              ? 'bg-accent'
+                              : 'bg-transparent group-hover:bg-black/20'
+                          }`}
+                          aria-hidden
+                        />
+                        <span
+                          className={`shrink-0 ${
+                            active
+                              ? 'text-accent'
+                              : 'text-muted group-hover:text-foreground'
+                          }`}
+                        >
+                          {navIcon(item.id)}
+                        </span>
+                        <span className="truncate">
+                          {t(locale, item.labelKey)}
+                        </span>
+                        <CountBadge count={count} />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
 
         <div className="shrink-0 border-t border-black/15 p-2">

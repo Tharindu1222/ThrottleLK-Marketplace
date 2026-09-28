@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --import tsx --test src/lib/json-ld.spec.ts src/lib/whatsapp.spec.ts src/lib/safe-next.spec.ts src/lib/dealer-showroom.spec.ts"
+    "test": "node --import tsx --test src/lib/json-ld.spec.ts src/lib/whatsapp.spec.ts src/lib/safe-next.spec.ts src/lib/dealer-showroom.spec.ts src/lib/auth.spec.ts src/lib/account-nav.spec.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.74.0",

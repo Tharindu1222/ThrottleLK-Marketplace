@@ -13,18 +13,22 @@ export type AuthUser = {
   avatarUrl?: string | null;
 };
 
-export function saveSession(data: { user: AuthUser }) {
-  const hint: AuthUser = {
-    id: data.user.id,
-    firstName: data.user.firstName,
-    lastName: data.user.lastName,
+/** UI hint only — omit email/phone, keep roles for account nav gating. */
+export function sessionUserHint(user: AuthUser): AuthUser {
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
     email: '',
     phone: null,
-    roles: [],
-    emailVerifiedAt: data.user.emailVerifiedAt,
-    avatarUrl: data.user.avatarUrl,
+    roles: Array.isArray(user.roles) ? [...user.roles] : [],
+    emailVerifiedAt: user.emailVerifiedAt,
+    avatarUrl: user.avatarUrl,
   };
-  localStorage.setItem(USER_KEY, JSON.stringify(hint));
+}
+
+export function saveSession(data: { user: AuthUser }) {
+  localStorage.setItem(USER_KEY, JSON.stringify(sessionUserHint(data.user)));
   window.dispatchEvent(new Event('throttlelk-session'));
 }
 
