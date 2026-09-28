@@ -46,6 +46,7 @@ const nav = [
       { href: '/part-categories', label: 'Part categories', icon: TagIcon },
       { href: '/users', label: 'Users', icon: UsersIcon },
       { href: '/taxonomy', label: 'Taxonomy', icon: TagIcon },
+      { href: '/audit', label: 'Audit log', icon: ShieldIcon },
     ],
   },
 ] as const;

@@ -24,6 +24,7 @@ import type { PaginationMeta } from '@throttlelk/types';
 
 type Listing = BrowseListingCard & {
   status: string;
+  expiresAt?: string | null;
   phoneClickCount?: number | null;
   whatsappClickCount?: number | null;
   favouriteCount?: number | null;
@@ -75,6 +76,8 @@ function statusLabel(locale: Locale, status: string) {
       return t(locale, 'statusRejected');
     case 'sold':
       return t(locale, 'statusSold');
+    case 'expired':
+      return t(locale, 'statusExpired');
     default:
       return status.replace(/_/g, ' ');
   }
@@ -94,6 +97,8 @@ function statusBadgeClass(status: string) {
       return 'bg-red-500/15 text-red-700 ring-red-500/30';
     case 'sold':
       return 'bg-black/5 text-muted ring-black/10';
+    case 'expired':
+      return 'bg-amber-500/15 text-amber-800 ring-amber-500/30';
     default:
       return 'bg-black/5 text-muted ring-black/10';
   }
@@ -472,6 +477,22 @@ function ListingActions({
         </>
       ) : null}
 
+      {listing.status === 'expired' ? (
+        <>
+          {editBtn}
+          <button
+            type="button"
+            disabled={busy}
+            className={btnAccent}
+            onClick={() =>
+              runAction(listing.id, `/api/v1/listings/${listing.id}/renew`)
+            }
+          >
+            <span className="truncate">{t(locale, 'renewListing')}</span>
+          </button>
+        </>
+      ) : null}
+
       {listing.status === 'sold' ? viewBtn : null}
     </div>
   );
@@ -690,6 +711,18 @@ export function MyListingsClient({
                     <p className="mt-1 text-sm text-accent">
                       {formatLkr(listing.priceLkr)}
                     </p>
+                    {listing.expiresAt &&
+                    (listing.status === 'active' ||
+                      listing.status === 'expired') ? (
+                      <p className="mt-1 text-xs text-muted">
+                        {t(locale, 'expiresOn').replace(
+                          '{date}',
+                          new Date(listing.expiresAt).toLocaleDateString(
+                            locale === 'si' ? 'si-LK' : 'en-LK',
+                          ),
+                        )}
+                      </p>
+                    ) : null}
                     <div className="mt-2">
                       <OwnerMetrics locale={locale} listing={listing} />
                     </div>

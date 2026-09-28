@@ -17,16 +17,27 @@ export function SaveSearchButton({
     modelId?: string;
     categoryId?: string;
     districtId?: string;
+    cityId?: string;
     minPrice?: string;
     maxPrice?: string;
     minYear?: string;
     maxYear?: string;
+    minMileage?: string;
+    maxMileage?: string;
+    minEngineCc?: string;
+    maxEngineCc?: string;
     condition?: string;
+    fuelType?: string;
+    transmission?: string;
+    sellerType?: string;
+    featured?: string;
+    negotiable?: string;
     sort?: string;
   };
 }) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notify, setNotify] = useState(true);
 
   const hasFilters = useMemo(
     () =>
@@ -36,11 +47,21 @@ export function SaveSearchButton({
           filters.modelId ||
           filters.categoryId ||
           filters.districtId ||
+          filters.cityId ||
           filters.minPrice ||
           filters.maxPrice ||
           filters.minYear ||
           filters.maxYear ||
-          filters.condition,
+          filters.minMileage ||
+          filters.maxMileage ||
+          filters.minEngineCc ||
+          filters.maxEngineCc ||
+          filters.condition ||
+          filters.fuelType ||
+          filters.transmission ||
+          filters.sellerType ||
+          filters.featured ||
+          filters.negotiable,
       ),
     [filters],
   );
@@ -75,14 +96,32 @@ export function SaveSearchButton({
             modelId: filters.modelId || undefined,
             categoryId: filters.categoryId || undefined,
             districtId: filters.districtId || undefined,
+            cityId: filters.cityId || undefined,
             minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
             maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
             minYear: filters.minYear ? Number(filters.minYear) : undefined,
             maxYear: filters.maxYear ? Number(filters.maxYear) : undefined,
+            minMileage: filters.minMileage
+              ? Number(filters.minMileage)
+              : undefined,
+            maxMileage: filters.maxMileage
+              ? Number(filters.maxMileage)
+              : undefined,
+            minEngineCc: filters.minEngineCc
+              ? Number(filters.minEngineCc)
+              : undefined,
+            maxEngineCc: filters.maxEngineCc
+              ? Number(filters.maxEngineCc)
+              : undefined,
             condition: filters.condition || undefined,
+            fuelType: filters.fuelType || undefined,
+            transmission: filters.transmission || undefined,
+            sellerType: filters.sellerType || undefined,
+            featured: filters.featured === 'true' ? true : undefined,
+            negotiable: filters.negotiable === 'true' ? true : undefined,
             sort: filters.sort || undefined,
           },
-          notificationsEnabled: false,
+          notificationsEnabled: notify,
         },
       });
       setStatus(t(locale, 'searchSaved'));
@@ -93,6 +132,14 @@ export function SaveSearchButton({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
+      <label className="flex items-center gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          checked={notify}
+          onChange={(e) => setNotify(e.target.checked)}
+        />
+        {t(locale, 'notifyNewMatches')}
+      </label>
       <button
         type="button"
         onClick={() => void onSave()}

@@ -13,6 +13,8 @@ import { Report } from '../reports/report.entity';
 import { ReportsModule } from '../reports/reports.module';
 import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 import { UsersModule } from '../users/users.module';
+import { AdminAuditLog } from './admin-audit-log.entity';
+import { AdminAuditService } from './admin-audit.service';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 
@@ -32,9 +34,10 @@ import { AdminService } from './admin.service';
       PartListing,
       Report,
       PromoRequest,
+      AdminAuditLog,
     ]),
   ],
   controllers: [AdminController],
-  providers: [AdminService],
+  providers: [AdminService, AdminAuditService],
 })
 export class AdminModule {}

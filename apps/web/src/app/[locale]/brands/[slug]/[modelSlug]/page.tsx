@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
+import { BikesBrowse } from '@/components/bikes-browse';
 import { apiGet } from '@/lib/api';
-import { isLocale } from '@/lib/i18n';
+import { isLocale, type Locale } from '@/lib/i18n';
+import { parsePageParam } from '@/lib/pagination';
 import { pageMetadata } from '@/lib/seo';
 
 type Model = {
@@ -12,6 +14,13 @@ type Model = {
   brand?: { id: string; name: string; slug: string };
 };
 
+function pageFrom(
+  searchParams: Record<string, string | string[] | undefined>,
+) {
+  const value = searchParams.page;
+  return parsePageParam(typeof value === 'string' ? value : undefined);
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -21,24 +30,29 @@ export async function generateMetadata({
   try {
     const model = await apiGet<Model>(`/api/v1/models/${modelSlug}`);
     const brandName = model.brand?.name ?? slug;
+    const brandSlug = model.brand?.slug ?? slug;
     return pageMetadata({
       title: `${brandName} ${model.name} for sale in Sri Lanka`,
       description: `Find ${brandName} ${model.name} bikes on ThrottleLK — prices, specs, and seller contact.`,
-      path: `/${locale}/bikes?brandId=${model.brandId}&modelId=${model.id}`,
+      path: `/${locale}/brands/${brandSlug}/${model.slug}`,
+      locale,
     });
   } catch {
     return { title: 'Model not found' };
   }
 }
 
-/** Model SEO URLs redirect into the shared bikes browse filters. */
 export default async function ModelPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string; modelSlug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale: raw, slug, modelSlug } = await params;
   if (!isLocale(raw)) notFound();
+  const locale = raw as Locale;
+  const sp = await searchParams;
 
   let model: Model;
   try {
@@ -51,7 +65,16 @@ export default async function ModelPage({
     notFound();
   }
 
-  redirect(
-    `/${raw}/bikes?brandId=${model.brandId}&modelId=${model.id}`,
+  const brandName = model.brand?.name ?? slug;
+
+  return (
+    <BikesBrowse
+      locale={locale}
+      heading={`${brandName} ${model.name}`}
+      filterState={{ brandId: model.brandId, modelId: model.id }}
+      page={pageFrom(sp)}
+      listPath={`/${locale}/brands/${slug}/${model.slug}`}
+      pagerState={{}}
+    />
   );
 }

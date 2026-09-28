@@ -394,6 +394,40 @@ export class NotificationsService {
     });
   }
 
+  async savedSearchMatch(
+    userId: string,
+    listing: { id: string; title: string; slug: string; searchName: string },
+  ) {
+    return this.notifyUser({
+      userId,
+      type: 'saved_search_match',
+      title: 'New bike matches a saved search',
+      message: `"${listing.title}" matches "${listing.searchName}".`,
+      data: {
+        listingId: listing.id,
+        slug: listing.slug,
+        searchName: listing.searchName,
+      },
+      emailSubject: `New match: ${listing.title}`,
+      emailHtml: `<p>A new listing <strong>${listing.title}</strong> matches your saved search <strong>${listing.searchName}</strong>.</p>`,
+    });
+  }
+
+  async listingExpired(
+    sellerId: string,
+    listing: { id: string; title: string },
+  ) {
+    return this.notifyUser({
+      userId: sellerId,
+      type: 'listing_expired',
+      title: 'Listing expired',
+      message: `"${listing.title}" is no longer in public search. Renew it to publish again.`,
+      data: { listingId: listing.id },
+      emailSubject: 'Your ThrottleLK listing expired',
+      emailHtml: `<p>Your listing <strong>${listing.title}</strong> expired and was removed from public search. Renew it from your account to publish again.</p>`,
+    });
+  }
+
   async priceDrop(
     userId: string,
     listing: { id: string; title: string; slug: string },

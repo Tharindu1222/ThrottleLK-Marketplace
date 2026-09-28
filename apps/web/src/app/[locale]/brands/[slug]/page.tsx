@@ -1,10 +1,19 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
+import { BikesBrowse } from '@/components/bikes-browse';
 import { apiGet } from '@/lib/api';
-import { isLocale } from '@/lib/i18n';
+import { isLocale, type Locale } from '@/lib/i18n';
+import { parsePageParam } from '@/lib/pagination';
 import { pageMetadata } from '@/lib/seo';
 
 type Brand = { id: string; name: string; slug: string };
+
+function pageFrom(
+  searchParams: Record<string, string | string[] | undefined>,
+) {
+  const value = searchParams.page;
+  return parsePageParam(typeof value === 'string' ? value : undefined);
+}
 
 export async function generateMetadata({
   params,
@@ -17,21 +26,25 @@ export async function generateMetadata({
     return pageMetadata({
       title: `${brand.name} motorcycles for sale in Sri Lanka`,
       description: `Browse used and new ${brand.name} bikes and scooters on ThrottleLK.`,
-      path: `/${locale}/bikes?brandId=${brand.id}`,
+      path: `/${locale}/brands/${brand.slug}`,
+      locale,
     });
   } catch {
     return { title: 'Brand not found' };
   }
 }
 
-/** Brand SEO URLs redirect into the shared bikes browse filters. */
 export default async function BrandPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale: raw, slug } = await params;
   if (!isLocale(raw)) notFound();
+  const locale = raw as Locale;
+  const sp = await searchParams;
 
   let brand: Brand;
   try {
@@ -40,5 +53,14 @@ export default async function BrandPage({
     notFound();
   }
 
-  redirect(`/${raw}/bikes?brandId=${brand.id}`);
+  return (
+    <BikesBrowse
+      locale={locale}
+      heading={`${brand.name}`}
+      filterState={{ brandId: brand.id }}
+      page={pageFrom(sp)}
+      listPath={`/${locale}/brands/${brand.slug}`}
+      pagerState={{}}
+    />
+  );
 }

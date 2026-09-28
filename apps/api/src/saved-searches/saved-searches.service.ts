@@ -5,13 +5,19 @@ import type {
   UpdateSavedSearchInput,
 } from '@throttlelk/validation';
 import { Repository } from 'typeorm';
+import { NotificationsService } from '../notifications/notifications.service';
 import { SavedSearch } from './saved-search.entity';
+import {
+  savedSearchMatchesListing,
+  type SavedSearchMatchListing,
+} from './saved-search-match';
 
 @Injectable()
 export class SavedSearchesService {
   constructor(
     @InjectRepository(SavedSearch)
     private readonly savedSearches: Repository<SavedSearch>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   list(userId: string) {
@@ -59,5 +65,33 @@ export class SavedSearchesService {
       });
     }
     return row;
+  }
+
+  async notifyMatches(
+    listing: SavedSearchMatchListing & {
+      id: string;
+      slug: string;
+      sellerId: string;
+    },
+  ) {
+    const rows = await this.savedSearches.find({
+      where: { notificationsEnabled: true },
+    });
+    await Promise.all(
+      rows
+        .filter(
+          (row) =>
+            row.userId !== listing.sellerId &&
+            savedSearchMatchesListing(row.query, listing),
+        )
+        .map((row) =>
+          this.notifications.savedSearchMatch(row.userId, {
+            id: listing.id,
+            title: listing.title,
+            slug: listing.slug,
+            searchName: row.name,
+          }),
+        ),
+    );
   }
 }

@@ -67,6 +67,8 @@ const skipDb = process.env.SKIP_DB === 'true';
                 type: 'postgres' as const,
                 url: config.get<string>('DATABASE_URL'),
                 synchronize: nodeEnv !== 'production',
+                migrationsRun: false,
+                migrations: [resolve(__dirname, 'migrations/*.{ts,js}')],
                 autoLoadEntities: true,
                 maxQueryExecutionTime: Number.isFinite(slowMs) ? slowMs : 1000,
                 extra: {

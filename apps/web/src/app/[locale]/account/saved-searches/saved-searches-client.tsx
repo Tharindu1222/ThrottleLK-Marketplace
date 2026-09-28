@@ -93,6 +93,25 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
               </p>
             </div>
             <div className="flex gap-2">
+              <button
+                type="button"
+                className="border border-black/20 px-3 py-1.5 text-sm"
+                onClick={() => {
+                  void apiSend(`/api/v1/saved-searches/${row.id}`, {
+                    method: 'PATCH',
+                    token,
+                    body: { notificationsEnabled: !row.notificationsEnabled },
+                  })
+                    .then(() => load(token))
+                    .catch((err) =>
+                      setError(err instanceof Error ? err.message : 'Failed'),
+                    );
+                }}
+              >
+                {row.notificationsEnabled
+                  ? t(locale, 'alertsOn')
+                  : t(locale, 'alertsOff')}
+              </button>
               <Link
                 href={toBrowseHref(locale, row.query)}
                 className="bg-accent px-3 py-1.5 text-sm text-white"

@@ -28,6 +28,7 @@ function makeService(
     listingPendingReview: jest.fn(async () => undefined),
     listingApproved: jest.fn(),
     listingRejected: jest.fn(),
+    listingExpired: jest.fn(),
     priceDrop: jest.fn(),
   };
   const dealersService = {
@@ -782,5 +783,99 @@ describe('ListingsService.getPublicOrOwned inventory privacy', () => {
       marginPercent: 25,
     });
     expect(favourites.countsByListingIds).toHaveBeenCalledWith(['listing-1']);
+  });
+});
+
+describe('ListingsService launch hardening', () => {
+  it('applies city, fuel, seller type and featured filters', async () => {
+    const publicQb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(async () => [[], 0]),
+    };
+    const service = new ListingsService(
+      { createQueryBuilder: jest.fn(() => publicQb) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { createQueryBuilder: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn(async () => []),
+      })) } as never,
+      { create: jest.fn(), save: jest.fn() } as never,
+      { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
+      {} as never,
+      { countsByListingIds: jest.fn(async () => new Map()) } as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+      { upsertFromListing: jest.fn(async () => undefined) } as never,
+    );
+
+    await service.listPublic({
+      cityId: 'city-1',
+      fuelType: 'petrol',
+      sellerType: 'private',
+      featured: 'true',
+      minMileage: 1000,
+    });
+
+    const clauses = publicQb.andWhere.mock.calls.map((call) => String(call[0]));
+    expect(clauses.some((sql) => sql.includes('city_id'))).toBe(true);
+    expect(clauses.some((sql) => sql.includes('fuel_type'))).toBe(true);
+    expect(clauses.some((sql) => sql.includes('dealer_id IS NULL'))).toBe(true);
+    expect(clauses.some((sql) => sql.includes('homepage_placements'))).toBe(true);
+    expect(clauses.some((sql) => sql.includes('mileage'))).toBe(true);
+  });
+
+  it('renews an expired listing and sets a new expiry', async () => {
+    const { service, row, listingsRepo } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'expired',
+      publishedAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    const saved = await service.renew(seller, row.id);
+
+    expect(saved.status).toBe('active');
+    expect(saved.expiresAt).toBeInstanceOf(Date);
+    expect(listingsRepo.save).toHaveBeenCalled();
+  });
+
+  it('expires due active listings and notifies the seller', async () => {
+    const due = {
+      id: 'listing-1',
+      sellerId: seller.id,
+      title: 'Honda Dio',
+      status: 'active',
+      expiresAt: new Date('2026-01-01T00:00:00.000Z'),
+    };
+    const { service, notifications } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'active',
+    });
+    const listingsRepo = {
+      find: jest
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([due]),
+      save: jest.fn(async (value: typeof due) => value),
+    };
+    Object.assign(service as never, { listings: listingsRepo });
+
+    const result = await service.expireStale(new Date('2026-03-01T00:00:00.000Z'));
+
+    expect(result.expired).toBe(1);
+    expect(due.status).toBe('expired');
+    expect(notifications.listingExpired).toHaveBeenCalledWith('seller-1', {
+      id: 'listing-1',
+      title: 'Honda Dio',
+    });
   });
 });

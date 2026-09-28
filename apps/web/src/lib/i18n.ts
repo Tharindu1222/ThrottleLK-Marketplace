@@ -610,6 +610,98 @@ const en: Dict = {
   promoteBranch: 'Branch',
   promoteNoPackages: 'No homepage packages are available yet.',
   promoteSubmitted: 'Request submitted. We will review your payment slip.',
+  footerCopyright: "Sri Lanka's motorbike marketplace",
+  footerTagline: 'Buy · Sell · Ride',
+  legalTermsLink: 'Terms',
+  legalPrivacyLink: 'Privacy',
+  legalRulesLink: 'Marketplace rules',
+  legalReviewHint:
+    'Launch copy for the marketplace. A lawyer should review this before it is treated as a final commercial contract.',
+  legalTermsTitle: 'Terms of service',
+  legalTermsDescription:
+    'Rules for using ThrottleLK to browse, list and contact sellers in Sri Lanka.',
+  legalTermsAboutHeading: 'About ThrottleLK',
+  legalTermsAbout1:
+    'ThrottleLK is a motorcycle marketplace for Sri Lanka. It helps buyers discover bikes and parts, and helps private sellers and approved dealers advertise inventory.',
+  legalTermsAbout2:
+    'ThrottleLK does not sell motorcycles, take purchase payments, hold escrow, transfer ownership, or give official valuations. Advertised prices are asking prices set by the seller.',
+  legalTermsAccountHeading: 'Your account',
+  legalTermsAccount1:
+    'You must give accurate registration details and keep your password private. You are responsible for activity on your account.',
+  legalTermsAccount2:
+    'We may suspend an account that is used for fraud, spam, abuse, or repeated policy breaches.',
+  legalTermsListingsHeading: 'Listings and contact',
+  legalTermsListings1:
+    'Sellers must describe the motorcycle or part honestly, including condition, price and location. Listings go live only after administrator review.',
+  legalTermsListings2:
+    'Buyers contact sellers by phone, WhatsApp or in-app message. Any sale, inspection, payment or ownership transfer happens outside ThrottleLK between the parties.',
+  legalTermsChangesHeading: 'Changes',
+  legalTermsChanges1:
+    'We may update these terms as the marketplace grows. The latest version will be published on this page. Continued use after a change means you accept the updated terms.',
+  legalTermsChanges2:
+    'These pages are product rules for launch. A lawyer should review them before they are treated as a final commercial contract.',
+  legalPrivacyTitle: 'Privacy notice',
+  legalPrivacyDescription:
+    'How ThrottleLK collects and uses account, listing and contact data.',
+  legalPrivacyCollectHeading: 'Data we collect',
+  legalPrivacyCollect1:
+    'We collect the name, email, optional phone number and password hash you provide at registration, plus profile and listing details you choose to publish.',
+  legalPrivacyCollect2:
+    'When you contact a seller we store the inquiry or conversation so both sides can continue the thread. We also record listing views and contact clicks to show sellers performance.',
+  legalPrivacyUseHeading: 'How we use it',
+  legalPrivacyUse1:
+    'We use this data to run your account, publish approved listings, send transactional email, match saved-search alerts, and operate moderation and promotions.',
+  legalPrivacyUse2:
+    'We do not sell personal data. Public pages show only the contact details the seller chose to display for that listing.',
+  legalPrivacyRightsHeading: 'Storage and rights',
+  legalPrivacyRights1:
+    'Account data is stored in our database. Images are stored in object storage. Passwords are hashed. You can update profile details from your account and ask us to close an account.',
+  legalPrivacyRights2:
+    'This notice is a launch baseline. Retention periods and a formal privacy policy should be confirmed before treating it as the final legal notice.',
+  legalRulesTitle: 'Marketplace rules',
+  legalRulesDescription:
+    'What sellers, dealers and buyers must follow on ThrottleLK.',
+  legalRulesAllowedHeading: 'Allowed listings',
+  legalRulesAllowed1:
+    'List only motorcycles, scooters and motorcycle parts you are allowed to sell. Photos must show the actual item. Do not copy another seller’s listing or use stolen images.',
+  legalRulesAllowed2:
+    'Do not list stolen vehicles, weapons, illegal parts, or anything that is not a motorcycle-related product.',
+  legalRulesHonestyHeading: 'Honesty and contact',
+  legalRulesHonesty1:
+    'Do not hide accident history, major faults, or a price that is not the real asking price. Phone and WhatsApp numbers on a listing must reach the seller.',
+  legalRulesHonesty2:
+    'Buyers must not harass sellers. Sellers must not bait-and-switch after a buyer contacts them.',
+  legalRulesModerationHeading: 'Moderation',
+  legalRulesModeration1:
+    'Administrators may reject, pause or take down a listing or dealer profile that breaks these rules. Repeat breaches can lead to account suspension.',
+  legalRulesModeration2:
+    'Use the report button if a listing looks fraudulent, duplicated, or unsafe. We review reports and may remove the content.',
+  cityFilter: 'City',
+  fuelFilter: 'Fuel',
+  transmissionFilter: 'Transmission',
+  transmissionManual: 'Manual',
+  transmissionAutomatic: 'Automatic',
+  transmissionSemi: 'Semi-automatic',
+  minMileage: 'Min mileage',
+  maxMileage: 'Max mileage',
+  minEngineCc: 'Min engine (cc)',
+  maxEngineCc: 'Max engine (cc)',
+  sellerTypeFilter: 'Seller type',
+  sellerTypeAny: 'Any seller',
+  sellerTypePrivate: 'Private seller',
+  sellerTypeDealer: 'Dealer',
+  featuredOnly: 'Featured only',
+  negotiableOnly: 'Negotiable only',
+  conditionNew: 'New',
+  conditionUsed: 'Used',
+  conditionReconditioned: 'Reconditioned',
+  notifyNewMatches: 'Email me when a new bike matches',
+  alertsOn: 'Alerts on',
+  alertsOff: 'Alerts off',
+  statusExpired: 'Expired',
+  renewListing: 'Renew listing',
+  expiresOn: 'Expires {date}',
+  adminAudit: 'Audit log',
 };
 
 const si: Dict = {
@@ -1169,6 +1261,61 @@ const si: Dict = {
   promotePending: 'Homepage review එක බලාගෙන',
   promoteLiveUntil: 'Homepage එකේ {date} දක්වා',
   homeTopBadge: 'ඉහළ',
+  footerCopyright: 'ශ්‍රී ලංකාවේ යතුරුපැදි වෙළඳපොළ',
+  footerTagline: 'මිලදී ගන්න · විකුණන්න · යන්න',
+  legalTermsLink: "කොන්දේසි",
+  legalPrivacyLink: "පෞද්ගලිකත්වය",
+  legalRulesLink: "වෙළඳපොළ රීති",
+  legalReviewHint: "දියත් කිරීම සඳහා නිෂ්පාදන පිටපතකි. අවසාන වාණිජ ගිවිසුමක් ලෙස සැලකීමට පෙර නීතිඥ සමාලෝචනයක් අවශ්‍යයි.",
+  legalTermsTitle: "සේවා කොන්දේසි",
+  legalTermsDescription: "ThrottleLK හි බයික් බැලීම, ලැයිස්තුගත කිරීම සහ විකුණුම්කරුවන් අමතීම සඳහා රීති.",
+  legalTermsAboutHeading: "ThrottleLK ගැන",
+  legalTermsAccountHeading: "ඔබේ ගිණුම",
+  legalTermsAccount1: "ලියාපදිංචියේදී නිවැරදි විස්තර ලබා දිය යුතු අතර මුරපදය රහසිගතව තබා ගත යුතුය. ඔබේ ගිණුමේ ක්‍රියාකාරකම් සඳහා ඔබ වගකිව යුතුය.",
+  legalTermsAccount2: "වංචා, ස්පෑම්, අපයෝජන හෝ නැවත නැවත ප්‍රතිපත්ති උල්ලංඝනය කිරීම් සඳහා භාවිතා වන ගිණුමක් අපට අත්හිටුවිය හැක.",
+  legalTermsListingsHeading: "ලැයිස්තු සහ සම්බන්ධතා",
+  legalTermsListings2: "ගැණුම්කරුවන් දුරකථනය, WhatsApp හෝ යෙදුම තුළ පණිවිඩයකින් විකුණුම්කරු අමතයි. විකිණීම, පරීක්ෂාව, ගෙවීම හෝ හිමිකම් මාරුව ThrottleLK ට පිටින් පාර්ශවයන් අතර සිදු වේ.",
+  legalTermsChangesHeading: "වෙනස්කම්",
+  legalTermsChanges1: "වෙළඳපොළ වර්ධනය වන විට මෙම කොන්දේසි යාවත්කාලීන කළ හැක. නවතම අනුවාදය මෙම පිටුවේ පළ කෙරේ. වෙනසකින් පසු දිගටම භාවිතා කිරීම යාවත්කාලීන කොන්දේසි පිළිගැනීමකි.",
+  legalPrivacyTitle: "පෞද්ගලිකත්ව දැන්වීම",
+  legalPrivacyDescription: "ThrottleLK ගිණුම්, ලැයිස්තු සහ සම්බන්ධතා දත්ත රැස් කර භාවිතා කරන ආකාරය.",
+  legalPrivacyCollectHeading: "අප රැස් කරන දත්ත",
+  legalPrivacyUseHeading: "භාවිතය",
+  legalPrivacyRightsHeading: "ගබඩා කිරීම සහ අයිතිවාසිකම්",
+  legalPrivacyRights1: "ගිණුම් දත්ත දත්ත සමුදායේ ගබඩා වේ. රූප object storage හි තබනු ලැබේ. මුරපද හැෂ් කර ඇත. ගිණුමෙන් පැතිකඩ යාවත්කාලීන කළ හැකි අතර ගිණුම වසා දැමීමට ඉල්ලිය හැක.",
+  legalRulesTitle: "වෙළඳපොළ රීති",
+  legalRulesDescription: "ThrottleLK හි විකුණුම්කරුවන්, ඩීලර්වරු සහ ගැණුම්කරුවන් අනුගමනය කළ යුතු දේ.",
+  legalRulesAllowedHeading: "අවසර ලත් ලැයිස්තු",
+  legalRulesHonestyHeading: "අවංකභාවය සහ සම්බන්ධතා",
+  legalRulesModerationHeading: "මධ්‍යස්ථභාවය",
+  legalRulesModeration1: "මෙම රීති උල්ලංඝනය කරන ලැයිස්තුවක් හෝ ඩීලර් පැතිකඩක් පරිපාලකයන්ට ප්‍රතික්ෂේප කිරීමට, විරාම කිරීමට හෝ ඉවත් කිරීමට හැකිය. නැවත නැවත උල්ලංඝනය කිරීම් ගිණුම අත්හිටුවීමට හේතු විය හැක.",
+  legalRulesModeration2: "ලැයිස්තුවක් වංචනික, අනුපිටපත් හෝ අනාරක්ෂිත නම් වාර්තා කරන්න. අපි වාර්තා සමාලෝචනය කර අන්තර්ගතය ඉවත් කළ හැක.",
+  cityFilter: "නගරය",
+  fuelFilter: "ඉන්ධන",
+  transmissionFilter: "ගියර්",
+  transmissionManual: "මැනුවල්",
+  transmissionAutomatic: "ඕටෝ",
+  transmissionSemi: "සෙමි-ඕටෝ",
+  minMileage: "අවම කි.මී.",
+  maxMileage: "උපරිම කි.මී.",
+  minEngineCc: "අවම එන්ජින් (cc)",
+  maxEngineCc: "උපරිම එන්ජින් (cc)",
+  sellerTypeFilter: "විකුණුම්කරු",
+  sellerTypeAny: "ඕනෑම විකුණුම්කරුවෙක්",
+  sellerTypePrivate: "පුද්ගලික",
+  sellerTypeDealer: "ඩීලර්",
+  featuredOnly: "විශේෂිත පමණයි",
+  negotiableOnly: "සාකච්ඡා කළ හැකි පමණයි",
+  conditionNew: "අලුත්",
+  conditionUsed: "පාවිච්චි කළ",
+  conditionReconditioned: "නැවත සකස් කළ",
+  notifyNewMatches: "නව බයික්කක් ගැලපෙන විට ඊමේල් කරන්න",
+  alertsOn: "ඇඟවීම් ඇත",
+  alertsOff: "ඇඟවීම් නැත",
+  statusExpired: "කල් ඉකුත්",
+  renewListing: "නැවත පළ කරන්න",
+  expiresOn: "{date} දක්වා වලංගුයි",
+  adminAudit: "විගණන ලොග්",
 };
 
 const tables: Record<Locale, Dict> = { en, si };

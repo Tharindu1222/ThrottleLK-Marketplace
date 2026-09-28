@@ -3,11 +3,14 @@ import { guides } from '@/content/guides';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { absoluteUrl } from '@/lib/seo';
 
-type Brand = { slug: string };
+type Brand = { slug: string; id: string };
 type District = { slug: string };
 type ListingSlug = { slug: string; sellerId?: string; updatedAt?: string };
 type DealerSlug = { slug: string };
 type PartSlug = { slug: string; kind?: string; updatedAt?: string | null };
+type Model = { slug: string };
+
+const LOCALES = ['en', 'si'] as const;
 
 async function fetchAllPages<T>(
   path: string,
@@ -28,46 +31,42 @@ async function fetchAllPages<T>(
   return all;
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base: MetadataRoute.Sitemap = [
-    { url: absoluteUrl('/en'), changeFrequency: 'daily', priority: 1 },
-    { url: absoluteUrl('/si'), changeFrequency: 'daily', priority: 1 },
-    { url: absoluteUrl('/en/bikes'), changeFrequency: 'hourly', priority: 0.9 },
-    { url: absoluteUrl('/si/bikes'), changeFrequency: 'hourly', priority: 0.9 },
-    {
-      url: absoluteUrl('/en/guides'),
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: absoluteUrl('/en/dealers'),
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-    {
-      url: absoluteUrl('/en/parts-dealers'),
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-    {
-      url: absoluteUrl('/en/spare-parts'),
-      changeFrequency: 'hourly',
-      priority: 0.8,
-    },
-    {
-      url: absoluteUrl('/en/modified-parts'),
-      changeFrequency: 'hourly',
-      priority: 0.8,
-    },
-  ];
+function loc(
+  locale: string,
+  path: string,
+  extras?: Omit<MetadataRoute.Sitemap[number], 'url'>,
+): MetadataRoute.Sitemap[number] {
+  return {
+    url: absoluteUrl(`/${locale}${path}`),
+    ...extras,
+  };
+}
 
-  for (const guide of guides) {
-    base.push({
-      url: absoluteUrl(`/en/guides/${guide.slug}`),
-      changeFrequency: 'monthly',
-      priority: 0.55,
-      lastModified: new Date(guide.publishedAt),
-    });
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base: MetadataRoute.Sitemap = [];
+
+  for (const locale of LOCALES) {
+    base.push(
+      loc(locale, '', { changeFrequency: 'daily', priority: 1 }),
+      loc(locale, '/bikes', { changeFrequency: 'hourly', priority: 0.9 }),
+      loc(locale, '/guides', { changeFrequency: 'weekly', priority: 0.7 }),
+      loc(locale, '/dealers', { changeFrequency: 'daily', priority: 0.7 }),
+      loc(locale, '/parts-dealers', { changeFrequency: 'daily', priority: 0.7 }),
+      loc(locale, '/spare-parts', { changeFrequency: 'hourly', priority: 0.8 }),
+      loc(locale, '/modified-parts', { changeFrequency: 'hourly', priority: 0.8 }),
+      loc(locale, '/terms', { changeFrequency: 'yearly', priority: 0.3 }),
+      loc(locale, '/privacy', { changeFrequency: 'yearly', priority: 0.3 }),
+      loc(locale, '/rules', { changeFrequency: 'yearly', priority: 0.3 }),
+    );
+    for (const guide of guides) {
+      base.push(
+        loc(locale, `/guides/${guide.slug}`, {
+          changeFrequency: 'monthly',
+          priority: 0.55,
+          lastModified: new Date(guide.publishedAt),
+        }),
+      );
+    }
   }
 
   try {
@@ -93,69 +92,97 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ]);
 
-    for (const brand of brands) {
-      base.push({
-        url: absoluteUrl(`/en/brands/${brand.slug}`),
-        changeFrequency: 'daily',
-        priority: 0.8,
-      });
-    }
-    for (const district of districts) {
-      base.push({
-        url: absoluteUrl(`/en/locations/${district.slug}`),
-        changeFrequency: 'daily',
-        priority: 0.7,
-      });
-    }
-    for (const dealer of dealers) {
-      base.push({
-        url: absoluteUrl(`/en/dealers/${dealer.slug}`),
-        changeFrequency: 'daily',
-        priority: 0.65,
-      });
-    }
-    for (const dealer of partsDealers) {
-      base.push({
-        url: absoluteUrl(`/en/parts-dealers/${dealer.slug}`),
-        changeFrequency: 'daily',
-        priority: 0.65,
-      });
-    }
-    for (const part of spareParts) {
-      base.push({
-        url: absoluteUrl(`/en/spare-parts/${part.slug}`),
-        changeFrequency: 'daily',
-        priority: 0.55,
-        lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,
-      });
-    }
-    for (const part of modifiedParts) {
-      base.push({
-        url: absoluteUrl(`/en/modified-parts/${part.slug}`),
-        changeFrequency: 'daily',
-        priority: 0.55,
-        lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,
-      });
-    }
+    const modelPairs = await Promise.all(
+      brands.map(async (brand) => {
+        const models = await apiGet<Model[]>(
+          `/api/v1/brands/${brand.id}/models`,
+        ).catch(() => [] as Model[]);
+        return { brand, models };
+      }),
+    );
 
-    const sellerIds = new Set<string>();
-    for (const listing of listings) {
-      base.push({
-        url: absoluteUrl(`/en/bikes/${listing.slug}`),
-        changeFrequency: 'daily',
-        priority: 0.6,
-        lastModified: listing.updatedAt
-          ? new Date(listing.updatedAt)
-          : undefined,
-      });
-      if (listing.sellerId) sellerIds.add(listing.sellerId);
-    }
-    for (const sellerId of sellerIds) {
-      base.push({
-        url: absoluteUrl(`/en/sellers/${sellerId}`),
-        changeFrequency: 'daily',
-        priority: 0.55,
-      });
+    for (const locale of LOCALES) {
+      for (const brand of brands) {
+        base.push(
+          loc(locale, `/brands/${brand.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.8,
+          }),
+        );
+      }
+      for (const { brand, models } of modelPairs) {
+        for (const model of models) {
+          base.push(
+            loc(locale, `/brands/${brand.slug}/${model.slug}`, {
+              changeFrequency: 'daily',
+              priority: 0.75,
+            }),
+          );
+        }
+      }
+      for (const district of districts) {
+        base.push(
+          loc(locale, `/locations/${district.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.7,
+          }),
+        );
+      }
+      for (const dealer of dealers) {
+        base.push(
+          loc(locale, `/dealers/${dealer.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.65,
+          }),
+        );
+      }
+      for (const dealer of partsDealers) {
+        base.push(
+          loc(locale, `/parts-dealers/${dealer.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.65,
+          }),
+        );
+      }
+      for (const part of spareParts) {
+        base.push(
+          loc(locale, `/spare-parts/${part.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.55,
+            lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,
+          }),
+        );
+      }
+      for (const part of modifiedParts) {
+        base.push(
+          loc(locale, `/modified-parts/${part.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.55,
+            lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,
+          }),
+        );
+      }
+      const sellerIds = new Set<string>();
+      for (const listing of listings) {
+        base.push(
+          loc(locale, `/bikes/${listing.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.6,
+            lastModified: listing.updatedAt
+              ? new Date(listing.updatedAt)
+              : undefined,
+          }),
+        );
+        if (listing.sellerId) sellerIds.add(listing.sellerId);
+      }
+      for (const sellerId of sellerIds) {
+        base.push(
+          loc(locale, `/sellers/${sellerId}`, {
+            changeFrequency: 'daily',
+            priority: 0.55,
+          }),
+        );
+      }
     }
   } catch {
     // API unavailable during build — return static entries only

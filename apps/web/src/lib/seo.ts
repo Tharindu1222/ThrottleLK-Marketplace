@@ -10,18 +10,22 @@ export function pageMetadata(input: {
   title: string;
   description: string;
   path: string;
+  locale?: string;
+  robots?: Metadata['robots'];
 }): Metadata {
   const url = absoluteUrl(input.path);
+  const locale = input.locale === 'si' ? 'si_LK' : 'en_LK';
   return {
     title: input.title,
     description: input.description,
     alternates: { canonical: url },
+    robots: input.robots,
     openGraph: {
       title: `${input.title} | ThrottleLK`,
       description: input.description,
       url,
       siteName: 'ThrottleLK',
-      locale: 'en_LK',
+      locale,
       type: 'website',
     },
   };

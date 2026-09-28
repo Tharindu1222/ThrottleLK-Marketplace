@@ -8,6 +8,7 @@ type Brand = { id: string; name: string };
 type Model = { id: string; name: string };
 type Category = { id: string; name: string };
 type District = { id: string; name: string };
+type City = { id: string; name: string };
 
 const SORTS = [
   { value: 'newest', labelKey: 'sortNewest' },
@@ -19,6 +20,30 @@ const SORTS = [
   { value: 'year_desc', labelKey: 'sortYearDesc' },
   { value: 'year_asc', labelKey: 'sortYearAsc' },
 ] as const;
+
+export type BrowseFilterState = {
+  q?: string;
+  brandId?: string;
+  modelId?: string;
+  categoryId?: string;
+  districtId?: string;
+  cityId?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minYear?: string;
+  maxYear?: string;
+  minMileage?: string;
+  maxMileage?: string;
+  minEngineCc?: string;
+  maxEngineCc?: string;
+  condition?: string;
+  fuelType?: string;
+  transmission?: string;
+  sellerType?: string;
+  featured?: string;
+  negotiable?: string;
+  sort?: string;
+};
 
 const fieldClass =
   'w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
@@ -34,22 +59,12 @@ export function BrowseFilters({
   brands: Brand[];
   districts: District[];
   categories: Category[];
-  initial: {
-    q?: string;
-    brandId?: string;
-    modelId?: string;
-    categoryId?: string;
-    districtId?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    minYear?: string;
-    maxYear?: string;
-    condition?: string;
-    sort?: string;
-  };
+  initial: BrowseFilterState;
 }) {
   const [brandId, setBrandId] = useState(initial.brandId ?? '');
+  const [districtId, setDistrictId] = useState(initial.districtId ?? '');
   const [models, setModels] = useState<Model[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
 
   const hasActiveFilters = useMemo(
     () =>
@@ -59,11 +74,21 @@ export function BrowseFilters({
           initial.modelId ||
           initial.categoryId ||
           initial.districtId ||
+          initial.cityId ||
           initial.minPrice ||
           initial.maxPrice ||
           initial.minYear ||
           initial.maxYear ||
-          initial.condition,
+          initial.minMileage ||
+          initial.maxMileage ||
+          initial.minEngineCc ||
+          initial.maxEngineCc ||
+          initial.condition ||
+          initial.fuelType ||
+          initial.transmission ||
+          initial.sellerType ||
+          initial.featured ||
+          initial.negotiable,
       ),
     [initial],
   );
@@ -79,6 +104,16 @@ export function BrowseFilters({
       .then(setModels)
       .catch(() => setModels([]));
   }, [brandId]);
+
+  useEffect(() => {
+    if (!districtId) {
+      setCities([]);
+      return;
+    }
+    void apiGet<City[]>(`/api/v1/locations/districts/${districtId}/cities`)
+      .then(setCities)
+      .catch(() => setCities([]));
+  }, [districtId]);
 
   return (
     <div>
@@ -148,7 +183,8 @@ export function BrowseFilters({
         </select>
         <select
           name="districtId"
-          defaultValue={initial.districtId}
+          value={districtId}
+          onChange={(e) => setDistrictId(e.target.value)}
           className={fieldClass}
         >
           <option value="">{t(locale, 'districtFilter')}</option>
@@ -159,14 +195,61 @@ export function BrowseFilters({
           ))}
         </select>
         <select
+          name="cityId"
+          defaultValue={initial.cityId}
+          disabled={!districtId}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'cityFilter')}</option>
+          {cities.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
           name="condition"
           defaultValue={initial.condition}
           className={fieldClass}
         >
           <option value="">{t(locale, 'condition')}</option>
-          <option value="new">New</option>
-          <option value="used">Used</option>
-          <option value="reconditioned">Reconditioned</option>
+          <option value="new">{t(locale, 'conditionNew')}</option>
+          <option value="used">{t(locale, 'conditionUsed')}</option>
+          <option value="reconditioned">
+            {t(locale, 'conditionReconditioned')}
+          </option>
+        </select>
+        <select
+          name="fuelType"
+          defaultValue={initial.fuelType}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'fuelFilter')}</option>
+          <option value="petrol">{t(locale, 'fuelPetrol')}</option>
+          <option value="diesel">{t(locale, 'fuelDiesel')}</option>
+          <option value="electric">{t(locale, 'fuelElectric')}</option>
+          <option value="hybrid">{t(locale, 'fuelHybrid')}</option>
+        </select>
+        <select
+          name="transmission"
+          defaultValue={initial.transmission}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'transmissionFilter')}</option>
+          <option value="manual">{t(locale, 'transmissionManual')}</option>
+          <option value="automatic">{t(locale, 'transmissionAutomatic')}</option>
+          <option value="semi_automatic">
+            {t(locale, 'transmissionSemi')}
+          </option>
+        </select>
+        <select
+          name="sellerType"
+          defaultValue={initial.sellerType}
+          className={fieldClass}
+        >
+          <option value="">{t(locale, 'sellerTypeAny')}</option>
+          <option value="private">{t(locale, 'sellerTypePrivate')}</option>
+          <option value="dealer">{t(locale, 'sellerTypeDealer')}</option>
         </select>
         <div className="grid grid-cols-2 gap-3">
           <input
@@ -196,6 +279,52 @@ export function BrowseFilters({
             className={fieldClass}
           />
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="minMileage"
+            defaultValue={initial.minMileage}
+            placeholder={t(locale, 'minMileage')}
+            className={fieldClass}
+          />
+          <input
+            name="maxMileage"
+            defaultValue={initial.maxMileage}
+            placeholder={t(locale, 'maxMileage')}
+            className={fieldClass}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="minEngineCc"
+            defaultValue={initial.minEngineCc}
+            placeholder={t(locale, 'minEngineCc')}
+            className={fieldClass}
+          />
+          <input
+            name="maxEngineCc"
+            defaultValue={initial.maxEngineCc}
+            placeholder={t(locale, 'maxEngineCc')}
+            className={fieldClass}
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="featured"
+            value="true"
+            defaultChecked={initial.featured === 'true'}
+          />
+          {t(locale, 'featuredOnly')}
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="negotiable"
+            value="true"
+            defaultChecked={initial.negotiable === 'true'}
+          />
+          {t(locale, 'negotiableOnly')}
+        </label>
         <select
           name="sort"
           defaultValue={initial.sort ?? 'newest'}

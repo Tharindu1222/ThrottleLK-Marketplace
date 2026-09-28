@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type {
@@ -12,7 +13,7 @@ import type {
   UpdateListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus } from '@throttlelk/types';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, LessThanOrEqual, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
@@ -26,7 +27,9 @@ import { UsersService } from '../users/users.service';
 import { ListingEngagementEvent } from './listing-engagement-event.entity';
 import { ListingImage } from './listing-image.entity';
 import { ListingInquiry } from './listing-inquiry.entity';
+import { computeExpiresAt } from './listing-expiry';
 import { Listing } from './listing.entity';
+import { SavedSearchesService } from '../saved-searches/saved-searches.service';
 
 @Injectable()
 export class ListingsService {
@@ -44,6 +47,7 @@ export class ListingsService {
     private readonly usersService: UsersService,
     private readonly cache: CacheService,
     private readonly inventoryService: InventoryService,
+    @Optional() private readonly savedSearches?: SavedSearchesService,
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
@@ -203,10 +207,10 @@ export class ListingsService {
         },
       });
     }
-    listing.status = 'active';
-    if (!listing.publishedAt) listing.publishedAt = new Date();
+    this.markActive(listing);
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
+    this.queueSavedSearchMatches(saved);
     return saved;
   }
 
@@ -296,13 +300,23 @@ export class ListingsService {
     modelId?: string;
     categoryId?: string;
     districtId?: string;
+    cityId?: string;
     dealerId?: string;
     sellerId?: string;
     minPrice?: number;
     maxPrice?: number;
     minYear?: number;
     maxYear?: number;
+    minMileage?: number;
+    maxMileage?: number;
+    minEngineCc?: number;
+    maxEngineCc?: number;
     condition?: string;
+    fuelType?: string;
+    transmission?: string;
+    sellerType?: string;
+    featured?: string | boolean;
+    negotiable?: string | boolean;
     q?: string;
     sort?: string;
     page?: string | number;
@@ -329,6 +343,52 @@ export class ListingsService {
     }
     if (filters.districtId) {
       qb.andWhere('l.district_id = :districtId', { districtId: filters.districtId });
+    }
+    if (filters.cityId) {
+      qb.andWhere('l.city_id = :cityId', { cityId: filters.cityId });
+    }
+    if (filters.fuelType) {
+      qb.andWhere('l.fuel_type = :fuelType', { fuelType: filters.fuelType });
+    }
+    if (filters.transmission) {
+      qb.andWhere('l.transmission = :transmission', {
+        transmission: filters.transmission,
+      });
+    }
+    if (filters.minMileage != null) {
+      qb.andWhere('l.mileage >= :minMileage', { minMileage: filters.minMileage });
+    }
+    if (filters.maxMileage != null) {
+      qb.andWhere('l.mileage <= :maxMileage', { maxMileage: filters.maxMileage });
+    }
+    if (filters.minEngineCc != null) {
+      qb.andWhere('l.engine_cc >= :minEngineCc', {
+        minEngineCc: filters.minEngineCc,
+      });
+    }
+    if (filters.maxEngineCc != null) {
+      qb.andWhere('l.engine_cc <= :maxEngineCc', {
+        maxEngineCc: filters.maxEngineCc,
+      });
+    }
+    if (filters.sellerType === 'dealer') {
+      qb.andWhere('l.dealer_id IS NOT NULL');
+    }
+    if (filters.sellerType === 'private') {
+      qb.andWhere('l.dealer_id IS NULL');
+    }
+    if (filters.negotiable === true || filters.negotiable === 'true') {
+      qb.andWhere('l.negotiable = true');
+    }
+    if (filters.featured === true || filters.featured === 'true') {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM homepage_placements hp
+          WHERE hp.listing_id = l.id
+            AND hp.starts_at <= NOW()
+            AND hp.ends_at > NOW()
+        )`,
+      );
     }
     if (filters.dealerId) {
       const dealer = await this.dealersService.findActiveById(filters.dealerId);
@@ -560,8 +620,41 @@ export class ListingsService {
     };
   }
 
+  private markActive(listing: Listing) {
+    listing.status = 'active';
+    if (!listing.publishedAt) listing.publishedAt = new Date();
+    listing.expiresAt = computeExpiresAt(new Date());
+    listing.rejectionReason = null;
+  }
+
+  private queueSavedSearchMatches(listing: Listing) {
+    void this.savedSearches
+      ?.notifyMatches({
+        id: listing.id,
+        slug: listing.slug,
+        sellerId: listing.sellerId,
+        title: listing.title,
+        brandId: listing.brandId,
+        modelId: listing.modelId,
+        categoryId: listing.categoryId,
+        districtId: listing.districtId,
+        cityId: listing.cityId,
+        priceLkr: listing.priceLkr,
+        manufactureYear: listing.manufactureYear,
+        condition: listing.condition,
+        fuelType: listing.fuelType,
+        transmission: listing.transmission,
+        mileage: listing.mileage,
+        engineCc: listing.engineCc,
+        dealerId: listing.dealerId,
+        negotiable: listing.negotiable,
+      })
+      .catch(() => undefined);
+  }
+
   private ownerInventoryFields(listing: Listing, favouriteCount: number) {
     return {
+      expiresAt: listing.expiresAt?.toISOString() ?? null,
       costPriceLkr: listing.costPriceLkr,
       purchaseDate: listing.purchaseDate,
       soldPriceLkr: listing.soldPriceLkr,
@@ -859,7 +952,10 @@ export class ListingsService {
       status,
       publishedAt: status === 'active' ? new Date() : null,
     });
-    return this.listings.save(listing);
+    if (status === 'active') this.markActive(listing);
+    const saved = await this.listings.save(listing);
+    if (status === 'active') this.queueSavedSearchMatches(saved);
+    return saved;
   }
 
   async adminUpdate(
@@ -921,8 +1017,8 @@ export class ListingsService {
 
     if (status) {
       listing.status = status;
-      if (status === 'active' && !listing.publishedAt) {
-        listing.publishedAt = new Date();
+      if (status === 'active') {
+        this.markActive(listing);
       }
       if (status === 'sold' && !listing.soldAt) {
         listing.soldAt = new Date();
@@ -952,9 +1048,7 @@ export class ListingsService {
         error: { code: 'INVALID_STATUS', message: 'Listing is not pending review' },
       });
     }
-    listing.status = 'active';
-    listing.publishedAt = new Date();
-    listing.rejectionReason = null;
+    this.markActive(listing);
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
     void this.notifications.listingApproved(saved.sellerId, {
@@ -962,7 +1056,51 @@ export class ListingsService {
       title: saved.title,
       slug: saved.slug,
     });
+    this.queueSavedSearchMatches(saved);
     return saved;
+  }
+
+  async renew(seller: User, id: string): Promise<Listing> {
+    const listing = await this.getOwned(seller.id, id);
+    if (listing.status !== 'expired') {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Only expired listings can be renewed',
+        },
+      });
+    }
+    this.markActive(listing);
+    const saved = await this.listings.save(listing);
+    this.bumpDashboard();
+    this.queueSavedSearchMatches(saved);
+    return saved;
+  }
+
+  async expireStale(now = new Date()) {
+    const undated = await this.listings.find({
+      where: { status: 'active', expiresAt: IsNull() },
+    });
+    for (const listing of undated) {
+      listing.expiresAt = computeExpiresAt(
+        listing.publishedAt ?? listing.createdAt ?? now,
+      );
+      await this.listings.save(listing);
+    }
+    const due = await this.listings.find({
+      where: { status: 'active', expiresAt: LessThanOrEqual(now) },
+    });
+    for (const listing of due) {
+      listing.status = 'expired';
+      await this.listings.save(listing);
+      void this.notifications.listingExpired(listing.sellerId, {
+        id: listing.id,
+        title: listing.title,
+      });
+    }
+    if (due.length) this.bumpDashboard();
+    return { expired: due.length, backfilled: undated.length };
   }
 
   async reject(id: string, reason: string): Promise<Listing> {

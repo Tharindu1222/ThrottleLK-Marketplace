@@ -7,8 +7,8 @@ loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: resolve(process.cwd(), '../../.env') });
 
 /**
- * CLI data source for TypeORM migrations (`npm run migration:run` in apps/api).
- * Runtime Nest still uses TypeOrmModule.forRootAsync — this file is not the app connection.
+ * CLI data source for TypeORM (`npm run migration:run` / `migration:revert` in apps/api).
+ * Nest also applies pending migrations on boot via `runMigrations()` in `main.ts`.
  */
 export default new DataSource({
   type: 'postgres',

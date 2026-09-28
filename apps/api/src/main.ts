@@ -1,11 +1,30 @@
 import helmet from 'helmet';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/api-exception.filter';
 
+async function applyPendingMigrations(app: NestExpressApplication) {
+  if (process.env.SKIP_DB === 'true') return;
+  const dataSource = app.get(DataSource);
+  const applied = await dataSource.runMigrations();
+  const logger = new Logger('Migrations');
+  if (applied.length === 0) {
+    logger.log('Database is up to date');
+    return;
+  }
+  logger.log(
+    `Applied ${applied.length} pending migration(s): ${applied
+      .map((migration) => migration.name)
+      .join(', ')}`,
+  );
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  await applyPendingMigrations(app);
   app.use(
     helmet({
       contentSecurityPolicy: false,

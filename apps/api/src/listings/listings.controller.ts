@@ -52,13 +52,23 @@ export class ListingsController {
     @Query('modelId') modelId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('districtId') districtId?: string,
+    @Query('cityId') cityId?: string,
     @Query('dealerId') dealerId?: string,
     @Query('sellerId') sellerId?: string,
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
     @Query('minYear') minYear?: string,
     @Query('maxYear') maxYear?: string,
+    @Query('minMileage') minMileage?: string,
+    @Query('maxMileage') maxMileage?: string,
+    @Query('minEngineCc') minEngineCc?: string,
+    @Query('maxEngineCc') maxEngineCc?: string,
     @Query('condition') condition?: string,
+    @Query('fuelType') fuelType?: string,
+    @Query('transmission') transmission?: string,
+    @Query('sellerType') sellerType?: string,
+    @Query('featured') featured?: string,
+    @Query('negotiable') negotiable?: string,
     @Query('sort') sort?: string,
     @Query('q') q?: string,
     @Query('page') page?: string,
@@ -69,13 +79,23 @@ export class ListingsController {
       modelId,
       categoryId,
       districtId,
+      cityId,
       dealerId,
       sellerId,
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       minYear: minYear ? Number(minYear) : undefined,
       maxYear: maxYear ? Number(maxYear) : undefined,
+      minMileage: minMileage ? Number(minMileage) : undefined,
+      maxMileage: maxMileage ? Number(maxMileage) : undefined,
+      minEngineCc: minEngineCc ? Number(minEngineCc) : undefined,
+      maxEngineCc: maxEngineCc ? Number(maxEngineCc) : undefined,
       condition,
+      fuelType,
+      transmission,
+      sellerType,
+      featured,
+      negotiable,
       sort,
       q,
       page,
@@ -291,6 +311,19 @@ export class ListingsController {
     return {
       success: true,
       data: await this.listingsService.resume(user, id),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
+  @Post(':id/renew')
+  async renew(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingsService.renew(user, id),
     };
   }
 

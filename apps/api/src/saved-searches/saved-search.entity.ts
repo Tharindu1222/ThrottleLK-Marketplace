@@ -14,9 +14,24 @@ export type SavedSearchQuery = {
   q?: string;
   brandId?: string;
   modelId?: string;
+  categoryId?: string;
   districtId?: string;
+  cityId?: string;
   minPrice?: number;
   maxPrice?: number;
+  minYear?: number;
+  maxYear?: number;
+  minMileage?: number;
+  maxMileage?: number;
+  minEngineCc?: number;
+  maxEngineCc?: number;
+  condition?: string;
+  fuelType?: string;
+  transmission?: string;
+  sellerType?: 'dealer' | 'private';
+  featured?: boolean;
+  negotiable?: boolean;
+  sort?: string;
 };
 
 @Entity('saved_searches')

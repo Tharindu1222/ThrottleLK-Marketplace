@@ -13,6 +13,8 @@ import { ListingInquiry } from './listing-inquiry.entity';
 import { Listing } from './listing.entity';
 import { ListingsController } from './listings.controller';
 import { ListingsService } from './listings.service';
+import { ListingJobsService } from './listing-jobs.service';
+import { SavedSearchesModule } from '../saved-searches/saved-searches.module';
 
 @Module({
   imports: [
@@ -28,8 +30,9 @@ import { ListingsService } from './listings.service';
     FavouritesModule,
     StorageModule,
     UsersModule,
+    SavedSearchesModule,
   ],
-  providers: [ListingsService, ListingImagesService],
+  providers: [ListingsService, ListingImagesService, ListingJobsService],
   controllers: [ListingsController],
   exports: [ListingsService, ListingImagesService, TypeOrmModule],
 })
