@@ -1,6 +1,7 @@
 import {
   computeExpiresAt,
   isPastExpiry,
+  isPubliclyListed,
   listingActiveDays,
 } from './listing-expiry';
 
@@ -23,5 +24,19 @@ describe('listing expiry helpers', () => {
     expect(isPastExpiry(new Date('2026-02-01T00:00:00.000Z'), now)).toBe(true);
     expect(isPastExpiry(new Date('2026-03-02T00:00:00.000Z'), now)).toBe(false);
     expect(isPastExpiry(null, now)).toBe(false);
+  });
+
+  it('hides active listings that have already expired', () => {
+    const now = new Date('2026-03-01T00:00:00.000Z');
+    expect(
+      isPubliclyListed('active', new Date('2026-02-01T00:00:00.000Z'), now),
+    ).toBe(false);
+    expect(
+      isPubliclyListed('active', new Date('2026-03-02T00:00:00.000Z'), now),
+    ).toBe(true);
+    expect(isPubliclyListed('sold', new Date('2026-02-01T00:00:00.000Z'), now)).toBe(
+      true,
+    );
+    expect(isPubliclyListed('draft', null, now)).toBe(false);
   });
 });

@@ -94,6 +94,15 @@ export class PromotionsService {
     listingId?: string,
     partListingId?: string,
   ) {
+    if (listingId || partListingId) {
+      const subjectType: PromoSubjectType = listingId ? 'bike' : 'part';
+      await this.assertOwnedActive(
+        sellerId,
+        subjectType,
+        listingId ?? null,
+        partListingId ?? null,
+      );
+    }
     const pending = await this.findPending(listingId ?? null, partListingId ?? null);
     const live = await this.findLive(listingId ?? null, partListingId ?? null);
     const latest = await this.requests.findOne({
@@ -193,7 +202,9 @@ export class PromotionsService {
     }
 
     const key = `promo-slips/${randomUUID()}/${randomUUID()}.${slipExtension(file!.mimetype)}`;
-    await this.storage.putObject(key, file!.buffer, file!.mimetype);
+    await this.storage.putObject(key, file!.buffer, file!.mimetype, {
+      access: 'private',
+    });
     const saved = await this.requests.save(
       this.requests.create({
         sellerId: seller.id,
@@ -232,7 +243,9 @@ export class PromotionsService {
       });
     }
     const key = `promo-slips/${request.id}/${randomUUID()}.${slipExtension(file!.mimetype)}`;
-    await this.storage.putObject(key, file!.buffer, file!.mimetype);
+    await this.storage.putObject(key, file!.buffer, file!.mimetype, {
+      access: 'private',
+    });
     await this.storage.deleteObject(request.slipStorageKey).catch(() => undefined);
     request.slipStorageKey = key;
     request.slipContentType = file!.mimetype;

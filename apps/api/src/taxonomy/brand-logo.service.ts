@@ -6,7 +6,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
-import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
+import { assertSafeImageFile } from '../common/image-bytes';
+import {
+  deletePublicMarketplaceImage,
+  storePublicMarketplaceImage,
+} from '../common/image-variants';
 import { StorageService } from '../storage/storage.service';
 import { Brand } from './brand.entity';
 
@@ -34,7 +38,7 @@ export class BrandLogoService {
         error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
       });
     }
-    const mime = assertSafeImageFile(file);
+    assertSafeImageFile(file);
     if (file.size > MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -43,30 +47,25 @@ export class BrandLogoService {
     }
 
     if (brand.logoStorageKey) {
-      await this.storage
-        .deleteObject(brand.logoStorageKey)
-        .catch(() => undefined);
+      await deletePublicMarketplaceImage(this.storage, brand.logoStorageKey);
     }
 
-    const ext = extensionForMime(mime);
-    const storageKey = `brands/${brandId}/${randomUUID()}.${ext}`;
-    const stored = await this.storage.putObject(
-      storageKey,
+    const stored = await storePublicMarketplaceImage(
+      this.storage,
+      `brands/${brandId}/${randomUUID()}`,
       file.buffer,
-      mime,
+      'logo',
     );
 
     brand.logoStorageKey = stored.storageKey;
-    brand.logoUrl = stored.publicUrl;
+    brand.logoUrl = stored.imageUrl;
     return this.brands.save(brand);
   }
 
   async removeLogo(brandId: string) {
     const brand = await this.getBrandOrThrow(brandId);
     if (brand.logoStorageKey) {
-      await this.storage
-        .deleteObject(brand.logoStorageKey)
-        .catch(() => undefined);
+      await deletePublicMarketplaceImage(this.storage, brand.logoStorageKey);
     }
     brand.logoStorageKey = null;
     brand.logoUrl = null;

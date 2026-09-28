@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { Throttle } from '@nestjs/throttler';
 
 /**
@@ -36,7 +37,11 @@ export function isInternalApiRequest(
   const key = expected?.trim();
   if (!key) return false;
   const provided = Array.isArray(headerValue) ? headerValue[0] : headerValue;
-  return Boolean(provided && provided === key);
+  if (!provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(key);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 export function clientIp(
@@ -51,10 +56,12 @@ export function clientIp(
   if (trustProxy) {
     const forwarded = req.headers?.['x-forwarded-for'];
     const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-    const first =
-      typeof raw === 'string' ? raw.split(',')[0]?.trim() : undefined;
-    if (first) return first;
-    if (req.ips?.[0]) return req.ips[0];
+    if (typeof raw === 'string' && raw.trim()) {
+      const hops = raw.split(',').map((part) => part.trim()).filter(Boolean);
+      const last = hops[hops.length - 1];
+      if (last) return last;
+    }
+    if (req.ips?.[0]) return req.ips[req.ips.length - 1] ?? req.ips[0];
   }
   return req.ip || req.ips?.[0] || req.socket?.remoteAddress || 'unknown';
 }

@@ -6,6 +6,7 @@ import { apiGet } from '@/lib/api';
 import { readAccessCookie } from '@/lib/session-cookie';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { breadcrumbJsonLd, listingJsonLd, pageMetadata } from '@/lib/seo';
+import { safeJsonLd } from '@/lib/json-ld';
 import { composeListingTitle } from '@/lib/listing-title';
 import { sellerProfileHref } from '@/lib/seller-href';
 import { ListingContactBar, ListingToolbar } from '@/components/listing-actions';
@@ -104,6 +105,7 @@ export async function generateMetadata({
       description: listing.description.slice(0, 160),
       path: `/${locale}/bikes/${slug}`,
       locale,
+      image: listing.coverImageUrl ?? listing.images?.[0]?.imageUrl ?? undefined,
     });
   } catch {
     return { title: 'Listing not found' };
@@ -147,6 +149,7 @@ export default async function ListingDetailPage({
     slug: listing.slug,
     locale,
     status: listing.status,
+    image: listing.coverImageUrl ?? listing.images?.[0]?.imageUrl ?? null,
   });
 
   let similarAll: BrowseListingCard[] = [];
@@ -194,12 +197,12 @@ export default async function ListingDetailPage({
       <ListingViewTracker listingId={listing.id} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLd(
             breadcrumbJsonLd(locale, [
               { name: t(locale, 'browse'), path: `/${locale}/bikes` },
               { name: heading, path: `/${locale}/bikes/${slug}` },

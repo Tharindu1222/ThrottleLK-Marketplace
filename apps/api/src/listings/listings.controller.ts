@@ -151,11 +151,15 @@ export class ListingsController {
     };
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/images')
-  async listImages(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+  async listImages(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: User },
+  ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.listingImagesService.listForListing(id),
+      data: await this.listingImagesService.listForListing(id, req.user ?? null),
     };
   }
 

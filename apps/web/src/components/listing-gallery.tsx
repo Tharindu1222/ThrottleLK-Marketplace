@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { BRAND_LOGO_SRC } from '@/components/brand-logo';
+import { MarketplaceImage } from '@/components/marketplace-image';
 import { t, type Locale } from '@/lib/i18n';
 
 type GalleryImage = {
@@ -157,10 +158,13 @@ export function ListingGallery({
   if (!current) {
     return (
       <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-3 border border-black/10 bg-[linear-gradient(160deg,#f0f0f0_0%,#fafafa_50%,#ececec_100%)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-20px_rgba(0,0,0,0.25)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <MarketplaceImage
           src={BRAND_LOGO_SRC}
           alt=""
+          fill={false}
+          width={192}
+          height={48}
+          sizes="192px"
           className="h-12 w-auto max-w-[40%] object-contain opacity-80 brightness-0"
         />
         <span className="text-sm text-muted">{t(locale, 'photoComingSoon')}</span>
@@ -212,13 +216,14 @@ export function ListingGallery({
                 </button>
               ) : null}
 
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={current}
-                alt={title}
-                onClick={(e) => e.stopPropagation()}
-                className="max-h-full max-w-full object-contain"
-              />
+              <div className="relative h-full w-full max-h-full max-w-full" onClick={(e) => e.stopPropagation()}>
+                <MarketplaceImage
+                  src={current}
+                  alt={title}
+                  sizes="100vw"
+                  className="object-contain"
+                />
+              </div>
 
               {multi ? (
                 <button
@@ -252,12 +257,15 @@ export function ListingGallery({
           className="block w-full cursor-zoom-in"
           aria-label={t(locale, 'galleryExpand')}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={current}
-            alt={title}
-            className="aspect-[16/10] w-full object-contain"
-          />
+          <span className="relative block aspect-[16/10] w-full bg-zinc-100">
+            <MarketplaceImage
+              src={current}
+              alt={title}
+              sizes="(max-width: 1024px) 100vw, 70vw"
+              className="object-contain"
+              priority
+            />
+          </span>
         </button>
 
         {multi ? (
@@ -308,14 +316,14 @@ export function ListingGallery({
                     : 'border-black/10 hover:border-accent/50'
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.imageUrl}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="h-16 w-20 object-cover sm:h-[4.5rem] sm:w-24"
-                />
+                <span className="relative block h-16 w-20 sm:h-[4.5rem] sm:w-24">
+                  <MarketplaceImage
+                    src={image.imageUrl}
+                    alt=""
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                </span>
               </button>
             );
           })}

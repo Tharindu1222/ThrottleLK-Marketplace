@@ -47,14 +47,16 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
 
     console.error(exception);
+    if (process.env.SENTRY_DSN) {
+      void import('@sentry/node')
+        .then((Sentry) => Sentry.captureException(exception))
+        .catch(() => undefined);
+    }
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message:
-          exception instanceof Error
-            ? exception.message
-            : 'Unexpected server error',
+        message: 'Unexpected server error',
       },
     });
   }

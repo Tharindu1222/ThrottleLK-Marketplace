@@ -110,8 +110,16 @@ export class StorageService {
     storageKey: string,
     buffer: Buffer,
     contentType: string,
+    options?: {
+      access?: 'public' | 'private';
+      cacheControl?: string;
+    },
   ): Promise<StoredObject> {
     const { client, bucket, publicUrl } = this.requireR2();
+    const cacheControl =
+      options?.access === 'private'
+        ? undefined
+        : (options?.cacheControl ?? 'public, max-age=31536000, immutable');
     try {
       await client.send(
         new PutObjectCommand({
@@ -119,6 +127,7 @@ export class StorageService {
           Key: storageKey,
           Body: buffer,
           ContentType: contentType,
+          CacheControl: cacheControl,
         }),
       );
     } catch (err) {
@@ -126,7 +135,8 @@ export class StorageService {
     }
     return {
       storageKey,
-      publicUrl: `${publicUrl}/${storageKey}`,
+      publicUrl:
+        options?.access === 'private' ? '' : `${publicUrl}/${storageKey}`,
     };
   }
 

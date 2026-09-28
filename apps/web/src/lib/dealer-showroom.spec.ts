@@ -72,7 +72,7 @@ describe('dealerWhatsappHref', () => {
   it('keeps digits only', () => {
     assert.equal(
       dealerWhatsappHref('070 460 8282'),
-      'https://wa.me/0704608282',
+      'https://wa.me/94704608282',
     );
     assert.equal(dealerWhatsappHref(null), null);
   });

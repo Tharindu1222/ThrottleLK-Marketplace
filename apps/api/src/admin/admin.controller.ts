@@ -193,10 +193,13 @@ export class AdminController {
   }
 
   @Get('listings/:id/images')
-  async listListingImages(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+  async listListingImages(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.listingImagesService.listForListing(id),
+      data: await this.listingImagesService.listForListing(id, user),
     };
   }
 
@@ -834,11 +837,12 @@ export class AdminController {
 
   @Get('part-listings/:id/images')
   async listPartListingImages(
+    @CurrentUser() user: User,
     @Param('id') id: string,
   ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.partListingImagesService.listForListing(id),
+      data: await this.partListingImagesService.listForListing(id, user),
     };
   }
 

@@ -24,12 +24,12 @@ describe('rate-limit helpers', () => {
     expect(isInternalApiRequest(undefined, 'secret')).toBe(false);
   });
 
-  it('uses the first forwarded IP only when the proxy is trusted', () => {
+  it('uses the last forwarded hop when the proxy is trusted', () => {
     const req = {
       ip: '10.0.0.1',
       headers: { 'x-forwarded-for': '203.0.113.9, 10.0.0.1' },
     };
-    expect(clientIp(req, true)).toBe('203.0.113.9');
+    expect(clientIp(req, true)).toBe('10.0.0.1');
     expect(clientIp(req, false)).toBe('10.0.0.1');
   });
 });

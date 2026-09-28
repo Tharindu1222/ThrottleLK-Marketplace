@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   FormEvent,
   useEffect,
@@ -17,6 +18,7 @@ import {
   type AuthUser,
 } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 import { sellerProfileHref } from '@/lib/seller-href';
 
 type Profile = {
@@ -177,6 +179,7 @@ function DetailRow({
 }
 
 export function ProfileForm({ locale }: { locale: Locale }) {
+  const pathname = usePathname();
   const [token, setToken] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [dealerSlug, setDealerSlug] = useState<string | null>(null);
@@ -258,7 +261,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
     return (
       <p className="text-muted">
         <Link
-          href={`/${locale}/login`}
+          href={loginHref(locale, pathname)}
           className="font-medium text-foreground underline decoration-black/20 underline-offset-2 transition hover:text-accent hover:decoration-accent"
         >
           {t(locale, 'login')}

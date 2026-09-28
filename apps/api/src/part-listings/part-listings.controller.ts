@@ -128,11 +128,18 @@ export class PartListingsController {
     };
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/images')
-  async listImages(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+  async listImages(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: User },
+  ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.partListingImagesService.listForListing(id),
+      data: await this.partListingImagesService.listForListing(
+        id,
+        req.user ?? null,
+      ),
     };
   }
 

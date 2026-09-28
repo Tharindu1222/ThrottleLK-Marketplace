@@ -15,6 +15,7 @@ import { ListingsController } from './listings.controller';
 import { ListingsService } from './listings.service';
 import { ListingJobsService } from './listing-jobs.service';
 import { SavedSearchesModule } from '../saved-searches/saved-searches.module';
+import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SavedSearchesModule } from '../saved-searches/saved-searches.module';
     StorageModule,
     UsersModule,
     SavedSearchesModule,
+    TaxonomyModule,
   ],
   providers: [ListingsService, ListingImagesService, ListingJobsService],
   controllers: [ListingsController],

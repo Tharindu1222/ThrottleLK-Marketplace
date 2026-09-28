@@ -1,9 +1,10 @@
 import { resolve } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppThrottlerGuard } from './common/app-throttler.guard';
+import { HttpCacheInterceptor } from './common/http-cache.interceptor';
 import { CacheModule } from './common/cache.module';
 import { RATE_LIMITS } from './common/rate-limit';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -66,7 +67,7 @@ const skipDb = process.env.SKIP_DB === 'true';
               return {
                 type: 'postgres' as const,
                 url: config.get<string>('DATABASE_URL'),
-                synchronize: nodeEnv !== 'production',
+                synchronize: false,
                 migrationsRun: false,
                 migrations: [resolve(__dirname, 'migrations/*.{ts,js}')],
                 autoLoadEntities: true,
@@ -103,6 +104,10 @@ const skipDb = process.env.SKIP_DB === 'true';
     {
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpCacheInterceptor,
     },
   ],
 })

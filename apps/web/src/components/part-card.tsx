@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { BRAND_LOGO_SRC } from '@/components/brand-logo';
+import { MarketplaceImage } from '@/components/marketplace-image';
 import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -250,18 +251,21 @@ export function PartCard({
     <article className="group flex h-full flex-col overflow-hidden border border-black/10 bg-white transition hover:border-accent/35 hover:shadow-[0_12px_28px_-18px_rgba(15,15,15,0.35)]">
       <Link href={cardHref} className="relative block aspect-[16/10] bg-surface">
         {part.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <MarketplaceImage
             src={part.coverImageUrl}
             alt=""
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition duration-300 group-hover:scale-[1.02]"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-surface">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <MarketplaceImage
               src={BRAND_LOGO_SRC}
               alt=""
+              fill={false}
+              width={160}
+              height={40}
+              sizes="160px"
               className="h-10 w-auto opacity-40"
             />
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
   clearSession,
@@ -11,6 +12,7 @@ import {
 } from '@/lib/auth';
 import { apiGet, apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 import { AuthRequiredLink } from './auth-required-link';
 import { BrandLogo } from './brand-logo';
 import { CompareNavIcon } from './compare-nav-icon';
@@ -60,6 +62,8 @@ export function SiteHeader({
   tone?: 'light' | 'dark';
 }) {
   const dark = tone === 'dark';
+  const pathname = usePathname();
+  const signInHref = loginHref(locale, pathname);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -281,7 +285,7 @@ export function SiteHeader({
               </div>
             </>
           ) : (
-            <Link href={`/${locale}/login`} className={navLinkClass}>
+            <Link href={signInHref} className={navLinkClass}>
               {t(locale, 'login')}
             </Link>
           )}
@@ -445,7 +449,7 @@ export function SiteHeader({
               </>
             ) : (
               <Link
-                href={`/${locale}/login`}
+                href={signInHref}
                 className="py-3 text-base text-muted"
                 onClick={() => setMenuOpen(false)}
               >

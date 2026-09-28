@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 
 type SavedSearch = {
   id: string;
@@ -31,6 +33,7 @@ function toBrowseHref(locale: Locale, query: SavedSearch['query']) {
 }
 
 export function SavedSearchesClient({ locale }: { locale: Locale }) {
+  const pathname = usePathname();
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<SavedSearch[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +54,7 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
   if (!token) {
     return (
       <p className="mt-6 text-muted">
-        <Link href={`/${locale}/login`} className="text-accent underline">
+        <Link href={loginHref(locale, pathname)} className="text-accent underline">
           {t(locale, 'login')}
         </Link>
       </p>

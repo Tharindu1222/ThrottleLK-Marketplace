@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RateLimit } from '../common/rate-limit';
 import { User } from '../users/user.entity';
 import { PromotionsService } from './promotions.service';
+import { SLIP_MAX_BYTES } from './promotions.util';
 import type { PromoSubjectType } from './promo-package.entity';
 
 @Controller('promotions')
@@ -64,7 +65,12 @@ export class PromotionsController {
   @UseGuards(JwtAuthGuard)
   @RateLimit('upload')
   @Post('requests')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: SLIP_MAX_BYTES },
+    }),
+  )
   async create(
     @CurrentUser() user: User,
     @UploadedFile() file: Express.Multer.File,
@@ -95,7 +101,12 @@ export class PromotionsController {
   @UseGuards(JwtAuthGuard)
   @RateLimit('upload')
   @Patch('requests/:id/slip')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: SLIP_MAX_BYTES },
+    }),
+  )
   async replaceSlip(
     @CurrentUser() user: User,
     @Param('id') id: string,

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import gsap from 'gsap';
 import { BrandLogo } from '@/components/brand-logo';
 import { AuthBikeStage } from '@/components/auth/auth-bike-stage';
 import { t, type Locale } from '@/lib/i18n';
@@ -25,37 +24,46 @@ export function AuthShell({
     const card = cardRef.current;
     if (!stage || !card) return;
 
+    let cancelled = false;
+    let revert: (() => void) | undefined;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return;
 
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        stage.querySelectorAll('[data-auth-fade]'),
-        { opacity: 0, y: 18 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.08,
-          ease: 'power3.out',
-          delay: 0.2,
-        },
-      );
-      gsap.fromTo(
-        card,
-        { opacity: 0, x: 40, y: 16 },
-        {
-          opacity: 1,
-          x: 0,
-          y: 0,
-          duration: 1,
-          ease: 'power3.out',
-          delay: 0.35,
-        },
-      );
-    }, stage);
+    void import('gsap').then(({ default: gsap }) => {
+      if (cancelled || !stageRef.current || !cardRef.current) return;
+      const ctx = gsap.context(() => {
+        gsap.fromTo(
+          stage.querySelectorAll('[data-auth-fade]'),
+          { opacity: 0, y: 18 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.08,
+            ease: 'power3.out',
+            delay: 0.2,
+          },
+        );
+        gsap.fromTo(
+          card,
+          { opacity: 0, x: 40, y: 16 },
+          {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            duration: 1,
+            ease: 'power3.out',
+            delay: 0.35,
+          },
+        );
+      }, stage);
+      revert = () => ctx.revert();
+    });
 
-    return () => ctx.revert();
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
   }, []);
 
   return (

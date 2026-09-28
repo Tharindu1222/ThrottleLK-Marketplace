@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -45,10 +45,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ]),
       ignoreExpiration: false,
       secretOrKey: access,
+      algorithms: ['HS256'],
     });
   }
 
   async validate(payload: JwtPayload) {
-    return this.usersService.findByIdOrThrow(payload.sub);
+    const user = await this.usersService.findByIdOrThrow(payload.sub);
+    if (user.status !== 'active') {
+      throw new UnauthorizedException({
+        success: false,
+        error: { code: 'ACCOUNT_DISABLED', message: 'Account is not active' },
+      });
+    }
+    return user;
   }
 }

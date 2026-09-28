@@ -26,6 +26,7 @@ export function AdminShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
+    <AdminGate locale={locale}>
     <div className="admin-app h-svh overflow-hidden">
       <div className="flex h-full">
         <AdminSidebar
@@ -44,10 +45,11 @@ export function AdminShell({
             searchPlaceholder={searchPlaceholder}
           />
           <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
-            <AdminGate locale={locale}>{children}</AdminGate>
+            {children}
           </main>
         </div>
       </div>
     </div>
+    </AdminGate>
   );
 }

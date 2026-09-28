@@ -54,13 +54,22 @@ function redirectToLoginIfUnauthorized(
     normalized.includes('/auth/register') ||
     normalized.includes('/auth/refresh') ||
     normalized.includes('/auth/forgot') ||
-    normalized.includes('/auth/reset')
+    normalized.includes('/auth/reset') ||
+    normalized.includes('/users/me')
   ) {
     return;
   }
 
   const pathname = window.location.pathname;
-  if (pathname.includes('/login')) return;
+  if (
+    pathname.includes('/login') ||
+    pathname.includes('/register') ||
+    pathname.includes('/forgot-password') ||
+    pathname.includes('/reset-password') ||
+    pathname.includes('/verify-email')
+  ) {
+    return;
+  }
 
   clearClientSession();
   const locale = pathname.split('/').filter(Boolean)[0] || 'en';

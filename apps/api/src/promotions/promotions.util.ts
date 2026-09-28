@@ -72,8 +72,9 @@ export function assertSlipFile(file?: {
 
 export function normalizeWhatsappDigits(raw: string): string {
   const digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('94')) return digits;
   if (digits.startsWith('0')) return `94${digits.slice(1)}`;
-  return digits;
+  return `94${digits}`;
 }
 
 export function addUtcDays(from: Date, days: number): Date {

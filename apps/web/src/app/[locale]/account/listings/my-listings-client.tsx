@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   useEffect,
   useId,
@@ -18,6 +19,7 @@ import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import { useUrlPage } from '@/lib/use-url-page';
 import type { PaginationMeta } from '@throttlelk/types';
@@ -507,6 +509,7 @@ export function MyListingsClient({
   embedded?: boolean;
   layout?: 'rows' | 'cards';
 }) {
+  const pathname = usePathname();
   const { page, goTo } = useUrlPage();
   const [token, setToken] = useState<string | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -595,7 +598,7 @@ export function MyListingsClient({
     if (embedded) return null;
     return (
       <p className="mt-8 text-muted">
-        <Link href={`/${locale}/login`} className="text-accent underline">
+        <Link href={loginHref(locale, pathname)} className="text-accent underline">
           {t(locale, 'login')}
         </Link>
       </p>

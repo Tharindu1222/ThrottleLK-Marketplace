@@ -14,7 +14,17 @@ export type AuthUser = {
 };
 
 export function saveSession(data: { user: AuthUser }) {
-  localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+  const hint: AuthUser = {
+    id: data.user.id,
+    firstName: data.user.firstName,
+    lastName: data.user.lastName,
+    email: '',
+    phone: null,
+    roles: [],
+    emailVerifiedAt: data.user.emailVerifiedAt,
+    avatarUrl: data.user.avatarUrl,
+  };
+  localStorage.setItem(USER_KEY, JSON.stringify(hint));
   window.dispatchEvent(new Event('throttlelk-session'));
 }
 

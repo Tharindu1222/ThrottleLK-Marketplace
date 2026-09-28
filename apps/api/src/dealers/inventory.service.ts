@@ -241,6 +241,7 @@ export class InventoryService {
       storageKey,
       file.buffer,
       file.mimetype,
+      { access: 'private' },
     );
 
     let doc = await this.documents.findOne({
@@ -268,8 +269,28 @@ export class InventoryService {
         expiresAt: needsExpiry ? expiresAt! : null,
       });
     }
-    await this.documents.save(doc);
+    const savedDoc = await this.documents.save(doc);
+    savedDoc.fileUrl = `/api/v1/dealers/mine/inventory/${item.id}/documents/${savedDoc.id}/file`;
+    await this.documents.save(savedDoc);
     return this.toDto(await this.reload(id));
+  }
+
+  async downloadDocument(owner: User, itemId: string, docId: string) {
+    const item = await this.getOwnedItem(owner.id, itemId);
+    const doc = await this.documents.findOne({
+      where: { id: docId, inventoryItemId: item.id },
+    });
+    if (!doc) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Document not found' },
+      });
+    }
+    const file = await this.storage.getObject(doc.storageKey);
+    return {
+      ...file,
+      filename: doc.fileName.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80) || 'document',
+    };
   }
 
   async deleteDocument(

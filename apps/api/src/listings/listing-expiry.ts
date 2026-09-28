@@ -13,3 +13,13 @@ export function computeExpiresAt(from: Date, days = listingActiveDays()): Date {
 export function isPastExpiry(expiresAt: Date | null | undefined, now = new Date()) {
   return Boolean(expiresAt && expiresAt.getTime() <= now.getTime());
 }
+
+/** Active ads past expiresAt are treated as gone; sold ads stay public. */
+export function isPubliclyListed(
+  status: string,
+  expiresAt?: Date | null,
+  now = new Date(),
+) {
+  if (status === 'sold') return true;
+  return status === 'active' && !isPastExpiry(expiresAt, now);
+}

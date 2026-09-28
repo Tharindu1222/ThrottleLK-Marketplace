@@ -19,6 +19,10 @@ SSH=(ssh -i "$KEY_FILE" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes)
 "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s <<REMOTE
 set -euo pipefail
 cd "$DEPLOY_PATH"
+if command -v pg_dump >/dev/null 2>&1 && [ -n "${DATABASE_URL:-}" ]; then
+  mkdir -p backups
+  pg_dump "$DATABASE_URL" | gzip > "backups/pre-deploy-$(date -u +%Y%m%dT%H%M%SZ).sql.gz"
+fi
 git fetch origin
 git checkout "$DEPLOY_REF"
 git pull --ff-only origin "$DEPLOY_REF"

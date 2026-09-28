@@ -10,6 +10,9 @@ import type { BrowseListingCard } from '@/components/listing-card';
 import type { BrowsePartCard } from '@/components/part-card';
 import { apiGet } from '@/lib/api';
 import { isLocale, type Locale } from '@/lib/i18n';
+import { pageMetadata } from '@/lib/seo';
+
+export const revalidate = 120;
 
 const HomeScrollReveals = dynamic(
   () =>
@@ -27,11 +30,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale: raw } = await params;
   if (!isLocale(raw)) return {};
-  return {
+  return pageMetadata({
     title: "Sri Lanka's Motorbike Marketplace",
     description:
       'Buy and sell motorbikes across Sri Lanka — from private sellers and dealers. Browse scooters, street bikes, trail bikes and more on ThrottleLK.',
-  };
+    path: `/${raw}`,
+    locale: raw,
+  });
 }
 
 export default async function HomePage({

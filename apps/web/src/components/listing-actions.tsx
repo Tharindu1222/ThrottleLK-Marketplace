@@ -13,6 +13,7 @@ import {
 import { t, type Locale } from '@/lib/i18n';
 import { LoginRequiredDialog } from '@/components/auth-required-link';
 import { ListingMessagePopup } from '@/components/listing-message-popup';
+import { whatsappHref } from '@/lib/whatsapp';
 
 type ListingActionItem = {
   id: string;
@@ -121,11 +122,6 @@ function MessageIcon() {
       <path d="M21 12a8.5 8.5 0 0 1-11.6 7.9L4 21l1.2-4.5A8.5 8.5 0 1 1 21 12z" />
     </SvgIcon>
   );
-}
-
-function whatsappHref(phone: string) {
-  const digits = phone.replace(/\D/g, '').replace(/^0/, '');
-  return `https://wa.me/94${digits}`;
 }
 
 const iconBtn =

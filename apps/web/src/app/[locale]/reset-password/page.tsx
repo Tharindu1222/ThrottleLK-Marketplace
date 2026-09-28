@@ -1,7 +1,25 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { isLocale, type Locale } from '@/lib/i18n';
+import { AUTH_ROBOTS, pageMetadata } from '@/lib/seo';
 import { ResetPasswordForm } from './reset-password-form';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale: raw } = await params;
+  if (!isLocale(raw)) return {};
+  return pageMetadata({
+    title: 'Reset password',
+    description: 'Choose a new ThrottleLK password.',
+    path: `/${raw}/reset-password`,
+    locale: raw,
+    robots: AUTH_ROBOTS,
+  });
+}
 
 export default async function ResetPasswordPage({
   params,

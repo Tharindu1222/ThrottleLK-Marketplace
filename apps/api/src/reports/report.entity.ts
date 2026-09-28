@@ -10,20 +10,29 @@ import {
 } from 'typeorm';
 import { Listing } from '../listings/listing.entity';
 import { User } from '../users/user.entity';
+import { PartListing } from '../part-listings/part-listing.entity';
 
 @Entity('reports')
 @Index('IDX_reports_status_created_at', ['status', 'createdAt'])
 @Index('IDX_reports_listing_id', ['listingId'])
+@Index('IDX_reports_part_listing_id', ['partListingId'])
 export class Report {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'listing_id' })
-  listingId!: string;
+  @Column({ name: 'listing_id', type: 'uuid', nullable: true })
+  listingId!: string | null;
 
-  @ManyToOne(() => Listing, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Listing, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'listing_id' })
-  listing!: Listing;
+  listing!: Listing | null;
+
+  @Column({ name: 'part_listing_id', type: 'uuid', nullable: true })
+  partListingId!: string | null;
+
+  @ManyToOne(() => PartListing, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'part_listing_id' })
+  partListing!: PartListing | null;
 
   @Column({ name: 'reported_by_user_id', type: 'uuid', nullable: true })
   reportedByUserId!: string | null;

@@ -19,11 +19,28 @@ describe('ApiExceptionFilter', () => {
 
     expect(setHeader).toHaveBeenCalledWith('Retry-After', '60');
     expect(status).toHaveBeenCalledWith(429);
+  });
+
+  it('hides non-HTTP exception messages from clients', () => {
+    const json = jest.fn();
+    const status = jest.fn().mockReturnValue({ json });
+    const host = {
+      switchToHttp: () => ({
+        getResponse: () => ({ status, setHeader: jest.fn() }),
+      }),
+    };
+
+    new ApiExceptionFilter().catch(
+      new Error('relation "users" does not exist'),
+      host as never,
+    );
+
+    expect(status).toHaveBeenCalledWith(500);
     expect(json).toHaveBeenCalledWith({
       success: false,
       error: {
-        code: 'RATE_LIMITED',
-        message: 'Too many requests. Try again in a minute.',
+        code: 'INTERNAL_ERROR',
+        message: 'Unexpected server error',
       },
     });
   });

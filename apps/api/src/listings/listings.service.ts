@@ -27,10 +27,12 @@ import { UsersService } from '../users/users.service';
 import { ListingEngagementEvent } from './listing-engagement-event.entity';
 import { ListingImage } from './listing-image.entity';
 import { ListingInquiry } from './listing-inquiry.entity';
-import { computeExpiresAt } from './listing-expiry';
+import { computeExpiresAt, isPubliclyListed } from './listing-expiry';
 import { Listing } from './listing.entity';
 import { SavedSearchesService } from '../saved-searches/saved-searches.service';
+import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { duplicateReasons } from './duplicate-signals';
+import { preferredCoverUrl } from '../common/image-variants';
 
 @Injectable()
 export class ListingsService {
@@ -49,10 +51,13 @@ export class ListingsService {
     private readonly cache: CacheService,
     private readonly inventoryService: InventoryService,
     @Optional() private readonly savedSearches?: SavedSearchesService,
+    @Optional() private readonly taxonomy?: TaxonomyService,
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
     this.assertEmailVerified(seller);
+    this.assertCanSell(seller);
+    await this.taxonomy?.assertListingTaxonomy(input);
     const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
     const baseSlug = slugify(input.title) || 'listing';
     const slug = `${baseSlug}-${Date.now().toString(36)}`;
@@ -94,7 +99,23 @@ export class ListingsService {
     input: UpdateListingInput,
   ): Promise<Listing> {
     const listing = await this.getOwned(seller.id, id);
-    const { costPriceLkr, purchaseDate, ...listingFields } = input;
+    const { costPriceLkr, purchaseDate, dealerId: _dealerId, ...listingFields } =
+      input;
+    if (
+      listingFields.brandId ||
+      listingFields.modelId ||
+      listingFields.categoryId ||
+      listingFields.districtId ||
+      listingFields.cityId
+    ) {
+      await this.taxonomy?.assertListingTaxonomy({
+        brandId: listingFields.brandId ?? listing.brandId,
+        modelId: listingFields.modelId ?? listing.modelId,
+        categoryId: listingFields.categoryId ?? listing.categoryId,
+        districtId: listingFields.districtId ?? listing.districtId,
+        cityId: listingFields.cityId ?? listing.cityId,
+      });
+    }
     if (listing.dealerId) {
       if (costPriceLkr !== undefined) listing.costPriceLkr = costPriceLkr ?? null;
       if (purchaseDate !== undefined) listing.purchaseDate = purchaseDate ?? null;
@@ -210,7 +231,12 @@ export class ListingsService {
         },
       });
     }
-    this.markActive(listing);
+    listing.status = 'active';
+    listing.rejectionReason = null;
+    if (!listing.publishedAt) listing.publishedAt = new Date();
+    if (!isPubliclyListed('active', listing.expiresAt)) {
+      listing.expiresAt = computeExpiresAt(new Date());
+    }
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
     this.queueSavedSearchMatches(saved);
@@ -280,9 +306,9 @@ export class ListingsService {
 
   async createInquiry(listingId: string, input: ContactListingInput) {
     const listing = await this.listings.findOne({
-      where: { id: listingId, status: 'active' as ListingStatus },
+      where: { id: listingId },
     });
-    if (!listing) {
+    if (!listing || !isPubliclyListed(listing.status, listing.expiresAt)) {
       throw new NotFoundException({
         success: false,
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
@@ -295,7 +321,13 @@ export class ListingsService {
       buyerEmail: input.buyerEmail ?? null,
       message: input.message,
     });
-    return this.inquiries.save(inquiry);
+    const saved = await this.inquiries.save(inquiry);
+    void this.notifications.listingInquiry(listing.sellerId, {
+      id: listing.id,
+      title: listing.title,
+      slug: listing.slug,
+    }, input.buyerName);
+    return saved;
   }
 
   async listPublic(filters: {
@@ -339,6 +371,32 @@ export class ListingsService {
       .leftJoinAndSelect('l.model', 'model')
       .leftJoinAndSelect('l.district', 'district')
       .leftJoinAndSelect('l.city', 'city')
+      .select([
+        'l.id',
+        'l.slug',
+        'l.title',
+        'l.priceLkr',
+        'l.manufactureYear',
+        'l.engineCc',
+        'l.mileage',
+        'l.condition',
+        'l.districtId',
+        'l.brandId',
+        'l.modelId',
+        'l.sellerId',
+        'l.dealerId',
+        'l.publishedAt',
+        'l.createdAt',
+        'l.viewCount',
+        'brand.id',
+        'brand.name',
+        'model.id',
+        'model.name',
+        'district.id',
+        'district.name',
+        'city.id',
+        'city.name',
+      ])
       .where('l.status = :status', { status: 'active' })
       .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
         now: new Date(),
@@ -399,10 +457,6 @@ export class ListingsService {
       );
     }
     if (filters.dealerId) {
-      const dealer = await this.dealersService.findActiveById(filters.dealerId);
-      if (dealer) {
-        await this.dealersService.attachOrphanListings(dealer);
-      }
       qb.andWhere('l.dealer_id = :dealerId', { dealerId: filters.dealerId });
     }
     if (filters.sellerId) {
@@ -510,8 +564,7 @@ export class ListingsService {
     }
     const isOwner = viewer?.id === listing.sellerId;
     const isAdmin = viewer?.roles?.some((r) => r.name === 'admin');
-    const publiclyVisible =
-      listing.status === 'active' || listing.status === 'sold';
+    const publiclyVisible = isPubliclyListed(listing.status, listing.expiresAt);
     if (!publiclyVisible && !isOwner && !isAdmin) {
       throw new NotFoundException({
         success: false,
@@ -626,9 +679,9 @@ export class ListingsService {
       );
     const listing = await this.listings.findOne({
       where: isUuid ? [{ id: idOrSlug }, { slug: idOrSlug }] : { slug: idOrSlug },
-      select: ['id', 'sellerId', 'status'],
+      select: ['id', 'sellerId', 'status', 'expiresAt'],
     });
-    if (!listing || listing.status !== 'active') {
+    if (!listing || !isPubliclyListed(listing.status, listing.expiresAt)) {
       return null;
     }
     return listing;
@@ -642,7 +695,7 @@ export class ListingsService {
     return {
       ...listing,
       images,
-      coverImageUrl: cover?.imageUrl ?? null,
+      coverImageUrl: cover ? preferredCoverUrl(cover) : null,
     };
   }
 
@@ -790,13 +843,21 @@ export class ListingsService {
     if (ids.length === 0) return map;
     const images = await this.listingImages
       .createQueryBuilder('img')
-      .select(['img.listingId', 'img.imageUrl', 'img.sortOrder', 'img.isCover'])
+      .select([
+        'img.listingId',
+        'img.imageUrl',
+        'img.thumbnailUrl',
+        'img.sortOrder',
+        'img.isCover',
+      ])
       .where('img.listingId IN (:...ids)', { ids })
       .orderBy('img.isCover', 'DESC')
       .addOrderBy('img.sortOrder', 'ASC')
       .getMany();
     for (const img of images) {
-      if (!map.has(img.listingId)) map.set(img.listingId, img.imageUrl);
+      if (!map.has(img.listingId)) {
+        map.set(img.listingId, preferredCoverUrl(img));
+      }
     }
     return map;
   }
@@ -954,6 +1015,7 @@ export class ListingsService {
     status?: ListingStatus;
   } & CreateListingInput): Promise<Listing> {
     const seller = await this.usersService.findByIdOrThrow(input.sellerId);
+    await this.taxonomy?.assertListingTaxonomy(input);
     const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
     const baseSlug = slugify(input.title) || 'listing';
     const slug = `${baseSlug}-${Date.now().toString(36)}`;
@@ -1123,16 +1185,25 @@ export class ListingsService {
     const due = await this.listings.find({
       where: { status: 'active', expiresAt: LessThanOrEqual(now) },
     });
+    let expired = 0;
     for (const listing of due) {
+      const result = await this.listings
+        .createQueryBuilder()
+        .update(Listing)
+        .set({ status: 'expired' })
+        .where('id = :id', { id: listing.id })
+        .andWhere('status = :status', { status: 'active' })
+        .execute();
+      if (!result.affected) continue;
       listing.status = 'expired';
-      await this.listings.save(listing);
+      expired += 1;
       void this.notifications.listingExpired(listing.sellerId, {
         id: listing.id,
         title: listing.title,
       });
     }
-    if (due.length) this.bumpDashboard();
-    return { expired: due.length, backfilled: undated.length };
+    if (expired) this.bumpDashboard();
+    return { expired, backfilled: undated.length };
   }
 
   async reject(id: string, reason: string): Promise<Listing> {
@@ -1206,6 +1277,24 @@ export class ListingsService {
         error: {
           code: 'EMAIL_UNVERIFIED',
           message: 'Verify your email before creating listings',
+        },
+      });
+    }
+  }
+
+  private assertCanSell(seller: User) {
+    const names = seller.roles?.map((role) => role.name) ?? [];
+    if (
+      names.length > 0 &&
+      !names.some((name) =>
+        ['seller', 'dealer', 'admin'].includes(name),
+      )
+    ) {
+      throw new ForbiddenException({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'A seller account is required to create listings',
         },
       });
     }

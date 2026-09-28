@@ -22,3 +22,24 @@ test('Sinhala locale sets lang and skip link', async ({ page }) => {
     page.getByRole('link', { name: 'ප්‍රධාන අන්තර්ගතයට යන්න' }),
   ).toHaveAttribute('href', '#main-content');
 });
+
+test('login form has persistent labels and is noindexed', async ({ page }) => {
+  const response = await page.goto('/en/login');
+  expect(response?.ok()).toBeTruthy();
+  await expect(page.getByText('Email', { exact: true })).toBeVisible();
+  await expect(page.getByText('Password', { exact: true })).toBeVisible();
+  const robots = await page.locator('meta[name="robots"]').getAttribute('content');
+  expect(robots ?? '').toMatch(/noindex/i);
+});
+
+test('compare empty state does not crash', async ({ page }) => {
+  await page.goto('/en/compare');
+  await expect(page.getByText(/no bikes selected/i)).toBeVisible();
+});
+
+test('unknown locale path shows a recovery 404', async ({ page }) => {
+  const response = await page.goto('/en/this-page-does-not-exist-throttlelk');
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole('heading', { name: /page not found/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /browse bikes/i })).toBeVisible();
+});

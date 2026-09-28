@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getAccessToken, getStoredUser, syncAccessCookie } from '@/lib/auth';
+import { apiGet } from '@/lib/api';
+import { getAccessToken, syncAccessCookie, type AuthUser } from '@/lib/auth';
 import type { Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 
 export function AdminGate({
   locale,
@@ -18,11 +20,21 @@ export function AdminGate({
 
   useEffect(() => {
     const access = getAccessToken();
-    const user = getStoredUser();
     syncAccessCookie();
     setToken(access);
-    setIsAdmin(Boolean(user?.roles.includes('admin')));
-    setReady(true);
+    if (!access) {
+      setIsAdmin(false);
+      setReady(true);
+      return;
+    }
+    void apiGet<AuthUser>('/api/v1/users/me')
+      .then((user) => {
+        setIsAdmin(Boolean(user?.roles?.includes('admin')));
+      })
+      .catch(() => {
+        setIsAdmin(false);
+      })
+      .finally(() => setReady(true));
   }, []);
 
   if (!ready) {
@@ -38,7 +50,7 @@ export function AdminGate({
       <div className="admin-card p-8 text-center">
         <p className="text-[var(--admin-muted)]">
           <Link
-            href={`/${locale}/login`}
+            href={loginHref(locale, `/${locale}/admin`)}
             className="font-medium text-[var(--admin-accent-2)] underline"
           >
             Log in

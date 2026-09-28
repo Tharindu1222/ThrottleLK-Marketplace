@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
 import { popularBrandLogoSrc } from '@/lib/home-shop';
 import { t, type Locale } from '@/lib/i18n';
 import type { HomeHeroBrand } from './home-hero';
@@ -15,7 +15,7 @@ export function HomeHeroRail({
   popular: HomeHeroBrand[];
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const tweenRef = useRef<gsap.core.Tween | null>(null);
+  const tweenRef = useRef<{ kill: () => void; pause: () => void; play: () => void } | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -30,16 +30,21 @@ export function HomeHeroRail({
     const track = trackRef.current;
     if (!track || reduceMotion || popular.length === 0) return;
 
-    const tween = gsap.to(track, {
-      xPercent: -50,
-      duration: Math.max(28, popular.length * 3.6),
-      ease: 'none',
-      repeat: -1,
+    let cancelled = false;
+    void import('gsap').then(({ default: gsap }) => {
+      if (cancelled || !trackRef.current) return;
+      const tween = gsap.to(trackRef.current, {
+        xPercent: -50,
+        duration: Math.max(28, popular.length * 3.6),
+        ease: 'none',
+        repeat: -1,
+      });
+      tweenRef.current = tween;
     });
-    tweenRef.current = tween;
 
     return () => {
-      tween.kill();
+      cancelled = true;
+      tweenRef.current?.kill();
       tweenRef.current = null;
     };
   }, [popular.length, reduceMotion]);
@@ -114,10 +119,11 @@ export function HomeHeroRail({
                       className="inline-flex h-10 items-center opacity-80 transition hover:opacity-100 focus-visible:rounded-sm focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       tabIndex={copy === 1 ? -1 : 0}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={logo}
                         alt=""
+                        width={136}
+                        height={28}
                         className="h-7 w-auto max-w-[8.5rem] object-contain brightness-0 invert"
                       />
                     </Link>

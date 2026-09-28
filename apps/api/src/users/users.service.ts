@@ -16,10 +16,15 @@ import type {
 } from '@throttlelk/validation';
 import { Listing } from '../listings/listing.entity';
 import { CacheService } from '../common/cache.service';
-import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
+import { assertSafeImageFile } from '../common/image-bytes';
+import {
+  deletePublicMarketplaceImage,
+  storePublicMarketplaceImage,
+} from '../common/image-variants';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { Dealer } from '../dealers/dealer.entity';
 import { StorageService } from '../storage/storage.service';
+import { RefreshSession } from '../auth/refresh-session.entity';
 import { Role } from './role.entity';
 import { User } from './user.entity';
 
@@ -32,6 +37,8 @@ export class UsersService {
     @InjectRepository(Role) private readonly roles: Repository<Role>,
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     @InjectRepository(Dealer) private readonly dealers: Repository<Dealer>,
+    @InjectRepository(RefreshSession)
+    private readonly refreshSessions: Repository<RefreshSession>,
     private readonly storage: StorageService,
     private readonly cache: CacheService,
   ) {}
@@ -99,6 +106,7 @@ export class UsersService {
         });
       }
       user.email = email;
+      user.emailVerifiedAt = null;
     }
 
     if (input.firstName) user.firstName = input.firstName;
@@ -107,6 +115,7 @@ export class UsersService {
     if (input.status) user.status = input.status;
     if (input.password) {
       user.passwordHash = await bcrypt.hash(input.password, 10);
+      await this.revokeRefreshSessions(user.id);
     }
     if (input.roles) {
       const roleNames =
@@ -126,7 +135,11 @@ export class UsersService {
       user.roles = roles;
     }
 
-    return this.toPublic(await this.users.save(user));
+    const saved = await this.users.save(user);
+    if (input.status === 'suspended' || input.password) {
+      await this.revokeRefreshSessions(user.id);
+    }
+    return this.toPublic(saved);
   }
 
   async adminDelete(userId: string) {
@@ -264,7 +277,7 @@ export class UsersService {
         error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
       });
     }
-    const mime = assertSafeImageFile(file);
+    assertSafeImageFile(file);
     if (file.size > AVATAR_MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -273,29 +286,24 @@ export class UsersService {
     }
 
     if (user.avatarStorageKey) {
-      await this.storage
-        .deleteObject(user.avatarStorageKey)
-        .catch(() => undefined);
+      await deletePublicMarketplaceImage(this.storage, user.avatarStorageKey);
     }
 
-    const ext = extensionForMime(mime);
-    const storageKey = `avatars/${user.id}/${randomUUID()}.${ext}`;
-    const stored = await this.storage.putObject(
-      storageKey,
+    const stored = await storePublicMarketplaceImage(
+      this.storage,
+      `avatars/${user.id}/${randomUUID()}`,
       file.buffer,
-      mime,
+      'avatar',
     );
 
     user.avatarStorageKey = stored.storageKey;
-    user.avatarUrl = stored.publicUrl;
+    user.avatarUrl = stored.imageUrl;
     return this.toPublic(await this.users.save(user));
   }
 
   async removeAvatar(user: User) {
     if (user.avatarStorageKey) {
-      await this.storage
-        .deleteObject(user.avatarStorageKey)
-        .catch(() => undefined);
+      await deletePublicMarketplaceImage(this.storage, user.avatarStorageKey);
     }
     user.avatarStorageKey = null;
     user.avatarUrl = null;
@@ -305,7 +313,9 @@ export class UsersService {
   async setPassword(userId: string, password: string) {
     const user = await this.findByIdOrThrow(userId);
     user.passwordHash = await bcrypt.hash(password, 10);
-    return this.users.save(user);
+    const saved = await this.users.save(user);
+    await this.revokeRefreshSessions(userId);
+    return saved;
   }
 
   async markEmailVerified(userId: string) {
@@ -347,7 +357,21 @@ export class UsersService {
   async setStatus(userId: string, status: 'active' | 'suspended') {
     const user = await this.findByIdOrThrow(userId);
     user.status = status;
-    return this.toPublic(await this.users.save(user));
+    const saved = await this.users.save(user);
+    if (status === 'suspended') {
+      await this.revokeRefreshSessions(userId);
+    }
+    return this.toPublic(saved);
+  }
+
+  async revokeRefreshSessions(userId: string) {
+    await this.refreshSessions
+      .createQueryBuilder()
+      .update(RefreshSession)
+      .set({ revokedAt: () => 'NOW()' })
+      .where('user_id = :userId', { userId })
+      .andWhere('revoked_at IS NULL')
+      .execute();
   }
 
   async countUsers() {

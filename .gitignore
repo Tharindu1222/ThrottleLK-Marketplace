@@ -18,6 +18,8 @@ apps/api/uploads
 .worktrees
 .superpowers
 .cursorrules
+# Agency Agents (generated: https://github.com/msitarzewski/agency-agents)
+.cursor/rules/
 .docs
 /test-results/
 /playwright-report/

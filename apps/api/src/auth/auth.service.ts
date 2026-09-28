@@ -41,7 +41,11 @@ export class AuthService {
       'buyer',
       'seller',
     ]);
-    void this.sendEmailVerification(user);
+    try {
+      await this.sendEmailVerification(user);
+    } catch {
+      // Token is stored; the user can resend. Do not fail registration.
+    }
     return this.issueTokens(user);
   }
 
@@ -106,9 +110,20 @@ export class AuthService {
       ) {
         throw new Error('session invalid');
       }
-      session.revokedAt = new Date();
-      await this.sessions.save(session);
+      const revoked = await this.sessions
+        .createQueryBuilder()
+        .update(RefreshSession)
+        .set({ revokedAt: () => 'NOW()' })
+        .where('id = :id', { id: session.id })
+        .andWhere('revoked_at IS NULL')
+        .execute();
+      if (!revoked.affected) {
+        throw new Error('session invalid');
+      }
       const user = await this.usersService.findByIdOrThrow(payload.sub);
+      if (user.status !== 'active') {
+        throw new Error('account disabled');
+      }
       return this.issueTokens(user);
     } catch {
       throw new UnauthorizedException({
@@ -137,11 +152,15 @@ export class AuthService {
     if (user && user.status === 'active') {
       const raw = await this.createToken(user.id, 'password_reset', 60);
       const link = `${this.webBase()}/en/reset-password?token=${raw}`;
-      void this.email.send(
-        user.email,
-        'Reset your ThrottleLK password',
-        `<p>Reset your password:</p><p><a href="${link}">${link}</a></p><p>This link expires in 60 minutes.</p>`,
-      );
+      try {
+        await this.email.send(
+          user.email,
+          'Reset your ThrottleLK password',
+          `<p>Reset your password:</p><p><a href="${link}">${link}</a></p><p>This link expires in 60 minutes.</p>`,
+        );
+      } catch {
+        // Still return 200 so this endpoint cannot enumerate emails.
+      }
     }
     return {
       ok: true,
@@ -239,8 +258,22 @@ export class AuthService {
         },
       });
     }
-    row.usedAt = new Date();
-    await this.tokens.save(row);
+    const used = await this.tokens
+      .createQueryBuilder()
+      .update(AuthToken)
+      .set({ usedAt: () => 'NOW()' })
+      .where('id = :id', { id: row.id })
+      .andWhere('used_at IS NULL')
+      .execute();
+    if (!used.affected) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'This link is invalid or has expired',
+        },
+      });
+    }
     return row;
   }
 

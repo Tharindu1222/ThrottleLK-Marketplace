@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 
 type Counterpart = {
   id: string;
@@ -83,6 +85,7 @@ export function MessageThread({
   locale: Locale;
   conversationId: string;
 }) {
+  const pathname = usePathname();
   const [token, setToken] = useState<string | null>(null);
   const [thread, setThread] = useState<Thread | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +149,7 @@ export function MessageThread({
       <div className="mt-8 border border-black/10 bg-white p-6 shadow-sm">
         <p className="text-sm text-muted">
           <Link
-            href={`/${locale}/login`}
+            href={loginHref(locale, pathname)}
             className="font-medium text-foreground underline decoration-black/20 underline-offset-2 transition hover:text-accent"
           >
             {t(locale, 'login')}

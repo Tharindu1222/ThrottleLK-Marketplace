@@ -1,3 +1,5 @@
+import { whatsappHref } from './whatsapp';
+
 export type DealerShowroomImage = {
   id: string;
   imageUrl: string;
@@ -73,7 +75,8 @@ export function dealerWhatsappHref(
   whatsapp: string | null | undefined,
 ): string | null {
   const digits = whatsapp?.replace(/\D/g, '') ?? '';
-  return digits ? `https://wa.me/${digits}` : null;
+  if (!digits) return null;
+  return whatsappHref(whatsapp ?? '');
 }
 
 export function dealerDirectionsHref(

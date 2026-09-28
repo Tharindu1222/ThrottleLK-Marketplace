@@ -7,6 +7,8 @@ import { isLocale, type Locale } from '@/lib/i18n';
 import { hrefWithPage, parsePageParam } from '@/lib/pagination';
 import { pageMetadata } from '@/lib/seo';
 
+export const revalidate = 60;
+
 function spStr(
   sp: Record<string, string | string[] | undefined>,
   key: string,

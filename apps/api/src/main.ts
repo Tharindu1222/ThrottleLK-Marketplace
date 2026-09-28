@@ -25,6 +25,12 @@ async function applyPendingMigrations(app: NestExpressApplication) {
 
 async function bootstrap() {
   requireJwtSecrets(process.env);
+  if (
+    (process.env.NODE_ENV ?? '') === 'production' &&
+    process.env.TRUST_PROXY !== 'true'
+  ) {
+    throw new Error('TRUST_PROXY=true is required in production');
+  }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   await applyPendingMigrations(app);
   app.use(

@@ -20,6 +20,7 @@ import { PartListingFitment } from './part-listing-fitment.entity';
 import { PartListingImage } from './part-listing-image.entity';
 import { PartListingImagesService } from './part-listing-images.service';
 import { PartListingInquiry } from './part-listing-inquiry.entity';
+import { PartListingJobsService } from './part-listing-jobs.service';
 import { PartListing } from './part-listing.entity';
 import { PartListingsController } from './part-listings.controller';
 import { PartListingsService } from './part-listings.service';
@@ -57,6 +58,7 @@ import { SparePartsController } from './spare-parts.controller';
     PartListingImagesService,
     PartCategoriesService,
     PartFavouritesService,
+    PartListingJobsService,
   ],
   exports: [
     PartListingsService,

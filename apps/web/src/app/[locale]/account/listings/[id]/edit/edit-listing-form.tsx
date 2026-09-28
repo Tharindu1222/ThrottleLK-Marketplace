@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   FormEvent,
   useEffect,
@@ -14,6 +14,7 @@ import { ListingImageManager } from '@/components/listing-image-manager';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 import { composeListingTitle } from '@/lib/listing-title';
 
 type Option = { id: string; name: string };
@@ -178,6 +179,7 @@ export function EditListingForm({
   locale: Locale;
   listingId: string;
 }) {
+  const pathname = usePathname();
   const [token, setToken] = useState<string | null>(null);
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [brands, setBrands] = useState<Option[]>([]);
@@ -272,7 +274,7 @@ export function EditListingForm({
   if (!token) {
     return (
       <p className="mt-6 text-muted">
-        <Link href={`/${locale}/login`} className="text-accent underline">
+        <Link href={loginHref(locale, pathname)} className="text-accent underline">
           {t(locale, 'login')}
         </Link>
       </p>

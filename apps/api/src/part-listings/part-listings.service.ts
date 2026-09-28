@@ -13,10 +13,15 @@ import type {
   UpdatePartListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus, PartListingKind } from '@throttlelk/types';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, LessThanOrEqual, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
+import { preferredCoverUrl } from '../common/image-variants';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
+import {
+  computeExpiresAt,
+  isPubliclyListed,
+} from '../listings/listing-expiry';
 import {
   escapeLikePattern,
   searchTokens,
@@ -226,6 +231,9 @@ export class PartListingsService {
     }
     listing.status = 'active';
     if (!listing.publishedAt) listing.publishedAt = new Date();
+    if (!isPubliclyListed('active', listing.expiresAt)) {
+      listing.expiresAt = computeExpiresAt(new Date());
+    }
     await this.partListings.save(listing);
     this.bumpDashboard();
     return this.getOwnedDetail(owner.id, listing.id);
@@ -338,7 +346,42 @@ export class PartListingsService {
       .leftJoinAndSelect('l.fitments', 'fitments')
       .leftJoinAndSelect('fitments.brand', 'fitBrand')
       .leftJoinAndSelect('fitments.model', 'fitModel')
-      .where('l.status = :status', { status: 'active' });
+      .select([
+        'l.id',
+        'l.slug',
+        'l.kind',
+        'l.title',
+        'l.priceLkr',
+        'l.negotiable',
+        'l.condition',
+        'l.categoryId',
+        'l.districtId',
+        'l.cityId',
+        'l.partsDealerId',
+        'l.publishedAt',
+        'l.createdAt',
+        'l.viewCount',
+        'category.id',
+        'category.name',
+        'district.id',
+        'district.name',
+        'city.id',
+        'city.name',
+        'partsDealer.id',
+        'partsDealer.name',
+        'partsDealer.slug',
+        'fitments.id',
+        'fitments.brandId',
+        'fitments.modelId',
+        'fitBrand.id',
+        'fitBrand.name',
+        'fitModel.id',
+        'fitModel.name',
+      ])
+      .where('l.status = :status', { status: 'active' })
+      .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
+        now: new Date(),
+      });
 
     if (filters.kind) {
       qb.andWhere('l.kind = :kind', { kind: filters.kind });
@@ -632,6 +675,9 @@ export class PartListingsService {
       .leftJoinAndSelect('l.partsDealer', 'partsDealer')
       .innerJoin('l.fitments', 'f')
       .where('l.status = :status', { status: 'active' })
+      .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
+        now: new Date(),
+      })
       .andWhere('f.brand_id = :brandId', { brandId: bike.brandId })
       .andWhere('f.model_id = :modelId', { modelId: bike.modelId })
       .orderBy('l.publishedAt', 'DESC', 'NULLS LAST')
@@ -902,6 +948,7 @@ export class PartListingsService {
     }
     listing.status = 'active';
     listing.publishedAt = new Date();
+    listing.expiresAt = computeExpiresAt(listing.publishedAt);
     listing.rejectionReason = null;
     const saved = await this.partListings.save(listing);
     this.bumpDashboard();
@@ -942,6 +989,64 @@ export class PartListingsService {
       reason,
     );
     return saved;
+  }
+
+  async takeDownForModeration(id: string, reason: string) {
+    const listing = await this.getById(id);
+    if (!['active', 'paused', 'pending_review'].includes(listing.status)) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: `Cannot remove listing in status "${listing.status}"`,
+        },
+      });
+    }
+    listing.status = 'rejected';
+    listing.rejectionReason = reason;
+    const saved = await this.partListings.save(listing);
+    this.bumpDashboard();
+    const dealer = await this.partsDealersService.adminGet(saved.partsDealerId);
+    void this.notifications.partListingRejected(
+      dealer.ownerUserId,
+      {
+        id: saved.id,
+        title: saved.title,
+        slug: saved.slug,
+        kind: saved.kind,
+      },
+      reason,
+    );
+    return saved;
+  }
+
+  async expireStale(now = new Date()) {
+    const undated = await this.partListings.find({
+      where: { status: 'active', expiresAt: IsNull() },
+    });
+    for (const listing of undated) {
+      listing.expiresAt = computeExpiresAt(
+        listing.publishedAt ?? listing.createdAt ?? now,
+      );
+      await this.partListings.save(listing);
+    }
+    const due = await this.partListings.find({
+      where: { status: 'active', expiresAt: LessThanOrEqual(now) },
+    });
+    let expired = 0;
+    for (const listing of due) {
+      const result = await this.partListings
+        .createQueryBuilder()
+        .update(PartListing)
+        .set({ status: 'expired' })
+        .where('id = :id', { id: listing.id })
+        .andWhere('status = :status', { status: 'active' })
+        .execute();
+      if (!result.affected) continue;
+      expired += 1;
+    }
+    if (expired) this.bumpDashboard();
+    return { expired, backfilled: undated.length };
   }
 
   async browseCardsByIds(ids: string[]) {
@@ -1012,6 +1117,7 @@ export class PartListingsService {
       .select([
         'img.partListingId',
         'img.imageUrl',
+        'img.thumbnailUrl',
         'img.sortOrder',
         'img.isCover',
       ])
@@ -1020,7 +1126,9 @@ export class PartListingsService {
       .addOrderBy('img.sortOrder', 'ASC')
       .getMany();
     for (const img of images) {
-      if (!map.has(img.partListingId)) map.set(img.partListingId, img.imageUrl);
+      if (!map.has(img.partListingId)) {
+        map.set(img.partListingId, preferredCoverUrl(img));
+      }
     }
     return map;
   }

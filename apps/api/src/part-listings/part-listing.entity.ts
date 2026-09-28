@@ -105,6 +105,9 @@ export class PartListing {
   @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
   publishedAt!: Date | null;
 
+  @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
+  expiresAt!: Date | null;
+
   @Column({ name: 'sold_at', type: 'timestamptz', nullable: true })
   soldAt!: Date | null;
 

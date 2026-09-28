@@ -7,11 +7,16 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
-import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
+import { assertSafeImageFile } from '../common/image-bytes';
+import {
+  deletePublicMarketplaceImage,
+  storePublicMarketplaceImage,
+} from '../common/image-variants';
 import { StorageService } from '../storage/storage.service';
 import { User } from '../users/user.entity';
 import { ListingImage } from './listing-image.entity';
 import { Listing } from './listing.entity';
+import { isPubliclyListed } from './listing-expiry';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 export const MAX_LISTING_IMAGES = 5;
@@ -25,7 +30,8 @@ export class ListingImagesService {
     private readonly storage: StorageService,
   ) {}
 
-  async listForListing(listingId: string) {
+  async listForListing(listingId: string, viewer?: User | null) {
+    await this.assertCanView(listingId, viewer);
     return this.images.find({
       where: { listingId },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
@@ -59,7 +65,7 @@ export class ListingImagesService {
         error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
       });
     }
-    const mime = assertSafeImageFile(file);
+    assertSafeImageFile(file);
     if (file.size > MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -78,22 +84,28 @@ export class ListingImagesService {
       });
     }
 
-    const ext = extensionForMime(mime);
-    const storageKey = `${listingId}/${randomUUID()}.${ext}`;
-    const stored = await this.storage.putObject(
-      storageKey,
+    const stored = await storePublicMarketplaceImage(
+      this.storage,
+      `${listingId}/${randomUUID()}`,
       file.buffer,
-      mime,
+      'photo',
     );
     const image = this.images.create({
       listingId,
       storageKey: stored.storageKey,
-      imageUrl: stored.publicUrl,
-      thumbnailUrl: stored.publicUrl,
+      imageUrl: stored.imageUrl,
+      thumbnailUrl: stored.thumbnailUrl,
       sortOrder: count,
       isCover: count === 0,
     });
-    return this.images.save(image);
+    const saved = await this.images.save(image);
+    const listing = await this.getListingOrThrow(listingId);
+    if (listing.status === 'active' || listing.status === 'sold') {
+      listing.status = 'pending_review';
+      listing.publishedAt = null;
+      await this.listings.save(listing);
+    }
+    return saved;
   }
 
   private async removeImage(listingId: string, imageId: string) {
@@ -106,7 +118,7 @@ export class ListingImagesService {
         error: { code: 'IMAGE_NOT_FOUND', message: 'Image not found' },
       });
     }
-    await this.storage.deleteObject(image.storageKey);
+    await deletePublicMarketplaceImage(this.storage, image.storageKey);
     await this.images.remove(image);
     await this.resequence(listingId);
     return { id: imageId };
@@ -147,5 +159,17 @@ export class ListingImagesService {
       });
     }
     return listing;
+  }
+
+  private async assertCanView(listingId: string, viewer?: User | null) {
+    const listing = await this.getListingOrThrow(listingId);
+    const isOwner = viewer?.id === listing.sellerId;
+    const isAdmin = Boolean(viewer?.roles?.some((role) => role.name === 'admin'));
+    if (!isPubliclyListed(listing.status, listing.expiresAt) && !isOwner && !isAdmin) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
+      });
+    }
   }
 }

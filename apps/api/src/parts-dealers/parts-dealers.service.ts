@@ -468,7 +468,6 @@ export class PartsDealersService {
         },
       });
     }
-    await this.ensureSlugMatchesName(dealer);
     const owner = dealer.owner;
     const covered = this.withCover(dealer);
     const { owner: _owner, ...safe } = covered as typeof covered & {

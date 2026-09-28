@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-import { DM_Sans, Noto_Sans_Sinhala, Outfit } from 'next/font/google';
+import { DM_Sans, Noto_Sans_Sinhala } from 'next/font/google';
 import { AnalyticsTags } from '@/components/analytics-tags';
+import { WebVitals } from '@/components/web-vitals';
 import './globals.css';
 
 const sans = DM_Sans({
@@ -16,13 +17,6 @@ const sinhala = Noto_Sans_Sinhala({
   subsets: ['sinhala'],
   weight: ['400', '500', '700'],
   variable: '--font-si',
-  display: 'swap',
-});
-
-const display = Outfit({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-  variable: '--font-outfit',
   display: 'swap',
 });
 
@@ -53,9 +47,10 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
-        className={`${sans.className} ${sans.variable} ${display.variable} ${sinhala.variable}`}
+        className={`${sans.className} ${sans.variable} ${sinhala.variable}`}
         suppressHydrationWarning
       >
+        <WebVitals />
         <AnalyticsTags />
         {children}
       </body>

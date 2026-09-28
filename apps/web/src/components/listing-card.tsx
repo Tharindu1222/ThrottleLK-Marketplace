@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
-import { BRAND_LOGO_SRC } from '@/components/brand-logo';
+import { MarketplaceImage } from '@/components/marketplace-image';
 import { apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 import { composeListingTitle } from '@/lib/listing-title';
 import {
   loadFavouriteIds,
@@ -119,10 +120,12 @@ function formatListedAt(iso: string, locale: Locale): string {
 function FavouriteHeart({
   locale,
   listingId,
+  listingSlug,
   onChange,
 }: {
   locale: Locale;
   listingId: string;
+  listingSlug: string;
   onChange?: (listingId: string, favourited: boolean) => void;
 }) {
   const [favourited, setFavourited] = useState(false);
@@ -146,7 +149,10 @@ function FavouriteHeart({
     stopCardNav(e);
     const token = getAccessToken();
     if (!token) {
-      window.location.href = `/${locale}/login`;
+      window.location.href = loginHref(
+        locale,
+        `/${locale}/bikes/${listingSlug}`,
+      );
       return;
     }
     if (busy) return;
@@ -477,27 +483,22 @@ export function ListingCard({
 
       <div className="pointer-events-none relative aspect-[4/3] shrink-0 overflow-hidden bg-surface">
         {listing.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <MarketplaceImage
             src={listing.coverImageUrl}
             alt=""
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
-            onError={(e) => {
-              const el = e.currentTarget;
-              el.onerror = null;
-              el.src = BRAND_LOGO_SRC;
-              el.className =
-                'mx-auto mt-[18%] h-12 w-auto max-w-[50%] object-contain opacity-80 brightness-0';
-            }}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
+            fallbackClassName="object-contain p-10 opacity-80 brightness-0"
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 bg-[linear-gradient(160deg,#f0f0f0_0%,#fafafa_50%,#ececec_100%)] px-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={BRAND_LOGO_SRC}
+            <MarketplaceImage
+              src="/images/brand/throttlelk-logo.png"
               alt=""
+              fill={false}
+              width={160}
+              height={40}
+              sizes="160px"
               className="h-10 w-auto max-w-[55%] object-contain opacity-80 brightness-0"
             />
             <span className="text-xs tracking-wide text-muted">
@@ -541,6 +542,7 @@ export function ListingCard({
             <FavouriteHeart
               locale={locale}
               listingId={listing.id}
+              listingSlug={listing.slug}
               onChange={onFavouriteChange}
             />
           </div>

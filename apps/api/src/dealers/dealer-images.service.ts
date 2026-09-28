@@ -7,7 +7,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
-import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
+import { assertSafeImageFile } from '../common/image-bytes';
+import {
+  deletePublicMarketplaceImage,
+  storePublicMarketplaceImage,
+} from '../common/image-variants';
 import { StorageService } from '../storage/storage.service';
 import { User } from '../users/user.entity';
 import { DealerImage } from './dealer-image.entity';
@@ -59,7 +63,7 @@ export class DealerImagesService {
         error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
       });
     }
-    const mime = assertSafeImageFile(file);
+    assertSafeImageFile(file);
     if (file.size > MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -78,18 +82,17 @@ export class DealerImagesService {
       });
     }
 
-    const ext = extensionForMime(mime);
-    const storageKey = `dealers/${dealerId}/${randomUUID()}.${ext}`;
-    const stored = await this.storage.putObject(
-      storageKey,
+    const stored = await storePublicMarketplaceImage(
+      this.storage,
+      `dealers/${dealerId}/${randomUUID()}`,
       file.buffer,
-      mime,
+      'photo',
     );
     const image = this.images.create({
       dealerId,
       storageKey: stored.storageKey,
-      imageUrl: stored.publicUrl,
-      thumbnailUrl: stored.publicUrl,
+      imageUrl: stored.imageUrl,
+      thumbnailUrl: stored.thumbnailUrl,
       sortOrder: count,
       isCover: count === 0,
     });
@@ -106,7 +109,7 @@ export class DealerImagesService {
         error: { code: 'IMAGE_NOT_FOUND', message: 'Image not found' },
       });
     }
-    await this.storage.deleteObject(image.storageKey);
+    await deletePublicMarketplaceImage(this.storage, image.storageKey);
     await this.images.remove(image);
     await this.resequence(dealerId);
     return { id: imageId };

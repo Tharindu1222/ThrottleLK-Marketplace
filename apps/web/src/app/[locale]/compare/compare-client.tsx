@@ -199,17 +199,29 @@ export function CompareClient({ locale }: { locale: Locale }) {
     }
     setLoading(true);
     void Promise.all(
-      selected.map((item) => apiGet<Listing>(`/api/v1/listings/${item.id}`)),
+      selected.map((item) =>
+        apiGet<Listing>(`/api/v1/listings/${item.id}`).then(
+          (listing) => ({ ok: true as const, listing }),
+          () => ({ ok: false as const }),
+        ),
+      ),
     )
-      .then((data) => {
-        setListings(data);
-        setError(null);
+      .then((results) => {
+        const loaded = results
+          .filter((row) => row.ok)
+          .map((row) => row.listing);
+        setListings(loaded);
+        setError(
+          loaded.length < selected.length
+            ? t(locale, 'compareUnavailable')
+            : null,
+        );
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Failed to load'),
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [locale]);
 
   function removeListing(listing: Listing) {
     toggleCompare({
@@ -379,7 +391,7 @@ export function CompareClient({ locale }: { locale: Locale }) {
                 );
               })}
               {showAddSlot ? (
-                <th className="hidden min-w-[11rem] max-w-[14rem] border-l border-black/10 px-4 py-4 align-top md:table-cell">
+                <th className="min-w-[11rem] max-w-[14rem] border-l border-black/10 px-4 py-4 align-top">
                   <Link
                     href={`/${locale}/bikes`}
                     className="mx-auto flex aspect-[16/10] w-full max-w-[13.5rem] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-black/20 bg-surface text-muted transition hover:border-accent/50 hover:text-accent"

@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef } from 'react';
-import gsap from 'gsap';
 import type { HomeBrand } from '@/components/home/home-brand-grid';
 import { t, type Locale } from '@/lib/i18n';
 
@@ -23,7 +22,7 @@ export function HomeBrandTicker({
   brands: HomeBrand[];
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const tweenRef = useRef<gsap.core.Tween | null>(null);
+  const tweenRef = useRef<{ kill: () => void; pause: () => void; play: () => void } | null>(null);
   const items = useMemo(() => tickerBrands(brands), [brands]);
   const row = useMemo(() => {
     if (items.length === 0) return [];
@@ -37,16 +36,21 @@ export function HomeBrandTicker({
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mq.matches) return;
 
-    const tween = gsap.to(track, {
-      xPercent: -50,
-      duration: Math.max(36, row.length * 2.4),
-      ease: 'none',
-      repeat: -1,
+    let cancelled = false;
+    void import('gsap').then(({ default: gsap }) => {
+      if (cancelled || !trackRef.current) return;
+      const tween = gsap.to(trackRef.current, {
+        xPercent: -50,
+        duration: Math.max(36, row.length * 2.4),
+        ease: 'none',
+        repeat: -1,
+      });
+      tweenRef.current = tween;
     });
-    tweenRef.current = tween;
 
     return () => {
-      tween.kill();
+      cancelled = true;
+      tweenRef.current?.kill();
       tweenRef.current = null;
     };
   }, [row.length]);

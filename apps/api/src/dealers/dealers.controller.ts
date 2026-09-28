@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -13,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import type { Response } from 'express';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   createDealerSchema,
@@ -184,6 +186,23 @@ export class DealersController {
         expiresAt,
       ),
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mine/inventory/:id/documents/:docId/file')
+  async downloadInventoryDocument(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Param('docId') docId: string,
+    @Res() res: Response,
+  ) {
+    const file = await this.inventoryService.downloadDocument(user, id, docId);
+    res.setHeader('Content-Type', file.contentType ?? 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${file.filename}"`,
+    );
+    res.send(file.buffer);
   }
 
   @UseGuards(JwtAuthGuard)

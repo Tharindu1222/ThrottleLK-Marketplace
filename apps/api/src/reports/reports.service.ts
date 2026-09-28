@@ -12,6 +12,9 @@ import { Listing } from '../listings/listing.entity';
 import { ListingImage } from '../listings/listing-image.entity';
 import { ListingsService } from '../listings/listings.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PartListing } from '../part-listings/part-listing.entity';
+import { PartListingImage } from '../part-listings/part-listing-image.entity';
+import { PartListingsService } from '../part-listings/part-listings.service';
 import { Report } from './report.entity';
 
 @Injectable()
@@ -21,23 +24,41 @@ export class ReportsService {
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     @InjectRepository(ListingImage)
     private readonly listingImages: Repository<ListingImage>,
+    @InjectRepository(PartListing)
+    private readonly partListings: Repository<PartListing>,
+    @InjectRepository(PartListingImage)
+    private readonly partImages: Repository<PartListingImage>,
     private readonly listingsService: ListingsService,
+    private readonly partListingsService: PartListingsService,
     private readonly notifications: NotificationsService,
     private readonly cache: CacheService,
   ) {}
 
   async create(userId: string | null, input: CreateReportInput) {
-    const listing = await this.listings.findOne({
-      where: { id: input.listingId },
-    });
-    if (!listing) {
-      throw new NotFoundException({
-        success: false,
-        error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
+    if (input.partListingId) {
+      const listing = await this.partListings.findOne({
+        where: { id: input.partListingId },
       });
+      if (!listing) {
+        throw new NotFoundException({
+          success: false,
+          error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
+        });
+      }
+    } else {
+      const listing = await this.listings.findOne({
+        where: { id: input.listingId },
+      });
+      if (!listing) {
+        throw new NotFoundException({
+          success: false,
+          error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
+        });
+      }
     }
     const report = this.reports.create({
-      listingId: input.listingId,
+      listingId: input.listingId ?? null,
+      partListingId: input.partListingId ?? null,
       reportedByUserId: userId,
       reason: input.reason,
       description: input.description,
@@ -62,22 +83,25 @@ export class ReportsService {
     const qb = this.reports
       .createQueryBuilder('r')
       .leftJoinAndSelect('r.listing', 'listing')
+      .leftJoinAndSelect('r.partListing', 'partListing')
       .where('r.status = :status', { status: 'open' })
       .orderBy('r.createdAt', 'ASC');
     if (paging?.q?.trim()) {
       const q = `%${paging.q.trim().toLowerCase()}%`;
       qb.andWhere(
-        '(LOWER(r.reason) LIKE :q OR LOWER(r.description) LIKE :q OR LOWER(r.listingId) LIKE :q OR LOWER(listing.title) LIKE :q)',
+        '(LOWER(r.reason) LIKE :q OR LOWER(r.description) LIKE :q OR LOWER(COALESCE(r.listingId, \'\')) LIKE :q OR LOWER(COALESCE(r.partListingId, \'\')) LIKE :q OR LOWER(listing.title) LIKE :q OR LOWER(partListing.title) LIKE :q)',
         { q },
       );
     }
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
 
-    const listingIds = rows
-      .map((row) => row.listingId)
-      .filter(Boolean);
+    const listingIds = rows.map((row) => row.listingId).filter((id): id is string => Boolean(id));
+    const partIds = rows
+      .map((row) => row.partListingId)
+      .filter((id): id is string => Boolean(id));
     const coverByListing = new Map<string, string>();
+    const coverByPart = new Map<string, string>();
     if (listingIds.length > 0) {
       const images = await this.listingImages
         .createQueryBuilder('img')
@@ -92,10 +116,31 @@ export class ReportsService {
         }
       }
     }
+    if (partIds.length > 0) {
+      const images = await this.partImages
+        .createQueryBuilder('img')
+        .select(['img.partListingId', 'img.imageUrl', 'img.sortOrder', 'img.isCover'])
+        .where('img.partListingId IN (:...ids)', { ids: partIds })
+        .orderBy('img.isCover', 'DESC')
+        .addOrderBy('img.sortOrder', 'ASC')
+        .getMany();
+      for (const img of images) {
+        if (!coverByPart.has(img.partListingId)) {
+          coverByPart.set(img.partListingId, img.imageUrl);
+        }
+      }
+    }
 
     return {
       items: rows.map((row) =>
-        this.toAdminReport(row, coverByListing.get(row.listingId) ?? null),
+        this.toAdminReport(
+          row,
+          row.listingId
+            ? (coverByListing.get(row.listingId) ?? null)
+            : row.partListingId
+              ? (coverByPart.get(row.partListingId) ?? null)
+              : null,
+        ),
       ),
       meta: paginationMeta(total, page, limit),
     };
@@ -108,7 +153,7 @@ export class ReportsService {
   ) {
     const report = await this.reports.findOne({
       where: { id },
-      relations: ['listing'],
+      relations: ['listing', 'partListing'],
     });
     if (!report) {
       throw new NotFoundException({
@@ -130,29 +175,60 @@ export class ReportsService {
       const reason = (
         note ?? `Report (${report.reason}): ${report.description}`
       ).slice(0, 1000);
-      await this.listingsService.takeDownForModeration(report.listingId, reason);
+      if (report.partListingId) {
+        await this.partListingsService.takeDownForModeration(
+          report.partListingId,
+          reason,
+        );
+      } else if (report.listingId) {
+        await this.listingsService.takeDownForModeration(report.listingId, reason);
+      }
       report.status = 'actioned';
     } else if (action === 'warn_seller') {
       const listing = report.listing;
-      if (!listing) {
+      const part = report.partListing;
+      if (part) {
+        const message = (
+          note ??
+          `Your listing was reported for ${report.reason}. ${report.description}`
+        ).slice(0, 1000);
+        const dealer = await this.partListings
+          .findOne({
+            where: { id: part.id },
+            relations: ['partsDealer'],
+          })
+          .then((row) => row?.partsDealer);
+        if (dealer) {
+          await this.notifications.listingWarning(
+            dealer.ownerUserId,
+            {
+              id: part.id,
+              title: part.title,
+              slug: part.slug,
+            },
+            message,
+          );
+        }
+      } else if (listing) {
+        const message = (
+          note ??
+          `Your listing was reported for ${report.reason}. ${report.description}`
+        ).slice(0, 1000);
+        await this.notifications.listingWarning(
+          listing.sellerId,
+          {
+            id: listing.id,
+            title: listing.title,
+            slug: listing.slug,
+          },
+          message,
+        );
+      } else {
         throw new NotFoundException({
           success: false,
           error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
         });
       }
-      const message = (
-        note ??
-        `Your listing was reported for ${report.reason}. ${report.description}`
-      ).slice(0, 1000);
-      await this.notifications.listingWarning(
-        listing.sellerId,
-        {
-          id: listing.id,
-          title: listing.title,
-          slug: listing.slug,
-        },
-        message,
-      );
       report.status = 'actioned';
     } else {
       report.status = 'dismissed';
@@ -165,20 +241,23 @@ export class ReportsService {
 
   private toAdminReport(report: Report, coverImageUrl: string | null) {
     const listing = report.listing;
+    const part = report.partListing;
+    const subject = listing ?? part;
     return {
       id: report.id,
       listingId: report.listingId,
+      partListingId: report.partListingId,
       reason: report.reason,
       description: report.description,
       status: report.status,
       createdAt: report.createdAt,
-      listing: listing
+      listing: subject
         ? {
-            id: listing.id,
-            title: listing.title,
-            slug: listing.slug,
+            id: subject.id,
+            title: subject.title,
+            slug: subject.slug,
             coverImageUrl,
-            status: listing.status,
+            status: subject.status,
           }
         : null,
     };

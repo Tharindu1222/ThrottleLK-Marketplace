@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import {
   authFieldClass,
   authPrimaryBtnClass,
@@ -10,10 +10,21 @@ import {
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { safeNextPath } from '@/lib/safe-next';
 
 export function LoginForm({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [registerHref, setRegisterHref] = useState(`/${locale}/register`);
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get('next');
+    setRegisterHref(
+      next
+        ? `/${locale}/register?next=${encodeURIComponent(next)}`
+        : `/${locale}/register`,
+    );
+  }, [locale]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,11 +42,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
       });
       saveSession({ user: data.user });
       const next = new URLSearchParams(window.location.search).get('next');
-      const safeNext =
-        next && next.startsWith(`/${locale}/`) && !next.includes('//')
-          ? next
-          : `/${locale}/bikes`;
-      window.location.href = safeNext;
+      window.location.href = safeNextPath(next, locale);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
       setBusy(false);
@@ -45,7 +52,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
   return (
     <form onSubmit={onSubmit} className="grid gap-4">
       <label className="grid gap-1.5">
-        <span className="sr-only">{t(locale, 'email')}</span>
+        <span className="text-sm font-medium">{t(locale, 'email')}</span>
         <div className="relative">
           <span
             aria-hidden
@@ -65,7 +72,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
       </label>
 
       <label className="grid gap-1.5">
-        <span className="sr-only">{t(locale, 'password')}</span>
+        <span className="text-sm font-medium">{t(locale, 'password')}</span>
         <div className="relative">
           <span
             aria-hidden
@@ -99,7 +106,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
           href={`/${locale}/forgot-password`}
           className="text-muted transition hover:text-accent"
         >
-          Forgot password?
+          {t(locale, 'forgotPassword')}
         </Link>
       </p>
 
@@ -108,7 +115,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
           {busy ? '…' : t(locale, 'login').toUpperCase()}
         </button>
         <Link
-          href={`/${locale}/register`}
+          href={registerHref}
           className={authSecondaryBtnClass}
         >
           {t(locale, 'register').toUpperCase()}
@@ -123,7 +130,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
 
       <p className="text-center text-sm text-muted">
         {t(locale, 'noAccountYet')}{' '}
-        <Link href={`/${locale}/register`} className="font-medium text-accent">
+        <Link href={registerHref} className="font-medium text-accent">
           {t(locale, 'register')}
         </Link>
       </p>

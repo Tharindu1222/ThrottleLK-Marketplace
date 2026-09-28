@@ -5,6 +5,7 @@ import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { UsersService } from '../users/users.service';
 import { EmailService } from './email.service';
 import { Notification } from './notification.entity';
+import { escapeHtml } from '../common/html-escape';
 
 @Injectable()
 export class NotificationsService {
@@ -86,7 +87,7 @@ export class NotificationsService {
         this.email.send(
           user.email,
           input.emailSubject ?? input.title,
-          input.emailHtml ?? `<p>${input.message}</p>`,
+          input.emailHtml ?? `<p>${escapeHtml(input.message)}</p>`,
         ),
       )
       .catch(() => undefined);
@@ -102,7 +103,23 @@ export class NotificationsService {
       message: `"${listing.title}" is now live on ThrottleLK.`,
       data: { listingId: listing.id, slug: listing.slug },
       emailSubject: 'Your ThrottleLK listing is live',
-      emailHtml: `<p>Your listing <strong>${listing.title}</strong> was approved and is now public.</p>`,
+      emailHtml: `<p>Your listing <strong>${escapeHtml(listing.title)}</strong> was approved and is now public.</p>`,
+    });
+  }
+
+  async listingInquiry(
+    sellerId: string,
+    listing: { id: string; title: string; slug: string },
+    buyerName: string,
+  ) {
+    return this.notifyUser({
+      userId: sellerId,
+      type: 'listing_inquiry',
+      title: 'New listing enquiry',
+      message: `${buyerName} sent a message about "${listing.title}".`,
+      data: { listingId: listing.id, slug: listing.slug },
+      emailSubject: 'New ThrottleLK listing enquiry',
+      emailHtml: `<p>${escapeHtml(buyerName)} asked about <strong>${escapeHtml(listing.title)}</strong>.</p><p>Open your ThrottleLK messages or listing dashboard to reply.</p>`,
     });
   }
 
@@ -118,7 +135,7 @@ export class NotificationsService {
       message: `"${listing.title}" was rejected: ${reason}`,
       data: { listingId: listing.id, reason },
       emailSubject: 'ThrottleLK listing rejected',
-      emailHtml: `<p>Your listing <strong>${listing.title}</strong> was rejected.</p><p>Reason: ${reason}</p>`,
+      emailHtml: `<p>Your listing <strong>${escapeHtml(listing.title)}</strong> was rejected.</p><p>Reason: ${escapeHtml(reason)}</p>`,
     });
   }
 
@@ -134,7 +151,7 @@ export class NotificationsService {
       message: `"${listing.title}": ${message}`,
       data: { listingId: listing.id, slug: listing.slug, reason: message },
       emailSubject: 'ThrottleLK listing warning',
-      emailHtml: `<p>We received a report about your listing <strong>${listing.title}</strong>.</p><p>${message}</p><p>Please review and fix any issues. Further violations may lead to removal.</p>`,
+      emailHtml: `<p>We received a report about your listing <strong>${escapeHtml(listing.title)}</strong>.</p><p>${escapeHtml(message)}</p><p>Please review and fix any issues. Further violations may lead to removal.</p>`,
     });
   }
 
@@ -146,7 +163,7 @@ export class NotificationsService {
       message: `"${dealer.name}" is approved. You can attach listings to your showroom.`,
       data: { dealerId: dealer.id, slug: dealer.slug },
       emailSubject: 'Your ThrottleLK dealer profile is approved',
-      emailHtml: `<p>Your dealer profile <strong>${dealer.name}</strong> is now active.</p>`,
+      emailHtml: `<p>Your dealer profile <strong>${escapeHtml(dealer.name)}</strong> is now active.</p>`,
     });
   }
 
@@ -161,7 +178,7 @@ export class NotificationsService {
       message: `"${dealer.name}" was rejected: ${dealer.reason}`,
       data: { dealerId: dealer.id, reason: dealer.reason },
       emailSubject: 'ThrottleLK dealer application rejected',
-      emailHtml: `<p>Your dealer application <strong>${dealer.name}</strong> was rejected.</p><p>Reason: ${dealer.reason}</p>`,
+      emailHtml: `<p>Your dealer application <strong>${escapeHtml(dealer.name)}</strong> was rejected.</p><p>Reason: ${escapeHtml(dealer.reason)}</p>`,
     });
   }
 
@@ -176,7 +193,7 @@ export class NotificationsService {
       message: `"${dealer.name}" is approved. You can list spare and modified parts.`,
       data: { partsDealerId: dealer.id, slug: dealer.slug },
       emailSubject: 'Your ThrottleLK parts shop is approved',
-      emailHtml: `<p>Your parts shop <strong>${dealer.name}</strong> is now active.</p>`,
+      emailHtml: `<p>Your parts shop <strong>${escapeHtml(dealer.name)}</strong> is now active.</p>`,
     });
   }
 
@@ -191,7 +208,7 @@ export class NotificationsService {
       message: `"${dealer.name}" was rejected: ${dealer.reason}`,
       data: { partsDealerId: dealer.id, reason: dealer.reason },
       emailSubject: 'ThrottleLK parts shop application rejected',
-      emailHtml: `<p>Your parts shop application <strong>${dealer.name}</strong> was rejected.</p><p>Reason: ${dealer.reason}</p>`,
+      emailHtml: `<p>Your parts shop application <strong>${escapeHtml(dealer.name)}</strong> was rejected.</p><p>Reason: ${escapeHtml(dealer.reason)}</p>`,
     });
   }
 
@@ -212,7 +229,7 @@ export class NotificationsService {
       message: `${input.listingTitle}: ${input.preview.slice(0, 120)}`,
       data: { conversationId: input.conversationId },
       emailSubject: `New ThrottleLK message — ${input.listingTitle}`,
-      emailHtml: `<p>You have a new message about <strong>${input.listingTitle}</strong>.</p><p>${input.preview}</p>`,
+      emailHtml: `<p>You have a new message about <strong>${escapeHtml(input.listingTitle)}</strong>.</p><p>${escapeHtml(input.preview)}</p>`,
     });
   }
 
@@ -231,7 +248,7 @@ export class NotificationsService {
           message: `"${listing.title}" is waiting for approval.`,
           data: { listingId: listing.id, slug: listing.slug },
           emailSubject: `ThrottleLK: listing pending review — ${listing.title}`,
-          emailHtml: `<p>A listing <strong>${listing.title}</strong> was submitted and is waiting for admin review.</p>`,
+          emailHtml: `<p>A listing <strong>${escapeHtml(listing.title)}</strong> was submitted and is waiting for admin review.</p>`,
         }),
       ),
     );
@@ -248,7 +265,7 @@ export class NotificationsService {
           message: `"${dealer.name}" applied as a bike dealer.`,
           data: { dealerId: dealer.id, slug: dealer.slug },
           emailSubject: `ThrottleLK: dealer application — ${dealer.name}`,
-          emailHtml: `<p>A dealer application for <strong>${dealer.name}</strong> is waiting for review.</p>`,
+          emailHtml: `<p>A dealer application for <strong>${escapeHtml(dealer.name)}</strong> is waiting for review.</p>`,
         }),
       ),
     );
@@ -269,7 +286,7 @@ export class NotificationsService {
           message: `"${dealer.name}" applied as a parts dealer.`,
           data: { partsDealerId: dealer.id, slug: dealer.slug },
           emailSubject: `ThrottleLK: parts dealer application — ${dealer.name}`,
-          emailHtml: `<p>A parts dealer application for <strong>${dealer.name}</strong> is waiting for review.</p>`,
+          emailHtml: `<p>A parts dealer application for <strong>${escapeHtml(dealer.name)}</strong> is waiting for review.</p>`,
         }),
       ),
     );
@@ -290,7 +307,7 @@ export class NotificationsService {
         kind: listing.kind,
       },
       emailSubject: 'Your ThrottleLK part listing is live',
-      emailHtml: `<p>Your part listing <strong>${listing.title}</strong> was approved and is now public.</p>`,
+      emailHtml: `<p>Your part listing <strong>${escapeHtml(listing.title)}</strong> was approved and is now public.</p>`,
     });
   }
 
@@ -311,7 +328,7 @@ export class NotificationsService {
         reason,
       },
       emailSubject: 'ThrottleLK part listing rejected',
-      emailHtml: `<p>Your part listing <strong>${listing.title}</strong> was rejected.</p><p>Reason: ${reason}</p>`,
+      emailHtml: `<p>Your part listing <strong>${escapeHtml(listing.title)}</strong> was rejected.</p><p>Reason: ${escapeHtml(reason)}</p>`,
     });
   }
 
@@ -335,7 +352,7 @@ export class NotificationsService {
             kind: listing.kind,
           },
           emailSubject: `ThrottleLK: part listing pending — ${listing.title}`,
-          emailHtml: `<p>A part listing <strong>${listing.title}</strong> was submitted and is waiting for admin review.</p>`,
+          emailHtml: `<p>A part listing <strong>${escapeHtml(listing.title)}</strong> was submitted and is waiting for admin review.</p>`,
         }),
       ),
     );
@@ -366,7 +383,7 @@ export class NotificationsService {
         endsAt: listing.endsAt.toISOString(),
       },
       emailSubject: 'Your listing is on the ThrottleLK homepage',
-      emailHtml: `<p><strong>${listing.title}</strong> is on the homepage until ${until}.</p>`,
+      emailHtml: `<p><strong>${escapeHtml(listing.title)}</strong> is on the homepage until ${until}.</p>`,
     });
   }
 
@@ -390,7 +407,7 @@ export class NotificationsService {
         reason: listing.reason,
       },
       emailSubject: 'ThrottleLK homepage request rejected',
-      emailHtml: `<p>Your homepage request for <strong>${listing.title}</strong> was rejected.</p><p>Reason: ${listing.reason}</p>`,
+      emailHtml: `<p>Your homepage request for <strong>${escapeHtml(listing.title)}</strong> was rejected.</p><p>Reason: ${escapeHtml(listing.reason)}</p>`,
     });
   }
 
@@ -409,7 +426,7 @@ export class NotificationsService {
         searchName: listing.searchName,
       },
       emailSubject: `New match: ${listing.title}`,
-      emailHtml: `<p>A new listing <strong>${listing.title}</strong> matches your saved search <strong>${listing.searchName}</strong>.</p>`,
+      emailHtml: `<p>A new listing <strong>${escapeHtml(listing.title)}</strong> matches your saved search <strong>${escapeHtml(listing.searchName)}</strong>.</p>`,
     });
   }
 
@@ -424,7 +441,7 @@ export class NotificationsService {
       message: `"${listing.title}" is no longer in public search. Renew it to publish again.`,
       data: { listingId: listing.id },
       emailSubject: 'Your ThrottleLK listing expired',
-      emailHtml: `<p>Your listing <strong>${listing.title}</strong> expired and was removed from public search. Renew it from your account to publish again.</p>`,
+      emailHtml: `<p>Your listing <strong>${escapeHtml(listing.title)}</strong> expired and was removed from public search. Renew it from your account to publish again.</p>`,
     });
   }
 
@@ -446,7 +463,7 @@ export class NotificationsService {
         newPrice,
       },
       emailSubject: `Price drop: ${listing.title}`,
-      emailHtml: `<p><strong>${listing.title}</strong> dropped from Rs. ${oldPrice.toLocaleString('en-LK')} to Rs. ${newPrice.toLocaleString('en-LK')}.</p>`,
+      emailHtml: `<p><strong>${escapeHtml(listing.title)}</strong> dropped from Rs. ${oldPrice.toLocaleString('en-LK')} to Rs. ${newPrice.toLocaleString('en-LK')}.</p>`,
     });
   }
 }

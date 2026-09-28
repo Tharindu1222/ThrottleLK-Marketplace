@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export const BRAND_LOGO_SRC = '/images/brand/throttlelk-logo.png';
 export const BRAND_LOGO_ALT = 'Throttle LK Motowear';
 
@@ -26,10 +28,12 @@ export function BrandLogo({
   tone = 'black',
 }: BrandLogoProps) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Image
       src={BRAND_LOGO_SRC}
       alt={BRAND_LOGO_ALT}
+      width={180}
+      height={40}
+      priority={size === 'header'}
       className={`${sizeClass[size]} ${toneClass[tone]} object-contain object-left ${className ?? ''}`}
     />
   );

@@ -6,7 +6,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
-import { assertSafeImageFile, extensionForMime } from '../common/image-bytes';
+import { assertSafeImageFile } from '../common/image-bytes';
+import {
+  deletePublicMarketplaceImage,
+  storePublicMarketplaceImage,
+} from '../common/image-variants';
 import { StorageService } from '../storage/storage.service';
 import { PUBLIC_CATEGORY_SLUGS } from './category-map';
 import { Category } from './category.entity';
@@ -44,7 +48,7 @@ export class CategoryCoverService {
         error: { code: 'FILE_REQUIRED', message: 'Image file is required' },
       });
     }
-    const mime = assertSafeImageFile(file);
+    assertSafeImageFile(file);
     if (file.size > MAX_BYTES) {
       throw new BadRequestException({
         success: false,
@@ -53,26 +57,25 @@ export class CategoryCoverService {
     }
 
     if (category.coverStorageKey) {
-      await this.storage.deleteObject(category.coverStorageKey).catch(() => undefined);
+      await deletePublicMarketplaceImage(this.storage, category.coverStorageKey);
     }
 
-    const ext = extensionForMime(mime);
-    const storageKey = `categories/${categoryId}/${randomUUID()}.${ext}`;
-    const stored = await this.storage.putObject(
-      storageKey,
+    const stored = await storePublicMarketplaceImage(
+      this.storage,
+      `categories/${categoryId}/${randomUUID()}`,
       file.buffer,
-      mime,
+      'logo',
     );
 
     category.coverStorageKey = stored.storageKey;
-    category.coverImageUrl = stored.publicUrl;
+    category.coverImageUrl = stored.imageUrl;
     return this.categories.save(category);
   }
 
   async removeCover(categoryId: string) {
     const category = await this.getPublicCategoryOrThrow(categoryId);
     if (category.coverStorageKey) {
-      await this.storage.deleteObject(category.coverStorageKey).catch(() => undefined);
+      await deletePublicMarketplaceImage(this.storage, category.coverStorageKey);
     }
     category.coverStorageKey = null;
     category.coverImageUrl = null;

@@ -64,6 +64,10 @@ describe('normalizeWhatsappDigits', () => {
   it('strips non-digits', () => {
     expect(normalizeWhatsappDigits('+94 77-123 4567')).toBe('94771234567');
   });
+
+  it('does not double-prefix numbers that already include 94', () => {
+    expect(normalizeWhatsappDigits('94771234567')).toBe('94771234567');
+  });
 });
 
 describe('addUtcDays', () => {

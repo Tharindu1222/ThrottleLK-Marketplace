@@ -29,6 +29,7 @@ function makeService(
     listingApproved: jest.fn(),
     listingRejected: jest.fn(),
     listingExpired: jest.fn(),
+    listingInquiry: jest.fn(),
     priceDrop: jest.fn(),
   };
   const dealersService = {
@@ -161,6 +162,7 @@ describe('ListingsService.listPending', () => {
     };
     const listingsQb = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
@@ -603,6 +605,7 @@ describe('ListingsService.listMine owner extras', () => {
     };
     const publicQb = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
@@ -837,6 +840,7 @@ describe('ListingsService launch hardening', () => {
   it('applies city, fuel, seller type and featured filters', async () => {
     const publicQb = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
@@ -882,6 +886,7 @@ describe('ListingsService launch hardening', () => {
   it('excludes listings that are past expires_at', async () => {
     const publicQb = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
@@ -935,6 +940,39 @@ describe('ListingsService launch hardening', () => {
     expect(listingsRepo.save).toHaveBeenCalled();
   });
 
+  it('resumes a paused listing without resetting a future expiry', async () => {
+    const expiresAt = new Date('2027-06-01T00:00:00.000Z');
+    const { service, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'paused',
+      expiresAt,
+      publishedAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    const saved = await service.resume(seller, row.id);
+
+    expect(saved.status).toBe('active');
+    expect(saved.expiresAt).toEqual(expiresAt);
+  });
+
+  it('does not copy dealerId from a listing update payload', async () => {
+    const { service, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      status: 'draft',
+      dealerId: 'dealer-own',
+      title: 'Honda Dio 2022',
+    });
+
+    await service.update(seller, row.id, {
+      dealerId: 'dealer-other',
+      title: 'Honda Dio 2022 clean',
+    } as never);
+
+    expect(row.dealerId).toBe('dealer-own');
+  });
+
   it('expires due active listings and notifies the seller', async () => {
     const due = {
       id: 'listing-1',
@@ -954,6 +992,13 @@ describe('ListingsService launch hardening', () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([due]),
       save: jest.fn(async (value: typeof due) => value),
+      createQueryBuilder: jest.fn(() => ({
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        execute: jest.fn(async () => ({ affected: 1 })),
+      })),
     };
     Object.assign(service as never, { listings: listingsRepo });
 

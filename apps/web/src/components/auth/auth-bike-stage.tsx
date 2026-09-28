@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
 
 const BIKE_SRC =
   '/images/bike/3cd99af1e73ba8f8e1985b681bbd4b6e-removebg-preview.png';
@@ -19,53 +18,65 @@ export function AuthBikeStage({ className = '' }: { className?: string }) {
     const shadow = shadowRef.current;
     if (!root || !bike || !glow || !shadow) return;
 
+    let cancelled = false;
+    let revert: (() => void) | undefined;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      gsap.set([bike, glow, shadow], { opacity: 1, clearProps: 'transform' });
-      return;
-    }
 
-    const ctx = gsap.context(() => {
-      gsap.set(bike, {
-        opacity: 0,
-        x: -60,
-        y: 28,
-        scale: 0.95,
-        rotate: -3,
-      });
-      gsap.set(glow, { opacity: 0, scale: 0.7 });
-      gsap.set(shadow, { opacity: 0, scaleX: 0.45 });
+    void import('gsap').then(({ default: gsap }) => {
+      if (cancelled || !rootRef.current || !bikeRef.current || !glowRef.current || !shadowRef.current) {
+        return;
+      }
+      if (reduced) {
+        gsap.set([bike, glow, shadow], { opacity: 1, clearProps: 'transform' });
+        return;
+      }
 
-      const intro = gsap.timeline({ defaults: { ease: 'power3.out' } });
-      intro
-        .to(glow, { opacity: 1, scale: 1.05, duration: 1 }, 0)
-        .to(
-          bike,
-          {
-            opacity: 1,
-            x: 0,
-            y: 0,
-            scale: 1.12,
-            rotate: 0,
-            duration: 1.2,
-          },
-          0.1,
-        )
-        .to(shadow, { opacity: 0.5, scaleX: 1.05, duration: 0.85 }, 0.4);
+      const ctx = gsap.context(() => {
+        gsap.set(bike, {
+          opacity: 0,
+          x: -60,
+          y: 28,
+          scale: 0.95,
+          rotate: -3,
+        });
+        gsap.set(glow, { opacity: 0, scale: 0.7 });
+        gsap.set(shadow, { opacity: 0, scaleX: 0.45 });
 
-      const float = gsap.timeline({
-        delay: 1.25,
-        repeat: -1,
-        yoyo: true,
-        defaults: { ease: 'sine.inOut' },
-      });
-      float
-        .to(bike, { y: -12, rotate: 1.1, scale: 1.14, duration: 2.6 })
-        .to(glow, { scale: 1.15, opacity: 0.95, duration: 2.6 }, 0)
-        .to(shadow, { scaleX: 0.95, opacity: 0.35, duration: 2.6 }, 0);
-    }, root);
+        const intro = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        intro
+          .to(glow, { opacity: 1, scale: 1.05, duration: 1 }, 0)
+          .to(
+            bike,
+            {
+              opacity: 1,
+              x: 0,
+              y: 0,
+              scale: 1.12,
+              rotate: 0,
+              duration: 1.2,
+            },
+            0.1,
+          )
+          .to(shadow, { opacity: 0.5, scaleX: 1.05, duration: 0.85 }, 0.4);
 
-    return () => ctx.revert();
+        const float = gsap.timeline({
+          delay: 1.25,
+          repeat: -1,
+          yoyo: true,
+          defaults: { ease: 'sine.inOut' },
+        });
+        float
+          .to(bike, { y: -12, rotate: 1.1, scale: 1.14, duration: 2.6 })
+          .to(glow, { scale: 1.15, opacity: 0.95, duration: 2.6 }, 0)
+          .to(shadow, { scaleX: 0.95, opacity: 0.35, duration: 2.6 }, 0);
+      }, root);
+      revert = () => ctx.revert();
+    });
+
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
   }, []);
 
   return (

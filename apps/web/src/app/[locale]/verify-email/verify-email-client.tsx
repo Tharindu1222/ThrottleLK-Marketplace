@@ -1,19 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { apiSend } from '@/lib/api';
+import { consumeAuthTokenFromLocation } from '@/lib/auth-token';
 import { t, type Locale } from '@/lib/i18n';
 
 export function VerifyEmailClient({ locale }: { locale: Locale }) {
-  const search = useSearchParams();
-  const token = useMemo(() => search.get('token') ?? '', [search]);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   const [pending, setPending] = useState(true);
 
   useEffect(() => {
+    const token = consumeAuthTokenFromLocation();
     if (!token) {
       setPending(false);
       setError('Missing verification token');
@@ -25,7 +24,7 @@ export function VerifyEmailClient({ locale }: { locale: Locale }) {
         setError(err instanceof Error ? err.message : 'Verification failed'),
       )
       .finally(() => setPending(false));
-  }, [token]);
+  }, []);
 
   if (pending) {
     return <p className="mt-8 text-muted">Verifying…</p>;

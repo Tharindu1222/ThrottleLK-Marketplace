@@ -10,6 +10,7 @@ import { Category } from '../taxonomy/category.entity';
 import { City } from '../taxonomy/city.entity';
 import { District } from '../taxonomy/district.entity';
 import { UsersService } from '../users/users.service';
+import { resolveAdminBootstrap } from './admin-bootstrap';
 
 const DEMO_TITLES = [
   'Honda Dio 2022 Excellent',
@@ -62,25 +63,32 @@ export class SeedService implements OnModuleInit {
   }
 
   private async bootstrapAdmin() {
-    const email =
-      this.config.get<string>('ADMIN_BOOTSTRAP_EMAIL') ??
-      'admin@throttlelk.lk';
-    const password =
-      this.config.get<string>('ADMIN_BOOTSTRAP_PASSWORD') ??
-      'ChangeMeAdmin1!';
+    const creds = resolveAdminBootstrap({
+      NODE_ENV: this.config.get<string>('NODE_ENV') ?? process.env.NODE_ENV,
+      ADMIN_BOOTSTRAP_EMAIL:
+        this.config.get<string>('ADMIN_BOOTSTRAP_EMAIL') ??
+        process.env.ADMIN_BOOTSTRAP_EMAIL,
+      ADMIN_BOOTSTRAP_PASSWORD:
+        this.config.get<string>('ADMIN_BOOTSTRAP_PASSWORD') ??
+        process.env.ADMIN_BOOTSTRAP_PASSWORD,
+    });
+    if (!creds) {
+      this.logger.log('Skipping admin bootstrap (credentials not set)');
+      return;
+    }
 
-    const existing = await this.usersService.findByEmail(email);
+    const existing = await this.usersService.findByEmail(creds.email);
     if (!existing) {
       await this.usersService.createUser(
         {
           firstName: 'Throttle',
           lastName: 'Admin',
-          email,
-          password,
+          email: creds.email,
+          password: creds.password,
         },
         ['admin', 'buyer', 'seller'],
       );
-      this.logger.log(`Bootstrapped admin user ${email}`);
+      this.logger.log(`Bootstrapped admin user ${creds.email}`);
     }
   }
 

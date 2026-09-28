@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { guides } from '@/content/guides';
+import { PUBLIC_CATEGORY_SLUGS } from '@/lib/bike-categories';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { absoluteUrl } from '@/lib/seo';
 
@@ -49,6 +50,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     base.push(
       loc(locale, '', { changeFrequency: 'daily', priority: 1 }),
       loc(locale, '/bikes', { changeFrequency: 'hourly', priority: 0.9 }),
+      ...PUBLIC_CATEGORY_SLUGS.map((slug) =>
+        loc(locale, `/bikes/${slug}`, {
+          changeFrequency: 'daily',
+          priority: 0.85,
+        }),
+      ),
       loc(locale, '/guides', { changeFrequency: 'weekly', priority: 0.7 }),
       loc(locale, '/dealers', { changeFrequency: 'daily', priority: 0.7 }),
       loc(locale, '/parts-dealers', { changeFrequency: 'daily', priority: 0.7 }),

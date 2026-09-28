@@ -12,6 +12,8 @@ import { apiGet } from '@/lib/api';
 import { readAccessCookie } from '@/lib/session-cookie';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
+import { whatsappHref } from '@/lib/whatsapp';
+import { ReportListing } from '@/components/report-listing';
 
 type PartDetail = {
   id: string;
@@ -99,7 +101,7 @@ export default async function SparePartDetailPage({
     .filter(Boolean)
     .slice(0, 6)
     .join(' · ');
-  const waDigits = part.whatsapp?.replace(/\D/g, '') ?? '';
+  const waHref = part.whatsapp ? whatsappHref(part.whatsapp) : null;
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
@@ -176,9 +178,9 @@ export default async function SparePartDetailPage({
                   {t(locale, 'call')} · {part.phone}
                 </a>
               ) : null}
-              {part.whatsapp ? (
+              {waHref ? (
                 <a
-                  href={`https://wa.me/${waDigits}`}
+                  href={waHref}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex h-11 items-center rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white"
@@ -204,6 +206,7 @@ export default async function SparePartDetailPage({
             {t(locale, 'description')}
           </h2>
           <ListingDescription locale={locale} text={part.description} />
+          <ReportListing locale={locale} partListingId={part.id} />
         </section>
       </div>
     </main>

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
@@ -331,6 +331,48 @@ export class TaxonomyService implements OnModuleInit {
 
   listBrandsAdmin() {
     return this.brands.find({ order: { name: 'ASC' } });
+  }
+
+  async assertListingTaxonomy(input: {
+    brandId: string;
+    modelId: string;
+    categoryId: string;
+    districtId: string;
+    cityId: string;
+  }) {
+    const [brand, model, category, city] = await Promise.all([
+      this.brands.findOne({ where: { id: input.brandId } }),
+      this.models.findOne({ where: { id: input.modelId } }),
+      this.categories.findOne({ where: { id: input.categoryId } }),
+      this.cities.findOne({ where: { id: input.cityId } }),
+    ]);
+    if (!brand || !model || !category || !city) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_TAXONOMY',
+          message: 'Brand, model, category, or city is invalid',
+        },
+      });
+    }
+    if (model.brandId !== input.brandId) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_TAXONOMY',
+          message: 'Model does not belong to the selected brand',
+        },
+      });
+    }
+    if (city.districtId !== input.districtId) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_TAXONOMY',
+          message: 'City does not belong to the selected district',
+        },
+      });
+    }
   }
 
   private async getBrandOrThrow(id: string) {

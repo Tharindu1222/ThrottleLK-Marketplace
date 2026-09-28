@@ -361,18 +361,31 @@ export const updateSavedSearchSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
 });
 
-export const createReportSchema = z.object({
-  listingId: z.string().uuid(),
-  reason: z.enum([
-    'spam',
-    'fraud',
-    'wrong_info',
-    'inappropriate',
-    'duplicate',
-    'other',
-  ]),
-  description: z.string().min(10).max(2000),
-});
+export const createReportSchema = z
+  .object({
+    listingId: z.string().uuid().optional(),
+    partListingId: z.string().uuid().optional(),
+    reason: z.enum([
+      'spam',
+      'fraud',
+      'wrong_info',
+      'inappropriate',
+      'duplicate',
+      'other',
+    ]),
+    description: z.string().min(10).max(2000),
+  })
+  .superRefine((data, ctx) => {
+    const hasListing = Boolean(data.listingId);
+    const hasPart = Boolean(data.partListingId);
+    if (hasListing === hasPart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide exactly one of listingId or partListingId',
+        path: hasListing ? ['partListingId'] : ['listingId'],
+      });
+    }
+  });
 
 export const adminCreateBrandSchema = z.object({
   name: z.string().min(1).max(80),

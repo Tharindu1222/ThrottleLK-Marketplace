@@ -10,6 +10,7 @@ import {
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { safeNextPath } from '@/lib/safe-next';
 
 export function RegisterForm({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +34,8 @@ export function RegisterForm({ locale }: { locale: Locale }) {
         },
       });
       saveSession({ user: data.user });
-      window.location.href = `/${locale}/sell`;
+      const next = new URLSearchParams(window.location.search).get('next');
+      window.location.href = safeNextPath(next, locale, `/${locale}/account`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Register failed');
       setBusy(false);
@@ -43,44 +45,59 @@ export function RegisterForm({ locale }: { locale: Locale }) {
   return (
     <form onSubmit={onSubmit} className="grid gap-3.5">
       <div className="grid gap-3.5 sm:grid-cols-2">
-        <input
-          name="firstName"
-          required
-          autoComplete="given-name"
-          placeholder={t(locale, 'firstName')}
-          className={authFieldClass}
-        />
-        <input
-          name="lastName"
-          required
-          autoComplete="family-name"
-          placeholder={t(locale, 'lastName')}
-          className={authFieldClass}
-        />
+        <label className="grid gap-1.5">
+          <span className="text-sm font-medium">{t(locale, 'firstName')}</span>
+          <input
+            name="firstName"
+            required
+            autoComplete="given-name"
+            placeholder={t(locale, 'firstName')}
+            className={authFieldClass}
+          />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-sm font-medium">{t(locale, 'lastName')}</span>
+          <input
+            name="lastName"
+            required
+            autoComplete="family-name"
+            placeholder={t(locale, 'lastName')}
+            className={authFieldClass}
+          />
+        </label>
       </div>
-      <input
-        name="email"
-        type="email"
-        required
-        autoComplete="email"
-        placeholder={t(locale, 'email')}
-        className={authFieldClass}
-      />
-      <input
-        name="phone"
-        autoComplete="tel"
-        placeholder={t(locale, 'phone')}
-        className={authFieldClass}
-      />
-      <input
-        name="password"
-        type="password"
-        required
-        minLength={8}
-        autoComplete="new-password"
-        placeholder={t(locale, 'password')}
-        className={authFieldClass}
-      />
+      <label className="grid gap-1.5">
+        <span className="text-sm font-medium">{t(locale, 'email')}</span>
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder={t(locale, 'email')}
+          className={authFieldClass}
+        />
+      </label>
+      <label className="grid gap-1.5">
+        <span className="text-sm font-medium">{t(locale, 'phone')}</span>
+        <input
+          name="phone"
+          autoComplete="tel"
+          placeholder={t(locale, 'phone')}
+          className={authFieldClass}
+        />
+      </label>
+      <label className="grid gap-1.5">
+        <span className="text-sm font-medium">{t(locale, 'password')}</span>
+        <input
+          name="password"
+          type="password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder={t(locale, 'password')}
+          className={authFieldClass}
+        />
+      </label>
 
       <div className="mt-1 flex flex-col gap-3 sm:flex-row">
         <button type="submit" disabled={busy} className={authPrimaryBtnClass}>

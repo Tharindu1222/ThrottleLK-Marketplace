@@ -1,16 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { FormEvent, useEffect, useState } from 'react';
 import { apiSend } from '@/lib/api';
+import { consumeAuthTokenFromLocation } from '@/lib/auth-token';
 import { t, type Locale } from '@/lib/i18n';
 
 export function ResetPasswordForm({ locale }: { locale: Locale }) {
-  const search = useSearchParams();
-  const token = useMemo(() => search.get('token') ?? '', [search]);
+  const [token, setToken] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+
+  useEffect(() => {
+    setToken(consumeAuthTokenFromLocation());
+  }, []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -51,14 +54,18 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
           Open the link from your email to reset your password.
         </p>
       ) : null}
-      <input
-        name="password"
-        type="password"
-        required
-        minLength={8}
-        placeholder="New password"
-        className="bg-background px-3 py-2 ring-1 ring-black/10"
-      />
+      <label className="grid gap-1.5">
+        <span className="text-sm font-medium">New password</span>
+        <input
+          name="password"
+          type="password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="New password"
+          className="bg-background px-3 py-2 ring-1 ring-black/10"
+        />
+      </label>
       <button
         type="submit"
         disabled={!token}

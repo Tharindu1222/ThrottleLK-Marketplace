@@ -5,18 +5,26 @@ import { FormEvent, useEffect, useState } from 'react';
 import { apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 
 export function ReportListing({
   locale,
   listingId,
+  partListingId,
 }: {
   locale: Locale;
-  listingId: string;
+  listingId?: string;
+  partListingId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const nextPath =
+    typeof window === 'undefined'
+      ? `/${locale}`
+      : `${window.location.pathname}${window.location.search}`;
+  const signInHref = loginHref(locale, nextPath);
 
   useEffect(() => {
     setToken(getAccessToken());
@@ -25,7 +33,7 @@ export function ReportListing({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!token) {
-      window.location.href = `/${locale}/login`;
+      window.location.href = signInHref;
       return;
     }
     setError(null);
@@ -35,7 +43,8 @@ export function ReportListing({
       await apiSend('/api/v1/reports', {
         token,
         body: {
-          listingId,
+          ...(listingId ? { listingId } : {}),
+          ...(partListingId ? { partListingId } : {}),
           reason: String(form.get('reason')),
           description: String(form.get('description')),
         },
@@ -55,7 +64,7 @@ export function ReportListing({
           className="text-sm text-muted underline hover:text-foreground"
           onClick={() => {
             if (!token) {
-              window.location.href = `/${locale}/login`;
+              window.location.href = signInHref;
               return;
             }
             setOpen(true);
@@ -111,7 +120,7 @@ export function ReportListing({
           </div>
           {!token ? (
             <p className="text-xs text-muted">
-              <Link href={`/${locale}/login`} className="text-accent underline">
+              <Link href={signInHref} className="text-accent underline">
                 {t(locale, 'login')}
               </Link>{' '}
               required

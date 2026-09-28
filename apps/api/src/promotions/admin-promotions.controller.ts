@@ -114,9 +114,9 @@ export class AdminPromotionsController {
   @Get('requests/:id/slip')
   async slip(@Param('id') id: string, @Res() res: Response) {
     const { buffer, contentType, filename } = await this.promotions.getSlip(id);
-    const safe = filename.replace(/"/g, '');
+    const safe = filename.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80) || 'slip';
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `inline; filename="${safe}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${safe}"`);
     res.send(buffer);
   }
 

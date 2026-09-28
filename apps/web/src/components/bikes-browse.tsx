@@ -10,6 +10,7 @@ import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 import { hrefWithPage } from '@/lib/pagination';
 import { faqPageJsonLd } from '@/lib/seo';
+import { safeJsonLd } from '@/lib/json-ld';
 
 type Brand = { id: string; name: string; slug: string };
 type District = { id: string; name: string; slug: string };
@@ -128,7 +129,7 @@ export async function BikesBrowse({
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify(faqPageJsonLd(faqItems)),
+              __html: safeJsonLd(faqPageJsonLd(faqItems)),
             }}
           />
           <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">

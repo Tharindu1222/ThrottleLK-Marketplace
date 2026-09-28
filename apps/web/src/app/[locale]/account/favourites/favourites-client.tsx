@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   ListingCard,
@@ -10,6 +11,7 @@ import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import { useUrlPage } from '@/lib/use-url-page';
 import type { PaginationMeta } from '@throttlelk/types';
@@ -20,6 +22,7 @@ type FavRow = {
 };
 
 export function FavouritesClient({ locale }: { locale: Locale }) {
+  const pathname = usePathname();
   const { page, goTo } = useUrlPage();
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<FavRow[]>([]);
@@ -62,7 +65,7 @@ export function FavouritesClient({ locale }: { locale: Locale }) {
   if (!token) {
     return (
       <p className="mt-6 text-muted">
-        <Link href={`/${locale}/login`} className="text-accent underline">
+        <Link href={loginHref(locale, pathname)} className="text-accent underline">
           {t(locale, 'login')}
         </Link>{' '}
         {t(locale, 'toSaveFavourites')}
