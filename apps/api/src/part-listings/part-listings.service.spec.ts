@@ -1,7 +1,7 @@
 import { PartListingsService } from './part-listings.service';
 
 describe('PartListingsService.relatedForBikeListing', () => {
-  it('matches fitments by brand and optional model', async () => {
+  it('matches fitments by the same brand and model', async () => {
     const bikeListings = {
       findOne: jest.fn(async () => ({
         id: 'bike-1',
@@ -84,10 +84,51 @@ describe('PartListingsService.relatedForBikeListing', () => {
     expect(qb.andWhere).toHaveBeenCalledWith('f.brand_id = :brandId', {
       brandId: 'brand-1',
     });
+    expect(qb.andWhere).toHaveBeenCalledWith('f.model_id = :modelId', {
+      modelId: 'model-1',
+    });
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
       id: 'part-1',
       kind: 'spare',
     });
+  });
+});
+
+describe('PartListingsService.remove', () => {
+  it('soft-removes an owned listing', async () => {
+    const listing = { id: 'pl-1', partsDealerId: 'pd-1' };
+    const partListings = {
+      findOne: jest.fn(async () => listing),
+      softRemove: jest.fn(async () => undefined),
+    };
+    const partsDealersService = {
+      assertOwnedActivePartsDealer: jest.fn(async () => undefined),
+    };
+    const cache = { invalidateDashboard: jest.fn() };
+    const service = new PartListingsService(
+      partListings as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      partsDealersService as never,
+      {} as never,
+      cache as never,
+    );
+
+    const result = await service.remove({ id: 'user-1' } as never, 'pl-1');
+
+    expect(partsDealersService.assertOwnedActivePartsDealer).toHaveBeenCalledWith(
+      'user-1',
+      'pd-1',
+    );
+    expect(partListings.softRemove).toHaveBeenCalledWith(listing);
+    expect(cache.invalidateDashboard).toHaveBeenCalled();
+    expect(result).toEqual({ id: 'pl-1', deleted: true });
   });
 });

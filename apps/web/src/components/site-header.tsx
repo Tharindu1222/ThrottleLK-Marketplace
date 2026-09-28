@@ -66,6 +66,7 @@ export function SiteHeader({
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const isDealer = Boolean(user?.roles?.includes('dealer'));
+  const isPartsDealer = Boolean(user?.roles?.includes('parts_dealer'));
 
   useEffect(() => {
     const stored = getStoredUser();
@@ -260,6 +261,16 @@ export function SiteHeader({
                         {t(locale, 'dealerShowroom')}
                       </Link>
                     ) : null}
+                    {isPartsDealer ? (
+                      <Link
+                        role="menuitem"
+                        href={`/${locale}/account/parts-showroom`}
+                        className="block px-4 py-2.5 text-sm text-muted transition hover:bg-black/5 hover:text-foreground"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        {t(locale, 'partsShowroom')}
+                      </Link>
+                    ) : null}
                     <div className="my-1 border-t border-black/10" />
                     <button
                       type="button"
@@ -410,6 +421,15 @@ export function SiteHeader({
                     onClick={() => setMenuOpen(false)}
                   >
                     {t(locale, 'dealerShowroom')}
+                  </Link>
+                ) : null}
+                {isPartsDealer ? (
+                  <Link
+                    href={`/${locale}/account/parts-showroom`}
+                    className="py-3 pl-2 text-base text-muted"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t(locale, 'partsShowroom')}
                   </Link>
                 ) : null}
                 <Link

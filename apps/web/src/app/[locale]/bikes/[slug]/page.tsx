@@ -142,21 +142,25 @@ export default async function ListingDetailPage({
   });
 
   let similarAll: BrowseListingCard[] = [];
-  if (listing.brandId) {
+  if (listing.brandId && listing.modelId) {
     try {
-      const byBrand = await apiGet<BrowseListingCard[]>('/api/v1/listings', {
-        searchParams: { brandId: listing.brandId },
+      const byModel = await apiGet<BrowseListingCard[]>('/api/v1/listings', {
+        searchParams: {
+          brandId: listing.brandId,
+          modelId: listing.modelId,
+        },
       });
-      similarAll = byBrand.filter((item) => item.id !== listing.id);
+      similarAll = byModel.filter((item) => item.id !== listing.id);
     } catch {
       similarAll = [];
     }
   }
   const similarRow = similarAll.slice(0, SIMILAR_ROW_SIZE);
   const hasMoreSimilar = similarAll.length > SIMILAR_ROW_SIZE;
-  const seeMoreHref = listing.brandId
-    ? `/${locale}/bikes?brandId=${encodeURIComponent(listing.brandId)}`
-    : `/${locale}/bikes`;
+  const seeMoreHref =
+    listing.brandId && listing.modelId
+      ? `/${locale}/bikes?brandId=${encodeURIComponent(listing.brandId)}&modelId=${encodeURIComponent(listing.modelId)}`
+      : `/${locale}/bikes`;
 
   let relatedSpare: BrowsePartCard[] = [];
   let relatedModified: BrowsePartCard[] = [];

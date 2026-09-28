@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { ShowroomSwitchNav } from '@/components/showroom-switch-nav';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { PartsShowroomClient } from './parts-showroom-client';
 
@@ -19,6 +20,7 @@ export default async function PartsShowroomPage({
       <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
         {t(locale, 'partsShowroomHint')}
       </p>
+      <ShowroomSwitchNav locale={locale} />
       <div className="mt-6">
         <PartsShowroomClient locale={locale} />
       </div>

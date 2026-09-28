@@ -257,6 +257,7 @@ function ListingActions({
   busy,
   runAction,
   onMarkSold,
+  onDelete,
   dense = false,
 }: {
   locale: Locale;
@@ -264,11 +265,24 @@ function ListingActions({
   busy: boolean;
   runAction: (listingId: string, path: string) => void;
   onMarkSold: (listing: PartListing) => void;
+  onDelete: (listing: PartListing) => void;
   dense?: boolean;
 }) {
+  const editHref = `/${locale}/account/parts-listings/${listing.id}/edit`;
   const viewHref = publicHref(locale, listing);
   const viewLabel = dense ? t(locale, 'viewShort') : t(locale, 'viewListing');
   const soldLabel = dense ? t(locale, 'markSoldShort') : t(locale, 'markSold');
+
+  const editBtn =
+    listing.status !== 'sold' ? (
+      <Link href={editHref} className={btnGhost}>
+        <ActionIcon>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+        </ActionIcon>
+        <span className="truncate">{t(locale, 'editListing')}</span>
+      </Link>
+    ) : null;
 
   const viewBtn = (
     <Link href={viewHref} className={listing.status === 'active' ? btnSolid : btnGhost}>
@@ -296,16 +310,21 @@ function ListingActions({
     </button>
   );
 
-  const pauseBtn = (
+  const deleteBtn = (
     <button
       type="button"
       disabled={busy}
       className={btnGhost}
-      onClick={() =>
-        runAction(listing.id, `/api/v1/part-listings/${listing.id}/pause`)
-      }
+      onClick={() => onDelete(listing)}
     >
-      <span className="truncate">{t(locale, 'pauseListing')}</span>
+      <ActionIcon>
+        <path d="M4 7h16" />
+        <path d="M9 7V5h6v2" />
+        <path d="M6 7l1 12h10l1-12" />
+        <path d="M10 11v5" />
+        <path d="M14 11v5" />
+      </ActionIcon>
+      <span className="truncate">{t(locale, 'delete')}</span>
     </button>
   );
 
@@ -317,7 +336,8 @@ function ListingActions({
       {listing.status === 'active' ? (
         <>
           {viewBtn}
-          {pauseBtn}
+          {editBtn}
+          {deleteBtn}
           {soldBtn}
           <Link
             href={`/${locale}/account/parts-listings/${listing.id}/promote`}
@@ -339,24 +359,39 @@ function ListingActions({
           >
             <span className="truncate">{t(locale, 'resumeListing')}</span>
           </button>
+          {editBtn}
+          {deleteBtn}
           {soldBtn}
         </>
       ) : null}
-      {['draft', 'rejected'].includes(listing.status) ? (
-        <button
-          type="button"
-          disabled={busy}
-          className={btnAccent}
-          onClick={() =>
-            runAction(listing.id, `/api/v1/part-listings/${listing.id}/submit`)
-          }
-        >
-          <span className="truncate">{t(locale, 'submitForReview')}</span>
-        </button>
+      {listing.status === 'pending_review' ? (
+        <>
+          {editBtn}
+          {deleteBtn}
+        </>
       ) : null}
-      {listing.status === 'sold' || listing.status === 'pending_review'
-        ? viewBtn
-        : null}
+      {['draft', 'rejected'].includes(listing.status) ? (
+        <>
+          {editBtn}
+          {deleteBtn}
+          <button
+            type="button"
+            disabled={busy}
+            className={btnAccent}
+            onClick={() =>
+              runAction(listing.id, `/api/v1/part-listings/${listing.id}/submit`)
+            }
+          >
+            <span className="truncate">{t(locale, 'submitForReview')}</span>
+          </button>
+        </>
+      ) : null}
+      {listing.status === 'sold' ? (
+        <>
+          {viewBtn}
+          {deleteBtn}
+        </>
+      ) : null}
     </div>
   );
 }
@@ -409,6 +444,22 @@ export function MyPartsListingsClient({
       .then(() => load(token, page))
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Action failed'),
+      )
+      .finally(() => setBusyId(null));
+  }
+
+  function deleteListing(listing: PartListing) {
+    if (!token) return;
+    if (!window.confirm(t(locale, 'deleteListingConfirm'))) return;
+    setBusyId(listing.id);
+    setError(null);
+    void apiSend(`/api/v1/part-listings/${listing.id}`, {
+      method: 'DELETE',
+      token,
+    })
+      .then(() => load(token, page))
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : t(locale, 'deleteFailed')),
       )
       .finally(() => setBusyId(null));
   }
@@ -517,7 +568,7 @@ export function MyPartsListingsClient({
                     href={
                       listing.status === 'active' || listing.status === 'sold'
                         ? publicHref(locale, listing)
-                        : undefined
+                        : `/${locale}/account/parts-listings/${listing.id}/edit`
                     }
                     statusBadge={{
                       label: statusLabel(locale, listing.status),
@@ -531,6 +582,7 @@ export function MyPartsListingsClient({
                         busy={busy}
                         runAction={runAction}
                         onMarkSold={openSoldDialog}
+                        onDelete={deleteListing}
                         dense
                       />
                     }
@@ -585,6 +637,7 @@ export function MyPartsListingsClient({
                     busy={busy}
                     runAction={runAction}
                     onMarkSold={openSoldDialog}
+                    onDelete={deleteListing}
                   />
                 </li>
               );

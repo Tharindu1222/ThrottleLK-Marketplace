@@ -222,6 +222,16 @@ export class PartListingsService {
     return this.getOwnedDetail(owner.id, listing.id);
   }
 
+  async remove(
+    owner: User,
+    id: string,
+  ): Promise<{ id: string; deleted: true }> {
+    const listing = await this.getOwned(owner.id, id);
+    await this.partListings.softRemove(listing);
+    this.bumpDashboard();
+    return { id: listing.id, deleted: true };
+  }
+
   async markSold(
     owner: User,
     id: string,
@@ -601,6 +611,9 @@ export class PartListingsService {
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
       });
     }
+    if (!bike.brandId || !bike.modelId) {
+      return [];
+    }
     const limit = Math.min(Math.max(opts?.limit ?? 12, 1), 50);
     const qb = this.partListings
       .createQueryBuilder('l')
@@ -611,9 +624,7 @@ export class PartListingsService {
       .innerJoin('l.fitments', 'f')
       .where('l.status = :status', { status: 'active' })
       .andWhere('f.brand_id = :brandId', { brandId: bike.brandId })
-      .andWhere('(f.model_id = :modelId OR f.model_id IS NULL)', {
-        modelId: bike.modelId,
-      })
+      .andWhere('f.model_id = :modelId', { modelId: bike.modelId })
       .orderBy('l.publishedAt', 'DESC', 'NULLS LAST')
       .take(limit)
       .distinct(true);

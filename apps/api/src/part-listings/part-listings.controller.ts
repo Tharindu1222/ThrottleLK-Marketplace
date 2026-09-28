@@ -285,6 +285,19 @@ export class PartListingsController {
 
   @UseGuards(JwtAuthGuard)
   @RateLimit('write')
+  @Delete(':id')
+  async remove(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.remove(user, id),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Post(':id/mark-sold')
   async markSold(
     @CurrentUser() user: User,

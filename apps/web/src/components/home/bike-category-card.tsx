@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useRef } from 'react';
 import { categoryHref, type BikeCategory } from '@/lib/bike-categories';
 import type { Locale } from '@/lib/i18n';
+import { useGsapCardHover } from './use-gsap-card-hover';
 
 export function BikeCategoryCard({
   locale,
@@ -14,14 +18,17 @@ export function BikeCategoryCard({
   variant?: 'default' | 'compact';
 }) {
   const compact = variant === 'compact';
+  const cardRef = useRef<HTMLAnchorElement>(null);
+  useGsapCardHover(cardRef);
 
   return (
     <Link
+      ref={cardRef}
       href={href ?? categoryHref(locale, category.slug)}
       className={
         compact
-          ? 'group relative flex h-[188px] flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] ring-1 ring-black/[0.06] transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.35)] hover:ring-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none motion-reduce:hover:translate-y-0 xl:h-[210px]'
-          : 'group relative flex h-[220px] flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] ring-1 ring-black/[0.06] transition duration-300 hover:-translate-y-1.5 hover:bg-white hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.35)] hover:ring-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:hover:translate-y-0 sm:h-[240px] lg:h-[260px]'
+          ? 'group relative flex h-[188px] flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] ring-1 ring-black/[0.06] outline-none transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.35)] hover:ring-black/10 motion-reduce:transition-none motion-reduce:hover:translate-y-0 xl:h-[210px]'
+          : 'group relative flex h-[220px] flex-col overflow-hidden rounded-2xl bg-[#f6f6f6] ring-1 ring-black/[0.06] outline-none transition duration-300 hover:-translate-y-1.5 hover:bg-white hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.35)] hover:ring-black/10 motion-reduce:hover:translate-y-0 sm:h-[240px] lg:h-[260px]'
       }
     >
       <div className="relative flex min-h-0 flex-1 items-center justify-center px-3 pt-4">

@@ -55,10 +55,37 @@ const emptyForm: FormState = {
   negotiable: true,
 };
 
-export function NewPartListingForm({ locale }: { locale: Locale }) {
+type LoadedPart = {
+  id: string;
+  kind: 'spare' | 'modified';
+  title: string;
+  description: string;
+  priceLkr: number;
+  condition: 'new' | 'used' | 'reconditioned';
+  categoryId: string;
+  category?: { parentId?: string | null } | null;
+  districtId: string;
+  cityId: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  negotiable?: boolean;
+  status?: string;
+  images?: { id: string }[];
+  fitments?: { brandId: string; modelId?: string | null }[];
+};
+
+export function NewPartListingForm({
+  locale,
+  listingId: existingId,
+}: {
+  locale: Locale;
+  listingId?: string;
+}) {
   const uid = useId();
+  const isEdit = Boolean(existingId);
   const [token, setToken] = useState<string | null>(null);
   const [step, setStep] = useState(1);
+  const [status, setStatus] = useState<string>('draft');
   const [form, setForm] = useState<FormState>(emptyForm);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [parentCategoryId, setParentCategoryId] = useState('');
@@ -103,11 +130,39 @@ export function NewPartListingForm({ locale }: { locale: Locale }) {
       apiGet<{ phone?: string | null }>('/api/v1/users/me', {
         token: access,
       }).catch(() => null),
+      existingId
+        ? apiGet<LoadedPart>(`/api/v1/part-listings/${existingId}`, {
+            token: access,
+          })
+        : Promise.resolve(null),
     ])
-      .then(([cats, brandList, districtList, me]) => {
+      .then(([cats, brandList, districtList, me, existing]) => {
         setCategories(cats);
         setBrands(brandList);
         setDistricts(districtList);
+        if (existing) {
+          const fit = existing.fitments?.[0];
+          setListingId(existing.id);
+          setStatus(existing.status ?? 'draft');
+          setPhotoCount(existing.images?.length ?? 0);
+          setParentCategoryId(existing.category?.parentId ?? '');
+          setForm({
+            kind: existing.kind,
+            title: existing.title,
+            description: existing.description,
+            priceLkr: String(existing.priceLkr),
+            condition: existing.condition,
+            categoryId: existing.categoryId,
+            brandId: fit?.brandId ?? '',
+            modelId: fit?.modelId ?? '',
+            districtId: existing.districtId,
+            cityId: existing.cityId,
+            phone: existing.phone ?? '',
+            whatsapp: existing.whatsapp ?? '',
+            negotiable: existing.negotiable ?? true,
+          });
+          return;
+        }
         if (me?.phone) {
           setForm((f) =>
             f.phone ? f : { ...f, phone: me.phone ?? '', whatsapp: me.phone ?? '' },
@@ -117,7 +172,7 @@ export function NewPartListingForm({ locale }: { locale: Locale }) {
       .catch((err) =>
         setError(err instanceof Error ? err.message : t(locale, 'failedToLoad')),
       );
-  }, [locale]);
+  }, [locale, existingId]);
 
   useEffect(() => {
     if (!form.brandId) {
@@ -239,6 +294,15 @@ export function NewPartListingForm({ locale }: { locale: Locale }) {
     }
     setBusy(true);
     try {
+      if (isEdit && !['draft', 'rejected'].includes(status)) {
+        await apiSend(`/api/v1/part-listings/${listingId}`, {
+          method: 'PATCH',
+          token: token!,
+          body: listingBody(),
+        });
+        setSubmitted(true);
+        return;
+      }
       await apiSend(`/api/v1/part-listings/${listingId}/submit`, {
         method: 'POST',
         token: token!,
@@ -255,7 +319,11 @@ export function NewPartListingForm({ locale }: { locale: Locale }) {
     return (
       <p className="mt-6 text-sm text-muted">
         <Link
-          href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/account/parts-listings/new`)}`}
+          href={`/${locale}/login?next=${encodeURIComponent(
+            existingId
+              ? `/${locale}/account/parts-listings/${existingId}/edit`
+              : `/${locale}/account/parts-listings/new`,
+          )}`}
           className="text-accent underline"
         >
           {t(locale, 'login')}
@@ -268,9 +336,11 @@ export function NewPartListingForm({ locale }: { locale: Locale }) {
     return (
       <div className="mt-8 border border-black/10 bg-surface/40 p-6">
         <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-accent">
-          {t(locale, 'adSubmitted')}
+          {isEdit ? t(locale, 'changesSaved') : t(locale, 'adSubmitted')}
         </p>
-        <p className="mt-2 text-sm text-muted">{t(locale, 'adSubmittedHint')}</p>
+        <p className="mt-2 text-sm text-muted">
+          {isEdit ? t(locale, 'editReviewHint') : t(locale, 'adSubmittedHint')}
+        </p>
         <Link
           href={`/${locale}/account/parts-listings`}
           className="mt-6 inline-flex bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
@@ -283,6 +353,9 @@ export function NewPartListingForm({ locale }: { locale: Locale }) {
 
   return (
     <div className="mt-6 w-full">
+      {isEdit && status === 'active' ? (
+        <p className="mb-4 text-sm text-muted">{t(locale, 'editReviewHint')}</p>
+      ) : null}
       <ol
         className="mb-6 flex w-full flex-wrap gap-2"
         aria-label={t(locale, 'sellFormSteps')}
@@ -627,7 +700,11 @@ export function NewPartListingForm({ locale }: { locale: Locale }) {
               onClick={() => void submitAd()}
               disabled={busy || photoCount < 1}
             >
-              {busy ? t(locale, 'submitting') : t(locale, 'submitForReview')}
+              {busy
+                ? t(locale, isEdit ? 'saving' : 'submitting')
+                : isEdit && !['draft', 'rejected'].includes(status)
+                  ? t(locale, 'saveChanges')
+                  : t(locale, 'submitForReview')}
             </button>
           </>
         ) : (
