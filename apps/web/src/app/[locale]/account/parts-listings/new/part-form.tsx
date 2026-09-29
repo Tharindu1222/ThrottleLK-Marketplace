@@ -334,16 +334,19 @@ export function NewPartListingForm({
 
   if (submitted) {
     return (
-      <div className="mt-8 border border-black/10 bg-surface/40 p-6">
-        <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-accent">
+      <div className="mt-8 max-w-xl rounded-2xl bg-white p-6 ring-1 ring-black/[0.06]">
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+          {isEdit ? t(locale, 'editListingEyebrow') : t(locale, 'listPartEyebrow')}
+        </p>
+        <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">
           {isEdit ? t(locale, 'changesSaved') : t(locale, 'adSubmitted')}
         </p>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-sm leading-relaxed text-muted">
           {isEdit ? t(locale, 'editReviewHint') : t(locale, 'adSubmittedHint')}
         </p>
         <Link
           href={`/${locale}/account/parts-listings`}
-          className="mt-6 inline-flex bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
+          className="mt-6 inline-flex rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
         >
           {t(locale, 'partsListings')}
         </Link>
@@ -352,10 +355,12 @@ export function NewPartListingForm({
   }
 
   return (
-    <div className="mt-6 w-full">
+    <div className="mt-8 w-full">
       <VerifyEmailCallout locale={locale} />
       {isEdit && status === 'active' ? (
-        <p className="mb-4 text-sm text-muted">{t(locale, 'editReviewHint')}</p>
+        <p className="mb-5 rounded-md border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          {t(locale, 'editReviewHint')}
+        </p>
       ) : null}
       <ol
         className="mb-6 flex w-full flex-wrap gap-2"
@@ -367,12 +372,12 @@ export function NewPartListingForm({
           return (
             <li
               key={s.id}
-              className={`inline-flex items-center gap-2 border px-3 py-1.5 text-xs tracking-wide ${
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs tracking-wide ring-1 ${
                 active
-                  ? 'border-accent bg-accent/10 text-accent'
+                  ? 'bg-accent/10 text-accent ring-accent/30'
                   : done
-                    ? 'border-black/15 bg-white text-foreground'
-                    : 'border-black/10 bg-white/60 text-muted'
+                    ? 'bg-white text-foreground ring-black/[0.08]'
+                    : 'bg-white/60 text-muted ring-black/[0.06]'
               }`}
             >
               <span
@@ -391,7 +396,15 @@ export function NewPartListingForm({
       </ol>
 
       {step === 1 ? (
-        <div className="grid gap-4 rounded-xl border border-black/[0.08] bg-white p-4 shadow-[0_1px_2px_rgba(15,15,15,0.04)] sm:p-5 lg:grid-cols-3">
+        <div className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6 lg:grid-cols-3">
+          <div className="lg:col-span-3">
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+              {t(locale, 'listPartStepDetails')}
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {t(locale, 'listPartStepDetails')}
+            </h2>
+          </div>
           <div>
             <label className={labelClass} htmlFor={`${uid}-kind`}>
               {t(locale, 'partKind')} *
@@ -524,7 +537,15 @@ export function NewPartListingForm({
       ) : null}
 
       {step === 2 ? (
-        <div className="grid gap-4 rounded-xl border border-black/[0.08] bg-white p-4 shadow-[0_1px_2px_rgba(15,15,15,0.04)] sm:p-5 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="lg:col-span-2 xl:col-span-3">
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+              {t(locale, 'listPartStepFitment')}
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {t(locale, 'listPartStepFitment')}
+            </h2>
+          </div>
           <div>
             <label className={labelClass} htmlFor={`${uid}-brand`}>
               {t(locale, 'fitsBrand')}
@@ -633,8 +654,17 @@ export function NewPartListingForm({
       ) : null}
 
       {step === 3 && listingId ? (
-        <div className="rounded-xl border border-black/[0.08] bg-white p-4 shadow-[0_1px_2px_rgba(15,15,15,0.04)] sm:p-5">
-          <p className="text-sm text-muted">{t(locale, 'photosHint')}</p>
+        <div className="rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+            {t(locale, 'sellStepPhotos')}
+          </p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            {t(locale, 'sellStepPhotos')}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            {t(locale, 'photosHint')}
+          </p>
+          <div className="mt-5">
           <PartListingImageManager
             listingId={listingId}
             locale={locale}
@@ -647,6 +677,7 @@ export function NewPartListingForm({
                 .catch(() => undefined);
             }}
           />
+          </div>
           {photoCount < 1 ? (
             <p className="mt-3 text-sm text-accent">
               {t(locale, 'uploadOnePhoto')}
@@ -665,14 +696,14 @@ export function NewPartListingForm({
       ) : null}
 
       {error ? (
-        <p className="mt-4 text-sm text-red-400">{error}</p>
+        <p className="mt-4 text-sm text-red-600">{error}</p>
       ) : null}
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         {step > 1 && step < 3 ? (
           <button
             type="button"
-            className="border border-black/20 px-4 py-2.5 text-sm text-foreground transition hover:border-accent"
+            className="rounded-md border border-black/15 bg-white px-4 py-2.5 text-sm text-foreground transition hover:border-black/25"
             onClick={() => {
               setError(null);
               setStep((s) => s - 1);
@@ -686,7 +717,7 @@ export function NewPartListingForm({
           <>
             <button
               type="button"
-              className="border border-black/20 px-4 py-2.5 text-sm text-foreground transition hover:border-accent"
+              className="rounded-md border border-black/15 bg-white px-4 py-2.5 text-sm text-foreground transition hover:border-black/25"
               onClick={() => {
                 setError(null);
                 setStep(2);
@@ -697,7 +728,7 @@ export function NewPartListingForm({
             </button>
             <button
               type="button"
-              className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50"
               onClick={() => void submitAd()}
               disabled={busy || photoCount < 1}
             >
@@ -711,7 +742,7 @@ export function NewPartListingForm({
         ) : (
           <button
             type="button"
-            className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110 disabled:opacity-60"
+            className="rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50"
             onClick={() => void goNext()}
             disabled={busy}
           >
@@ -720,7 +751,7 @@ export function NewPartListingForm({
         )}
         <Link
           href={`/${locale}/account/parts-listings`}
-          className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
+          className="text-sm text-muted underline-offset-4 hover:text-foreground hover:underline"
         >
           {t(locale, 'cancel')}
         </Link>

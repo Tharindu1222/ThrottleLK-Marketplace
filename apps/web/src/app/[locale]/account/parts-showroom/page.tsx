@@ -14,14 +14,17 @@ export default async function PartsShowroomPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
+      <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+        {t(locale, 'accountPartsShowroomEyebrow')}
+      </p>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
         {t(locale, 'partsShowroom')}
       </h1>
-      <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
         {t(locale, 'partsShowroomHint')}
       </p>
       <ShowroomSwitchNav locale={locale} />
-      <div className="mt-6">
+      <div className="mt-8">
         <PartsShowroomClient locale={locale} />
       </div>
     </div>

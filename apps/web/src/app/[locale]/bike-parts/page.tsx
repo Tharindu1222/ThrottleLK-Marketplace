@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { PartBrowseFilters } from '@/components/part-browse-filters';
 import { PartCard, type BrowsePartCard } from '@/components/part-card';
 import { Pagination } from '@/components/pagination';
+import { PromotedListingsRail } from '@/components/promoted-listings-rail';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { hrefWithPage, parsePageParam } from '@/lib/pagination';
@@ -105,21 +106,28 @@ export default async function BikePartsPage({
 
   const total = pager?.total ?? result.data.length;
   const tabClass = (active: boolean) =>
-    `rounded-full px-4 py-2 text-sm font-medium transition ${
+    `rounded-md px-4 py-2 text-sm font-semibold transition ${
       active
-        ? 'bg-foreground text-white'
-        : 'border border-black/15 bg-background hover:border-accent/40'
+        ? 'bg-[#0a0a0a] text-white'
+        : 'bg-background text-foreground ring-1 ring-black/10 hover:ring-accent/40'
     }`;
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
-      <h1
-        id="part-results"
-        className="font-[family-name:var(--font-display)] text-4xl tracking-wide"
-      >
-        {t(locale, 'bikePartsTitle')}
-      </h1>
-      <p className="mt-2 text-muted">{t(locale, 'bikePartsSubtitle')}</p>
+      <header>
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+          {t(locale, 'bikePartsBrowseEyebrow')}
+        </p>
+        <h1
+          id="part-results"
+          className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+        >
+          {t(locale, 'bikePartsTitle')}
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
+          {t(locale, 'bikePartsSubtitle')}
+        </p>
+      </header>
 
       <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label={t(locale, 'partKindFilter')}>
         <Link
@@ -171,6 +179,13 @@ export default async function BikePartsPage({
         </aside>
 
         <div>
+          <PromotedListingsRail
+            locale={locale}
+            surface="browse"
+            kind="part"
+            limit={6}
+            variant="browse"
+          />
           <p className="mb-4 text-sm text-muted">
             {total === 1
               ? t(locale, 'resultCountPartsOne')

@@ -1,15 +1,37 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { PromotionsService } from './promotions.service';
 import type { User } from '../users/user.entity';
 
-const seller = { id: 'seller-1', emailVerifiedAt: new Date() } as User;
+const seller = {
+  id: 'seller-1',
+  emailVerifiedAt: new Date(),
+  firstName: 'Nimal',
+  lastName: 'Perera',
+  email: 'nimal@example.com',
+  phone: '0771234567',
+} as User;
 const admin = { id: 'admin-1' } as User;
+
+function md5(value: string) {
+  return createHash('md5').update(value, 'utf8').digest('hex');
+}
 
 function makeService(overrides?: {
   listing?: { id: string; sellerId: string; status: string; title?: string };
   partListing?: { id: string; sellerId: string; status: string; title?: string };
-  pkg?: { id: string; kind: string; durationDays: number; priceLkr: number; isActive: boolean; name: string };
+  pkg?: {
+    id: string;
+    kind: string;
+    durationDays: number;
+    priceLkr: number;
+    isActive: boolean;
+    name: string;
+    tier?: string;
+    surfaces?: string[];
+    priority?: number;
+  };
   bank?: { id: string; isDefault: boolean; isActive: boolean };
   pending?: unknown;
   live?: unknown;
@@ -27,6 +49,9 @@ function makeService(overrides?: {
     priceLkr: 2500,
     isActive: true,
     name: '7 days',
+    tier: 'featured',
+    surfaces: ['home', 'browse', 'detail'],
+    priority: 20,
   };
   const bank = overrides?.bank ?? {
     id: 'bank-1',
@@ -66,7 +91,10 @@ function makeService(overrides?: {
   const storage = {
     putObject: jest.fn(async () => ({ storageKey: 'k', publicUrl: 'u' })),
     deleteObject: jest.fn(async () => undefined),
-    getObject: jest.fn(async () => ({ buffer: Buffer.from('x'), contentType: 'application/pdf' })),
+    getObject: jest.fn(async () => ({
+      buffer: Buffer.from('x'),
+      contentType: 'application/pdf',
+    })),
   };
   const notifications = {
     promoApproved: jest.fn(async () => undefined),
@@ -85,6 +113,21 @@ function makeService(overrides?: {
     listPublic: jest.fn(async () => ({ items: [] })),
   };
   const cache = { invalidateDashboard: jest.fn() };
+  const payhere = {
+    requireMerchantId: jest.fn(() => '123456'),
+    merchantSecret: jest.fn(() => 'secret_value'),
+    currency: jest.fn(() => 'LKR'),
+    mode: jest.fn(() => 'sandbox' as const),
+    checkoutUrl: jest.fn(() => 'https://sandbox.payhere.lk/pay/checkout'),
+    notifyUrl: jest.fn(
+      () => 'https://api.example/api/v1/promotions/payhere/notify',
+    ),
+    webUrl: jest.fn(() => 'http://localhost:3000'),
+    formatAmount: jest.fn((n: number) => Number(n).toFixed(2)),
+    buildCheckoutHash: jest.fn(() => 'CHECKOUT_HASH'),
+    buildNotifyHash: jest.fn(() => 'NOTIFY_HASH'),
+    verifyNotifyHash: jest.fn(() => true),
+  };
   const dataSource = {
     transaction: jest.fn(async (cb: (manager: unknown) => Promise<unknown>) => {
       const manager = {
@@ -145,6 +188,7 @@ function makeService(overrides?: {
     storage as never,
     notifications as never,
     cache as never,
+    payhere as never,
     dataSource as never,
   );
 
@@ -157,6 +201,7 @@ function makeService(overrides?: {
     listings,
     storage,
     notifications,
+    payhere,
     listing,
     pkg,
   };
@@ -183,7 +228,7 @@ describe('PromotionsService.createRequest', () => {
 
   it('rejects a second request while one is pending', async () => {
     const { service } = makeService({
-      pending: { id: 'req-old', status: 'pending' },
+      pending: { id: 'req-old', status: 'pending', sellerId: 'other' },
     });
     await expect(
       service.createRequest(
@@ -234,6 +279,159 @@ describe('PromotionsService.createRequest', () => {
   });
 });
 
+describe('PromotionsService.createCheckout', () => {
+  it('creates a payhere pending request and returns checkout fields', async () => {
+    const { service, requests, payhere } = makeService();
+    const result = await service.createCheckout(seller, {
+      packageId: 'pkg-1',
+      listingId: 'listing-1',
+      locale: 'en',
+    });
+    expect(requests.save).toHaveBeenCalled();
+    const saved = requests.save.mock.calls[0][0] as {
+      paymentProvider: string;
+      paymentStatus: string;
+      payhereOrderId: string;
+    };
+    expect(saved.paymentProvider).toBe('payhere');
+    expect(saved.paymentStatus).toBe('unpaid');
+    expect(saved.payhereOrderId).toMatch(/^promo_/);
+    expect(result.checkoutUrl).toBe('https://sandbox.payhere.lk/pay/checkout');
+    expect(result.merchant_id).toBe('123456');
+    expect(result.amount).toBe('2500.00');
+    expect(result.currency).toBe('LKR');
+    expect(result.hash).toBe('CHECKOUT_HASH');
+    expect(result.custom_1).toBe('req-1');
+    expect(result.return_url).toContain(
+      '/en/account/listings/listing-1/promote?paid=1',
+    );
+    expect(result.cancel_url).toContain('cancelled=1');
+    expect(payhere.requireMerchantId).toHaveBeenCalled();
+  });
+
+  it('reclaims an unpaid payhere pending for the same seller', async () => {
+    const pending = {
+      id: 'req-old',
+      status: 'pending',
+      sellerId: seller.id,
+      paymentProvider: 'payhere',
+      paymentStatus: 'unpaid',
+      packageId: 'pkg-old',
+    };
+    const { service, requests } = makeService({ pending });
+    await service.createCheckout(seller, {
+      packageId: 'pkg-1',
+      listingId: 'listing-1',
+    });
+    expect(requests.save).toHaveBeenCalled();
+    const saved = requests.save.mock.calls[0][0] as {
+      id: string;
+      packageId: string;
+      paymentStatus: string;
+    };
+    expect(saved.id).toBe('req-old');
+    expect(saved.packageId).toBe('pkg-1');
+    expect(saved.paymentStatus).toBe('unpaid');
+  });
+});
+
+describe('PromotionsService.handlePayHereNotify', () => {
+  it('activates on status_code 2 and is idempotent on repeat', async () => {
+    const { service, requests, placements, notifications, payhere } =
+      makeService();
+    const pendingRow = {
+      id: 'req-1',
+      status: 'pending',
+      sellerId: seller.id,
+      subjectType: 'bike',
+      listingId: 'listing-1',
+      partListingId: null,
+      paymentProvider: 'payhere',
+      paymentStatus: 'unpaid',
+      payhereOrderId: 'promo_abc',
+      package: {
+        durationDays: 7,
+        priceLkr: 2500,
+        name: '7 days',
+        tier: 'featured',
+        surfaces: ['home', 'browse', 'detail'],
+        priority: 20,
+      },
+      listing: { title: 'Honda Dio' },
+    };
+    requests.findOne.mockResolvedValue(pendingRow as never);
+
+    const amount = '2500.00';
+    const currency = 'LKR';
+    const statusCode = '2';
+    const secretHash = md5('secret_value').toUpperCase();
+    const md5sig = md5(
+      '123456' + 'promo_abc' + amount + currency + statusCode + secretHash,
+    ).toUpperCase();
+    payhere.verifyNotifyHash.mockReturnValue(true);
+
+    const first = await service.handlePayHereNotify({
+      merchant_id: '123456',
+      order_id: 'promo_abc',
+      payhere_amount: amount,
+      payhere_currency: currency,
+      status_code: statusCode,
+      md5sig,
+      payment_id: 'ph-1',
+      custom_1: 'req-1',
+    });
+    expect(first).toBe('OK');
+    expect(placements.save).toHaveBeenCalled();
+    expect(notifications.promoApproved).toHaveBeenCalled();
+
+    notifications.promoApproved.mockClear();
+    placements.save.mockClear();
+    requests.findOne.mockResolvedValue({
+      ...pendingRow,
+      status: 'approved',
+      paymentStatus: 'paid',
+    } as never);
+    const second = await service.handlePayHereNotify({
+      merchant_id: '123456',
+      order_id: 'promo_abc',
+      payhere_amount: amount,
+      payhere_currency: currency,
+      status_code: statusCode,
+      md5sig,
+      payment_id: 'ph-1',
+      custom_1: 'req-1',
+    });
+    expect(second).toBe('OK');
+    expect(notifications.promoApproved).not.toHaveBeenCalled();
+    expect(placements.save).not.toHaveBeenCalled();
+  });
+
+  it('marks payment failed on status_code -2', async () => {
+    const { service, requests, payhere } = makeService();
+    const pendingRow = {
+      id: 'req-1',
+      status: 'pending',
+      paymentStatus: 'unpaid',
+      payhereOrderId: 'promo_abc',
+      package: { priceLkr: 2500 },
+    };
+    requests.findOne.mockResolvedValue(pendingRow as never);
+    payhere.verifyNotifyHash.mockReturnValue(true);
+    const result = await service.handlePayHereNotify({
+      merchant_id: '123456',
+      order_id: 'promo_abc',
+      payhere_amount: '2500.00',
+      payhere_currency: 'LKR',
+      status_code: '-2',
+      md5sig: 'x',
+    });
+    expect(result).toBe('OK');
+    expect(requests.save).toHaveBeenCalled();
+    const saved = requests.save.mock.calls[0][0] as { paymentStatus: string };
+    expect(saved.paymentStatus).toBe('failed');
+  });
+});
+
 describe('PromotionsService.approve', () => {
   it('creates a placement ending after the package duration', async () => {
     const now = Date.now();
@@ -245,13 +443,27 @@ describe('PromotionsService.approve', () => {
       subjectType: 'bike',
       listingId: 'listing-1',
       partListingId: null,
-      package: { durationDays: 7, name: '7 days' },
+      package: {
+        durationDays: 7,
+        name: '7 days',
+        tier: 'featured',
+        surfaces: ['home', 'browse', 'detail'],
+        priority: 20,
+      },
     });
     const result = await service.approve(admin, 'req-1');
     expect(result.status).toBe('approved');
     expect(placements.save).toHaveBeenCalled();
-    const saved = placements.save.mock.calls[0][0] as { endsAt: Date };
+    const saved = placements.save.mock.calls[0][0] as {
+      endsAt: Date;
+      tier: string;
+      surfaces: string[];
+      priority: number;
+    };
     expect(saved.endsAt.getTime()).toBeGreaterThan(now + 6 * 86_400_000);
+    expect(saved.tier).toBe('featured');
+    expect(saved.surfaces).toEqual(['home', 'browse', 'detail']);
+    expect(saved.priority).toBe(20);
   });
 
   it('fails when the listing is no longer active', async () => {
@@ -265,7 +477,12 @@ describe('PromotionsService.approve', () => {
       subjectType: 'bike',
       listingId: 'listing-1',
       partListingId: null,
-      package: { durationDays: 7 },
+      package: {
+        durationDays: 7,
+        tier: 'featured',
+        surfaces: ['home', 'browse', 'detail'],
+        priority: 20,
+      },
     });
     listings.findOne.mockResolvedValue({
       id: 'listing-1',

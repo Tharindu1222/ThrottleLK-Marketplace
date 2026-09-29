@@ -5,6 +5,7 @@ import {
 } from '@/components/browse-filters';
 import { ListingCard, type BrowseListingCard } from '@/components/listing-card';
 import { Pagination } from '@/components/pagination';
+import { PromotedListingsRail } from '@/components/promoted-listings-rail';
 import { SaveSearchButton } from '@/components/save-search-button';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
@@ -65,13 +66,22 @@ export async function BikesBrowse({
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
-      <h1
-        id="listing-results"
-        className="font-[family-name:var(--font-display)] text-4xl tracking-wide"
-      >
-        {heading ?? t(locale, 'browse')}
-      </h1>
-      {intro ? <p className="mt-3 max-w-3xl text-muted">{intro}</p> : null}
+      <header>
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+          {t(locale, 'homeBrowseEyebrow')}
+        </p>
+        <h1
+          id="listing-results"
+          className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+        >
+          {heading ?? t(locale, 'browse')}
+        </h1>
+        {intro ? (
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
+            {intro}
+          </p>
+        ) : null}
+      </header>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
         <aside className="space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
@@ -86,6 +96,13 @@ export async function BikesBrowse({
         </aside>
 
         <div>
+          <PromotedListingsRail
+            locale={locale}
+            surface="browse"
+            kind="bike"
+            limit={6}
+            variant="browse"
+          />
           <p className="mb-4 text-sm text-muted">
             {total === 1
               ? t(locale, 'resultCountOne')
@@ -132,7 +149,7 @@ export async function BikesBrowse({
               __html: safeJsonLd(faqPageJsonLd(faqItems)),
             }}
           />
-          <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             {faqTitle}
           </h2>
           <dl className="mt-4 space-y-5 text-sm leading-relaxed text-foreground/90">

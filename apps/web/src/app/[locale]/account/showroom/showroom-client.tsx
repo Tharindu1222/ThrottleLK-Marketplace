@@ -59,13 +59,16 @@ type DealerImage = {
 };
 
 const fieldClass =
-  'w-full rounded-full border border-black/10 bg-surface/90 px-5 py-3 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
+  'w-full rounded-md border border-black/10 bg-surface/90 px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
 
 const areaClass =
-  'w-full resize-y rounded-2xl border border-black/10 bg-surface/90 px-5 py-3 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
+  'w-full resize-y rounded-2xl border border-black/10 bg-surface/90 px-4 py-3 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
 
 const cardClass =
-  'overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_1px_2px_rgba(15,15,15,0.04)]';
+  'overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06]';
+
+const ctaClass =
+  'inline-flex items-center justify-center rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-60';
 
 function Field({
   label,
@@ -431,7 +434,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
             aria-labelledby="showroom-saved-title"
             tabIndex={-1}
           >
-            <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-black/10 bg-white p-6 text-center shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
+            <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 text-center ring-1 ring-black/[0.06] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                 <svg
                   viewBox="0 0 24 24"
@@ -450,7 +453,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
               </div>
               <p
                 id="showroom-saved-title"
-                className="mt-4 font-[family-name:var(--font-display)] text-xl tracking-wide text-foreground"
+                className="mt-4 text-xl font-bold tracking-tight text-foreground"
               >
                 {ok}
               </p>
@@ -463,14 +466,14 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
                   onClick={() =>
                     router.push(`/${locale}/dealers/${dealer.slug}`)
                   }
-                  className="inline-flex justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent/90"
+                  className={ctaClass}
                 >
                   {t(locale, 'viewShowroom')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setOk(null)}
-                  className="inline-flex justify-center rounded-full border border-black/15 bg-white px-5 py-2.5 text-sm font-medium text-muted transition hover:border-black/25 hover:text-foreground"
+                  className="inline-flex justify-center rounded-md border border-black/15 bg-white px-5 py-2.5 text-sm font-medium text-muted transition hover:border-black/25 hover:text-foreground"
                 >
                   {t(locale, 'galleryClose')}
                 </button>
@@ -483,14 +486,16 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
 
   if (!token) {
     return (
-      <p className="text-muted">
-        <Link
-          href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/account/showroom`)}`}
-          className="font-medium text-foreground underline decoration-black/20 underline-offset-2 transition hover:text-accent hover:decoration-accent"
-        >
-          {t(locale, 'login')}
-        </Link>
-      </p>
+      <div className={`${cardClass} max-w-xl p-5 sm:p-6`}>
+        <p className="text-sm text-muted">
+          <Link
+            href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/account/showroom`)}`}
+            className="font-medium text-foreground underline decoration-black/20 underline-offset-2 transition hover:text-accent hover:decoration-accent"
+          >
+            {t(locale, 'login')}
+          </Link>
+        </p>
+      </div>
     );
   }
 
@@ -510,7 +515,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
   if (!dealer) {
     return (
       <section className={`${cardClass} max-w-xl p-5 sm:p-6`}>
-        <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground">
+        <p className="text-lg font-bold tracking-tight text-foreground">
           {t(locale, 'noActiveShowroom')}
         </p>
         <p className="mt-2 text-sm text-muted">
@@ -518,7 +523,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
         </p>
         <Link
           href={`/${locale}/dealers/apply`}
-          className="mt-5 inline-flex rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent/90"
+          className={`mt-5 ${ctaClass}`}
         >
           {t(locale, 'dealerApply')}
         </Link>
@@ -549,7 +554,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
         <div className="grid gap-5 lg:grid-cols-2">
           <section className={cardClass}>
             <header className="border-b border-black/[0.06] px-4 py-3.5 sm:px-5">
-              <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide">
+              <h2 className="text-lg font-bold tracking-tight text-foreground">
                 {t(locale, 'showroomShopInfo')}
               </h2>
             </header>
@@ -580,7 +585,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
 
           <section className={cardClass}>
             <header className="border-b border-black/[0.06] px-4 py-3.5 sm:px-5">
-              <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide">
+              <h2 className="text-lg font-bold tracking-tight text-foreground">
                 {t(locale, 'showroomContact')}
               </h2>
             </header>
@@ -632,7 +637,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
         {/* Location: map dominant */}
         <section className={cardClass}>
           <header className="border-b border-black/[0.06] px-4 py-3.5 sm:px-5">
-            <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide">
+            <h2 className="text-lg font-bold tracking-tight text-foreground">
               {t(locale, 'showroomLocation')}
             </h2>
           </header>
@@ -757,7 +762,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
             <button
               type="submit"
               disabled={saving || !districtId || !cityId}
-              className="inline-flex h-[46px] items-center justify-center rounded-full bg-accent px-8 text-sm font-medium text-white transition hover:bg-accent/90 disabled:opacity-60"
+              className={`h-[46px] px-8 ${ctaClass}`}
             >
               {saving ? t(locale, 'saving') : t(locale, 'saveShowroomDetails')}
             </button>

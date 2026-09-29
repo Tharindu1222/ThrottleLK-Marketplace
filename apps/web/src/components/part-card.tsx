@@ -9,6 +9,10 @@ import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { listingConditionLabel } from '@/lib/listing-labels';
+import {
+  promoCardBadgeLabel,
+  type PromoTier,
+} from '@/lib/promo-tier';
 
 export type BrowsePartCard = {
   id: string;
@@ -28,6 +32,8 @@ export type BrowsePartCard = {
   listedAt?: string | null;
   viewCount?: number | null;
   isTop?: boolean;
+  /** Promo package tier when served from promotions / home preview */
+  tier?: PromoTier | null;
 };
 
 function formatLkr(n: number) {
@@ -247,6 +253,7 @@ export function PartCard({
             part.viewCount.toLocaleString('en-LK'),
           )
       : null;
+  const promoBadge = promoCardBadgeLabel(locale, part.tier, part.isTop);
 
   return (
     <article className="group flex h-full flex-col overflow-hidden border border-black/10 bg-white transition hover:border-accent/35 hover:shadow-[0_12px_28px_-18px_rgba(15,15,15,0.35)]">
@@ -276,9 +283,9 @@ export function PartCard({
             <span className="inline-flex rounded-sm bg-black/70 px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-white uppercase">
               {kindLabel(locale, part.kind)}
             </span>
-            {part.isTop ? (
+            {promoBadge ? (
               <span className="inline-flex rounded-sm bg-accent px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-white uppercase">
-                {t(locale, 'homeTopBadge')}
+                {promoBadge}
               </span>
             ) : null}
           </div>

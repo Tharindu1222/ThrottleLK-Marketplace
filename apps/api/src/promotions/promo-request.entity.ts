@@ -16,6 +16,12 @@ import { PromoPackage } from './promo-package.entity';
 import type { PromoSubjectType } from './promo-package.entity';
 
 export type PromoRequestStatus = 'pending' | 'approved' | 'rejected';
+export type PromoPaymentProvider = 'payhere' | 'bank';
+export type PromoPaymentStatus =
+  | 'unpaid'
+  | 'paid'
+  | 'failed'
+  | 'chargedback';
 
 @Entity('promo_requests')
 @Index('IDX_promo_requests_status_created', ['status', 'createdAt'])
@@ -56,21 +62,36 @@ export class PromoRequest {
   @JoinColumn({ name: 'package_id' })
   package!: PromoPackage;
 
-  @Column({ name: 'bank_account_id' })
-  bankAccountId!: string;
+  @Column({ name: 'bank_account_id', type: 'uuid', nullable: true })
+  bankAccountId!: string | null;
 
-  @ManyToOne(() => PromoBankAccount)
+  @ManyToOne(() => PromoBankAccount, { nullable: true })
   @JoinColumn({ name: 'bank_account_id' })
-  bankAccount!: PromoBankAccount;
+  bankAccount!: PromoBankAccount | null;
 
-  @Column({ name: 'slip_storage_key', length: 400 })
-  slipStorageKey!: string;
+  @Column({ name: 'slip_storage_key', type: 'varchar', length: 400, nullable: true })
+  slipStorageKey!: string | null;
 
-  @Column({ name: 'slip_content_type', length: 80 })
-  slipContentType!: string;
+  @Column({ name: 'slip_content_type', type: 'varchar', length: 80, nullable: true })
+  slipContentType!: string | null;
 
-  @Column({ name: 'slip_original_name', length: 200 })
-  slipOriginalName!: string;
+  @Column({ name: 'slip_original_name', type: 'varchar', length: 200, nullable: true })
+  slipOriginalName!: string | null;
+
+  @Column({ name: 'payment_provider', type: 'varchar', length: 20, nullable: true })
+  paymentProvider!: PromoPaymentProvider | null;
+
+  @Column({ name: 'payhere_order_id', type: 'varchar', length: 80, nullable: true })
+  payhereOrderId!: string | null;
+
+  @Column({ name: 'payment_status', length: 20, default: 'unpaid' })
+  paymentStatus!: PromoPaymentStatus;
+
+  @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
+  paidAt!: Date | null;
+
+  @Column({ name: 'payhere_payment_id', type: 'varchar', length: 80, nullable: true })
+  payherePaymentId!: string | null;
 
   @Column({ length: 20, default: 'pending' })
   status!: PromoRequestStatus;

@@ -13,10 +13,15 @@ export default async function EditPartListingPage({
 
   return (
     <div className="w-full">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
+      <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+        {t(locale, 'editListingEyebrow')}
+      </p>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
         {t(locale, 'editListingPage')}
       </h1>
-      <p className="mt-2 text-sm text-muted">{t(locale, 'listPartHint')}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        {t(locale, 'listPartHint')}
+      </p>
       <NewPartListingForm locale={locale} listingId={id} />
     </div>
   );

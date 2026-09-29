@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  Header,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -14,10 +16,15 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import type { ApiSuccess } from '@throttlelk/types';
-import { createPromoRequestMetaSchema } from '@throttlelk/validation';
+import type { CreatePromoCheckoutInput } from '@throttlelk/validation';
+import {
+  createPromoCheckoutSchema,
+  createPromoRequestMetaSchema,
+} from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RateLimit } from '../common/rate-limit';
+import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { PromotionsService } from './promotions.service';
 import { SLIP_MAX_BYTES } from './promotions.util';
@@ -43,6 +50,30 @@ export class PromotionsController {
     return { success: true, data: await this.promotions.paymentInfo() };
   }
 
+  @Get('live')
+  async live(
+    @Query('surface') surface?: string,
+    @Query('kind') kind?: string,
+    @Query('limit') limitRaw?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    if (surface !== 'browse' && surface !== 'detail') {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'surface must be browse or detail',
+        },
+      });
+    }
+    const k = kind === 'part' ? 'part' : 'bike';
+    const parsed = Number.parseInt(limitRaw ?? '8', 10);
+    const limit = Number.isFinite(parsed) ? parsed : 8;
+    return {
+      success: true,
+      data: await this.promotions.listLiveForSurface(surface, k, limit),
+    };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('status')
   async status(
@@ -60,6 +91,29 @@ export class PromotionsController {
   @Get('mine')
   async mine(@CurrentUser() user: User): Promise<ApiSuccess<unknown>> {
     return { success: true, data: await this.promotions.mineStatuses(user.id) };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('checkout')
+  async checkout(
+    @CurrentUser() user: User,
+    @Body(new ZodValidationPipe(createPromoCheckoutSchema))
+    body: CreatePromoCheckoutInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.promotions.createCheckout(user, body),
+    };
+  }
+
+  /** PayHere IPN — public, application/x-www-form-urlencoded, plain OK. */
+  @Post('payhere/notify')
+  @HttpCode(200)
+  @Header('Content-Type', 'text/plain')
+  async payhereNotify(
+    @Body() body: Record<string, string>,
+  ): Promise<string> {
+    return this.promotions.handlePayHereNotify(body ?? {});
   }
 
   @UseGuards(JwtAuthGuard)

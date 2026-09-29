@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { t, type Locale } from '@/lib/i18n';
 
 export const inboxCardClass =
-  'overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-18px_rgba(0,0,0,0.22)]';
+  'overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06]';
 
 export type InboxFilter = 'all' | 'unread';
 
@@ -27,7 +27,7 @@ export function InboxToolbar({
         <div
           role="tablist"
           aria-label={t(locale, 'inboxFilters')}
-          className="inline-flex rounded-full border border-black/10 bg-white p-0.5 shadow-[0_1px_0_rgba(0,0,0,0.04)]"
+          className="inline-flex rounded-md bg-white p-0.5 ring-1 ring-black/[0.06]"
         >
           {(
             [
@@ -42,7 +42,7 @@ export function InboxToolbar({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className={`rounded-full px-3.5 py-1.5 text-sm transition ${
+                className={`rounded-md px-3.5 py-1.5 text-sm transition ${
                   active
                     ? 'bg-accent/10 font-medium text-accent'
                     : 'text-muted hover:text-foreground'
@@ -71,7 +71,7 @@ export function InboxSkeleton({ rows = 5 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="flex gap-3.5 border-b border-black/10 px-4 py-4 last:border-b-0 sm:px-5"
+          className="flex gap-3.5 border-b border-black/[0.06] px-4 py-4 last:border-b-0 sm:px-5"
         >
           <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-black/[0.06]" />
           <div className="min-w-0 flex-1 space-y-2 py-0.5">

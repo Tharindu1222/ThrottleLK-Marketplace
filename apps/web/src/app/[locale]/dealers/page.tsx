@@ -124,34 +124,39 @@ export default async function DealersIndexPage({
   const mapHref = `/${locale}/dealers/map`;
 
   const tabClass = (active: boolean) =>
-    `rounded-full px-4 py-2 text-sm font-medium transition ${
+    `rounded-md px-4 py-2 text-sm font-semibold transition ${
       active
-        ? 'bg-foreground text-white'
-        : 'border border-black/15 bg-background hover:border-accent/40'
+        ? 'bg-[#0a0a0a] text-white'
+        : 'bg-background text-foreground ring-1 ring-black/10 hover:ring-accent/40'
     }`;
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+        <header>
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+            {t(locale, 'dealersBrowseEyebrow')}
+          </p>
           <h1
             id="dealer-results"
-            className="font-[family-name:var(--font-display)] text-4xl tracking-wide"
+            className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
           >
             {t(locale, 'dealersNav')}
           </h1>
-          <p className="mt-2 text-muted">{t(locale, 'dealersHubSubtitle')}</p>
-        </div>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
+            {t(locale, 'dealersHubSubtitle')}
+          </p>
+        </header>
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={mapHref}
-            className="inline-flex items-center justify-center rounded-full border border-black/15 bg-background px-5 py-2.5 text-sm font-medium transition hover:border-accent/40"
+            className="inline-flex items-center justify-center rounded-md bg-background px-4 py-2.5 text-sm font-semibold text-foreground ring-1 ring-black/10 transition hover:ring-accent/40"
           >
             {t(locale, 'dealersMapView')}
           </Link>
           <BecomeDealerButton
             locale={locale}
-            className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="inline-flex items-center justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
           />
         </div>
       </div>
@@ -187,11 +192,11 @@ export default async function DealersIndexPage({
           name="q"
           defaultValue={q}
           placeholder={t(locale, 'searchPlaceholder')}
-          className="min-w-[220px] flex-1 bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent"
+          className="min-w-[220px] flex-1 rounded-md bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent"
         />
         <button
           type="submit"
-          className="rounded-md bg-foreground px-4 py-2 text-sm text-white"
+          className="rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
         >
           {t(locale, 'search')}
         </button>
@@ -209,7 +214,7 @@ export default async function DealersIndexPage({
               <Link
                 key={`${dealer.kind}-${dealer.id}`}
                 href={dealerHref(locale, dealer)}
-                className="overflow-hidden border border-black/10 bg-surface/40 hover:border-accent/40"
+                className="overflow-hidden bg-surface/40 ring-1 ring-black/10 transition hover:ring-accent/40"
               >
                 {dealer.coverImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -225,7 +230,7 @@ export default async function DealersIndexPage({
                 )}
                 <div className="p-5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-[family-name:var(--font-display)] text-2xl">
+                    <h2 className="text-xl font-bold tracking-tight text-foreground">
                       {dealer.name}
                     </h2>
                     {dealer.verifiedAt ? (

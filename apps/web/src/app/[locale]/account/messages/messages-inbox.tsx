@@ -169,7 +169,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
             filter === 'all' ? (
               <Link
                 href={`/${locale}/bikes`}
-                className="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
+                className="inline-flex items-center justify-center rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
               >
                 {t(locale, 'browse')}
               </Link>
@@ -188,7 +188,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
               <Link
                 key={row.id}
                 href={`/${locale}/account/messages/${row.id}`}
-                className={`flex gap-3.5 border-b border-black/10 px-4 py-3.5 transition last:border-b-0 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 sm:px-5 ${
+          className={`flex gap-3.5 border-b border-black/[0.06] px-4 py-3.5 transition last:border-b-0 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 sm:px-5 ${
                   unread ? 'bg-accent/[0.04]' : ''
                 }`}
               >
@@ -205,10 +205,10 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p
-                        className={`truncate font-[family-name:var(--font-display)] text-base tracking-wide sm:text-lg ${
+                        className={`truncate text-base tracking-tight sm:text-lg ${
                           unread
                             ? 'font-semibold text-foreground'
-                            : 'text-foreground'
+                            : 'font-medium text-foreground'
                         }`}
                       >
                         {name}

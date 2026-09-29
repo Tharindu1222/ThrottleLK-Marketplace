@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { PromoteListingForm } from '@/components/promote-listing-form';
 import { isLocale, type Locale } from '@/lib/i18n';
@@ -12,12 +13,14 @@ export default async function PromotePartPage({
   const locale = raw as Locale;
 
   return (
-    <PromoteListingForm
-      locale={locale}
-      kind="part"
-      partListingId={id}
-      title=""
-      backHref={`/${locale}/account/parts-listings`}
-    />
+    <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+      <PromoteListingForm
+        locale={locale}
+        kind="part"
+        partListingId={id}
+        title=""
+        backHref={`/${locale}/account/parts-listings`}
+      />
+    </Suspense>
   );
 }

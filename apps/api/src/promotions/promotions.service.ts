@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +16,7 @@ import {
 import type {
   AdminPlaceHomepageInput,
   CreatePromoBankAccountInput,
+  CreatePromoCheckoutInput,
   CreatePromoPackageInput,
   CreatePromoRequestMetaInput,
   UpdatePromoBankAccountInput,
@@ -31,8 +33,14 @@ import { PartListingsService } from '../part-listings/part-listings.service';
 import { StorageService } from '../storage/storage.service';
 import { User } from '../users/user.entity';
 import { HomepagePlacement } from './homepage-placement.entity';
+import { PayHereService } from './payhere.service';
 import { PromoBankAccount } from './promo-bank-account.entity';
-import { PromoPackage, type PromoSubjectType } from './promo-package.entity';
+import {
+  PromoPackage,
+  type PromoSubjectType,
+  type PromoSurface,
+  type PromoTier,
+} from './promo-package.entity';
 import { PromoRequest } from './promo-request.entity';
 import { PromoSettings } from './promo-settings.entity';
 import {
@@ -45,6 +53,19 @@ import {
 
 const PREVIEW_LIMIT = 8;
 
+const TIER_DEFAULTS: Record<
+  PromoTier,
+  { surfaces: PromoSurface[]; priority: number }
+> = {
+  boost: { surfaces: ['browse', 'detail'], priority: 10 },
+  featured: { surfaces: ['home', 'browse', 'detail'], priority: 20 },
+  premium: { surfaces: ['home', 'browse', 'detail'], priority: 30 },
+};
+
+function defaultsForTier(tier: PromoTier) {
+  return TIER_DEFAULTS[tier];
+}
+
 function isUniqueViolation(err: unknown): boolean {
   if (!(err instanceof QueryFailedError)) return false;
   const driver = err.driverError as { code?: string } | undefined;
@@ -53,6 +74,8 @@ function isUniqueViolation(err: unknown): boolean {
 
 @Injectable()
 export class PromotionsService {
+  private readonly logger = new Logger(PromotionsService.name);
+
   constructor(
     @InjectRepository(PromoPackage)
     private readonly packages: Repository<PromoPackage>,
@@ -73,6 +96,7 @@ export class PromotionsService {
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
     private readonly cache: CacheService,
+    private readonly payhere: PayHereService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -123,9 +147,18 @@ export class PromotionsService {
       where: listingId ? { listingId, sellerId } : { partListingId, sellerId },
       order: { createdAt: 'DESC' },
     });
+    const payhereRetryable =
+      pending?.sellerId === sellerId &&
+      pending.paymentProvider === 'payhere' &&
+      (pending.paymentStatus === 'unpaid' || pending.paymentStatus === 'failed');
     return {
       pending: pending
-        ? { id: pending.id, createdAt: pending.createdAt.toISOString() }
+        ? {
+            id: pending.id,
+            createdAt: pending.createdAt.toISOString(),
+            paymentProvider: pending.paymentProvider,
+            paymentStatus: pending.paymentStatus,
+          }
         : null,
       live: live
         ? { id: live.id, endsAt: live.endsAt.toISOString() }
@@ -134,7 +167,7 @@ export class PromotionsService {
         latest?.status === 'rejected'
           ? { reason: latest.rejectionReason }
           : null,
-      canRequest: !pending && !live,
+      canRequest: (!pending || payhereRetryable) && !live,
     };
   }
 
@@ -163,6 +196,143 @@ export class PromotionsService {
         partListingId: row.partListingId,
         endsAt: row.endsAt.toISOString(),
       })),
+    };
+  }
+
+  async createCheckout(seller: User, input: CreatePromoCheckoutInput) {
+    assertEmailVerified(seller, 'requesting a homepage ad');
+    const merchantId = this.payhere.requireMerchantId();
+    const subjectType: PromoSubjectType = input.listingId ? 'bike' : 'part';
+    const listingId = input.listingId ?? null;
+    const partListingId = input.partListingId ?? null;
+    await this.assertOwnedActive(seller.id, subjectType, listingId, partListingId);
+
+    const pkg = await this.packages.findOne({ where: { id: input.packageId } });
+    if (!pkg || !pkg.isActive || pkg.kind !== subjectType) {
+      throw new BadRequestException({
+        success: false,
+        error: { code: 'INVALID_PACKAGE', message: 'Package is not available' },
+      });
+    }
+    const existingPending = await this.findPending(listingId, partListingId);
+    if (existingPending) {
+      const reclaimable =
+        existingPending.sellerId === seller.id &&
+        existingPending.paymentProvider === 'payhere' &&
+        (existingPending.paymentStatus === 'unpaid' ||
+          existingPending.paymentStatus === 'failed');
+      if (!reclaimable) {
+        throw new BadRequestException({
+          success: false,
+          error: {
+            code: 'REQUEST_PENDING',
+            message: 'A homepage request is already pending',
+          },
+        });
+      }
+    }
+    if (await this.findLive(listingId, partListingId)) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'ALREADY_LIVE',
+          message: 'This listing is already on the homepage',
+        },
+      });
+    }
+
+    const orderId = `promo_${randomUUID()}`;
+    const currency = this.payhere.currency();
+    const amount = this.payhere.formatAmount(pkg.priceLkr);
+    const locale = input.locale === 'si' ? 'si' : 'en';
+    const promotePath = listingId
+      ? `/${locale}/account/listings/${listingId}/promote`
+      : `/${locale}/account/parts-listings/${partListingId}/promote`;
+    const webUrl = this.payhere.webUrl();
+    const returnUrl = `${webUrl}${promotePath}?paid=1`;
+    const cancelUrl = `${webUrl}${promotePath}?cancelled=1`;
+    const notifyUrl = this.payhere.notifyUrl();
+    if (!notifyUrl) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'PAYHERE_NOTIFY_MISSING',
+          message: 'PayHere notify URL is not configured',
+        },
+      });
+    }
+
+    let saved: PromoRequest;
+    try {
+      if (existingPending) {
+        existingPending.packageId = pkg.id;
+        existingPending.payhereOrderId = orderId;
+        existingPending.paymentStatus = 'unpaid';
+        existingPending.paymentProvider = 'payhere';
+        existingPending.bankAccountId = null;
+        existingPending.slipStorageKey = null;
+        existingPending.slipContentType = null;
+        existingPending.slipOriginalName = null;
+        existingPending.payherePaymentId = null;
+        existingPending.paidAt = null;
+        saved = await this.requests.save(existingPending);
+      } else {
+        saved = await this.requests.save(
+          this.requests.create({
+            sellerId: seller.id,
+            subjectType,
+            listingId,
+            partListingId,
+            packageId: pkg.id,
+            bankAccountId: null,
+            slipStorageKey: null,
+            slipContentType: null,
+            slipOriginalName: null,
+            paymentProvider: 'payhere',
+            payhereOrderId: orderId,
+            paymentStatus: 'unpaid',
+            status: 'pending',
+          }),
+        );
+      }
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new BadRequestException({
+          success: false,
+          error: {
+            code: 'REQUEST_PENDING',
+            message: 'A homepage request is already pending',
+          },
+        });
+      }
+      throw err;
+    }
+    this.cache.invalidateDashboard();
+
+    const hash = this.payhere.buildCheckoutHash({
+      merchantId,
+      orderId,
+      amount,
+      currency,
+    });
+    const items = `ThrottleLK ${pkg.name} (${pkg.durationDays} days)`;
+
+    return {
+      checkoutUrl: this.payhere.checkoutUrl(),
+      merchant_id: merchantId,
+      return_url: returnUrl,
+      cancel_url: cancelUrl,
+      notify_url: notifyUrl,
+      order_id: orderId,
+      items,
+      currency,
+      amount,
+      hash,
+      first_name: seller.firstName || 'Seller',
+      last_name: seller.lastName || 'ThrottleLK',
+      email: seller.email,
+      phone: seller.phone ?? undefined,
+      custom_1: saved.id,
     };
   }
 
@@ -232,6 +402,8 @@ export class PromotionsService {
           slipStorageKey: key,
           slipContentType: file!.mimetype,
           slipOriginalName: file!.originalname || 'slip',
+          paymentProvider: 'bank',
+          paymentStatus: 'unpaid',
           status: 'pending',
         }),
       );
@@ -271,20 +443,37 @@ export class PromotionsService {
         },
       });
     }
+    if (request.paymentProvider === 'payhere') {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'PAYHERE_NO_SLIP',
+          message: 'PayHere requests do not use payment slips',
+        },
+      });
+    }
     const key = `promo-slips/${request.id}/${randomUUID()}.${slipExtension(file!.mimetype)}`;
     await this.storage.putObject(key, file!.buffer, file!.mimetype, {
       access: 'private',
     });
-    await this.storage.deleteObject(request.slipStorageKey).catch(() => undefined);
+    if (request.slipStorageKey) {
+      await this.storage.deleteObject(request.slipStorageKey).catch(() => undefined);
+    }
     request.slipStorageKey = key;
     request.slipContentType = file!.mimetype;
     request.slipOriginalName = file!.originalname || 'slip';
     return this.requests.save(request);
   }
 
-  async approve(admin: User, requestId: string) {
-    const { saved, title, endsAt } = await this.dataSource.transaction(
-      async (manager) => {
+  /**
+   * Shared activation used by PayHere notify and admin bank-slip approve.
+   */
+  async activatePaidRequest(
+    requestId: string,
+    opts?: { paymentId?: string; reviewedById?: string },
+  ) {
+    const { saved, title, endsAt, alreadyActive } =
+      await this.dataSource.transaction(async (manager) => {
         const request = await manager
           .getRepository(PromoRequest)
           .createQueryBuilder('r')
@@ -295,6 +484,23 @@ export class PromotionsService {
           .where('r.id = :id', { id: requestId })
           .getOne();
         if (!request) this.notFound('Request');
+
+        if (
+          request.status === 'approved' &&
+          (request.paymentStatus === 'paid' ||
+            request.paymentProvider === 'bank')
+        ) {
+          return {
+            saved: request,
+            title:
+              request.listing?.title ??
+              request.partListing?.title ??
+              'Your listing',
+            endsAt: null as Date | null,
+            alreadyActive: true,
+          };
+        }
+
         if (request.status !== 'pending') {
           throw new BadRequestException({
             success: false,
@@ -323,6 +529,9 @@ export class PromotionsService {
           startsAt,
           request.package.durationDays,
         );
+        const pkg = request.package;
+        const tier: PromoTier = pkg.tier ?? 'featured';
+        const tierDefaults = defaultsForTier(tier);
         await manager.getRepository(HomepagePlacement).save(
           manager.getRepository(HomepagePlacement).create({
             requestId: request.id,
@@ -330,13 +539,27 @@ export class PromotionsService {
             subjectType: request.subjectType,
             listingId: request.listingId,
             partListingId: request.partListingId,
+            tier,
+            surfaces: pkg.surfaces?.length
+              ? pkg.surfaces
+              : tierDefaults.surfaces,
+            priority: pkg.priority ?? tierDefaults.priority,
             startsAt,
             endsAt: placementEndsAt,
           }),
         );
         request.status = 'approved';
-        request.reviewedById = admin.id;
-        request.reviewedAt = new Date();
+        request.paymentStatus = 'paid';
+        request.paidAt = new Date();
+        if (opts?.paymentId) {
+          request.payherePaymentId = opts.paymentId;
+        }
+        if (opts?.reviewedById) {
+          request.reviewedById = opts.reviewedById;
+          request.reviewedAt = new Date();
+        } else {
+          request.reviewedAt = new Date();
+        }
         request.rejectionReason = null;
         const row = await manager.getRepository(PromoRequest).save(request);
         return {
@@ -346,18 +569,116 @@ export class PromotionsService {
             request.partListing?.title ??
             'Your listing',
           endsAt: placementEndsAt,
+          alreadyActive: false,
         };
-      },
-    );
+      });
 
-    await this.notifications.promoApproved(saved.sellerId, {
-      title,
-      endsAt,
-      listingId: saved.listingId,
-      partListingId: saved.partListingId,
-    });
-    this.cache.invalidateDashboard();
+    if (!alreadyActive && endsAt) {
+      await this.notifications.promoApproved(saved.sellerId, {
+        title,
+        endsAt,
+        listingId: saved.listingId,
+        partListingId: saved.partListingId,
+      });
+      this.cache.invalidateDashboard();
+    }
     return saved;
+  }
+
+  async approve(admin: User, requestId: string) {
+    return this.activatePaidRequest(requestId, { reviewedById: admin.id });
+  }
+
+  async handlePayHereNotify(body: Record<string, string | undefined>) {
+    const merchantId = body.merchant_id ?? '';
+    const orderId = body.order_id ?? '';
+    const payhereAmount = body.payhere_amount ?? '';
+    const payhereCurrency = body.payhere_currency ?? '';
+    const statusCode = String(body.status_code ?? '');
+    const md5sig = body.md5sig ?? '';
+    const paymentId = body.payment_id ?? undefined;
+    const custom1 = body.custom_1 ?? undefined;
+
+    const configuredMerchant = this.payhere.requireMerchantId();
+    if (merchantId !== configuredMerchant) {
+      this.logger.warn(`PayHere notify merchant mismatch for order ${orderId}`);
+      return 'OK';
+    }
+
+    const valid = this.payhere.verifyNotifyHash({
+      merchantId,
+      orderId,
+      amount: payhereAmount,
+      currency: payhereCurrency,
+      statusCode,
+      md5sig,
+    });
+    if (!valid) {
+      this.logger.warn(`PayHere notify invalid hash for order ${orderId}`);
+      return 'OK';
+    }
+
+    const request =
+      (await this.requests.findOne({
+        where: { payhereOrderId: orderId },
+        relations: ['package'],
+      })) ??
+      (custom1
+        ? await this.requests.findOne({
+            where: { id: custom1 },
+            relations: ['package'],
+          })
+        : null);
+
+    if (!request) {
+      this.logger.warn(`PayHere notify unknown order ${orderId}`);
+      return 'OK';
+    }
+
+    if (request.status === 'approved' || request.paymentStatus === 'paid') {
+      return 'OK';
+    }
+
+    if (statusCode === '2') {
+      const expectedAmount = this.payhere.formatAmount(
+        request.package?.priceLkr ?? 0,
+      );
+      const expectedCurrency = this.payhere.currency();
+      if (
+        payhereAmount !== expectedAmount ||
+        payhereCurrency.toUpperCase() !== expectedCurrency
+      ) {
+        this.logger.warn(
+          `PayHere notify amount/currency mismatch for order ${orderId}`,
+        );
+        request.paymentStatus = 'failed';
+        await this.requests.save(request);
+        return 'OK';
+      }
+      try {
+        await this.activatePaidRequest(request.id, { paymentId });
+      } catch (err) {
+        this.logger.error(
+          `PayHere activate failed for ${request.id}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
+      return 'OK';
+    }
+
+    if (statusCode === '-3') {
+      request.paymentStatus = 'chargedback';
+      await this.requests.save(request);
+      return 'OK';
+    }
+
+    if (statusCode === '-1' || statusCode === '-2') {
+      request.paymentStatus = 'failed';
+      await this.requests.save(request);
+    }
+
+    return 'OK';
   }
 
   async reject(admin: User, requestId: string, reason: string) {
@@ -438,13 +759,19 @@ export class PromotionsService {
   async getSlip(requestId: string) {
     const request = await this.requests.findOne({ where: { id: requestId } });
     if (!request) this.notFound('Request');
+    if (!request.slipStorageKey) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'NO_SLIP', message: 'No payment slip for this request' },
+      });
+    }
     const { buffer, contentType } = await this.storage.getObject(
       request.slipStorageKey,
     );
     return {
       buffer,
-      contentType: contentType || request.slipContentType,
-      filename: request.slipOriginalName,
+      contentType: contentType || request.slipContentType || 'application/octet-stream',
+      filename: request.slipOriginalName || 'slip',
     };
   }
 
@@ -462,13 +789,31 @@ export class PromotionsService {
       await this.reject(admin, pending.id, 'Placed by admin');
     }
 
+    let tier: PromoTier = 'featured';
+    let surfaces: PromoSurface[] = defaultsForTier('featured').surfaces;
+    let priority = defaultsForTier('featured').priority;
+    let durationDays = input.durationDays ?? 7;
+    if (input.packageId) {
+      const pkg = await this.packages.findOne({
+        where: { id: input.packageId },
+      });
+      if (!pkg) this.notFound('Package');
+      tier = pkg.tier;
+      surfaces = [...pkg.surfaces];
+      priority = pkg.priority;
+      durationDays = input.durationDays ?? pkg.durationDays;
+    }
+
     const endsAt = input.endsAt
       ? new Date(input.endsAt)
-      : addUtcDays(new Date(), input.durationDays ?? 7);
+      : addUtcDays(new Date(), durationDays);
     const existing = await this.findLive(listingId, partListingId);
     if (existing) {
       existing.endsAt = endsAt;
       existing.source = 'admin_override';
+      existing.tier = tier;
+      existing.surfaces = surfaces;
+      existing.priority = priority;
       return this.placements.save(existing);
     }
     return this.placements.save(
@@ -478,6 +823,9 @@ export class PromotionsService {
         subjectType: input.subjectType,
         listingId,
         partListingId,
+        tier,
+        surfaces,
+        priority,
         startsAt: new Date(),
         endsAt,
       }),
@@ -500,11 +848,17 @@ export class PromotionsService {
 
   async marketplacePreview() {
     const now = new Date();
-    const live = await this.placements.find({
-      where: { endsAt: MoreThan(now) },
-      relations: ['listing', 'partListing'],
-      order: { startsAt: 'DESC' },
-    });
+    const live = await this.placements
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.listing', 'listing')
+      .leftJoinAndSelect('p.partListing', 'partListing')
+      .where('p.endsAt > :now', { now })
+      .andWhere(`p.surfaces @> :homeSurface::jsonb`, {
+        homeSurface: JSON.stringify(['home']),
+      })
+      .orderBy('p.priority', 'DESC')
+      .addOrderBy('p.startsAt', 'DESC')
+      .getMany();
     const bikeFeatured = live
       .filter((row) => row.subjectType === 'bike' && row.listing?.status === 'active')
       .map((row) => row.listingId)
@@ -547,6 +901,16 @@ export class PromotionsService {
 
     const featuredBikeSet = new Set(bikeFeatured);
     const featuredPartSet = new Set(partFeatured);
+    const bikeTierById = new Map(
+      live
+        .filter((row) => row.listingId)
+        .map((row) => [row.listingId!, row.tier] as const),
+    );
+    const partTierById = new Map(
+      live
+        .filter((row) => row.partListingId)
+        .map((row) => [row.partListingId!, row.tier] as const),
+    );
     const [bikes, parts] = await Promise.all([
       this.listingsService.browseCardsByIds(bikeIds),
       this.partListingsService.browseCardsByIds(partIds),
@@ -555,18 +919,77 @@ export class PromotionsService {
       bikes: bikes.map((card) => ({
         ...card,
         isTop: featuredBikeSet.has(card.id),
+        tier: bikeTierById.get(card.id) ?? null,
       })),
       parts: parts.map((card) => ({
         ...card,
         isTop: featuredPartSet.has(card.id),
+        tier: partTierById.get(card.id) ?? null,
       })),
     };
   }
 
+  async listLiveForSurface(
+    surface: PromoSurface,
+    kind: PromoSubjectType,
+    limit: number,
+  ) {
+    const capped = Math.min(Math.max(limit, 1), 24);
+    const now = new Date();
+    const live = await this.placements
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.listing', 'listing')
+      .leftJoinAndSelect('p.partListing', 'partListing')
+      .where('p.endsAt > :now', { now })
+      .andWhere('p.subjectType = :kind', { kind })
+      .andWhere(`p.surfaces @> :surface::jsonb`, {
+        surface: JSON.stringify([surface]),
+      })
+      .orderBy('p.priority', 'DESC')
+      .addOrderBy('p.startsAt', 'DESC')
+      .getMany();
+
+    if (kind === 'bike') {
+      const rows = live
+        .filter((row) => row.listing?.status === 'active')
+        .slice(0, capped);
+      const ids = rows
+        .map((row) => row.listingId)
+        .filter((id): id is string => Boolean(id));
+      const tierById = new Map(
+        rows.map((row) => [row.listingId!, row.tier] as const),
+      );
+      const cards = await this.listingsService.browseCardsByIds(ids);
+      return cards.map((card) => ({
+        ...card,
+        isTop: true,
+        tier: tierById.get(card.id) ?? 'featured',
+      }));
+    }
+
+    const rows = live
+      .filter((row) => row.partListing?.status === 'active')
+      .slice(0, capped);
+    const ids = rows
+      .map((row) => row.partListingId)
+      .filter((id): id is string => Boolean(id));
+    const tierById = new Map(
+      rows.map((row) => [row.partListingId!, row.tier] as const),
+    );
+    const cards = await this.partListingsService.browseCardsByIds(ids);
+    return cards.map((card) => ({
+      ...card,
+      isTop: true,
+      tier: tierById.get(card.id) ?? 'featured',
+    }));
+  }
+
   async createPackage(input: CreatePromoPackageInput) {
+    const fields = this.resolvePackageTierFields(input);
     return this.packages.save(
       this.packages.create({
         ...input,
+        ...fields,
         sortOrder: input.sortOrder ?? 0,
         isActive: input.isActive ?? true,
       }),
@@ -576,7 +999,13 @@ export class PromotionsService {
   async updatePackage(id: string, input: UpdatePromoPackageInput) {
     const row = await this.packages.findOne({ where: { id } });
     if (!row) this.notFound('Package');
-    Object.assign(row, input);
+    const next = { ...input };
+    if (next.tier !== undefined && next.surfaces === undefined) {
+      const defaults = defaultsForTier(next.tier);
+      next.surfaces = defaults.surfaces;
+      if (next.priority === undefined) next.priority = defaults.priority;
+    }
+    Object.assign(row, next);
     return this.packages.save(row);
   }
 
@@ -784,6 +1213,20 @@ export class PromotionsService {
         error: { code, message },
       });
     }
+  }
+
+  private resolvePackageTierFields(input: {
+    tier?: PromoTier;
+    surfaces?: PromoSurface[];
+    priority?: number;
+  }): { tier: PromoTier; surfaces: PromoSurface[]; priority: number } {
+    const tier = input.tier ?? 'featured';
+    const defaults = defaultsForTier(tier);
+    return {
+      tier,
+      surfaces: input.surfaces ?? defaults.surfaces,
+      priority: input.priority ?? defaults.priority,
+    };
   }
 
   private notFound(label: string): never {

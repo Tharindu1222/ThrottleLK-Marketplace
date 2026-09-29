@@ -18,6 +18,7 @@ import {
 } from '@/components/listing-card';
 import { PartCard, type BrowsePartCard } from '@/components/part-card';
 import { ListingViewTracker } from '@/components/listing-view-tracker';
+import { PromotedListingsRail } from '@/components/promoted-listings-rail';
 import { ReportListing } from '@/components/report-listing';
 import { BreadcrumbLabels } from '@/components/breadcrumbs';
 import {
@@ -306,6 +307,15 @@ export default async function ListingDetailPage({
           </div>
         </section>
       </div>
+
+      <PromotedListingsRail
+        locale={locale}
+        surface="detail"
+        kind="bike"
+        limit={4}
+        excludeId={listing.id}
+        variant="detail"
+      />
 
       {similarRow.length > 0 ? (
         <section className="mt-14 border-t border-black/10 pt-10">

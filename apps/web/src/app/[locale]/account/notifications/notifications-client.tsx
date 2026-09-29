@@ -163,7 +163,7 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
               <button
                 key={n.id}
                 type="button"
-                className={`flex w-full gap-3.5 border-b border-black/10 px-4 py-3.5 text-left transition last:border-b-0 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 sm:px-5 ${
+                className={`flex w-full gap-3.5 border-b border-black/[0.06] px-4 py-3.5 text-left transition last:border-b-0 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 sm:px-5 ${
                   unread ? 'bg-accent/[0.04]' : 'bg-white'
                 }`}
                 onClick={() => void openItem(n)}
@@ -180,10 +180,10 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <p
-                      className={`min-w-0 truncate font-[family-name:var(--font-display)] text-base tracking-wide sm:text-lg ${
+                      className={`min-w-0 truncate text-base tracking-tight sm:text-lg ${
                         unread
                           ? 'font-semibold text-foreground'
-                          : 'text-foreground'
+                          : 'font-medium text-foreground'
                       }`}
                     >
                       {n.title}

@@ -9,6 +9,7 @@ import { StorageModule } from '../storage/storage.module';
 import { AdminPromotionsController } from './admin-promotions.controller';
 import { HomeController } from './home.controller';
 import { HomepagePlacement } from './homepage-placement.entity';
+import { PayHereService } from './payhere.service';
 import { PromoBankAccount } from './promo-bank-account.entity';
 import { PromoPackage } from './promo-package.entity';
 import { PromoRequest } from './promo-request.entity';
@@ -37,7 +38,7 @@ import { PromotionsService } from './promotions.service';
     AdminPromotionsController,
     HomeController,
   ],
-  providers: [PromotionsService],
+  providers: [PromotionsService, PayHereService],
   exports: [PromotionsService],
 })
 export class PromotionsModule {}

@@ -15,10 +15,15 @@ export default async function SellPage({
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+          {t(locale, 'postAnAdEyebrow')}
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {t(locale, 'postAnAd')}
         </h1>
-        <p className="mt-2 text-muted">{t(locale, 'postAnAdHint')}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          {t(locale, 'postAnAdHint')}
+        </p>
       </div>
       <SellLoginGate locale={locale}>
         <SellForm locale={locale} />

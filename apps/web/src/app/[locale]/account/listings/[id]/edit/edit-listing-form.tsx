@@ -47,23 +47,6 @@ type ListingDetail = {
 const fieldClass =
   'w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35';
 
-function Icon({ children }: { children: ReactNode }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.85"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      {children}
-    </svg>
-  );
-}
-
 function statusLabel(locale: Locale, status: string) {
   switch (status) {
     case 'draft':
@@ -107,33 +90,26 @@ function Field({
   htmlFor,
   optional,
   optionalLabel,
-  icon,
   children,
 }: {
   label: string;
   htmlFor?: string;
   optional?: boolean;
   optionalLabel?: string;
-  icon: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="min-w-0">
       <label
         htmlFor={htmlFor}
-        className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground"
+        className="mb-1.5 block text-sm text-muted"
       >
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#f4f5f7] text-foreground/70">
-          {icon}
-        </span>
-        <span className="min-w-0">
-          {label}
-          {optional ? (
-            <span className="ml-1.5 font-normal text-muted">
-              ({optionalLabel})
-            </span>
-          ) : null}
-        </span>
+        {label}
+        {optional ? (
+          <span className="ml-1.5 font-normal text-muted/80">
+            ({optionalLabel})
+          </span>
+        ) : null}
       </label>
       {children}
     </div>
@@ -143,32 +119,30 @@ function Field({
 function Section({
   title,
   hint,
-  icon,
   children,
   className = '',
 }: {
   title: string;
   hint?: string;
-  icon: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <section
-      className={`flex h-full flex-col overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_1px_2px_rgba(15,15,15,0.04)] ${className}`}
+      className={`flex h-full flex-col rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6 ${className}`}
     >
-      <header className="flex items-center gap-3 border-b border-black/[0.06] px-4 py-3.5 sm:px-5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground">
-            {title}
-          </h2>
-          {hint ? <p className="text-xs text-muted">{hint}</p> : null}
-        </div>
+      <header className="mb-5">
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+          {title}
+        </p>
+        <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+          {title}
+        </h2>
+        {hint ? (
+          <p className="mt-2 text-sm leading-relaxed text-muted">{hint}</p>
+        ) : null}
       </header>
-      <div className="grid flex-1 gap-4 p-4 sm:p-5">{children}</div>
+      <div className="grid flex-1 gap-4">{children}</div>
     </section>
   );
 }
@@ -289,11 +263,11 @@ export function EditListingForm({
   if (!listing && !error) {
     return (
       <div className="mt-6 grid gap-5 xl:grid-cols-2" aria-busy="true">
-        <div className="h-10 animate-pulse rounded-lg bg-black/[0.06] xl:col-span-2" />
-        <div className="h-56 animate-pulse rounded-xl bg-black/[0.06]" />
-        <div className="h-56 animate-pulse rounded-xl bg-black/[0.06]" />
-        <div className="h-64 animate-pulse rounded-xl bg-black/[0.06]" />
-        <div className="h-64 animate-pulse rounded-xl bg-black/[0.06]" />
+        <div className="h-10 animate-pulse rounded-2xl bg-black/[0.06] xl:col-span-2" />
+        <div className="h-56 animate-pulse rounded-2xl bg-black/[0.06]" />
+        <div className="h-56 animate-pulse rounded-2xl bg-black/[0.06]" />
+        <div className="h-64 animate-pulse rounded-2xl bg-black/[0.06]" />
+        <div className="h-64 animate-pulse rounded-2xl bg-black/[0.06]" />
       </div>
     );
   }
@@ -308,6 +282,7 @@ export function EditListingForm({
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!listing) return;
     setError(null);
     setSaving(true);
     const form = new FormData(e.currentTarget);
@@ -386,43 +361,35 @@ export function EditListingForm({
         });
 
   return (
-    <div className="mt-5 w-full space-y-5">
+    <div className="mt-8 w-full space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href={listingsHref}
-          className="inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-accent"
+          className="text-sm text-muted underline-offset-4 hover:text-foreground hover:underline"
         >
-          <Icon>
-            <path d="M15 18l-6-6 6-6" />
-          </Icon>
           {t(locale, 'backToMyListings')}
         </Link>
         <span
-          className={`inline-flex rounded-sm px-2.5 py-1 text-[11px] font-semibold tracking-wide ${statusChipClass(listing.status)}`}
+          className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-semibold tracking-wide ${statusChipClass(listing.status)}`}
         >
           {statusLabel(locale, listing.status)}
         </span>
       </div>
 
-      <div className="rounded-xl border border-black/[0.08] bg-white px-4 py-3.5 sm:px-5">
-        <p className="text-[11px] font-medium tracking-[0.16em] text-muted uppercase">
+      <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-black/[0.06] sm:px-6">
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
           {t(locale, 'title')}
         </p>
-        <p className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground">
+        <p className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           {autoTitle}
         </p>
-        <p className="mt-1 text-sm text-muted">{t(locale, 'titleLockedHint')}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          {t(locale, 'titleLockedHint')}
+        </p>
       </div>
 
       {listing.status === 'active' ? (
-        <p className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-950">
-          <span className="mt-0.5 text-amber-700">
-            <Icon>
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 8v5" />
-              <path d="M12 16h.01" />
-            </Icon>
-          </span>
+        <p className="rounded-md border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           {t(locale, 'editReviewHint')}
         </p>
       ) : null}
@@ -431,22 +398,11 @@ export function EditListingForm({
         <Section
           className="xl:col-span-2"
           title={t(locale, 'sellStepDetails')}
-          icon={
-            <Icon>
-              <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-              <path d="M14 3v6h6" />
-            </Icon>
-          }
         >
           <div className="grid gap-4 xl:grid-cols-[1fr_16rem] xl:items-start">
             <Field
               label={t(locale, 'description')}
               htmlFor={`${uid}-description`}
-              icon={
-                <Icon>
-                  <path d="M4 6h16M4 12h10M4 18h14" />
-                </Icon>
-              }
             >
               <textarea
                 id={`${uid}-description`}
@@ -463,13 +419,6 @@ export function EditListingForm({
               <Field
                 label={t(locale, 'priceLkr')}
                 htmlFor={`${uid}-price`}
-                icon={
-                  <Icon>
-                    <rect x="3" y="6" width="18" height="12" rx="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <path d="M7 12h.01M17 12h.01" />
-                  </Icon>
-                }
               >
                 <input
                   id={`${uid}-price`}
@@ -488,12 +437,6 @@ export function EditListingForm({
                     htmlFor={`${uid}-purchaseDate`}
                     optional
                     optionalLabel={optionalLabel}
-                    icon={
-                      <Icon>
-                        <rect x="4" y="5" width="16" height="16" rx="2" />
-                        <path d="M8 3v4M16 3v4M4 11h16" />
-                      </Icon>
-                    }
                   >
                     <input
                       id={`${uid}-purchaseDate`}
@@ -512,13 +455,6 @@ export function EditListingForm({
                     htmlFor={`${uid}-costPrice`}
                     optional
                     optionalLabel={optionalLabel}
-                    icon={
-                      <Icon>
-                        <rect x="3" y="6" width="18" height="12" rx="2" />
-                        <circle cx="12" cy="12" r="2" />
-                        <path d="M7 12h.01M17 12h.01" />
-                      </Icon>
-                    }
                   >
                     <input
                       id={`${uid}-costPrice`}
@@ -541,23 +477,11 @@ export function EditListingForm({
 
         <Section
           title={t(locale, 'sellStepBike')}
-          icon={
-            <Icon>
-              <circle cx="6.5" cy="16.5" r="3" />
-              <circle cx="17.5" cy="16.5" r="3" />
-              <path d="M6.5 16.5L10 8h4l4 8.5M10 8l2 4h5" />
-            </Icon>
-          }
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label={t(locale, 'brandFilter')}
               htmlFor={`${uid}-brand`}
-              icon={
-                <Icon>
-                  <path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z" />
-                </Icon>
-              }
             >
               <select
                 id={`${uid}-brand`}
@@ -581,12 +505,6 @@ export function EditListingForm({
             <Field
               label={t(locale, 'modelFilter')}
               htmlFor={`${uid}-model`}
-              icon={
-                <Icon>
-                  <rect x="4" y="5" width="16" height="14" rx="2" />
-                  <path d="M8 9h8M8 13h5" />
-                </Icon>
-              }
             >
               <select
                 id={`${uid}-model`}
@@ -612,11 +530,6 @@ export function EditListingForm({
           <Field
             label={t(locale, 'categoryFilter')}
             htmlFor={`${uid}-category`}
-            icon={
-              <Icon>
-                <path d="M4 9h7V4H4zM13 20h7v-7h-7zM4 20h7v-7H4zM13 9h7V4h-7z" />
-              </Icon>
-            }
           >
             <select
               id={`${uid}-category`}
@@ -637,24 +550,11 @@ export function EditListingForm({
 
         <Section
           title={t(locale, 'sellStepSpecs')}
-          icon={
-            <Icon>
-              <circle cx="12" cy="13" r="8" />
-              <path d="M12 13l4-4" />
-              <path d="M7 8.5a8 8 0 0 1 10 0" />
-            </Icon>
-          }
         >
           <div className="grid gap-4 sm:grid-cols-3">
             <Field
               label={t(locale, 'manufactureYear')}
               htmlFor={`${uid}-year`}
-              icon={
-                <Icon>
-                  <rect x="4" y="5" width="16" height="16" rx="2" />
-                  <path d="M8 3v4M16 3v4M4 11h16" />
-                </Icon>
-              }
             >
               <input
                 id={`${uid}-year`}
@@ -673,12 +573,6 @@ export function EditListingForm({
               htmlFor={`${uid}-cc`}
               optional
               optionalLabel={optionalLabel}
-              icon={
-                <Icon>
-                  <path d="M7 8h10l1.5 4H18v5H6v-5h-.5L7 8z" />
-                  <path d="M9 8V6h6v2" />
-                </Icon>
-              }
             >
               <input
                 id={`${uid}-cc`}
@@ -694,12 +588,6 @@ export function EditListingForm({
               htmlFor={`${uid}-mileage`}
               optional
               optionalLabel={optionalLabel}
-              icon={
-                <Icon>
-                  <circle cx="12" cy="13" r="8" />
-                  <path d="M12 13l4-4" />
-                </Icon>
-              }
             >
               <input
                 id={`${uid}-mileage`}
@@ -715,13 +603,6 @@ export function EditListingForm({
             <Field
               label={t(locale, 'fuelType')}
               htmlFor={`${uid}-fuel`}
-              icon={
-                <Icon>
-                  <path d="M10 21V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14" />
-                  <path d="M8 21h12" />
-                  <path d="M16 11h3l2 3v7" />
-                </Icon>
-              }
             >
               <select
                 id={`${uid}-fuel`}
@@ -740,12 +621,6 @@ export function EditListingForm({
             <Field
               label={t(locale, 'transmission')}
               htmlFor={`${uid}-trans`}
-              icon={
-                <Icon>
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 5v2M12 17v2M5 12h2M17 12h2M7.1 7.1l1.4 1.4M15.5 15.5l1.4 1.4M7.1 16.9l1.4-1.4M15.5 8.5l1.4-1.4" />
-                </Icon>
-              }
             >
               <select
                 id={`${uid}-trans`}
@@ -763,12 +638,6 @@ export function EditListingForm({
             <Field
               label={t(locale, 'condition')}
               htmlFor={`${uid}-condition`}
-              icon={
-                <Icon>
-                  <path d="M12 3l7 4v5c0 5-3.5 8.5-7 10-4.5-1.5-8-5-8-10V7l7-4z" />
-                  <path d="M9 12l2 2 4-4" />
-                </Icon>
-              }
             >
               <select
                 id={`${uid}-condition`}
@@ -790,23 +659,11 @@ export function EditListingForm({
         <Section
           className="xl:col-span-2"
           title={t(locale, 'editLocationContact')}
-          icon={
-            <Icon>
-              <path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z" />
-              <circle cx="12" cy="10" r="2.5" />
-            </Icon>
-          }
         >
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <Field
               label={t(locale, 'districtFilter')}
               htmlFor={`${uid}-district`}
-              icon={
-                <Icon>
-                  <path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z" />
-                  <circle cx="12" cy="10" r="2.5" />
-                </Icon>
-              }
             >
               <select
                 id={`${uid}-district`}
@@ -830,12 +687,6 @@ export function EditListingForm({
             <Field
               label={t(locale, 'city')}
               htmlFor={`${uid}-city`}
-              icon={
-                <Icon>
-                  <path d="M4 20V9l8-5 8 5v11" />
-                  <path d="M9 20v-6h6v6" />
-                </Icon>
-              }
             >
               <select
                 id={`${uid}-city`}
@@ -858,11 +709,6 @@ export function EditListingForm({
               htmlFor={`${uid}-phone`}
               optional
               optionalLabel={optionalLabel}
-              icon={
-                <Icon>
-                  <path d="M7 3h4l2 5-3 2a12 12 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 7a2 2 0 0 1 2-2z" />
-                </Icon>
-              }
             >
               <input
                 id={`${uid}-phone`}
@@ -880,13 +726,6 @@ export function EditListingForm({
           className="xl:col-span-2"
           title={t(locale, 'sellStepPhotos')}
           hint={t(locale, 'photosHint')}
-          icon={
-            <Icon>
-              <rect x="3" y="5" width="18" height="14" rx="2" />
-              <circle cx="9" cy="11" r="1.5" />
-              <path d="M21 16l-5-5-8 8" />
-            </Icon>
-          }
         >
           <ListingImageManager listingId={listingId} locale={locale} />
         </Section>
@@ -900,21 +739,15 @@ export function EditListingForm({
         <div className="flex flex-col-reverse gap-3 xl:col-span-2 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href={listingsHref}
-            className="inline-flex items-center justify-center gap-1.5 px-2 py-2 text-sm text-muted transition hover:text-foreground"
+            className="inline-flex items-center justify-center px-2 py-2 text-sm text-muted underline-offset-4 hover:text-foreground hover:underline"
           >
-            <Icon>
-              <path d="M15 18l-6-6 6-6" />
-            </Icon>
             {t(locale, 'backToMyListings')}
           </Link>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center justify-center gap-2 bg-accent px-5 py-3 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110 disabled:opacity-60 sm:min-w-[12rem]"
+            className="inline-flex items-center justify-center rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50 sm:min-w-[12rem]"
           >
-            <Icon>
-              <path d="M5 12l5 5L20 7" />
-            </Icon>
             {saving ? t(locale, 'saving') : t(locale, 'saveChanges')}
           </button>
         </div>
@@ -932,16 +765,16 @@ export function EditListingForm({
           onClick={goToMyListings}
         >
           <div
-            className="w-full max-w-md border border-black/10 bg-background p-6 shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)]"
+            className="w-full max-w-md rounded-2xl bg-white p-6 ring-1 ring-black/[0.06] shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)]"
             onClick={(event) => event.stopPropagation()}
           >
             <p
               id={titleId}
-              className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-accent"
+              className="text-2xl font-bold tracking-tight text-foreground"
             >
               {t(locale, 'changesSaved')}
             </p>
-            <p id={descriptionId} className="mt-2 text-sm leading-6 text-muted">
+            <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-muted">
               {saveResult === 'review'
                 ? t(locale, 'adSubmittedHint')
                 : t(locale, 'listingUpdated')}
@@ -950,7 +783,7 @@ export function EditListingForm({
               ref={confirmButtonRef}
               type="button"
               onClick={goToMyListings}
-              className="mt-6 w-full bg-accent px-4 py-3 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
+              className="mt-6 w-full rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
             >
               {t(locale, 'viewMyListings')}
             </button>

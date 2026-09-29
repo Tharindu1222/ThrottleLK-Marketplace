@@ -8,6 +8,7 @@ import { ListingGallery } from '@/components/listing-gallery';
 import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { LocationPinIcon } from '@/components/listing-spec-sheet';
 import { PartViewTracker } from '@/components/part-view-tracker';
+import { PromotedListingsRail } from '@/components/promoted-listings-rail';
 import { apiGet } from '@/lib/api';
 import { readAccessCookie } from '@/lib/session-cookie';
 import { isLocale, t, type Locale } from '@/lib/i18n';
@@ -209,6 +210,15 @@ export default async function SparePartDetailPage({
           <ReportListing locale={locale} partListingId={part.id} />
         </section>
       </div>
+
+      <PromotedListingsRail
+        locale={locale}
+        surface="detail"
+        kind="part"
+        limit={4}
+        excludeId={part.id}
+        variant="detail"
+      />
     </main>
   );
 }

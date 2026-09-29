@@ -80,9 +80,9 @@ const titles: Record<
     placeholder: 'Search reports…',
   },
   'homepage-ads': {
-    title: 'Homepage ads',
+    title: 'Promotions',
     subtitle: 'Promo requests, placements, and packages',
-    placeholder: 'Search ads…',
+    placeholder: 'Search promotions…',
   },
   audit: {
     title: 'Audit log',

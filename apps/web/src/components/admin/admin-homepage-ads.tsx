@@ -7,6 +7,9 @@ import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type Tab = 'requests' | 'live' | 'settings';
 
+type PromoTier = 'boost' | 'featured' | 'premium';
+type PromoSurface = 'home' | 'browse' | 'detail';
+
 type PackageRow = {
   id: string;
   kind: 'bike' | 'part';
@@ -15,7 +18,33 @@ type PackageRow = {
   priceLkr: number;
   sortOrder: number;
   isActive: boolean;
+  tier: PromoTier;
+  surfaces: PromoSurface[];
+  priority: number;
 };
+
+const TIER_DEFAULTS: Record<
+  PromoTier,
+  { surfaces: PromoSurface[]; priority: number }
+> = {
+  boost: { surfaces: ['browse', 'detail'], priority: 10 },
+  featured: { surfaces: ['home', 'browse', 'detail'], priority: 20 },
+  premium: { surfaces: ['home', 'browse', 'detail'], priority: 30 },
+};
+
+const TIER_LABELS: Record<PromoTier, string> = {
+  boost: 'Boost',
+  featured: 'Featured',
+  premium: 'Premium',
+};
+
+const SURFACE_LABELS: Record<PromoSurface, string> = {
+  home: 'Home',
+  browse: 'Browse',
+  detail: 'Detail',
+};
+
+const ALL_SURFACES: PromoSurface[] = ['home', 'browse', 'detail'];
 
 type BankRow = {
   id: string;
@@ -33,7 +62,9 @@ type RequestRow = {
   status: string;
   createdAt: string;
   rejectionReason?: string | null;
-  slipContentType?: string;
+  slipContentType?: string | null;
+  paymentProvider?: string | null;
+  paymentStatus?: string | null;
   package?: { name: string; priceLkr: number; durationDays: number };
   seller?: { email: string; firstName: string; lastName: string };
   listing?: { id: string; title: string } | null;
@@ -46,6 +77,9 @@ type PlacementRow = {
   source: string;
   startsAt: string;
   endsAt: string;
+  tier?: PromoTier;
+  surfaces?: PromoSurface[];
+  priority?: number;
   listing?: { id: string; title: string } | null;
   partListing?: { id: string; title: string } | null;
 };
@@ -75,6 +109,13 @@ export function AdminHomepageAds() {
   const [pkgName, setPkgName] = useState('');
   const [pkgDays, setPkgDays] = useState('7');
   const [pkgPrice, setPkgPrice] = useState('');
+  const [pkgTier, setPkgTier] = useState<PromoTier>('featured');
+  const [pkgSurfaces, setPkgSurfaces] = useState<PromoSurface[]>(
+    TIER_DEFAULTS.featured.surfaces,
+  );
+  const [pkgPriority, setPkgPriority] = useState(
+    String(TIER_DEFAULTS.featured.priority),
+  );
 
   const [bankName, setBankName] = useState('');
   const [accountName, setAccountName] = useState('');
@@ -85,6 +126,7 @@ export function AdminHomepageAds() {
   const [placeQ, setPlaceQ] = useState('');
   const [placeHits, setPlaceHits] = useState<{ id: string; title: string }[]>([]);
   const [placeDays, setPlaceDays] = useState('7');
+  const [placePackageId, setPlacePackageId] = useState('');
 
   const token = () => getAccessToken();
 
@@ -158,9 +200,28 @@ export function AdminHomepageAds() {
     await load();
   }
 
+  function applyTierDefaults(tier: PromoTier) {
+    const defaults = TIER_DEFAULTS[tier];
+    setPkgTier(tier);
+    setPkgSurfaces(defaults.surfaces);
+    setPkgPriority(String(defaults.priority));
+  }
+
+  function toggleSurface(surface: PromoSurface) {
+    setPkgSurfaces((prev) =>
+      prev.includes(surface)
+        ? prev.filter((s) => s !== surface)
+        : [...prev, surface],
+    );
+  }
+
   async function addPackage() {
     const access = token();
     if (!access) return;
+    if (pkgSurfaces.length === 0) {
+      setError('Select at least one surface');
+      return;
+    }
     await apiSend('/api/v1/admin/promotions/packages', {
       token: access,
       body: {
@@ -168,10 +229,14 @@ export function AdminHomepageAds() {
         name: pkgName,
         durationDays: Number(pkgDays),
         priceLkr: Number(pkgPrice),
+        tier: pkgTier,
+        surfaces: pkgSurfaces,
+        priority: Number(pkgPriority),
       },
     });
     setPkgName('');
     setPkgPrice('');
+    applyTierDefaults('featured');
     await load();
   }
 
@@ -251,6 +316,7 @@ export function AdminHomepageAds() {
         listingId: placeKind === 'bike' ? id : undefined,
         partListingId: placeKind === 'part' ? id : undefined,
         durationDays: Number(placeDays),
+        packageId: placePackageId || undefined,
       },
     });
     setPlaceHits([]);
@@ -283,7 +349,7 @@ export function AdminHomepageAds() {
     <div className="space-y-4">
       <div
         role="tablist"
-        aria-label="Homepage ads sections"
+        aria-label="Promotions sections"
         className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-0.5"
       >
         {tabs.map((item) => {
@@ -338,15 +404,22 @@ export function AdminHomepageAds() {
                 </p>
                 <p className="mt-1 text-xs text-[var(--admin-muted)]">
                   {row.seller?.firstName} {row.seller?.lastName} · {row.seller?.email}
+                  {row.paymentProvider
+                    ? ` · ${row.paymentProvider}${
+                        row.paymentStatus ? ` (${row.paymentStatus})` : ''
+                      }`
+                    : ''}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className={btnGhost}
-                    onClick={() => void viewSlip(row.id, row.slipContentType)}
-                  >
-                    View slip
-                  </button>
+                  {row.slipContentType ? (
+                    <button
+                      type="button"
+                      className={btnGhost}
+                      onClick={() => void viewSlip(row.id, row.slipContentType ?? undefined)}
+                    >
+                      View slip
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className={btn}
@@ -408,10 +481,32 @@ export function AdminHomepageAds() {
               <select
                 className={inline}
                 value={placeKind}
-                onChange={(e) => setPlaceKind(e.target.value as 'bike' | 'part')}
+                onChange={(e) => {
+                  setPlaceKind(e.target.value as 'bike' | 'part');
+                  setPlacePackageId('');
+                }}
               >
                 <option value="bike">Bike</option>
                 <option value="part">Part</option>
+              </select>
+              <select
+                className={inline}
+                value={placePackageId}
+                onChange={(e) => {
+                  setPlacePackageId(e.target.value);
+                  const pkg = packages.find((row) => row.id === e.target.value);
+                  if (pkg) setPlaceDays(String(pkg.durationDays));
+                }}
+                aria-label="Package"
+              >
+                <option value="">Package (optional)</option>
+                {packages
+                  .filter((row) => row.kind === placeKind && row.isActive)
+                  .map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.tier} · {row.name} · {row.durationDays}d
+                    </option>
+                  ))}
               </select>
               <input
                 className={`${inline} min-w-[12rem]`}
@@ -471,7 +566,8 @@ export function AdminHomepageAds() {
                   {row.listing?.title ?? row.partListing?.title}
                 </p>
                 <p className="text-xs text-[var(--admin-muted)]">
-                  Until {new Date(row.endsAt).toLocaleDateString('en-LK')} ·{' '}
+                  {TIER_LABELS[row.tier ?? 'featured']} · Until{' '}
+                  {new Date(row.endsAt).toLocaleDateString('en-LK')} ·{' '}
                   {row.source}
                 </p>
               </div>
@@ -518,6 +614,28 @@ export function AdminHomepageAds() {
                 value={pkgPrice}
                 onChange={(e) => setPkgPrice(e.target.value)}
               />
+              <select
+                className={inline}
+                value={pkgTier}
+                onChange={(e) =>
+                  applyTierDefaults(e.target.value as PromoTier)
+                }
+                aria-label="Tier"
+              >
+                <option value="boost">Boost</option>
+                <option value="featured">Featured</option>
+                <option value="premium">Premium</option>
+              </select>
+              <input
+                className={`${inline} min-w-[4.5rem] w-20`}
+                type="number"
+                min={0}
+                max={1000}
+                placeholder="Priority"
+                value={pkgPriority}
+                onChange={(e) => setPkgPriority(e.target.value)}
+                aria-label="Priority"
+              />
               <button
                 type="button"
                 className={`${btn} ml-auto`}
@@ -526,26 +644,68 @@ export function AdminHomepageAds() {
                 Add
               </button>
             </div>
-            <ul className="mt-3 space-y-2">
-              {packages.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex items-center justify-between gap-2 text-sm text-[var(--admin-text)]"
+            <fieldset className="mt-3 flex flex-wrap items-center gap-3">
+              <legend className="sr-only">Surfaces</legend>
+              <span className="text-xs text-[var(--admin-muted)]">Surfaces</span>
+              {ALL_SURFACES.map((surface) => (
+                <label
+                  key={surface}
+                  className="inline-flex items-center gap-1.5 text-sm text-[var(--admin-text)]"
                 >
-                  <span className="min-w-0 truncate">
-                    {row.kind} · {row.name} · {row.durationDays}d · Rs.{' '}
-                    {row.priceLkr.toLocaleString('en-LK')}
-                    {row.isActive ? '' : ' (off)'}
-                  </span>
-                  <button
-                    type="button"
-                    className={btnGhost}
-                    onClick={() => void togglePackage(row)}
-                  >
-                    {row.isActive ? 'Disable' : 'Enable'}
-                  </button>
-                </li>
+                  <input
+                    type="checkbox"
+                    checked={pkgSurfaces.includes(surface)}
+                    onChange={() => toggleSurface(surface)}
+                  />
+                  {SURFACE_LABELS[surface]}
+                </label>
               ))}
+            </fieldset>
+            <ul className="mt-3 space-y-2">
+              {packages.map((row) => {
+                const tier = row.tier ?? 'featured';
+                const surfaces = row.surfaces?.length
+                  ? row.surfaces
+                  : TIER_DEFAULTS[tier].surfaces;
+                return (
+                  <li
+                    key={row.id}
+                    className="flex items-center justify-between gap-2 text-sm text-[var(--admin-text)]"
+                  >
+                    <div className="min-w-0 flex flex-wrap items-center gap-2">
+                      <span
+                        className="inline-flex rounded-md bg-[var(--admin-accent-soft)] px-1.5 py-0.5 text-xs font-medium text-[var(--admin-accent-2)]"
+                      >
+                        {TIER_LABELS[tier]}
+                      </span>
+                      <span className="min-w-0 truncate">
+                        {row.kind} · {row.name} · {row.durationDays}d · Rs.{' '}
+                        {row.priceLkr.toLocaleString('en-LK')}
+                        {row.isActive ? '' : ' (off)'}
+                        {' · p'}
+                        {row.priority ?? TIER_DEFAULTS[tier].priority}
+                      </span>
+                      <span className="flex flex-wrap gap-1">
+                        {surfaces.map((surface) => (
+                          <span
+                            key={surface}
+                            className="rounded border border-[var(--admin-border)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--admin-muted)]"
+                          >
+                            {SURFACE_LABELS[surface]}
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className={btnGhost}
+                      onClick={() => void togglePackage(row)}
+                    >
+                      {row.isActive ? 'Disable' : 'Enable'}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
 

@@ -429,16 +429,54 @@ export const adminCreateCitySchema = z.object({
 
 export const promoSubjectTypeSchema = z.enum(['bike', 'part']);
 
-export const createPromoPackageSchema = z.object({
-  kind: promoSubjectTypeSchema,
-  name: z.string().trim().min(1).max(80),
-  durationDays: z.number().int().min(1).max(365),
-  priceLkr: z.number().int().min(0),
+export const promoTierSchema = z.enum(['boost', 'featured', 'premium']);
+export const promoSurfaceSchema = z.enum(['home', 'browse', 'detail']);
+
+export const createPromoPackageSchema = z
+  .object({
+    kind: promoSubjectTypeSchema,
+    name: z.string().trim().min(1).max(80),
+    durationDays: z.number().int().min(1).max(365),
+    priceLkr: z.number().int().min(0),
+    sortOrder: z.number().int().min(0).optional(),
+    isActive: z.boolean().optional(),
+    tier: promoTierSchema.optional(),
+    surfaces: z.array(promoSurfaceSchema).min(1).optional(),
+    priority: z.number().int().min(0).max(1000).optional(),
+  })
+  .transform((data) => {
+    const tier = data.tier ?? 'featured';
+    const defaults =
+      tier === 'boost'
+        ? { surfaces: ['browse', 'detail'] as const, priority: 10 }
+        : tier === 'premium'
+          ? {
+              surfaces: ['home', 'browse', 'detail'] as const,
+              priority: 30,
+            }
+          : {
+              surfaces: ['home', 'browse', 'detail'] as const,
+              priority: 20,
+            };
+    return {
+      ...data,
+      tier,
+      surfaces: data.surfaces ?? [...defaults.surfaces],
+      priority: data.priority ?? defaults.priority,
+    };
+  });
+
+export const updatePromoPackageSchema = z.object({
+  kind: promoSubjectTypeSchema.optional(),
+  name: z.string().trim().min(1).max(80).optional(),
+  durationDays: z.number().int().min(1).max(365).optional(),
+  priceLkr: z.number().int().min(0).optional(),
   sortOrder: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
+  tier: promoTierSchema.optional(),
+  surfaces: z.array(promoSurfaceSchema).min(1).optional(),
+  priority: z.number().int().min(0).max(1000).optional(),
 });
-
-export const updatePromoPackageSchema = createPromoPackageSchema.partial();
 
 export const createPromoBankAccountSchema = z.object({
   bankName: z.string().trim().min(1).max(80),
@@ -473,6 +511,25 @@ export const createPromoRequestMetaSchema = z
     }
   });
 
+export const createPromoCheckoutSchema = z
+  .object({
+    packageId: z.string().uuid(),
+    listingId: z.string().uuid().optional(),
+    partListingId: z.string().uuid().optional(),
+    locale: z.enum(['en', 'si']).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasListing = Boolean(data.listingId);
+    const hasPart = Boolean(data.partListingId);
+    if (hasListing === hasPart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide exactly one of listingId or partListingId',
+        path: ['listingId'],
+      });
+    }
+  });
+
 export const rejectPromoRequestSchema = z.object({
   reason: z.string().trim().min(1).max(500),
 });
@@ -482,6 +539,7 @@ export const adminPlaceHomepageSchema = z
     subjectType: promoSubjectTypeSchema,
     listingId: z.string().uuid().optional(),
     partListingId: z.string().uuid().optional(),
+    packageId: z.string().uuid().optional(),
     durationDays: z.number().int().min(1).max(365).optional(),
     endsAt: z.string().datetime().optional(),
   })
@@ -646,6 +704,7 @@ export type UpdatePromoSettingsInput = z.infer<typeof updatePromoSettingsSchema>
 export type CreatePromoRequestMetaInput = z.infer<
   typeof createPromoRequestMetaSchema
 >;
+export type CreatePromoCheckoutInput = z.infer<typeof createPromoCheckoutSchema>;
 export type RejectPromoRequestInput = z.infer<typeof rejectPromoRequestSchema>;
 export type AdminPlaceHomepageInput = z.infer<typeof adminPlaceHomepageSchema>;
 export type AdminUpdatePlacementInput = z.infer<

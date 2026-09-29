@@ -14,10 +14,15 @@ export default async function MyPartsListingsPage({
 
   return (
     <div>
-      <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
+      <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+        {t(locale, 'accountPartsListingsEyebrow')}
+      </p>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
         {t(locale, 'partsListings')}
       </h1>
-      <p className="mt-2 text-sm text-muted">{t(locale, 'partsListingsHint')}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        {t(locale, 'partsListingsHint')}
+      </p>
       <div className="mt-8">
         <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
           <MyPartsListingsClient locale={locale} layout="cards" />

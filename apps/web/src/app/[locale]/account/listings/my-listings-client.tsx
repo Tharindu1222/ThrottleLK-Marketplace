@@ -110,7 +110,7 @@ function statusBadgeClass(status: string) {
 const btnBase =
   'inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium tracking-wide transition duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50';
 const btnGhost = `${btnBase} border border-black/[0.08] bg-[#f7f7f7] text-foreground hover:border-black/15 hover:bg-white hover:shadow-[0_1px_2px_rgba(15,15,15,0.06)]`;
-const btnSolid = `${btnBase} bg-foreground text-white hover:bg-foreground/90`;
+const btnSolid = `${btnBase} bg-[#0a0a0a] text-white hover:bg-accent`;
 const btnAccent = `${btnBase} bg-accent text-white hover:brightness-110`;
 
 function ActionIcon({ children }: { children: ReactNode }) {
@@ -301,15 +301,15 @@ function MarkSoldDialog({
     >
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm overflow-hidden rounded-2xl border border-black/10 bg-white p-6 text-left shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]"
+        className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 text-left shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] ring-1 ring-black/[0.06]"
       >
         <h2
           id={titleId}
-          className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground"
+          className="text-xl font-bold tracking-tight text-foreground"
         >
           {t(locale, 'markSold')}
         </h2>
-        <p className="mt-1 truncate text-sm text-muted">{listing.title}</p>
+        <p className="mt-1 truncate text-sm leading-relaxed text-muted">{listing.title}</p>
 
         <div className="mt-5">
           <label className={labelClass} htmlFor={priceId}>
@@ -444,7 +444,16 @@ function ListingActions({
           {viewBtn}
           {editBtn}
           {soldBtn}
-          <Link href={`/${locale}/account/listings/${listing.id}/promote`} className={btnGhost}>
+          <Link
+            href={`/${locale}/account/listings/${listing.id}/promote`}
+            className={`${btnAccent} w-full basis-full col-span-3 shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)]`}
+          >
+            <ActionIcon>
+              <path d="M12 3v18" />
+              <path d="M7 8l5-5 5 5" />
+              <path d="M5 14h14" />
+              <path d="M7 18h10" />
+            </ActionIcon>
             <span className="truncate">{t(locale, 'promoteListing')}</span>
           </Link>
         </>
@@ -612,9 +621,9 @@ export function MyListingsClient({
   }
 
   return (
-    <div className={embedded ? 'mt-0' : 'mt-8'}>
+    <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">
+        <p className="text-sm leading-relaxed text-muted">
           {(meta.total || listings.length) === 1
             ? t(locale, 'resultCountOne')
             : t(locale, 'resultCount').replace(
@@ -624,7 +633,7 @@ export function MyListingsClient({
         </p>
         <Link
           href={`/${locale}/sell`}
-          className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-sm tracking-wide text-white transition hover:brightness-110"
+          className="rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent"
         >
           {t(locale, 'createListing')}
         </Link>
@@ -636,11 +645,11 @@ export function MyListingsClient({
 
       <div aria-busy={loading} className={loading ? 'pointer-events-none opacity-60' : undefined}>
       {listings.length === 0 ? (
-        <div className="border border-dashed border-black/15 px-6 py-14 text-center">
-          <p className="text-muted">{t(locale, 'noListingsYet')}</p>
+        <div className="rounded-2xl bg-white px-6 py-14 text-center ring-1 ring-black/[0.06]">
+          <p className="text-sm leading-relaxed text-muted">{t(locale, 'noListingsYet')}</p>
           <Link
             href={`/${locale}/sell`}
-            className="mt-4 inline-flex bg-accent px-4 py-2 text-sm text-white transition hover:brightness-110"
+            className="mt-4 inline-flex rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-110"
           >
             {t(locale, 'createListing')}
           </Link>
@@ -683,7 +692,7 @@ export function MyListingsClient({
           })}
         </ul>
       ) : (
-        <ul className="divide-y divide-black/10 border border-black/10">
+        <ul className="divide-y divide-black/[0.06] overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06]">
           {listings.map((listing) => {
             const busy = busyId === listing.id;
             return (
@@ -692,7 +701,7 @@ export function MyListingsClient({
                 className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-4">
-                  <div className="h-16 w-24 shrink-0 overflow-hidden bg-background/80 ring-1 ring-black/10 sm:h-20 sm:w-28">
+                  <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-background/80 ring-1 ring-black/[0.06] sm:h-20 sm:w-28">
                     {listing.coverImageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -708,11 +717,11 @@ export function MyListingsClient({
                   </div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate font-[family-name:var(--font-display)] text-lg tracking-wide sm:text-xl">
+                      <h2 className="truncate text-lg font-bold tracking-tight sm:text-xl">
                         {listing.title}
                       </h2>
                       <span
-                        className={`inline-flex shrink-0 px-2 py-0.5 text-xs ring-1 ${statusBadgeClass(listing.status)}`}
+                        className={`inline-flex shrink-0 rounded-md px-2 py-0.5 text-xs ring-1 ${statusBadgeClass(listing.status)}`}
                       >
                         {statusLabel(locale, listing.status)}
                       </span>

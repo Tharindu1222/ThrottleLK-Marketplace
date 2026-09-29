@@ -1,34 +1,47 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { apiGet, apiUpload, ApiRequestError } from '@/lib/api';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
-import { whatsappHref } from '@/lib/whatsapp-href';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
+import {
+  PromoPackageCard,
+  type PromoPackageCardData,
+  type PromoTier,
+} from '@/components/promo-package-card';
 
-type Package = {
-  id: string;
-  name: string;
-  durationDays: number;
-  priceLkr: number;
-};
-
-type PaymentInfo = {
-  bank: {
-    bankName: string;
-    accountName: string;
-    accountNumber: string;
-    branch: string | null;
-  } | null;
-  whatsapp: string | null;
-};
+type Package = PromoPackageCardData;
 
 type Status = {
-  pending: { id: string } | null;
+  pending: {
+    id: string;
+    paymentProvider?: string | null;
+    paymentStatus?: string | null;
+  } | null;
   live: { endsAt: string } | null;
   rejected: { reason: string | null } | null;
   canRequest: boolean;
+};
+
+type PayHereCheckout = {
+  checkoutUrl: string;
+  merchant_id: string;
+  return_url: string;
+  cancel_url: string;
+  notify_url: string;
+  order_id: string;
+  items: string;
+  currency: string;
+  amount: string;
+  hash: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  custom_1: string;
 };
 
 function formatLkr(n: number) {
@@ -41,6 +54,51 @@ function formatDate(iso: string, locale: Locale) {
     month: 'short',
     year: 'numeric',
   });
+}
+
+const TIER_ORDER: PromoTier[] = ['boost', 'featured', 'premium'];
+
+function sortPackages(pkgs: Package[]): Package[] {
+  return [...pkgs].sort((a, b) => {
+    const ai = TIER_ORDER.indexOf(a.tier ?? 'featured');
+    const bi = TIER_ORDER.indexOf(b.tier ?? 'featured');
+    if (ai !== bi) return ai - bi;
+    return a.priceLkr - b.priceLkr;
+  });
+}
+
+function submitPayHereForm(checkout: PayHereCheckout) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = checkout.checkoutUrl;
+  form.style.display = 'none';
+
+  const fields: Record<string, string> = {
+    merchant_id: checkout.merchant_id,
+    return_url: checkout.return_url,
+    cancel_url: checkout.cancel_url,
+    notify_url: checkout.notify_url,
+    order_id: checkout.order_id,
+    items: checkout.items,
+    currency: checkout.currency,
+    amount: checkout.amount,
+    hash: checkout.hash,
+    first_name: checkout.first_name,
+    last_name: checkout.last_name,
+    email: checkout.email,
+    custom_1: checkout.custom_1,
+  };
+  if (checkout.phone) fields.phone = checkout.phone;
+
+  for (const [name, value] of Object.entries(fields)) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
 }
 
 export function PromoteListingForm({
@@ -58,17 +116,52 @@ export function PromoteListingForm({
   title: string;
   backHref: string;
 }) {
+  const searchParams = useSearchParams();
+  const paidReturn = searchParams.get('paid') === '1';
+  const cancelledReturn = searchParams.get('cancelled') === '1';
+
   const [packages, setPackages] = useState<Package[]>([]);
-  const [payment, setPayment] = useState<PaymentInfo | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [heading, setHeading] = useState(title);
+  const [waitingPayment, setWaitingPayment] = useState(paidReturn);
+  const [cancelledBanner, setCancelledBanner] = useState(cancelledReturn);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const payDialogId = `promote-pay-${useId().replace(/:/g, '')}`;
+  useDialogFocusTrap(payOpen, payDialogId);
 
   const selected = packages.find((pkg) => pkg.id === selectedId) ?? null;
+
+  function openPayModal(packageId: string) {
+    setSelectedId(packageId);
+    setError(null);
+    setPayOpen(true);
+  }
+
+  function closePayModal() {
+    if (busy) return;
+    setPayOpen(false);
+    setSelectedId(null);
+  }
+
+  async function refreshStatus(token: string) {
+    const st = await apiGet<Status>('/api/v1/promotions/status', {
+      token,
+      searchParams: { listingId, partListingId },
+    });
+    setStatus(st);
+    if (st.live) {
+      setWaitingPayment(false);
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    }
+    return st;
+  }
 
   useEffect(() => {
     const token = getAccessToken();
@@ -85,85 +178,129 @@ export function PromoteListingForm({
       apiGet<Package[]>('/api/v1/promotions/packages', {
         searchParams: { kind },
       }),
-      apiGet<PaymentInfo>('/api/v1/promotions/payment-info'),
       apiGet<Status>('/api/v1/promotions/status', {
         token,
-        searchParams: {
-          listingId,
-          partListingId,
-        },
+        searchParams: { listingId, partListingId },
       }),
       detail,
     ])
-      .then(([pkgs, info, st, row]) => {
-        setPackages(pkgs);
-        setPayment(info);
+      .then(([pkgs, st, row]) => {
+        setPackages(sortPackages(pkgs));
         setStatus(st);
         if (row.title) setHeading(row.title);
+        if (st.live) setWaitingPayment(false);
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : t(locale, 'uploadFailed')),
       );
   }, [kind, listingId, partListingId, locale, title]);
 
-  async function submit() {
+  useEffect(() => {
+    if (!waitingPayment || status?.live) return;
     const token = getAccessToken();
-    if (!token || !selected || !file) return;
+    if (!token) return;
+    pollRef.current = setInterval(() => {
+      void refreshStatus(token).catch(() => undefined);
+    }, 2500);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- poll while waiting
+  }, [waitingPayment, status?.live, listingId, partListingId]);
+
+  async function payWithPayHere() {
+    const token = getAccessToken();
+    if (!token || !selected) return;
     setBusy(true);
     setError(null);
+    setCancelledBanner(false);
     try {
-      await apiUpload('/api/v1/promotions/requests', file, token, {
-        packageId: selected.id,
-        ...(listingId ? { listingId } : {}),
-        ...(partListingId ? { partListingId } : {}),
-      });
-      setDone(true);
+      const checkout = await apiSend<PayHereCheckout>(
+        '/api/v1/promotions/checkout',
+        {
+          method: 'POST',
+          token,
+          body: {
+            packageId: selected.id,
+            locale,
+            ...(listingId ? { listingId } : {}),
+            ...(partListingId ? { partListingId } : {}),
+          },
+        },
+      );
+      submitPayHereForm(checkout);
     } catch (err) {
       setError(
         err instanceof ApiRequestError
           ? err.message
-          : t(locale, 'uploadFailed'),
+          : t(locale, 'promotePayFailed'),
       );
-    } finally {
       setBusy(false);
     }
   }
 
-  const waText = selected
-    ? `${heading} — ${selected.name} (${selected.durationDays} days) ${formatLkr(selected.priceLkr)}`
-    : heading;
+  const showCheckout =
+    !status?.live &&
+    !waitingPayment &&
+    (status?.canRequest || cancelledBanner);
+
+  const showBankPending =
+    status?.pending &&
+    !waitingPayment &&
+    !status.live &&
+    !status.canRequest &&
+    status.pending.paymentProvider !== 'payhere';
 
   return (
-    <div className="mx-auto max-w-xl space-y-8">
-      <div>
+    <div className="mx-auto max-w-5xl space-y-8">
+      <div className="max-w-xl">
         <Link
           href={backHref}
           className="text-sm text-muted underline-offset-4 hover:text-foreground hover:underline"
         >
           {t(locale, 'backToMyListings')}
         </Link>
-        <h1 className="mt-3 font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground">
+        <p className="mt-4 text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+          {t(locale, 'promoteEyebrow')}
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {t(locale, 'promoteTitle')}
         </h1>
-        <p className="mt-2 text-sm text-muted">{t(locale, 'promoteSubtitle')}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          {t(locale, 'promoteSubtitle')}
+        </p>
         <p className="mt-1 text-sm font-medium text-foreground">{heading}</p>
       </div>
 
       {status?.live ? (
-        <p className="rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
+        <p className="max-w-xl rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
           {t(locale, 'promoteLiveUntil').replace(
             '{date}',
             formatDate(status.live.endsAt, locale),
           )}
         </p>
       ) : null}
-      {status?.pending ? (
-        <p className="rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
+
+      {waitingPayment && !status?.live ? (
+        <p className="max-w-xl rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
+          {t(locale, 'promotePayWaiting')}
+        </p>
+      ) : null}
+
+      {cancelledBanner && !status?.live ? (
+        <p className="max-w-xl rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
+          {t(locale, 'promotePayCancelled')}
+        </p>
+      ) : null}
+
+      {showBankPending ? (
+        <p className="max-w-xl rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
           {t(locale, 'promotePending')}
         </p>
       ) : null}
+
       {status?.rejected && !status.pending && !status.live ? (
-        <p className="rounded-md border border-black/10 bg-white px-4 py-3 text-sm text-red-700">
+        <p className="max-w-xl rounded-md border border-black/10 bg-white px-4 py-3 text-sm text-red-700">
           {t(locale, 'promoteRejected').replace(
             '{reason}',
             status.rejected.reason ?? '',
@@ -171,135 +308,125 @@ export function PromoteListingForm({
         </p>
       ) : null}
 
-      {done ? (
-        <p className="rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
-          {t(locale, 'promoteSubmitted')}
-        </p>
+      {error && !payOpen ? (
+        <p className="max-w-xl text-sm text-red-600">{error}</p>
       ) : null}
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-      {!done && status?.canRequest ? (
-        <>
+      {showCheckout ? (
+        <div className="rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-8">
           <section>
-            <h2 className="text-sm font-semibold text-foreground">
-              {t(locale, 'promoteStepPackage')}
-            </h2>
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+                {t(locale, 'promoteStepPackageEyebrow')}
+              </p>
+              <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                {t(locale, 'promoteStepPackage')}
+              </h2>
+            </div>
             {packages.length === 0 ? (
               <p className="mt-3 text-sm text-muted">
                 {t(locale, 'promoteNoPackages')}
               </p>
             ) : (
-              <ul className="mt-3 grid gap-2">
+              <ul className="mt-6 grid list-none gap-4 md:grid-cols-3 md:items-stretch md:gap-5 md:pt-3">
                 {packages.map((pkg) => (
-                  <li key={pkg.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(pkg.id)}
-                      className={`flex w-full items-center justify-between rounded-md border px-4 py-3 text-left text-sm ${
-                        selectedId === pkg.id
-                          ? 'border-accent bg-accent/5'
-                          : 'border-black/10 bg-white hover:border-black/20'
-                      }`}
-                    >
-                      <span>
-                        <span className="font-medium">{pkg.name}</span>
-                        <span className="ml-2 text-muted">
-                          {t(locale, 'promoteDays').replace(
-                            '{n}',
-                            String(pkg.durationDays),
-                          )}
-                        </span>
-                      </span>
-                      <span className="font-semibold">
-                        {formatLkr(pkg.priceLkr)}
-                      </span>
-                    </button>
+                  <li key={pkg.id} className="h-full">
+                    <PromoPackageCard
+                      locale={locale}
+                      pkg={pkg}
+                      selected={payOpen && selectedId === pkg.id}
+                      onSelect={() => openPayModal(pkg.id)}
+                    />
                   </li>
                 ))}
               </ul>
             )}
           </section>
+        </div>
+      ) : null}
 
-          {selected ? (
-            <section>
-              <h2 className="text-sm font-semibold text-foreground">
-                {t(locale, 'promoteStepPay')}
-              </h2>
-              {!payment?.bank ? (
-                <p className="mt-3 text-sm text-muted">
-                  {payment?.whatsapp
-                    ? t(locale, 'promoteContactWhatsapp')
-                    : t(locale, 'promoteUnavailable')}
+      {payOpen && selected ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closePayModal();
+          }}
+        >
+          <div
+            id={payDialogId}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${payDialogId}-title`}
+            className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)] ring-1 ring-black/[0.08] sm:rounded-2xl sm:p-6"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+                  {t(locale, 'promoteStepPayEyebrow')}
                 </p>
-              ) : (
-                <dl className="mt-3 space-y-1 rounded-md border border-black/10 bg-white px-4 py-3 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted">{t(locale, 'promotePayAmount')}</dt>
-                    <dd className="font-semibold">{formatLkr(selected.priceLkr)}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted">{t(locale, 'promoteBankName')}</dt>
-                    <dd>{payment.bank.bankName}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted">{t(locale, 'promoteAccountName')}</dt>
-                    <dd>{payment.bank.accountName}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted">{t(locale, 'promoteAccountNumber')}</dt>
-                    <dd className="font-mono">{payment.bank.accountNumber}</dd>
-                  </div>
-                  {payment.bank.branch ? (
-                    <div className="flex justify-between gap-4">
-                      <dt className="text-muted">{t(locale, 'promoteBranch')}</dt>
-                      <dd>{payment.bank.branch}</dd>
-                    </div>
-                  ) : null}
-                </dl>
-              )}
-              {payment?.whatsapp ? (
-                <a
-                  href={whatsappHref(payment.whatsapp, waText)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex text-sm font-medium text-accent underline-offset-4 hover:underline"
+                <h2
+                  id={`${payDialogId}-title`}
+                  className="mt-2 text-xl font-bold tracking-tight text-foreground"
                 >
-                  {t(locale, 'promoteWhatsapp')}
-                </a>
-              ) : null}
-            </section>
-          ) : null}
-
-          {selected && payment?.bank ? (
-            <section>
-              <h2 className="text-sm font-semibold text-foreground">
-                {t(locale, 'promoteStepSlip')}
-              </h2>
-              <label className="mt-3 block text-sm text-muted" htmlFor="promo-slip">
-                {t(locale, 'promoteSlipLabel')}
-              </label>
-              <input
-                id="promo-slip"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="mt-1 block w-full text-sm"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              />
-              <p className="mt-1 text-xs text-muted">
-                {t(locale, 'promoteSlipHint')}
-              </p>
+                  {t(locale, 'promoteStepPay')}
+                </h2>
+                <p className="mt-1 text-sm text-muted">{heading}</p>
+              </div>
               <button
                 type="button"
-                disabled={busy || !file}
-                onClick={() => void submit()}
-                className="mt-4 inline-flex rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                onClick={closePayModal}
+                disabled={busy}
+                className="rounded-md px-2 py-1 text-sm text-muted transition hover:bg-black/[0.04] hover:text-foreground disabled:opacity-50"
               >
-                {busy ? t(locale, 'uploading') : t(locale, 'promoteSubmit')}
+                {t(locale, 'close')}
               </button>
-            </section>
-          ) : null}
-        </>
+            </div>
+
+            <dl className="mt-5 space-y-2 rounded-2xl bg-surface/60 px-4 py-3 text-sm ring-1 ring-black/[0.06]">
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted">{t(locale, 'promotePayAmount')}</dt>
+                <dd className="font-semibold">{formatLkr(selected.priceLkr)}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted">
+                  {t(locale, 'promoteStepPackageEyebrow')}
+                </dt>
+                <dd className="text-right">
+                  {selected.name} ·{' '}
+                  {t(locale, 'promoteDays').replace(
+                    '{n}',
+                    String(selected.durationDays),
+                  )}
+                </dd>
+              </div>
+            </dl>
+
+            {error ? (
+              <p className="mt-3 text-sm text-red-600">{error}</p>
+            ) : null}
+
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closePayModal}
+                disabled={busy}
+                className="inline-flex justify-center rounded-md px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-black/[0.04] hover:text-foreground disabled:opacity-50"
+              >
+                {t(locale, 'cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void payWithPayHere()}
+                className="inline-flex justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50"
+              >
+                {busy
+                  ? t(locale, 'promotePayRedirecting')
+                  : t(locale, 'promotePayCta')}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

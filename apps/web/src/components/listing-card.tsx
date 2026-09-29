@@ -19,6 +19,10 @@ import {
   type CompareItem,
 } from '@/lib/compare';
 import { VerifiedDealerIcon } from '@/components/verified-dealer-badge';
+import {
+  promoCardBadgeLabel,
+  type PromoTier,
+} from '@/lib/promo-tier';
 
 export type BrowseListingCard = {
   id: string;
@@ -40,6 +44,8 @@ export type BrowseListingCard = {
   listedAt?: string | null;
   viewCount?: number | null;
   isTop?: boolean;
+  /** Promo package tier when served from promotions / home preview */
+  tier?: PromoTier | null;
 };
 
 function OverlayTip({
@@ -472,6 +478,11 @@ export function ListingCard({
             listing.viewCount.toLocaleString('en-US'),
           )
       : null;
+  const promoBadge = promoCardBadgeLabel(
+    locale,
+    listing.tier,
+    listing.isTop,
+  );
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden border border-black/10 bg-white shadow-[0_1px_2px_rgba(15,15,15,0.06),0_10px_28px_-16px_rgba(15,15,15,0.22)] transition duration-300 ease-out hover:-translate-y-1 hover:border-accent/35 hover:shadow-[0_4px_8px_rgba(15,15,15,0.06),0_18px_36px_-16px_rgba(15,15,15,0.28)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
@@ -511,9 +522,9 @@ export function ListingCard({
           aria-hidden
           className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 via-black/20 to-transparent"
         />
-        {listing.isTop ? (
+        {promoBadge ? (
           <span className="absolute top-3 right-3 z-[2] rounded-sm bg-accent px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-white uppercase">
-            {t(locale, 'homeTopBadge')}
+            {promoBadge}
           </span>
         ) : null}
         {statusBadge ? (

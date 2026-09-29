@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 
 export type PromoSubjectType = 'bike' | 'part';
+export type PromoTier = 'boost' | 'featured' | 'premium';
+export type PromoSurface = 'home' | 'browse' | 'detail';
 
 @Entity('promo_packages')
 export class PromoPackage {
@@ -24,6 +26,15 @@ export class PromoPackage {
 
   @Column({ name: 'price_lkr', type: 'int' })
   priceLkr!: number;
+
+  @Column({ length: 20, default: 'featured' })
+  tier!: PromoTier;
+
+  @Column({ type: 'jsonb', default: () => `'["home","browse","detail"]'` })
+  surfaces!: PromoSurface[];
+
+  @Column({ type: 'int', default: 20 })
+  priority!: number;
 
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number;

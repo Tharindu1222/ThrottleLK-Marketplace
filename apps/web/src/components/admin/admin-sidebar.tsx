@@ -52,11 +52,11 @@ const nav = [
     ],
   },
   {
-    group: 'Ads',
+    group: 'Promotions',
     items: [
       {
         href: '/homepage-ads',
-        label: 'Homepage ads',
+        label: 'Promotions',
         icon: AdsIcon,
         badgeKey: 'promos' as const,
       },
@@ -215,7 +215,7 @@ export function AdminSidebar({
                             : count > 0 && badgeKey === 'reports'
                               ? `Reports, ${count} open`
                               : count > 0 && badgeKey === 'promos'
-                                ? `Homepage ads, ${count} pending`
+                                ? `Promotions, ${count} pending`
                                 : undefined
                         }
                       >

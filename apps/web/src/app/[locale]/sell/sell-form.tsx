@@ -55,7 +55,7 @@ const STEPS = [
 ] as const;
 
 const fieldClass =
-  'w-full bg-background px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 focus:ring-accent';
+  'w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35';
 const labelClass = 'mb-1.5 block text-sm text-muted';
 
 const emptyForm: FormState = {
@@ -374,14 +374,19 @@ export function SellForm({ locale }: { locale: Locale }) {
 
   if (submitted) {
     return (
-      <div className="mx-auto mt-8 max-w-xl border border-black/10 bg-surface/40 p-6 text-left">
-        <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-accent">
+      <div className="mx-auto mt-8 max-w-xl rounded-2xl bg-white p-6 text-left ring-1 ring-black/[0.06]">
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+          {t(locale, 'postAnAdEyebrow')}
+        </p>
+        <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">
           {t(locale, 'adSubmitted')}
         </p>
-        <p className="mt-2 text-muted">{t(locale, 'adSubmittedHint')}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          {t(locale, 'adSubmittedHint')}
+        </p>
         <Link
           href={`/${locale}/account/listings`}
-          className="mt-6 inline-flex bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white"
+          className="mt-6 inline-flex rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
         >
           {t(locale, 'manageListings')}
         </Link>
@@ -404,15 +409,21 @@ export function SellForm({ locale }: { locale: Locale }) {
           return (
             <li
               key={s.id}
-              className={`flex items-center gap-2 border px-3 py-1.5 text-xs tracking-wide ${
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs tracking-wide ring-1 ${
                 active
-                  ? 'border-accent text-accent'
+                  ? 'bg-accent/10 text-accent ring-accent/30'
                   : done
-                    ? 'border-black/20 text-foreground'
-                    : 'border-black/10 text-muted'
+                    ? 'bg-white text-foreground ring-black/[0.08]'
+                    : 'bg-white/60 text-muted ring-black/[0.06]'
               }`}
             >
-              <span className="font-[family-name:var(--font-display)] text-sm">
+              <span
+                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${
+                  active || done
+                    ? 'bg-accent text-white'
+                    : 'bg-black/5 text-muted'
+                }`}
+              >
                 {s.id}
               </span>
               {t(locale, s.labelKey)}
@@ -422,7 +433,15 @@ export function SellForm({ locale }: { locale: Locale }) {
       </ol>
 
       {step === 1 ? (
-        <div className="grid gap-4 text-left">
+        <div className="grid gap-4 rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:p-6">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+              {t(locale, 'sellStepBike')}
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {t(locale, 'sellStepBike')}
+            </h2>
+          </div>
           <SearchableCombobox
             label={t(locale, 'brandFilter')}
             required
@@ -516,7 +535,15 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {step === 2 ? (
-        <div className="grid gap-4 text-left sm:grid-cols-2">
+        <div className="grid gap-4 rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:grid-cols-2 sm:p-6">
+          <div className="sm:col-span-2">
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+              {t(locale, 'sellStepSpecs')}
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {t(locale, 'sellStepSpecs')}
+            </h2>
+          </div>
           <div>
             <label className={labelClass} htmlFor="manufactureYear">
               {t(locale, 'manufactureYear')} *
@@ -677,7 +704,15 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {step === 3 ? (
-        <div className="grid gap-4 text-left">
+        <div className="grid gap-4 rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:p-6">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+              {t(locale, 'sellStepDetails')}
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {t(locale, 'sellStepDetails')}
+            </h2>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass} htmlFor="districtId">
@@ -783,8 +818,17 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {step === 4 && listingId ? (
-        <div className="border border-black/10 bg-surface/40 p-4 text-left">
-          <p className="text-sm text-muted">{t(locale, 'photosHint')}</p>
+        <div className="rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:p-6">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+            {t(locale, 'sellStepPhotos')}
+          </p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            {t(locale, 'sellStepPhotos')}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            {t(locale, 'photosHint')}
+          </p>
+          <div className="mt-5">
           <ListingImageManager
             listingId={listingId}
             locale={locale}
@@ -797,6 +841,7 @@ export function SellForm({ locale }: { locale: Locale }) {
                 .catch(() => undefined);
             }}
           />
+          </div>
           {photoCount < 1 ? (
             <p className="mt-3 text-sm text-accent">
               {t(locale, 'uploadOnePhoto')}
@@ -812,14 +857,14 @@ export function SellForm({ locale }: { locale: Locale }) {
       ) : null}
 
       {error ? (
-        <p className="mt-4 text-center text-sm text-red-400">{error}</p>
+        <p className="mt-4 text-center text-sm text-red-600">{error}</p>
       ) : null}
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         {step > 1 && step < 4 ? (
           <button
             type="button"
-            className="border border-black/20 px-4 py-2.5 text-sm text-foreground hover:border-accent"
+            className="rounded-md border border-black/15 bg-white px-4 py-2.5 text-sm text-foreground transition hover:border-black/25"
             onClick={() => {
               setError(null);
               setStep((s) => s - 1);
@@ -833,7 +878,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           <>
             <button
               type="button"
-              className="border border-black/20 px-4 py-2.5 text-sm text-foreground hover:border-accent"
+              className="rounded-md border border-black/15 bg-white px-4 py-2.5 text-sm text-foreground transition hover:border-black/25"
               onClick={() => {
                 setError(null);
                 setStep(3);
@@ -845,7 +890,7 @@ export function SellForm({ locale }: { locale: Locale }) {
             <button
               type="button"
               disabled={busy || photoCount < 1}
-              className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white disabled:opacity-50"
+              className="rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50"
               onClick={() => void submitAd()}
             >
               {busy ? t(locale, 'posting') : t(locale, 'postAd')}
@@ -855,7 +900,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           <button
             type="button"
             disabled={busy}
-            className="bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white disabled:opacity-50"
+            className="rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50"
             onClick={() => void goNext()}
           >
             {busy

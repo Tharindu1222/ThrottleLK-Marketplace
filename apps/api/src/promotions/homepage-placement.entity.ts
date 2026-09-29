@@ -11,7 +11,11 @@ import {
 import { Listing } from '../listings/listing.entity';
 import { PartListing } from '../part-listings/part-listing.entity';
 import { PromoRequest } from './promo-request.entity';
-import type { PromoSubjectType } from './promo-package.entity';
+import type {
+  PromoSubjectType,
+  PromoSurface,
+  PromoTier,
+} from './promo-package.entity';
 
 export type PlacementSource = 'request' | 'admin_override';
 
@@ -49,6 +53,18 @@ export class HomepagePlacement {
   @ManyToOne(() => PartListing, { nullable: true })
   @JoinColumn({ name: 'part_listing_id' })
   partListing!: PartListing | null;
+
+  /** Snapshot from package at approve/place time. */
+  @Column({ length: 20, default: 'featured' })
+  tier!: PromoTier;
+
+  /** Snapshot from package at approve/place time. */
+  @Column({ type: 'jsonb', default: () => `'["home","browse","detail"]'` })
+  surfaces!: PromoSurface[];
+
+  /** Snapshot from package at approve/place time. */
+  @Column({ type: 'int', default: 20 })
+  priority!: number;
 
   @Column({ name: 'starts_at', type: 'timestamptz' })
   startsAt!: Date;

@@ -79,7 +79,7 @@ function AvatarBubble({
   }
   return (
     <div
-      className={`${dim} flex shrink-0 items-center justify-center rounded-full bg-[#f4f5f7] font-[family-name:var(--font-display)] tracking-wide text-foreground ring-4 ring-white shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]`}
+      className={`${dim} flex shrink-0 items-center justify-center rounded-full bg-[#f4f5f7] text-foreground ring-4 ring-white shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]`}
       aria-hidden
     >
       {initials(profile.firstName, profile.lastName)}
@@ -100,13 +100,13 @@ function Section({
 }) {
   return (
     <section
-      className={`flex flex-col overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_1px_2px_rgba(15,15,15,0.04)] ${className}`}
+      className={`flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06] ${className}`}
     >
       <header className="flex items-center gap-3 border-b border-black/[0.06] px-4 py-3.5 sm:px-5">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
           {icon}
         </span>
-        <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground">
+        <h2 className="text-lg font-bold tracking-tight text-foreground">
           {title}
         </h2>
       </header>
@@ -272,15 +272,18 @@ export function ProfileForm({ locale }: { locale: Locale }) {
 
   if (!profile && !error) {
     return (
-      <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]" aria-busy="true">
-        <div className="h-72 animate-pulse rounded-xl bg-black/[0.06]" />
-        <div className="space-y-5">
-          <div className="h-44 animate-pulse rounded-xl bg-black/[0.06]" />
-          <div className="h-36 animate-pulse rounded-xl bg-black/[0.06]" />
-        </div>
-        <span className="sr-only">{t(locale, 'loadingProfile')}</span>
+    <div
+      className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]"
+      aria-busy="true"
+    >
+      <div className="h-72 animate-pulse rounded-2xl bg-black/[0.06]" />
+      <div className="space-y-5">
+        <div className="h-44 animate-pulse rounded-2xl bg-black/[0.06]" />
+        <div className="h-36 animate-pulse rounded-2xl bg-black/[0.06]" />
       </div>
-    );
+      <span className="sr-only">{t(locale, 'loadingProfile')}</span>
+    </div>
+  );
   }
 
   if (!profile) {
@@ -391,8 +394,8 @@ export function ProfileForm({ locale }: { locale: Locale }) {
         onChange={(e) => void onAvatarSelected(e.target.files?.[0] ?? null)}
       />
 
-      <aside className="overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_1px_2px_rgba(15,15,15,0.04)] xl:sticky xl:top-0">
-        <div className="h-16 bg-gradient-to-br from-[#eceef1] via-[#f7f8f9] to-accent/10" />
+      <aside className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06] xl:sticky xl:top-0">
+        <div className="h-16 bg-[#f4f5f7]" />
         <div className="-mt-10 flex flex-col items-center px-5 pb-6 text-center">
           <div className="relative">
             <AvatarBubble profile={profile} size="xl" />
@@ -416,12 +419,12 @@ export function ProfileForm({ locale }: { locale: Locale }) {
               </Icon>
             </button>
           </div>
-          <h2 className="mt-4 max-w-full truncate font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground">
+          <h2 className="mt-4 max-w-full truncate text-2xl font-bold tracking-tight text-foreground">
             {fullName}
           </h2>
-          <p className="mt-1 text-sm text-muted">{sellerType}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted">{sellerType}</p>
           <span
-            className={`mt-3 inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
+            className={`mt-3 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
               verified
                 ? 'bg-emerald-700 text-white'
                 : 'bg-amber-400 text-zinc-950'
@@ -461,7 +464,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
             {editing ? (
               <button
                 type="button"
-                className="inline-flex items-center justify-center px-5 py-2.5 text-sm text-muted transition hover:text-foreground"
+                className="inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm text-muted transition hover:text-foreground"
                 onClick={() => {
                   setEditing(false);
                   setError(null);
@@ -473,7 +476,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
               <>
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center gap-2 bg-accent px-5 py-3 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-[#0a0a0a] px-5 py-3 text-sm font-medium text-white transition hover:bg-accent"
                   onClick={startEditing}
                 >
                   <Icon>
@@ -502,7 +505,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
       <div className="min-w-0 space-y-5">
         {ok ? (
           <p
-            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-950"
+            className="rounded-2xl bg-emerald-50 px-3.5 py-3 text-sm text-emerald-950 ring-1 ring-emerald-200"
             role="status"
           >
             {ok}
@@ -510,7 +513,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
         ) : null}
         {error ? (
           <p
-            className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-800"
+            className="rounded-2xl bg-red-50 px-3.5 py-3 text-sm text-red-800 ring-1 ring-red-200"
             role="alert"
           >
             {error}
@@ -518,7 +521,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
         ) : null}
 
         {!verified ? (
-          <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-2xl bg-amber-50 px-4 py-3.5 ring-1 ring-amber-200 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-2.5 text-sm text-amber-950">
               <span className="mt-0.5 text-amber-700">
                 <Icon>
@@ -529,7 +532,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
               </span>
               <div>
                 <p className="font-medium">{t(locale, 'emailNotVerified')}</p>
-                <p className="mt-0.5 text-amber-900/80">
+                <p className="mt-0.5 leading-relaxed text-amber-900/80">
                   {t(locale, 'emailNotVerifiedHint')}
                 </p>
               </div>
@@ -537,7 +540,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
             <button
               type="button"
               disabled={resending}
-              className="inline-flex shrink-0 items-center justify-center bg-white px-4 py-2.5 text-sm font-medium text-amber-950 ring-1 ring-amber-900/15 transition hover:bg-amber-100 disabled:opacity-60"
+              className="inline-flex shrink-0 items-center justify-center rounded-md bg-white px-4 py-2.5 text-sm font-medium text-amber-950 ring-1 ring-amber-900/15 transition hover:bg-amber-100 disabled:opacity-60"
               onClick={() => void resendVerification()}
             >
               {resending ? t(locale, 'sending') : t(locale, 'resendVerification')}
@@ -755,7 +758,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
-              className="inline-flex items-center justify-center px-5 py-2.5 text-sm text-muted transition hover:text-foreground"
+              className="inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm text-muted transition hover:text-foreground"
               onClick={() => {
                 setEditing(false);
                 setError(null);
@@ -766,7 +769,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 bg-accent px-5 py-3 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110 disabled:opacity-60 sm:min-w-[12rem]"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-[#0a0a0a] px-5 py-3 text-sm font-medium text-white transition hover:bg-accent disabled:opacity-60 sm:min-w-[12rem]"
             >
               <Icon>
                 <path d="M5 12l5 5L20 7" />

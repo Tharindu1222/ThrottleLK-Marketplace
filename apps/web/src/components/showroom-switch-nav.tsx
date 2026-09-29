@@ -41,7 +41,7 @@ export function ShowroomSwitchNav({ locale }: { locale: Locale }) {
   if (!bike && !parts) return null;
 
   const buttonClass =
-    'inline-flex items-center rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent/90';
+    'inline-flex items-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent';
 
   return (
     <nav aria-label={t(locale, 'viewShowroom')} className="mt-4 flex flex-wrap gap-2">
