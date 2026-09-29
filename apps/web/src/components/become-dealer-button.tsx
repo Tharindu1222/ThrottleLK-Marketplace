@@ -14,6 +14,11 @@ import {
   type OwnedDealerKind,
 } from '@/lib/owned-dealer';
 
+const CARD_IMAGE: Record<OwnedDealerKind, string> = {
+  bike: '/images/dealers/become-bike.png',
+  parts: '/images/dealers/become-parts.png',
+};
+
 export function BecomeDealerButton({
   locale,
   className,
@@ -97,7 +102,7 @@ export function BecomeDealerButton({
         ? createPortal(
             <div
               id={dialogId}
-              className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[90] flex items-end justify-center bg-black/50 p-0 backdrop-blur-[3px] sm:items-center sm:p-4"
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
@@ -107,18 +112,26 @@ export function BecomeDealerButton({
                 if (e.target === e.currentTarget) setOpen(false);
               }}
             >
-              <div className="w-full max-w-md overflow-hidden rounded-t-2xl border border-black/10 bg-white p-6 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:rounded-2xl">
+              <div className="w-full max-w-3xl overflow-hidden rounded-t-2xl border border-black/10 bg-white p-5 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:rounded-2xl sm:p-6">
                 <div className="flex items-start justify-between gap-3">
-                  <h2
-                    id={titleId}
-                    className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground"
-                  >
-                    {t(locale, 'becomeDealerChooseTitle')}
-                  </h2>
+                  <div className="min-w-0">
+                    <h2
+                      id={titleId}
+                      className="font-[family-name:var(--font-display)] text-2xl tracking-tight text-foreground sm:text-[1.75rem]"
+                    >
+                      {t(locale, 'becomeDealerChooseTitle')}
+                    </h2>
+                    <p
+                      id={hintId}
+                      className="mt-1.5 text-sm leading-relaxed text-muted"
+                    >
+                      {t(locale, 'becomeDealerChooseHint')}
+                    </p>
+                  </div>
                   <button
                     ref={closeRef}
                     type="button"
-                    className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-black/10 text-muted transition hover:border-black/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                    className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-accent/35 text-muted transition hover:border-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                     aria-label={t(locale, 'close')}
                     onClick={() => setOpen(false)}
                   >
@@ -134,10 +147,8 @@ export function BecomeDealerButton({
                     </svg>
                   </button>
                 </div>
-                <p id={hintId} className="mt-2 text-sm leading-relaxed text-muted">
-                  {t(locale, 'becomeDealerChooseHint')}
-                </p>
-                <div className="mt-5 flex flex-col gap-2.5">
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 sm:gap-4">
                   {loaded ? (
                     <>
                       <DealerChoice
@@ -153,8 +164,8 @@ export function BecomeDealerButton({
                     </>
                   ) : (
                     <>
-                      <div className="h-[4.5rem] animate-pulse rounded-xl bg-black/[0.06]" />
-                      <div className="h-[4.5rem] animate-pulse rounded-xl bg-black/[0.06]" />
+                      <div className="aspect-[4/3] animate-pulse rounded-2xl bg-black/[0.06]" />
+                      <div className="aspect-[4/3] animate-pulse rounded-2xl bg-black/[0.06]" />
                     </>
                   )}
                 </div>
@@ -167,21 +178,25 @@ export function BecomeDealerButton({
   );
 }
 
-function ShowroomKindBadge({
-  locale,
-  kind,
-}: {
-  locale: Locale;
-  kind: OwnedDealerKind;
-}) {
-  const isParts = kind === 'parts';
+function ArrowCircle({ accent }: { accent: boolean }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${
-        isParts ? 'bg-accent text-white' : 'bg-foreground text-white'
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-white shadow-[0_10px_24px_-12px_rgba(15,15,15,0.55)] transition group-hover:scale-[1.04] ${
+        accent ? 'bg-accent' : 'bg-foreground'
       }`}
+      aria-hidden
     >
-      {isParts ? t(locale, 'partsShowroom') : t(locale, 'bikeShowroom')}
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 12h12M13 6l6 6-6 6" />
+      </svg>
     </span>
   );
 }
@@ -195,41 +210,57 @@ function DealerChoice({
   kind: OwnedDealerKind;
   dealer: OwnedDealer | null;
 }) {
-  const applyHref =
-    kind === 'parts'
-      ? `/${locale}/parts-dealers/apply`
-      : `/${locale}/dealers/apply`;
-  const applyHint =
-    kind === 'parts'
-      ? t(locale, 'becomeDealerChoosePartsHint')
-      : t(locale, 'becomeDealerChooseBikeHint');
-
-  if (dealer) {
-    return (
-      <Link
-        href={ownedDealerHref(locale, kind, dealer)}
-        className="rounded-xl border border-black/10 px-4 py-3.5 text-left transition hover:border-accent/40 hover:bg-surface/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-      >
-        <ShowroomKindBadge locale={locale} kind={kind} />
-        <span className="mt-2 block font-semibold text-foreground">
-          {dealer.name}
-        </span>
-        <span className="mt-1 block text-sm text-muted">
-          {dealer.status === 'active'
-            ? t(locale, 'viewShowroom')
-            : t(locale, 'dealerPendingHint')}
-        </span>
-      </Link>
-    );
-  }
+  const isParts = kind === 'parts';
+  const applyHref = isParts
+    ? `/${locale}/parts-dealers/apply`
+    : `/${locale}/dealers/apply`;
+  const applyHint = isParts
+    ? t(locale, 'becomeDealerChoosePartsHint')
+    : t(locale, 'becomeDealerChooseBikeHint');
+  const badge = isParts
+    ? t(locale, 'partsShowroom')
+    : t(locale, 'bikeShowroom');
+  const href = dealer ? ownedDealerHref(locale, kind, dealer) : applyHref;
+  const title = dealer
+    ? dealer.name
+    : isParts
+      ? t(locale, 'becomeDealerChooseParts')
+      : t(locale, 'becomeDealerChooseBike');
+  const subtitle = dealer
+    ? dealer.status === 'active'
+      ? t(locale, 'viewShowroom')
+      : t(locale, 'dealerPendingHint')
+    : applyHint;
 
   return (
     <Link
-      href={applyHref}
-      className="rounded-xl border border-black/10 px-4 py-3.5 text-left transition hover:border-accent/40 hover:bg-surface/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+      href={href}
+      className="group relative isolate block aspect-[4/3] overflow-hidden rounded-2xl bg-white shadow-[0_14px_36px_-18px_rgba(15,15,15,0.35)] ring-1 ring-black/10 transition hover:ring-accent/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
     >
-      <ShowroomKindBadge locale={locale} kind={kind} />
-      <span className="mt-2 block text-sm text-muted">{applyHint}</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={CARD_IMAGE[kind]}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.02]"
+      />
+      <div className="relative z-10 flex h-full flex-col justify-between p-4 sm:p-5">
+        <div className="max-w-[52%]">
+          <span
+            className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.12em] text-white uppercase ${
+              isParts ? 'bg-accent' : 'bg-foreground'
+            }`}
+          >
+            {badge}
+          </span>
+          <h3 className="mt-3 font-[family-name:var(--font-display)] text-xl leading-[1.05] tracking-tight break-words text-foreground sm:text-2xl">
+            {title}
+          </h3>
+          <p className="mt-1.5 line-clamp-2 text-sm leading-snug text-muted">
+            {subtitle}
+          </p>
+        </div>
+        <ArrowCircle accent={isParts} />
+      </div>
     </Link>
   );
 }
