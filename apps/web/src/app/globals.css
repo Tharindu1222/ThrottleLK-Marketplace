@@ -148,7 +148,29 @@ textarea:focus-visible {
   outline: none;
 }
 
-.admin-field:focus {
+/* Toolbar / filter selects — must not stretch to full row */
+.admin-field-inline {
+  width: auto;
+  min-width: 9rem;
+  max-width: 16rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--admin-border-strong);
+  background: var(--admin-bg-elevated);
+  color: var(--admin-text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.admin-field-inline.max-w-none,
+.admin-field-inline.flex-1 {
+  max-width: none;
+  flex-shrink: 1;
+}
+
+.admin-field:focus,
+.admin-field-inline:focus {
   border-color: var(--admin-accent);
   box-shadow: 0 0 0 3px var(--admin-accent-soft);
 }
@@ -157,7 +179,8 @@ textarea:focus-visible {
   color: var(--admin-faint);
 }
 
-.admin-app select.admin-field option {
+.admin-app select.admin-field option,
+.admin-app select.admin-field-inline option {
   background: var(--admin-bg-elevated);
   color: var(--admin-text);
 }

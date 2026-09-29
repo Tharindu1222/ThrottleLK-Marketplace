@@ -102,17 +102,7 @@ export function AdminReports({ search = '' }: { search?: string }) {
   if (!token) return null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-[var(--admin-text)]">
-          Reports
-        </h1>
-        <p className="mt-1 text-sm text-[var(--admin-muted)]">
-          Review open reports. Warn the seller, remove the listing, or dismiss
-          if everything looks fine.
-        </p>
-      </div>
-
+    <div className="space-y-4">
       {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
 
       <div className="admin-card overflow-hidden">
@@ -128,7 +118,17 @@ export function AdminReports({ search = '' }: { search?: string }) {
               </tr>
             </thead>
             <tbody>
-              {reports.map((report) => {
+              {reports.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-4 py-10 text-center text-[var(--admin-muted)]"
+                  >
+                    No open reports.
+                  </td>
+                </tr>
+              ) : (
+                reports.map((report) => {
                 const listing = report.listing;
                 const listingHref = listing?.slug
                   ? `/${locale}/bikes/${listing.slug}`
@@ -137,7 +137,7 @@ export function AdminReports({ search = '' }: { search?: string }) {
                 return (
                   <tr
                     key={report.id}
-                    className="border-b border-[var(--admin-border)] last:border-0"
+                    className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
                       {new Date(report.createdAt).toLocaleDateString()}
@@ -187,7 +187,7 @@ export function AdminReports({ search = '' }: { search?: string }) {
                         <button
                           type="button"
                           disabled={busy || !listing}
-                          className="admin-btn-primary px-3 py-1.5 text-xs disabled:opacity-50"
+                          className="rounded-lg px-2.5 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-50"
                           onClick={() =>
                             void resolve(report.id, 'remove_listing')
                           }
@@ -214,13 +214,11 @@ export function AdminReports({ search = '' }: { search?: string }) {
                     </td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
-        {reports.length === 0 ? (
-          <p className="p-6 text-sm text-[var(--admin-muted)]">No open reports.</p>
-        ) : null}
       </div>
       <Pagination
         variant="admin"

@@ -21,6 +21,7 @@ import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { loginHref } from '@/lib/login-href';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 import { useUrlPage } from '@/lib/use-url-page';
 import type { PaginationMeta } from '@throttlelk/types';
 
@@ -241,11 +242,14 @@ function MarkSoldDialog({
   const priceId = useId();
   const dateId = useId();
   const errorId = useId();
+  const reactId = useId();
+  const dialogId = `mark-sold-${reactId.replace(/:/g, '')}`;
   const priceRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
   const [soldPrice, setSoldPrice] = useState(String(listing.askingPrice));
   const [soldDate, setSoldDate] = useState(todayIsoDate);
   const [formError, setFormError] = useState<string | null>(null);
+  useDialogFocusTrap(mounted, dialogId, { initialFocusRef: priceRef });
 
   useEffect(() => setMounted(true), []);
 
@@ -285,10 +289,12 @@ function MarkSoldDialog({
 
   return createPortal(
     <div
+      id={dialogId}
       className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      tabIndex={-1}
       onClick={(e) => {
         if (e.target === e.currentTarget && !busy) onClose();
       }}

@@ -44,6 +44,36 @@ export function isInternalApiRequest(
   return timingSafeEqual(a, b);
 }
 
+function headerString(
+  headers: Record<string, unknown> | undefined,
+  name: string,
+): string | undefined {
+  const raw = headers?.[name] ?? headers?.[name.toLowerCase()];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+/**
+ * True when the request looks like it passed Cloudflare's edge.
+ * CF-Connecting-IP alone is forgeable; require CF-RAY as well, and only when
+ * TRUST_PROXY is enabled (origin behind a reverse proxy).
+ */
+export function isCloudflareEdgeRequest(
+  headers: Record<string, unknown> | undefined,
+  trustProxy = process.env.TRUST_PROXY === 'true',
+): boolean {
+  if (!trustProxy) return false;
+  return Boolean(
+    headerString(headers, 'cf-connecting-ip') &&
+      headerString(headers, 'cf-ray'),
+  );
+}
+
+/**
+ * Client IP for rate buckets. Prefer Cloudflare's connecting IP only when the
+ * request carries CF-RAY under TRUST_PROXY; otherwise use Express `req.ip`.
+ * Never take the leftmost XFF hop — clients can rotate that freely.
+ */
 export function clientIp(
   req: {
     ip?: string;
@@ -53,15 +83,17 @@ export function clientIp(
   },
   trustProxy = process.env.TRUST_PROXY === 'true',
 ): string {
-  if (trustProxy) {
-    const forwarded = req.headers?.['x-forwarded-for'];
-    const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-    if (typeof raw === 'string' && raw.trim()) {
-      const hops = raw.split(',').map((part) => part.trim()).filter(Boolean);
-      const last = hops[hops.length - 1];
-      if (last) return last;
-    }
-    if (req.ips?.[0]) return req.ips[req.ips.length - 1] ?? req.ips[0];
+  if (isCloudflareEdgeRequest(req.headers, trustProxy)) {
+    const cf = headerString(req.headers, 'cf-connecting-ip');
+    if (cf) return cf.split(',')[0]!.trim();
   }
-  return req.ip || req.ips?.[0] || req.socket?.remoteAddress || 'unknown';
+
+  if (trustProxy) {
+    if (req.ip?.trim()) return req.ip.trim();
+    if (req.ips?.length) {
+      return req.ips[0] ?? req.ips[req.ips.length - 1]!;
+    }
+  }
+
+  return req.ip || req.socket?.remoteAddress || 'unknown';
 }

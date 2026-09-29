@@ -16,6 +16,7 @@ import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { loginHref } from '@/lib/login-href';
 import { composeListingTitle } from '@/lib/listing-title';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type Option = { id: string; name: string };
 type Model = { id: string; name: string; brandId: string };
@@ -202,6 +203,10 @@ export function EditListingForm({
   const titleId = useId();
   const descriptionId = useId();
   const uid = useId();
+  const dialogId = `edit-saved-${uid.replace(/:/g, '')}`;
+  useDialogFocusTrap(Boolean(saveResult), dialogId, {
+    initialFocusRef: confirmButtonRef,
+  });
 
   useEffect(() => {
     const access = getAccessToken();
@@ -917,14 +922,16 @@ export function EditListingForm({
 
       {saveResult ? (
         <div
+          id={dialogId}
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          tabIndex={-1}
           onClick={goToMyListings}
         >
           <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descriptionId}
             className="w-full max-w-md border border-black/10 bg-background p-6 shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)]"
             onClick={(event) => event.stopPropagation()}
           >

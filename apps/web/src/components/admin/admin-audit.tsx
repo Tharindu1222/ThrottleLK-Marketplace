@@ -61,51 +61,55 @@ export function AdminAudit() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Audit log</h1>
-      <p className="mt-1 text-sm text-[var(--admin-muted)]">
-        Sensitive administrator actions, newest first.
-      </p>
+    <div className="space-y-4">
       {error ? (
-        <p className="mt-4 text-sm text-[var(--admin-danger)]">{error}</p>
+        <p className="text-sm text-[var(--admin-danger)]">{error}</p>
       ) : null}
       {loading ? (
-        <p className="mt-6 text-sm text-[var(--admin-muted)]">Loading…</p>
+        <p className="text-sm text-[var(--admin-muted)]">Loading…</p>
       ) : (
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-[var(--admin-border)] text-[var(--admin-muted)]">
-                <th className="py-2 pr-3 font-medium">When</th>
-                <th className="py-2 pr-3 font-medium">Action</th>
-                <th className="py-2 pr-3 font-medium">Entity</th>
-                <th className="py-2 font-medium">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-[var(--admin-border)]"
-                >
-                  <td className="py-2 pr-3 whitespace-nowrap">
-                    {new Date(row.createdAt).toLocaleString('en-LK')}
-                  </td>
-                  <td className="py-2 pr-3">{row.action}</td>
-                  <td className="py-2 pr-3">
-                    {row.entityType}
-                    {row.entityId ? ` · ${row.entityId.slice(0, 8)}` : ''}
-                  </td>
-                  <td className="py-2">{row.note ?? '—'}</td>
+        <div className="admin-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-[var(--admin-border)] text-[var(--admin-muted)]">
+                  <th className="px-4 py-3 font-medium">When</th>
+                  <th className="px-4 py-3 font-medium">Action</th>
+                  <th className="px-4 py-3 font-medium">Entity</th>
+                  <th className="px-4 py-3 font-medium">Note</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {rows.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--admin-muted)]">
-              No audited actions yet.
-            </p>
-          ) : null}
+              </thead>
+              <tbody>
+                {rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-10 text-center text-[var(--admin-muted)]"
+                    >
+                      No audited actions yet.
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {new Date(row.createdAt).toLocaleString('en-LK')}
+                      </td>
+                      <td className="px-4 py-3">{row.action}</td>
+                      <td className="px-4 py-3">
+                        {row.entityType}
+                        {row.entityId ? ` · ${row.entityId.slice(0, 8)}` : ''}
+                      </td>
+                      <td className="px-4 py-3">{row.note ?? '—'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       <Pagination

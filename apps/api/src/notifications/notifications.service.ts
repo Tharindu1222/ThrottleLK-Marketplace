@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
@@ -9,6 +9,8 @@ import { escapeHtml } from '../common/html-escape';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @InjectRepository(Notification)
     private readonly notifications: Repository<Notification>,
@@ -90,7 +92,13 @@ export class NotificationsService {
           input.emailHtml ?? `<p>${escapeHtml(input.message)}</p>`,
         ),
       )
-      .catch(() => undefined);
+      .catch((err: unknown) => {
+        this.logger.warn(
+          `Notification email failed userId=${input.userId} type=${input.type}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      });
 
     return row;
   }

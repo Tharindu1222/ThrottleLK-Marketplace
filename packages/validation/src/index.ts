@@ -190,6 +190,8 @@ export const updateDealerProfileSchema = z
     longitude: z.number().min(-180).max(180).optional().nullable(),
     facebookUrl: emptyToNullUrl,
     tiktokUrl: emptyToNullUrl,
+    coverFocusX: z.number().min(0).max(100).optional(),
+    coverFocusY: z.number().min(0).max(100).optional(),
   })
   .superRefine((data, ctx) => {
     const hasLat = data.latitude !== undefined && data.latitude !== null;

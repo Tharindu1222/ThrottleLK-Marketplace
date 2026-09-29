@@ -31,36 +31,50 @@ const nav = [
     ],
   },
   {
-    group: 'Manage',
+    group: 'Bikes',
     items: [
       { href: '/listings', label: 'Listings', icon: ListingsIcon },
-      { href: '/part-listings', label: 'Part listings', icon: ListingsIcon },
       { href: '/dealers', label: 'Dealer shops', icon: ShopIcon },
+    ],
+  },
+  {
+    group: 'Parts',
+    items: [
+      { href: '/part-listings', label: 'Part listings', icon: PartIcon },
       { href: '/parts-dealers', label: 'Parts shops', icon: PartsShopIcon },
+      { href: '/part-categories', label: 'Part categories', icon: TagIcon },
+    ],
+  },
+  {
+    group: 'Catalog',
+    items: [
+      { href: '/taxonomy', label: 'Taxonomy', icon: CatalogIcon },
+    ],
+  },
+  {
+    group: 'Ads',
+    items: [
       {
         href: '/homepage-ads',
         label: 'Homepage ads',
         icon: AdsIcon,
         badgeKey: 'promos' as const,
       },
-      { href: '/part-categories', label: 'Part categories', icon: TagIcon },
+    ],
+  },
+  {
+    group: 'System',
+    items: [
       { href: '/users', label: 'Users', icon: UsersIcon },
-      { href: '/taxonomy', label: 'Taxonomy', icon: TagIcon },
-      { href: '/audit', label: 'Audit log', icon: ShieldIcon },
+      { href: '/audit', label: 'Audit log', icon: AuditIcon },
     ],
   },
 ] as const;
 
-function NavCountBadge({ count, active }: { count: number; active: boolean }) {
+function NavCountBadge({ count }: { count: number; active?: boolean }) {
   if (count <= 0) return null;
   return (
-    <span
-      className={`ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none ${
-        active
-          ? 'bg-white text-[var(--admin-accent)]'
-          : 'bg-[var(--admin-accent)] text-white'
-      }`}
-    >
+    <span className="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--admin-accent)] px-1.5 text-[10px] font-bold leading-none text-white">
       {count > 99 ? '99+' : count}
     </span>
   );
@@ -82,6 +96,15 @@ export function AdminSidebar({
     reports: 0,
     promos: 0,
   });
+  const [desktop, setDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   const loadCounts = useCallback(async () => {
     const token = getAccessToken();
@@ -117,6 +140,15 @@ export function AdminSidebar({
     };
   }, [loadCounts, pathname]);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileOpen, onClose]);
+
   function badgeFor(key?: BadgeKey) {
     if (!key) return 0;
     return counts[key] ?? 0;
@@ -133,6 +165,11 @@ export function AdminSidebar({
         onClick={onClose}
       />
       <aside
+        id="admin-sidebar"
+        role={!desktop ? 'dialog' : undefined}
+        aria-modal={!desktop && mobileOpen ? true : undefined}
+        aria-label="Admin navigation"
+        inert={!desktop && !mobileOpen ? true : undefined}
         className={`fixed inset-y-0 left-0 z-50 flex h-svh w-64 flex-col border-r border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] transition-transform duration-200 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
@@ -144,19 +181,19 @@ export function AdminSidebar({
           </p>
         </div>
 
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
+        <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-6">
           {nav.map((section) => (
             <div key={section.group}>
-              <p className="mb-2 px-3 text-[11px] font-medium tracking-wider text-[var(--admin-faint)] uppercase">
+              <p className="mb-1.5 px-3 text-[11px] font-medium tracking-wider text-[var(--admin-faint)] uppercase">
                 {section.group}
               </p>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {section.items.map((item) => {
                   const href = `${base}${item.href}`;
                   const active =
                     item.href === ''
                       ? pathname === base || pathname === `${base}/`
-                      : pathname.startsWith(href);
+                      : pathname === href || pathname.startsWith(`${href}/`);
                   const Icon = item.icon;
                   const badgeKey =
                     'badgeKey' in item ? (item.badgeKey as BadgeKey) : undefined;
@@ -166,9 +203,10 @@ export function AdminSidebar({
                       <Link
                         href={href}
                         onClick={onClose}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                        aria-current={active ? 'page' : undefined}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${
                           active
-                            ? 'bg-[var(--admin-accent)] font-medium text-white shadow-[0_0_16px_rgba(225,6,0,0.25)]'
+                            ? 'bg-[var(--admin-accent-soft)] font-medium text-[var(--admin-accent-2)]'
                             : 'text-[var(--admin-muted)] hover:bg-[var(--admin-surface)] hover:text-[var(--admin-text)]'
                         }`}
                         aria-label={
@@ -196,7 +234,7 @@ export function AdminSidebar({
         <div className="border-t border-[var(--admin-border)] p-4">
           <Link
             href={`/${locale}`}
-            className="mb-3 block rounded-xl bg-gradient-to-br from-[#e10600] to-[#a30500] px-4 py-3 text-center text-sm font-medium text-white shadow-[0_8px_24px_rgba(225,6,0,0.25)]"
+            className="admin-btn-ghost mb-2 block px-4 py-2.5 text-center text-sm"
           >
             View marketplace
           </Link>
@@ -294,6 +332,34 @@ function TagIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
       <line x1="7" y1="7" x2="7.01" y2="7" />
+    </svg>
+  );
+}
+
+function PartIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
+  );
+}
+
+function CatalogIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+      <path d="M8 7h8M8 11h6" />
+    </svg>
+  );
+}
+
+function AuditIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <path d="M9 12h6M9 16h4" />
     </svg>
   );
 }

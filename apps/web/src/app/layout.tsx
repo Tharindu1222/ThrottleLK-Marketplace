@@ -10,7 +10,8 @@ const sans = DM_Sans({
   weight: ['400', '500', '700'],
   variable: '--font-dm',
   display: 'swap',
-  adjustFontFallback: true,
+  preload: true,
+  adjustFontFallback: false,
 });
 
 const sinhala = Noto_Sans_Sinhala({
@@ -18,6 +19,8 @@ const sinhala = Noto_Sans_Sinhala({
   weight: ['400', '500', '700'],
   variable: '--font-si',
   display: 'swap',
+  preload: false,
+  adjustFontFallback: false,
 });
 
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;

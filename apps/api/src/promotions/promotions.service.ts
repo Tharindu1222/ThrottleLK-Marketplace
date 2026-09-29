@@ -4,9 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { MoreThan, Repository } from 'typeorm';
+import {
+  DataSource,
+  MoreThan,
+  QueryFailedError,
+  Repository,
+} from 'typeorm';
 import type {
   AdminPlaceHomepageInput,
   CreatePromoBankAccountInput,
@@ -40,6 +45,12 @@ import {
 
 const PREVIEW_LIMIT = 8;
 
+function isUniqueViolation(err: unknown): boolean {
+  if (!(err instanceof QueryFailedError)) return false;
+  const driver = err.driverError as { code?: string } | undefined;
+  return driver?.code === '23505' || (err as { code?: string }).code === '23505';
+}
+
 @Injectable()
 export class PromotionsService {
   constructor(
@@ -62,6 +73,8 @@ export class PromotionsService {
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
     private readonly cache: CacheService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async listPublicPackages(kind: PromoSubjectType) {
@@ -207,22 +220,36 @@ export class PromotionsService {
     await this.storage.putObject(key, file!.buffer, file!.mimetype, {
       access: 'private',
     });
-    const saved = await this.requests.save(
-      this.requests.create({
-        sellerId: seller.id,
-        subjectType,
-        listingId,
-        partListingId,
-        packageId: pkg.id,
-        bankAccountId: bank.id,
-        slipStorageKey: key,
-        slipContentType: file!.mimetype,
-        slipOriginalName: file!.originalname || 'slip',
-        status: 'pending',
-      }),
-    );
-    this.cache.invalidateDashboard();
-    return saved;
+    try {
+      const saved = await this.requests.save(
+        this.requests.create({
+          sellerId: seller.id,
+          subjectType,
+          listingId,
+          partListingId,
+          packageId: pkg.id,
+          bankAccountId: bank.id,
+          slipStorageKey: key,
+          slipContentType: file!.mimetype,
+          slipOriginalName: file!.originalname || 'slip',
+          status: 'pending',
+        }),
+      );
+      this.cache.invalidateDashboard();
+      return saved;
+    } catch (err) {
+      await this.storage.deleteObject(key).catch(() => undefined);
+      if (isUniqueViolation(err)) {
+        throw new BadRequestException({
+          success: false,
+          error: {
+            code: 'REQUEST_PENDING',
+            message: 'A homepage request is already pending',
+          },
+        });
+      }
+      throw err;
+    }
   }
 
   async replaceSlip(seller: User, requestId: string, file?: Express.Multer.File) {
@@ -256,44 +283,78 @@ export class PromotionsService {
   }
 
   async approve(admin: User, requestId: string) {
-    const request = await this.requests.findOne({
-      where: { id: requestId },
-      relations: ['package', 'listing', 'partListing'],
-    });
-    if (!request) this.notFound('Request');
-    if (request.status !== 'pending') {
-      throw new BadRequestException({
-        success: false,
-        error: { code: 'NOT_PENDING', message: 'Request is not pending' },
-      });
-    }
-    await this.assertStillActive(request);
+    const { saved, title, endsAt } = await this.dataSource.transaction(
+      async (manager) => {
+        const request = await manager
+          .getRepository(PromoRequest)
+          .createQueryBuilder('r')
+          .setLock('pessimistic_write')
+          .leftJoinAndSelect('r.package', 'package')
+          .leftJoinAndSelect('r.listing', 'listing')
+          .leftJoinAndSelect('r.partListing', 'partListing')
+          .where('r.id = :id', { id: requestId })
+          .getOne();
+        if (!request) this.notFound('Request');
+        if (request.status !== 'pending') {
+          throw new BadRequestException({
+            success: false,
+            error: { code: 'NOT_PENDING', message: 'Request is not pending' },
+          });
+        }
+        await this.assertStillActive(request);
 
-    const startsAt = new Date();
-    const endsAt = addUtcDays(startsAt, request.package.durationDays);
-    await this.placements.save(
-      this.placements.create({
-        requestId: request.id,
-        source: 'request',
-        subjectType: request.subjectType,
-        listingId: request.listingId,
-        partListingId: request.partListingId,
-        startsAt,
-        endsAt,
-      }),
+        const live = await this.findLive(
+          request.listingId,
+          request.partListingId,
+          manager.getRepository(HomepagePlacement),
+        );
+        if (live) {
+          throw new BadRequestException({
+            success: false,
+            error: {
+              code: 'ALREADY_LIVE',
+              message: 'This listing is already on the homepage',
+            },
+          });
+        }
+
+        const startsAt = new Date();
+        const placementEndsAt = addUtcDays(
+          startsAt,
+          request.package.durationDays,
+        );
+        await manager.getRepository(HomepagePlacement).save(
+          manager.getRepository(HomepagePlacement).create({
+            requestId: request.id,
+            source: 'request',
+            subjectType: request.subjectType,
+            listingId: request.listingId,
+            partListingId: request.partListingId,
+            startsAt,
+            endsAt: placementEndsAt,
+          }),
+        );
+        request.status = 'approved';
+        request.reviewedById = admin.id;
+        request.reviewedAt = new Date();
+        request.rejectionReason = null;
+        const row = await manager.getRepository(PromoRequest).save(request);
+        return {
+          saved: row,
+          title:
+            request.listing?.title ??
+            request.partListing?.title ??
+            'Your listing',
+          endsAt: placementEndsAt,
+        };
+      },
     );
-    request.status = 'approved';
-    request.reviewedById = admin.id;
-    request.reviewedAt = new Date();
-    request.rejectionReason = null;
-    const saved = await this.requests.save(request);
-    const title =
-      request.listing?.title ?? request.partListing?.title ?? 'Your listing';
-    await this.notifications.promoApproved(request.sellerId, {
+
+    await this.notifications.promoApproved(saved.sellerId, {
       title,
       endsAt,
-      listingId: request.listingId,
-      partListingId: request.partListingId,
+      listingId: saved.listingId,
+      partListingId: saved.partListingId,
     });
     this.cache.invalidateDashboard();
     return saved;
@@ -607,14 +668,18 @@ export class PromotionsService {
     return null;
   }
 
-  private async findLive(listingId: string | null, partListingId: string | null) {
+  private async findLive(
+    listingId: string | null,
+    partListingId: string | null,
+    repo: Repository<HomepagePlacement> = this.placements,
+  ) {
     if (listingId) {
-      return this.placements.findOne({
+      return repo.findOne({
         where: { listingId, endsAt: MoreThan(new Date()) },
       });
     }
     if (partListingId) {
-      return this.placements.findOne({
+      return repo.findOne({
         where: { partListingId, endsAt: MoreThan(new Date()) },
       });
     }

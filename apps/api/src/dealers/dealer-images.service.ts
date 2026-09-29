@@ -71,16 +71,10 @@ export class DealerImagesService {
       });
     }
 
-    const count = await this.images.count({ where: { dealerId } });
-    if (count >= MAX_DEALER_IMAGES) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'MAX_IMAGES',
-          message: `Maximum ${MAX_DEALER_IMAGES} photo per dealer shop`,
-        },
-      });
-    }
+    const existing = await this.images.find({
+      where: { dealerId },
+      order: { sortOrder: 'ASC', createdAt: 'ASC' },
+    });
 
     const stored = await storePublicMarketplaceImage(
       this.storage,
@@ -93,10 +87,17 @@ export class DealerImagesService {
       storageKey: stored.storageKey,
       imageUrl: stored.imageUrl,
       thumbnailUrl: stored.thumbnailUrl,
-      sortOrder: count,
-      isCover: count === 0,
+      sortOrder: 0,
+      isCover: true,
     });
-    return this.images.save(image);
+    const saved = await this.images.save(image);
+
+    // Replace-in-place so clients can upload before deleting the old cover.
+    for (const old of existing) {
+      await deletePublicMarketplaceImage(this.storage, old.storageKey);
+      await this.images.remove(old);
+    }
+    return saved;
   }
 
   private async remove(dealerId: string, imageId: string) {
@@ -112,6 +113,12 @@ export class DealerImagesService {
     await deletePublicMarketplaceImage(this.storage, image.storageKey);
     await this.images.remove(image);
     await this.resequence(dealerId);
+    const dealer = await this.dealers.findOne({ where: { id: dealerId } });
+    if (dealer) {
+      dealer.coverFocusX = 50;
+      dealer.coverFocusY = 50;
+      await this.dealers.save(dealer);
+    }
     return { id: imageId };
   }
 

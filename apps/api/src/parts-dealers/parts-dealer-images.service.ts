@@ -76,16 +76,10 @@ export class PartsDealerImagesService {
       });
     }
 
-    const count = await this.images.count({ where: { partsDealerId } });
-    if (count >= MAX_PARTS_DEALER_IMAGES) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'MAX_IMAGES',
-          message: `Maximum ${MAX_PARTS_DEALER_IMAGES} photo per parts shop`,
-        },
-      });
-    }
+    const existing = await this.images.find({
+      where: { partsDealerId },
+      order: { sortOrder: 'ASC', createdAt: 'ASC' },
+    });
 
     const stored = await storePublicMarketplaceImage(
       this.storage,
@@ -98,10 +92,16 @@ export class PartsDealerImagesService {
       storageKey: stored.storageKey,
       imageUrl: stored.imageUrl,
       thumbnailUrl: stored.thumbnailUrl,
-      sortOrder: count,
-      isCover: count === 0,
+      sortOrder: 0,
+      isCover: true,
     });
-    return this.images.save(image);
+    const saved = await this.images.save(image);
+
+    for (const old of existing) {
+      await deletePublicMarketplaceImage(this.storage, old.storageKey);
+      await this.images.remove(old);
+    }
+    return saved;
   }
 
   private async remove(partsDealerId: string, imageId: string) {
@@ -117,6 +117,14 @@ export class PartsDealerImagesService {
     await deletePublicMarketplaceImage(this.storage, image.storageKey);
     await this.images.remove(image);
     await this.resequence(partsDealerId);
+    const dealer = await this.partsDealers.findOne({
+      where: { id: partsDealerId },
+    });
+    if (dealer) {
+      dealer.coverFocusX = 50;
+      dealer.coverFocusY = 50;
+      await this.partsDealers.save(dealer);
+    }
     return { id: imageId };
   }
 

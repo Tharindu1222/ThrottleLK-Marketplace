@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -11,6 +12,7 @@ import { createPortal } from 'react-dom';
 import { BRAND_LOGO_SRC } from '@/components/brand-logo';
 import { MarketplaceImage } from '@/components/marketplace-image';
 import { t, type Locale } from '@/lib/i18n';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type GalleryImage = {
   id: string;
@@ -91,6 +93,9 @@ export function ListingGallery({
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const reactId = useId();
+  const lightboxId = `gallery-lightbox-${reactId.replace(/:/g, '')}`;
+  useDialogFocusTrap(Boolean(mounted && lightboxOpen), lightboxId);
 
   useEffect(() => {
     setMounted(true);
@@ -121,10 +126,6 @@ export function ListingGallery({
 
   useEffect(() => {
     if (!lightboxOpen) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -138,11 +139,7 @@ export function ListingGallery({
       }
     };
     document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = overflow;
-      previous?.focus?.();
-    };
+    return () => document.removeEventListener('keydown', onKey);
   }, [lightboxOpen, closeLightbox, goPrev, goNext]);
 
   function onCoverKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
@@ -180,16 +177,19 @@ export function ListingGallery({
     mounted && lightboxOpen
       ? createPortal(
           <div
+            id={lightboxId}
             className="fixed inset-0 z-[80] flex flex-col bg-black/90"
             role="dialog"
             aria-modal="true"
             aria-label={title}
+            tabIndex={-1}
             onClick={closeLightbox}
           >
             <div className="flex items-center justify-between gap-3 px-4 py-3 text-white sm:px-6">
               <p className="text-sm tabular-nums text-white/80">{counterLabel}</p>
               <button
                 type="button"
+                autoFocus
                 onClick={(e) => {
                   e.stopPropagation();
                   closeLightbox();

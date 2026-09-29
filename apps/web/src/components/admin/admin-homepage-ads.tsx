@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { apiBlob, apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type Tab = 'requests' | 'live' | 'settings';
 
@@ -49,12 +50,12 @@ type PlacementRow = {
   partListing?: { id: string; title: string } | null;
 };
 
-const field =
-  'w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-bg)] px-3 py-2 text-sm text-[var(--admin-text)]';
-const btn =
-  'rounded-lg bg-[var(--admin-accent)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50';
-const btnGhost =
-  'rounded-lg border border-[var(--admin-border)] px-3 py-2 text-sm text-[var(--admin-text)] hover:bg-[var(--admin-surface)]';
+const inline = 'admin-field-inline';
+const full = 'admin-field';
+const btn = 'admin-btn-primary shrink-0 px-3 py-2 text-sm disabled:opacity-50';
+const btnGhost = 'admin-btn-ghost shrink-0 px-3 py-2 text-sm disabled:opacity-50';
+const btnDanger =
+  'rounded-lg px-3 py-2 text-sm text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-50';
 
 export function AdminHomepageAds() {
   const [tab, setTab] = useState<Tab>('requests');
@@ -65,6 +66,8 @@ export function AdminHomepageAds() {
   const [banks, setBanks] = useState<BankRow[]>([]);
   const [whatsapp, setWhatsapp] = useState('');
   const [slipUrl, setSlipUrl] = useState<string | null>(null);
+  const slipDialogId = `admin-homepage-ad-slip-${useId().replace(/:/g, '')}`;
+  useDialogFocusTrap(Boolean(slipUrl), slipDialogId);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -266,53 +269,66 @@ export function AdminHomepageAds() {
 
   const pending = requests.filter((row) => row.status === 'pending');
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[var(--admin-text)]">
-          Homepage ads
-        </h1>
-        <p className="mt-1 text-sm text-[var(--admin-muted)]">
-          Review payment slips, manage live placements, and edit packages.
-        </p>
-      </div>
+  const tabs: { id: Tab; label: string }[] = [
+    {
+      id: 'requests',
+      label:
+        pending.length > 0 ? `Requests (${pending.length})` : 'Requests',
+    },
+    { id: 'live', label: 'Live' },
+    { id: 'settings', label: 'Settings' },
+  ];
 
-      <div className="flex gap-2">
-        {(['requests', 'live', 'settings'] as const).map((key) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={`rounded-lg px-3 py-2 text-sm capitalize ${
-              tab === key
-                ? 'bg-[var(--admin-accent)] text-white'
-                : 'bg-[var(--admin-surface)] text-[var(--admin-muted)]'
-            }`}
-          >
-            {key}
-            {key === 'requests' && pending.length > 0
-              ? ` (${pending.length})`
-              : ''}
-          </button>
-        ))}
+  return (
+    <div className="space-y-4">
+      <div
+        role="tablist"
+        aria-label="Homepage ads sections"
+        className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-0.5"
+      >
+        {tabs.map((item) => {
+          const selected = tab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => setTab(item.id)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                selected
+                  ? 'bg-[var(--admin-accent-soft)] text-[var(--admin-accent-2)]'
+                  : 'text-[var(--admin-muted)] hover:bg-[var(--admin-surface-2)] hover:text-[var(--admin-text)]'
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
       </div>
 
       {error ? (
-        <p className="text-sm text-red-400">{error}</p>
+        <p className="text-sm text-[var(--admin-danger)]" role="alert">
+          {error}
+        </p>
       ) : null}
 
       {tab === 'requests' ? (
         <div className="space-y-3">
           {pending.length === 0 ? (
-            <p className="text-sm text-[var(--admin-muted)]">No pending requests.</p>
+            <div className="admin-card px-5 py-8 text-center">
+              <p className="text-sm font-medium text-[var(--admin-text)]">
+                No pending requests
+              </p>
+              <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                When sellers submit promo payment slips, they appear here.
+              </p>
+            </div>
           ) : null}
           {pending.map((row) => {
             const title = row.listing?.title ?? row.partListing?.title ?? 'Listing';
             return (
-              <article
-                key={row.id}
-                className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-4"
-              >
+              <article key={row.id} className="admin-card p-4">
                 <p className="text-sm font-medium text-[var(--admin-text)]">
                   {title}{' '}
                   <span className="text-[var(--admin-muted)]">
@@ -341,22 +357,35 @@ export function AdminHomepageAds() {
                   <button
                     type="button"
                     className={btnGhost}
-                    onClick={() => setRejectId(row.id)}
+                    onClick={() => {
+                      setRejectId(row.id);
+                      setRejectReason('');
+                    }}
                   >
                     Reject
                   </button>
                 </div>
                 {rejectId === row.id ? (
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <input
-                      className={field}
+                      className={`${inline} min-w-[12rem] flex-1 max-w-none`}
                       placeholder="Reason"
                       value={rejectReason}
                       onChange={(e) => setRejectReason(e.target.value)}
                     />
                     <button
                       type="button"
-                      className={btn}
+                      className={btnGhost}
+                      onClick={() => {
+                        setRejectId(null);
+                        setRejectReason('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className={btnDanger}
                       onClick={() => void reject(row.id)}
                     >
                       Confirm
@@ -371,13 +400,13 @@ export function AdminHomepageAds() {
 
       {tab === 'live' ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-4">
+          <div className="admin-card p-4">
             <p className="text-sm font-medium text-[var(--admin-text)]">
               Add manually
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <select
-                className={field}
+                className={inline}
                 value={placeKind}
                 onChange={(e) => setPlaceKind(e.target.value as 'bike' | 'part')}
               >
@@ -385,46 +414,72 @@ export function AdminHomepageAds() {
                 <option value="part">Part</option>
               </select>
               <input
-                className={field}
+                className={`${inline} min-w-[12rem]`}
                 placeholder="Search title"
                 value={placeQ}
                 onChange={(e) => setPlaceQ(e.target.value)}
               />
               <input
-                className={`${field} w-24`}
+                className={`${inline} min-w-[4.5rem] w-20`}
                 value={placeDays}
                 onChange={(e) => setPlaceDays(e.target.value)}
                 aria-label="Days"
               />
-              <button type="button" className={btn} onClick={() => void searchPlace()}>
+              <button
+                type="button"
+                className={`${btn} ml-auto`}
+                onClick={() => void searchPlace()}
+              >
                 Search
               </button>
             </div>
             <ul className="mt-2 space-y-1">
               {placeHits.map((hit) => (
-                <li key={hit.id} className="flex items-center justify-between text-sm">
-                  <span>{hit.title}</span>
-                  <button type="button" className={btnGhost} onClick={() => void place(hit.id)}>
+                <li
+                  key={hit.id}
+                  className="flex items-center justify-between gap-2 text-sm"
+                >
+                  <span className="truncate text-[var(--admin-text)]">{hit.title}</span>
+                  <button
+                    type="button"
+                    className={btnGhost}
+                    onClick={() => void place(hit.id)}
+                  >
                     Place
                   </button>
                 </li>
               ))}
             </ul>
           </div>
+          {placements.length === 0 ? (
+            <div className="admin-card px-5 py-8 text-center">
+              <p className="text-sm font-medium text-[var(--admin-text)]">
+                No live placements
+              </p>
+              <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                Approved promos and manual placements show up here while active.
+              </p>
+            </div>
+          ) : null}
           {placements.map((row) => (
             <article
               key={row.id}
-              className="flex items-center justify-between rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-4"
+              className="admin-card flex items-center justify-between gap-3 p-4"
             >
-              <div>
-                <p className="text-sm font-medium text-[var(--admin-text)]">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-[var(--admin-text)]">
                   {row.listing?.title ?? row.partListing?.title}
                 </p>
                 <p className="text-xs text-[var(--admin-muted)]">
-                  Until {new Date(row.endsAt).toLocaleDateString()} · {row.source}
+                  Until {new Date(row.endsAt).toLocaleDateString('en-LK')} ·{' '}
+                  {row.source}
                 </p>
               </div>
-              <button type="button" className={btnGhost} onClick={() => void endNow(row.id)}>
+              <button
+                type="button"
+                className={btnDanger}
+                onClick={() => void endNow(row.id)}
+              >
                 Remove now
               </button>
             </article>
@@ -433,12 +488,12 @@ export function AdminHomepageAds() {
       ) : null}
 
       {tab === 'settings' ? (
-        <div className="space-y-8">
-          <section>
+        <div className="space-y-4">
+          <section className="admin-card p-4">
             <h2 className="text-lg font-medium text-[var(--admin-text)]">Packages</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <select
-                className={field}
+                className={inline}
                 value={pkgKind}
                 onChange={(e) => setPkgKind(e.target.value as 'bike' | 'part')}
               >
@@ -446,24 +501,28 @@ export function AdminHomepageAds() {
                 <option value="part">Part</option>
               </select>
               <input
-                className={field}
+                className={`${inline} min-w-[10rem]`}
                 placeholder="Name"
                 value={pkgName}
                 onChange={(e) => setPkgName(e.target.value)}
               />
               <input
-                className={`${field} w-24`}
+                className={`${inline} min-w-[4.5rem] w-20`}
                 placeholder="Days"
                 value={pkgDays}
                 onChange={(e) => setPkgDays(e.target.value)}
               />
               <input
-                className={`${field} w-32`}
+                className={`${inline} min-w-[7rem]`}
                 placeholder="Price LKR"
                 value={pkgPrice}
                 onChange={(e) => setPkgPrice(e.target.value)}
               />
-              <button type="button" className={btn} onClick={() => void addPackage()}>
+              <button
+                type="button"
+                className={`${btn} ml-auto`}
+                onClick={() => void addPackage()}
+              >
                 Add
               </button>
             </div>
@@ -471,9 +530,9 @@ export function AdminHomepageAds() {
               {packages.map((row) => (
                 <li
                   key={row.id}
-                  className="flex items-center justify-between text-sm text-[var(--admin-text)]"
+                  className="flex items-center justify-between gap-2 text-sm text-[var(--admin-text)]"
                 >
-                  <span>
+                  <span className="min-w-0 truncate">
                     {row.kind} · {row.name} · {row.durationDays}d · Rs.{' '}
                     {row.priceLkr.toLocaleString('en-LK')}
                     {row.isActive ? '' : ' (off)'}
@@ -490,46 +549,50 @@ export function AdminHomepageAds() {
             </ul>
           </section>
 
-          <section>
+          <section className="admin-card p-4">
             <h2 className="text-lg font-medium text-[var(--admin-text)]">
               Bank accounts
             </h2>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <input
-                className={field}
+                className={full}
                 placeholder="Bank"
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
               />
               <input
-                className={field}
+                className={full}
                 placeholder="Account name"
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
               />
               <input
-                className={field}
+                className={full}
                 placeholder="Account number"
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
               />
               <input
-                className={field}
+                className={full}
                 placeholder="Branch"
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
               />
             </div>
-            <button type="button" className={`${btn} mt-2`} onClick={() => void addBank()}>
+            <button
+              type="button"
+              className={`${btn} mt-3`}
+              onClick={() => void addBank()}
+            >
               Add account
             </button>
             <ul className="mt-3 space-y-2">
               {banks.map((row) => (
                 <li
                   key={row.id}
-                  className="flex items-center justify-between text-sm text-[var(--admin-text)]"
+                  className="flex items-center justify-between gap-2 text-sm text-[var(--admin-text)]"
                 >
-                  <span>
+                  <span className="min-w-0 truncate">
                     {row.bankName} · {row.accountName} · {row.accountNumber}
                     {row.isDefault ? ' · default' : ''}
                   </span>
@@ -547,18 +610,22 @@ export function AdminHomepageAds() {
             </ul>
           </section>
 
-          <section>
+          <section className="admin-card p-4">
             <h2 className="text-lg font-medium text-[var(--admin-text)]">
               WhatsApp number
             </h2>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <input
-                className={field}
+                className={`${inline} min-w-[12rem] flex-1 max-w-none`}
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 placeholder="0771234567"
               />
-              <button type="button" className={btn} onClick={() => void saveWhatsapp()}>
+              <button
+                type="button"
+                className={btn}
+                onClick={() => void saveWhatsapp()}
+              >
                 Save
               </button>
             </div>
@@ -567,7 +634,14 @@ export function AdminHomepageAds() {
       ) : null}
 
       {slipUrl ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+        <div
+          id={slipDialogId}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Payment slip"
+          tabIndex={-1}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+        >
           <button
             type="button"
             className="absolute inset-0"

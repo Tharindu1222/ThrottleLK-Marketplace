@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { apiGet } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 import {
   ownedDealerHref,
   pickOwnedDealer,
@@ -22,26 +23,27 @@ export function BecomeDealerButton({
 }) {
   const titleId = useId();
   const hintId = useId();
+  const reactId = useId();
+  const dialogId = `become-dealer-${reactId.replace(/:/g, '')}`;
   const closeRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [bike, setBike] = useState<OwnedDealer | null>(null);
   const [parts, setParts] = useState<OwnedDealer | null>(null);
   const [loaded, setLoaded] = useState(false);
+  useDialogFocusTrap(Boolean(mounted && open), dialogId, {
+    initialFocusRef: closeRef,
+  });
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
-    closeRef.current?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
     }
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
     };
   }, [open]);
@@ -94,11 +96,13 @@ export function BecomeDealerButton({
       {mounted && open
         ? createPortal(
             <div
+              id={dialogId}
               className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
               aria-describedby={hintId}
+              tabIndex={-1}
               onClick={(e) => {
                 if (e.target === e.currentTarget) setOpen(false);
               }}

@@ -25,7 +25,10 @@ export function useAdminSearch() {
   return useContext(SearchCtx);
 }
 
-const titles: Record<string, { title: string; subtitle: string; placeholder: string }> = {
+const titles: Record<
+  string,
+  { title: string; subtitle: string; placeholder: string }
+> = {
   '': {
     title: 'Overview',
     subtitle: 'Marketplace operations dashboard',
@@ -76,7 +79,30 @@ const titles: Record<string, { title: string; subtitle: string; placeholder: str
     subtitle: 'Open listing reports',
     placeholder: 'Search reports…',
   },
+  'homepage-ads': {
+    title: 'Homepage ads',
+    subtitle: 'Promo requests, placements, and packages',
+    placeholder: 'Search ads…',
+  },
+  audit: {
+    title: 'Audit log',
+    subtitle: 'Admin action history',
+    placeholder: 'Search audit…',
+  },
 };
+
+/** Routes that actually consume the topbar search via useAdminSearch(). */
+const SEARCHABLE = new Set([
+  'moderation',
+  'users',
+  'listings',
+  'dealers',
+  'part-listings',
+  'parts-dealers',
+  'part-categories',
+  'taxonomy',
+  'reports',
+]);
 
 export function AdminLayoutClient({
   locale,
@@ -87,8 +113,11 @@ export function AdminLayoutClient({
 }) {
   const pathname = usePathname();
   const [search, setSearch] = useState('');
-  const segment = pathname.replace(new RegExp(`^/${locale}/admin/?`), '').split('/')[0] || '';
+  const segment =
+    pathname.replace(new RegExp(`^/${locale}/admin/?`), '').split('/')[0] ||
+    '';
   const meta = titles[segment] ?? titles[''];
+  const searchEnabled = SEARCHABLE.has(segment);
 
   useEffect(() => {
     setSearch('');
@@ -102,8 +131,8 @@ export function AdminLayoutClient({
         locale={locale}
         title={meta.title}
         subtitle={meta.subtitle}
-        searchValue={search}
-        onSearchChange={setSearch}
+        searchValue={searchEnabled ? search : undefined}
+        onSearchChange={searchEnabled ? setSearch : undefined}
         searchPlaceholder={meta.placeholder}
       >
         {children}

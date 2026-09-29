@@ -71,9 +71,8 @@ export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
-                    width: `${Math.max(4, (row.value / maxBar) * 100)}%`,
+                    width: `${(row.value / maxBar) * 100}%`,
                     backgroundColor: row.color,
-                    boxShadow: `0 0 12px ${row.color}55`,
                   }}
                 />
               </div>
@@ -111,7 +110,6 @@ export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
                 strokeWidth="16"
                 strokeLinecap="round"
                 strokeDasharray={`${(capacityScore / 1000) * 251} 251`}
-                style={{ filter: `drop-shadow(0 0 6px ${riskColor})` }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
@@ -140,7 +138,6 @@ export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
                   stroke={arc.color}
                   strokeWidth="16"
                   strokeLinecap="butt"
-                  style={{ filter: `drop-shadow(0 0 4px ${arc.color}88)` }}
                 />
               ))}
               <text

@@ -18,6 +18,8 @@ export type DealerShowroom = {
   website: string | null;
   address: string | null;
   coverImageUrl: string | null;
+  coverFocusX?: number | null;
+  coverFocusY?: number | null;
   latitude: number | null;
   longitude: number | null;
   facebookUrl: string | null;

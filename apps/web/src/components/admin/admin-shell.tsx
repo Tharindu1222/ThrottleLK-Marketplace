@@ -26,30 +26,34 @@ export function AdminShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <AdminGate locale={locale}>
     <div className="admin-app h-svh overflow-hidden">
-      <div className="flex h-full">
-        <AdminSidebar
-          locale={locale}
-          mobileOpen={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-        />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:pl-64">
-          <AdminTopbar
+      <AdminGate locale={locale}>
+        <div className="flex h-full">
+          <AdminSidebar
             locale={locale}
-            title={title}
-            subtitle={subtitle}
-            onMenuClick={() => setMobileOpen(true)}
-            searchValue={searchValue}
-            onSearchChange={onSearchChange}
-            searchPlaceholder={searchPlaceholder}
+            mobileOpen={mobileOpen}
+            onClose={() => setMobileOpen(false)}
           />
-          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
-            {children}
-          </main>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:pl-64">
+            <AdminTopbar
+              locale={locale}
+              title={title}
+              subtitle={subtitle}
+              onMenuClick={() => setMobileOpen(true)}
+              menuExpanded={mobileOpen}
+              searchValue={searchValue}
+              onSearchChange={onSearchChange}
+              searchPlaceholder={searchPlaceholder}
+            />
+            <main
+              id="main-content"
+              className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
+            >
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+      </AdminGate>
     </div>
-    </AdminGate>
   );
 }

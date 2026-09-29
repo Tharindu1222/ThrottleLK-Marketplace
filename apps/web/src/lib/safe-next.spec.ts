@@ -18,4 +18,9 @@ describe('safeNextPath', () => {
   it('does not send buyers to admin', () => {
     assert.equal(safeNextPath('/en/admin', 'en'), '/en/bikes');
   });
+
+  it('falls back when next is malformed percent-encoding', () => {
+    assert.equal(safeNextPath('/en/%E0%A4%A', 'en'), '/en/bikes');
+    assert.equal(safeNextPath('%', 'en'), '/en/bikes');
+  });
 });

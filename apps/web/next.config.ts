@@ -45,13 +45,18 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
+    const isDev = process.env.NODE_ENV !== 'production';
     return [
       {
         source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            // Immutable caching is correct for content-hashed production builds,
+            // but Turbopack reuses chunk names in dev — long-lived cache breaks HMR.
+            value: isDev
+              ? 'no-store'
+              : 'public, max-age=31536000, immutable',
           },
         ],
       },

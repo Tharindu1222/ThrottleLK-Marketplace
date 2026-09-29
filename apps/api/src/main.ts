@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DataSource } from 'typeorm';
 import { requireJwtSecrets } from './common/jwt-secrets';
+import { requireTurnstileSecret } from './common/turnstile';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/api-exception.filter';
 
@@ -25,6 +26,7 @@ async function applyPendingMigrations(app: NestExpressApplication) {
 
 async function bootstrap() {
   requireJwtSecrets(process.env);
+  requireTurnstileSecret(process.env);
   if (
     (process.env.NODE_ENV ?? '') === 'production' &&
     process.env.TRUST_PROXY !== 'true'

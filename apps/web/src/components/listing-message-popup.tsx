@@ -14,6 +14,7 @@ import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { apiCodeMessage } from '@/lib/listing-errors';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type ChatMessage = {
   id: string;
@@ -73,7 +74,7 @@ function SellerAvatar({
 
 export function ListingMessagePopup({
   locale,
-  dialogId,
+  dialogId: dialogIdProp,
   listingId,
   listingTitle,
   sellerName,
@@ -90,7 +91,11 @@ export function ListingMessagePopup({
 }) {
   const titleId = useId();
   const inputId = useId();
+  const reactId = useId();
+  const generatedDialogId = `listing-message-${reactId.replace(/:/g, '')}`;
+  const dialogId = dialogIdProp ?? generatedDialogId;
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  useDialogFocusTrap(true, dialogId, { initialFocusRef: inputRef });
   const bottomRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -110,10 +115,6 @@ export function ListingMessagePopup({
   }, []);
 
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const id = window.setTimeout(() => inputRef.current?.focus(), 40);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -121,12 +122,7 @@ export function ListingMessagePopup({
       }
     };
     document.addEventListener('keydown', onKey);
-    return () => {
-      window.clearTimeout(id);
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = overflow;
-      previous?.focus?.();
-    };
+    return () => document.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => {
@@ -226,6 +222,7 @@ export function ListingMessagePopup({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
         className="flex w-full max-w-[22.5rem] flex-col items-end gap-3"
       >
         <section className="flex h-[min(32rem,calc(100dvh-10rem))] w-full flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
@@ -301,6 +298,7 @@ export function ListingMessagePopup({
               id={inputId}
               name="message"
               rows={1}
+              autoFocus
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder={t(locale, 'chatPlaceholder')}

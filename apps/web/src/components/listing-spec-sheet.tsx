@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
 import { t, type Locale } from '@/lib/i18n';
+import {
+  listingConditionLabel,
+  listingFuelLabel,
+  listingTransmissionLabel,
+} from '@/lib/listing-labels';
 
 export type ListingSpecs = {
   brandName?: string | null;
@@ -21,10 +26,14 @@ export type ListingSpecs = {
   viewCount?: number;
 };
 
-function pretty(value: string) {
-  return value
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+function prettySpec(
+  locale: Locale,
+  kind: 'condition' | 'fuel' | 'transmission',
+  value: string,
+) {
+  if (kind === 'condition') return listingConditionLabel(locale, value);
+  if (kind === 'fuel') return listingFuelLabel(locale, value);
+  return listingTransmissionLabel(locale, value);
 }
 
 function Icon({ children }: { children: ReactNode }) {
@@ -240,18 +249,23 @@ export function ListingSpecSheet({
     t(locale, 'cc'),
     listing.engineCc != null ? `${listing.engineCc} cc` : null,
   );
-  push('fuel', icons.fuel, t(locale, 'fuel'), pretty(listing.fuelType));
+  push(
+    'fuel',
+    icons.fuel,
+    t(locale, 'fuel'),
+    prettySpec(locale, 'fuel', listing.fuelType),
+  );
   push(
     'gear',
     icons.transmission,
     t(locale, 'transmission'),
-    pretty(listing.transmission),
+    prettySpec(locale, 'transmission', listing.transmission),
   );
   push(
     'condition',
     icons.condition,
     t(locale, 'condition'),
-    pretty(listing.condition),
+    prettySpec(locale, 'condition', listing.condition),
   );
   push('colour', icons.colour, t(locale, 'colour'), listing.colour);
 

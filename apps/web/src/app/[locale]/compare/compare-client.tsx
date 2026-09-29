@@ -13,6 +13,11 @@ import {
 } from '@/lib/compare';
 import { t, type Locale } from '@/lib/i18n';
 import { composeListingTitle } from '@/lib/listing-title';
+import {
+  listingConditionLabel,
+  listingFuelLabel,
+  listingTransmissionLabel,
+} from '@/lib/listing-labels';
 
 type Listing = {
   id: string;
@@ -159,11 +164,11 @@ function rowIcon(key: RowKey) {
   }
 }
 
-function cellValue(listing: Listing, key: RowKey): string {
+function cellValue(listing: Listing, key: RowKey, locale: Locale): string {
   if (key === 'price') return formatLkr(listing.priceLkr);
   if (key === 'mileage') {
     return listing.mileage != null
-      ? `${listing.mileage.toLocaleString('en-LK')} km`
+      ? `${listing.mileage.toLocaleString(locale === 'si' ? 'si-LK' : 'en-LK')} km`
       : '—';
   }
   if (key === 'engineCc') {
@@ -174,13 +179,31 @@ function cellValue(listing: Listing, key: RowKey): string {
     const colour = listing.colour?.trim();
     return colour ? pretty(colour) : '—';
   }
+  if (key === 'condition') {
+    return listing.condition
+      ? listingConditionLabel(locale, listing.condition)
+      : '—';
+  }
+  if (key === 'fuelType') {
+    return listing.fuelType
+      ? listingFuelLabel(locale, listing.fuelType)
+      : '—';
+  }
+  if (key === 'transmission') {
+    return listing.transmission
+      ? listingTransmissionLabel(locale, listing.transmission)
+      : '—';
+  }
   const raw = listing[key];
   return raw ? pretty(String(raw)) : '—';
 }
 
-function rowDiffers(listings: Listing[], key: RowKey) {
+function rowDiffers(listings: Listing[], key: RowKey, locale: Locale) {
   if (listings.length < 2) return false;
-  return new Set(listings.map((listing) => cellValue(listing, key))).size > 1;
+  return (
+    new Set(listings.map((listing) => cellValue(listing, key, locale))).size >
+    1
+  );
 }
 
 export function CompareClient({ locale }: { locale: Locale }) {
@@ -411,7 +434,7 @@ export function CompareClient({ locale }: { locale: Locale }) {
           </thead>
           <tbody>
             {visibleRows.map((row, index) => {
-              const differs = rowDiffers(listings, row.key);
+              const differs = rowDiffers(listings, row.key, locale);
               const isPrice = row.key === 'price';
               return (
                 <tr
@@ -432,7 +455,7 @@ export function CompareClient({ locale }: { locale: Locale }) {
                     </span>
                   </th>
                   {listings.map((listing) => {
-                    const value = cellValue(listing, row.key);
+                    const value = cellValue(listing, row.key, locale);
                     return (
                       <td
                         key={listing.id}

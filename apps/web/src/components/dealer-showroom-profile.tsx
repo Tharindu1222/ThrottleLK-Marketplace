@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { DealerMapEmbed } from '@/components/dealer-map-embed';
 import { DealerShareButton } from '@/components/dealer-share-button';
 import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
+import { coverObjectPosition } from '@/lib/cover-crop';
 import {
   dealerCoverUrl,
   dealerDirectionsHref,
@@ -60,6 +61,10 @@ export function DealerShowroomProfile({
   eyebrow: string;
 }) {
   const cover = dealerCoverUrl(dealer);
+  const coverPosition = coverObjectPosition(
+    dealer.coverFocusX,
+    dealer.coverFocusY,
+  );
   const location = formatDealerLocation(dealer);
   const address = dealer.address ? formatStreetAddress(dealer.address) : '';
   const initials = dealerInitials(dealer.ownerDisplayName || dealer.name);
@@ -131,7 +136,8 @@ export function DealerShowroomProfile({
           <img
             src={cover}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover object-center"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: coverPosition }}
           />
         ) : (
           <div className="absolute inset-0 bg-[linear-gradient(145deg,#111_0%,#333_50%,#e10600_160%)]" />

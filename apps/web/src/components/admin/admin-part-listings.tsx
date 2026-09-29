@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
@@ -14,6 +14,7 @@ import type {
 import { AdminPartListingImageManager } from './admin-part-listing-image-manager';
 import { Pagination } from '@/components/pagination';
 import { clampedPage } from '@/lib/pagination';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type PartCategory = {
   id: string;
@@ -102,6 +103,8 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
+  const dialogId = `admin-part-listing-editor-${useId().replace(/:/g, '')}`;
+  useDialogFocusTrap(editorOpen, dialogId);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [fitmentsLoaded, setFitmentsLoaded] = useState(true);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -490,65 +493,61 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
   if (!token) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-[var(--admin-text)]">
-            Part listings
-          </h1>
-          <p className="mt-1 text-sm text-[var(--admin-muted)]">
-            Create, edit, update status, or delete any spare or modified part
-            listing.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={partsDealerFilter}
-            onChange={(e) => setPartsDealerFilter(e.target.value)}
-            className="admin-field w-auto min-w-[160px]"
-          >
-            <option value="">All shops</option>
-            {shops.map((shop) => (
-              <option key={shop.id} value={shop.id}>
-                {shop.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={kindFilter}
-            onChange={(e) => setKindFilter(e.target.value)}
-            className="admin-field w-auto min-w-[140px]"
-          >
-            <option value="">All kinds</option>
-            {KINDS.filter(Boolean).map((k) => (
-              <option key={k} value={k}>
-                {kindLabel(k)}
-              </option>
-            ))}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="admin-field w-auto min-w-[160px]"
-          >
-            <option value="">All statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="admin-btn-primary px-4 py-2 text-sm"
-            onClick={openCreate}
-          >
-            + New part listing
-          </button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={partsDealerFilter}
+          onChange={(e) => setPartsDealerFilter(e.target.value)}
+          aria-label="Filter by shop"
+          className="admin-field-inline min-w-[10rem]"
+        >
+          <option value="">All shops</option>
+          {shops.map((shop) => (
+            <option key={shop.id} value={shop.id}>
+              {shop.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={kindFilter}
+          onChange={(e) => setKindFilter(e.target.value)}
+          aria-label="Filter by kind"
+          className="admin-field-inline min-w-[8rem]"
+        >
+          <option value="">All kinds</option>
+          {KINDS.filter(Boolean).map((k) => (
+            <option key={k} value={k}>
+              {kindLabel(k)}
+            </option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label="Filter by status"
+          className="admin-field-inline min-w-[9rem]"
+        >
+          <option value="">All statuses</option>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="admin-btn-primary ml-auto shrink-0 px-4 py-2 text-sm"
+          onClick={openCreate}
+        >
+          + New part listing
+        </button>
       </div>
 
-      {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
+      {error && !editorOpen ? (
+        <p className="text-sm text-[var(--admin-danger)]" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <div className="admin-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -560,18 +559,30 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                 <th className="px-4 py-3 font-medium">Price</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Updated</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
+                <th className="px-4 py-3 font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row) => (
+              {filtered.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-10 text-center text-[var(--admin-muted)]"
+                  >
+                    No part listings found.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-[var(--admin-border)] last:border-0"
+                  className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)]">
+                      <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface-2)] ring-1 ring-[var(--admin-border)]">
                         {row.coverImageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -580,26 +591,26 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <div className="flex h-full items-center justify-center px-1 text-center text-[10px] leading-tight text-[var(--admin-faint)]">
-                            No photo
+                          <div className="flex h-full items-center justify-center text-[10px] text-[var(--admin-faint)]">
+                            —
                           </div>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-[var(--admin-text)]">
+                        <p className="truncate font-medium text-[var(--admin-text)]">
                           {row.title}
                         </p>
-                        <p className="text-xs text-[var(--admin-faint)]">
+                        <p className="truncate text-xs text-[var(--admin-faint)]">
                           {kindLabel(row.kind)}
                           {row.category?.name ? ` · ${row.category.name}` : ''}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">
+                  <td className="max-w-[10rem] truncate px-4 py-3 text-[var(--admin-muted)]">
                     {row.partsDealer?.name ?? row.partsDealerId.slice(0, 8)}
                   </td>
-                  <td className="px-4 py-3 text-[var(--admin-text)]">
+                  <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-text)]">
                     Rs. {row.priceLkr.toLocaleString('en-LK')}
                   </td>
                   <td className="px-4 py-3">
@@ -609,6 +620,7 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                       onChange={(e) =>
                         void onQuickStatus(row.id, e.target.value)
                       }
+                      aria-label={`Status for ${row.title}`}
                       className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium outline-none ${statusTone(row.status)}`}
                     >
                       {STATUSES.map((s) => (
@@ -623,28 +635,28 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                     </select>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
-                    {new Date(row.updatedAt).toLocaleDateString()}
+                    {new Date(row.updatedAt).toLocaleDateString('en-LK')}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center justify-end gap-1.5">
                       <Link
                         href={viewHref(row)}
                         aria-label={`View ${row.title}`}
                         title="View listing"
-                        className="admin-btn-ghost inline-flex h-8 w-8 items-center justify-center"
+                        className="admin-btn-ghost inline-flex h-8 w-8 items-center justify-center p-0"
                       >
                         <EyeIcon />
                       </Link>
                       <button
                         type="button"
-                        className="admin-btn-ghost px-3 py-1.5 text-xs"
+                        className="admin-btn-ghost px-2.5 py-1.5 text-xs"
                         onClick={() => void openEdit(row)}
                       >
                         Edit
                       </button>
                       <button
                         type="button"
-                        className="rounded-xl border border-[var(--admin-danger)]/40 px-3 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10"
+                        className="rounded-lg px-2.5 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10"
                         onClick={() => void onDelete(row.id)}
                       >
                         Delete
@@ -652,15 +664,11 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 ? (
-          <p className="p-6 text-sm text-[var(--admin-muted)]">
-            No part listings found.
-          </p>
-        ) : null}
       </div>
       {listMeta ? (
         <Pagination
@@ -677,7 +685,13 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
       ) : null}
 
       {editorOpen ? (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+        <div
+          id={dialogId}
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
+          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+        >
           <form
             onSubmit={onSubmit}
             className="admin-card my-8 w-full max-w-3xl space-y-4 p-6"
@@ -699,6 +713,12 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                 Close
               </button>
             </div>
+
+            {error ? (
+              <p className="text-sm text-[var(--admin-danger)]" role="alert">
+                {error}
+              </p>
+            ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
@@ -974,7 +994,7 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                   </label>
                   <button
                     type="button"
-                    className="rounded-xl border border-[var(--admin-danger)]/40 px-3 py-2 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-40"
+                    className="rounded-lg px-2.5 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-40"
                     disabled={form.fitments.length <= 1}
                     onClick={() => removeFitment(index)}
                   >

@@ -221,7 +221,13 @@ export default async function ListingDetailPage({
                 </span>
               ) : null}
               <span className="inline-flex border border-accent/25 bg-accent/5 px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] text-accent uppercase">
-                {listing.condition}
+                {listing.condition === 'new'
+                  ? t(locale, 'conditionNew')
+                  : listing.condition === 'reconditioned'
+                    ? t(locale, 'conditionReconditioned')
+                    : listing.condition === 'used'
+                      ? t(locale, 'conditionUsed')
+                      : listing.condition}
               </span>
               {sellerKind ? (
                 listing.dealerVerified ? (

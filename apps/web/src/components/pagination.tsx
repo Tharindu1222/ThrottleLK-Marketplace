@@ -43,7 +43,8 @@ export function Pagination({
   scroll = true,
 }: PaginationProps) {
   const isAdmin = variant === 'admin';
-  if (totalPages <= 0) return null;
+  // Hide chrome for empty result sets (avoids "Showing 0–0 of 0" + mt-6 waste).
+  if (totalPages <= 0 || total === 0) return null;
 
   const numbers = visiblePageNumbers(page, totalPages);
   const range =

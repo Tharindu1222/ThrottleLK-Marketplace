@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminPartsDealerRow, AdminUser, District } from '@/lib/admin-types';
 import { DealerImageManager } from './dealer-image-manager';
 import { Pagination } from '@/components/pagination';
 import { clampedPage } from '@/lib/pagination';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type City = { id: string; name: string };
 
@@ -71,6 +72,8 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
   const [busy, setBusy] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const dialogId = `admin-parts-dealer-editor-${useId().replace(/:/g, '')}`;
+  useDialogFocusTrap(editorOpen, dialogId);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [page, setPage] = useState(1);
   const [listMeta, setListMeta] = useState<{
@@ -274,40 +277,35 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
   if (!token) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-[var(--admin-text)]">
-            Parts shops
-          </h1>
-          <p className="mt-1 text-sm text-[var(--admin-muted)]">
-            Create, edit, approve, or delete dealer shop profiles.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="admin-field w-auto min-w-[160px]"
-          >
-            <option value="">All statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="admin-btn-primary px-4 py-2 text-sm"
-            onClick={openCreate}
-          >
-            + New dealer
-          </button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label="Filter by status"
+          className="admin-field-inline min-w-[9rem]"
+        >
+          <option value="">All statuses</option>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="admin-btn-primary ml-auto shrink-0 px-4 py-2 text-sm"
+          onClick={openCreate}
+        >
+          + New dealer
+        </button>
       </div>
 
-      {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
+      {error && !editorOpen ? (
+        <p className="text-sm text-[var(--admin-danger)]" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <div className="admin-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -324,10 +322,20 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row) => (
+              {filtered.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-4 py-10 text-center text-[var(--admin-muted)]"
+                  >
+                    No dealer shops found.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-[var(--admin-border)] last:border-0"
+                  className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
                 >
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -418,7 +426,7 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
                       </button>
                       <button
                         type="button"
-                        className="rounded-xl border border-[var(--admin-danger)]/40 px-3 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10"
+                        className="rounded-lg px-2.5 py-1.5 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10"
                         onClick={() => void onDelete(row.id)}
                       >
                         Delete
@@ -426,13 +434,11 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 ? (
-          <p className="p-6 text-sm text-[var(--admin-muted)]">No dealer shops found.</p>
-        ) : null}
       </div>
       {listMeta ? (
         <Pagination
@@ -449,7 +455,13 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
       ) : null}
 
       {editorOpen ? (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+        <div
+          id={dialogId}
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
+          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+        >
           <form
             onSubmit={onSubmit}
             className="admin-card my-8 w-full max-w-2xl space-y-4 p-6"
@@ -471,6 +483,12 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
                 Close
               </button>
             </div>
+
+            {error ? (
+              <p role="alert" className="text-sm text-[var(--admin-danger)]">
+                {error}
+              </p>
+            ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm sm:col-span-2">

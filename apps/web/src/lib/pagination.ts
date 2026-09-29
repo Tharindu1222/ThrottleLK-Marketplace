@@ -37,7 +37,7 @@ export const emptyMeta: PaginationMeta = {
   page: 1,
   limit: 20,
   total: 0,
-  totalPages: 1,
+  totalPages: 0,
   hasNextPage: false,
   hasPreviousPage: false,
 };

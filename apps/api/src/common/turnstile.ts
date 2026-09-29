@@ -5,14 +5,37 @@ import { clientIp } from './rate-limit';
 /**
  * ASVS 2.4.1 — Cloudflare Turnstile on public write endpoints.
  * Skips when TURNSTILE_SECRET_KEY is unset (local/tests).
+ * Production must set a secret at boot via requireTurnstileSecret().
  */
+export function requireTurnstileSecret(
+  env: Record<string, string | undefined>,
+  options?: { production?: boolean },
+) {
+  const production =
+    options?.production ??
+    (env.NODE_ENV ?? process.env.NODE_ENV) === 'production';
+  const secret = env.TURNSTILE_SECRET_KEY?.trim();
+  if (production && !secret) {
+    throw new Error('TURNSTILE_SECRET_KEY must be set in production');
+  }
+  return secret || undefined;
+}
+
 export async function assertTurnstile(opts: {
   token?: string;
   secret?: string;
   remoteIp?: string;
+  production?: boolean;
 }): Promise<void> {
+  const production =
+    opts.production ?? (process.env.NODE_ENV ?? '') === 'production';
   const secret = opts.secret?.trim();
-  if (!secret) return;
+  if (!secret) {
+    if (production) {
+      throw new Error('TURNSTILE_SECRET_KEY must be set in production');
+    }
+    return;
+  }
 
   const token = opts.token?.trim();
   if (!token) {

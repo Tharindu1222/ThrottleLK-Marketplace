@@ -144,7 +144,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link
@@ -153,12 +153,6 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
           >
             ← Back to parts shops
           </Link>
-          <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-wide text-[var(--admin-text)]">
-            {loadingShop ? 'Loading shop…' : (shop?.name ?? 'Parts shop')}
-          </h1>
-          <p className="mt-1 text-sm text-[var(--admin-muted)]">
-            Shop profile and inventory overview.
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {shop?.slug ? (
@@ -205,7 +199,11 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
+              <div>
+                <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[var(--admin-text)]">
+                  {shop.name}
+                </h2>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-medium ${dealerStatusTone(shop.status)}`}
                 >
@@ -230,6 +228,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
                     Verified
                   </span>
                 ) : null}
+                </div>
               </div>
 
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -352,10 +351,29 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
                 </tr>
               </thead>
               <tbody>
-                {inventory.map((row) => (
+                {loadingInventory ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-10 text-center text-[var(--admin-muted)]"
+                    >
+                      Loading inventory…
+                    </td>
+                  </tr>
+                ) : inventory.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-10 text-center text-[var(--admin-muted)]"
+                    >
+                      No parts listed for this shop yet.
+                    </td>
+                  </tr>
+                ) : (
+                  inventory.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-[var(--admin-border)] last:border-0"
+                    className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -416,19 +434,11 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-          {loadingInventory ? (
-            <p className="p-6 text-sm text-[var(--admin-muted)]">
-              Loading inventory…
-            </p>
-          ) : inventory.length === 0 ? (
-            <p className="p-6 text-sm text-[var(--admin-muted)]">
-              No parts listed for this shop yet.
-            </p>
-          ) : null}
         </div>
 
         {listMeta ? (

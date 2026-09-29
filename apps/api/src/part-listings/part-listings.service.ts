@@ -13,7 +13,13 @@ import type {
   UpdatePartListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus, PartListingKind } from '@throttlelk/types';
-import { In, IsNull, LessThanOrEqual, Repository } from 'typeorm';
+import {
+  In,
+  IsNull,
+  LessThanOrEqual,
+  Repository,
+  type SelectQueryBuilder,
+} from 'typeorm';
 import { CacheService } from '../common/cache.service';
 import { assertEmailVerified } from '../common/email-verified';
 import { preferredCoverUrl } from '../common/image-variants';
@@ -330,7 +336,19 @@ export class PartListingsService {
       defaultLimit: 50,
       maxLimit: 50,
     });
-    const qb = this.partListings
+    const idQb = this.partListings
+      .createQueryBuilder('l')
+      .select('l.id', 'id');
+    this.applyPublicListFilters(idQb, filters);
+    this.applyPublicListSort(idQb, filters.sort);
+    const total = await idQb.getCount();
+    const idRows = await idQb.skip(skip).take(limit).getRawMany<{ id: string }>();
+    const ids = idRows.map((row) => row.id).filter(Boolean);
+    if (ids.length === 0) {
+      return { items: [], meta: paginationMeta(total, page, limit) };
+    }
+
+    const rows = await this.partListings
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.category', 'category')
       .leftJoinAndSelect('l.district', 'district')
@@ -371,90 +389,18 @@ export class PartListingsService {
         'fitModel.id',
         'fitModel.name',
       ])
-      .where('l.status = :status', { status: 'active' })
-      .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
-        now: new Date(),
-      });
-
-    if (filters.kind) {
-      qb.andWhere('l.kind = :kind', { kind: filters.kind });
-    }
-    if (filters.categoryId) {
-      qb.andWhere('l.category_id = :categoryId', {
-        categoryId: filters.categoryId,
-      });
-    }
-    if (filters.districtId) {
-      qb.andWhere('l.district_id = :districtId', {
-        districtId: filters.districtId,
-      });
-    }
-    if (filters.cityId) {
-      qb.andWhere('l.city_id = :cityId', { cityId: filters.cityId });
-    }
-    if (filters.partsDealerId) {
-      qb.andWhere('l.parts_dealer_id = :partsDealerId', {
-        partsDealerId: filters.partsDealerId,
-      });
-    }
-    if (filters.minPrice != null) {
-      qb.andWhere('l.price_lkr >= :minPrice', { minPrice: filters.minPrice });
-    }
-    if (filters.maxPrice != null) {
-      qb.andWhere('l.price_lkr <= :maxPrice', { maxPrice: filters.maxPrice });
-    }
-    if (filters.condition) {
-      qb.andWhere('l.condition = :condition', { condition: filters.condition });
-    }
-    if (filters.brandId || filters.modelId) {
-      qb.innerJoin('l.fitments', 'fFilter');
-      if (filters.brandId) {
-        qb.andWhere('fFilter.brand_id = :brandId', {
-          brandId: filters.brandId,
-        });
-      }
-      if (filters.modelId) {
-        qb.andWhere(
-          '(fFilter.model_id = :modelId OR fFilter.model_id IS NULL)',
-          { modelId: filters.modelId },
-        );
-      }
-      qb.distinct(true);
-    }
-    if (filters.q?.trim()) {
-      const tokens = searchTokens(filters.q);
-      for (let i = 0; i < tokens.length; i++) {
-        const key = `q${i}`;
-        qb.andWhere(`l.title ILIKE :${key} ESCAPE '\\'`, {
-          [key]: `%${escapeLikePattern(tokens[i])}%`,
-        });
-      }
-    }
-
-    switch (filters.sort) {
-      case 'oldest':
-        qb.orderBy('l.publishedAt', 'ASC', 'NULLS LAST');
-        break;
-      case 'price_asc':
-        qb.orderBy('l.priceLkr', 'ASC');
-        break;
-      case 'price_desc':
-        qb.orderBy('l.priceLkr', 'DESC');
-        break;
-      case 'newest':
-      default:
-        qb.orderBy('l.publishedAt', 'DESC', 'NULLS LAST');
-        break;
-    }
-
-    qb.skip(skip).take(limit);
-    const [rows, total] = await qb.getManyAndCount();
-    const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+      .where('l.id IN (:...ids)', { ids })
+      .getMany();
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const ordered = ids
+      .map((id) => byId.get(id))
+      .filter((row): row is PartListing => Boolean(row));
+    const covers = await this.coverUrlsByListingId(ordered.map((row) => row.id));
     const verifiedIds = await this.partsDealersService.activeVerifiedIds(
-      rows.map((row) => row.partsDealerId),
+      ordered.map((row) => row.partsDealerId),
     );
     return {
-      items: rows.map((row) =>
+      items: ordered.map((row) =>
         this.toBrowseCard(
           row,
           covers.get(row.id) ?? null,
@@ -1063,6 +1009,103 @@ export class PartListingsService {
           verifiedIds.has(row.partsDealerId),
         ),
       );
+  }
+
+  private applyPublicListFilters(
+    qb: SelectQueryBuilder<PartListing>,
+    filters: {
+      kind?: PartListingKind | string;
+      q?: string;
+      categoryId?: string;
+      brandId?: string;
+      modelId?: string;
+      districtId?: string;
+      cityId?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      condition?: string;
+      partsDealerId?: string;
+    },
+  ) {
+    qb.where('l.status = :status', { status: 'active' }).andWhere(
+      '(l.expires_at IS NULL OR l.expires_at > :now)',
+      { now: new Date() },
+    );
+    if (filters.kind) {
+      qb.andWhere('l.kind = :kind', { kind: filters.kind });
+    }
+    if (filters.categoryId) {
+      qb.andWhere('l.category_id = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+    if (filters.districtId) {
+      qb.andWhere('l.district_id = :districtId', {
+        districtId: filters.districtId,
+      });
+    }
+    if (filters.cityId) {
+      qb.andWhere('l.city_id = :cityId', { cityId: filters.cityId });
+    }
+    if (filters.partsDealerId) {
+      qb.andWhere('l.parts_dealer_id = :partsDealerId', {
+        partsDealerId: filters.partsDealerId,
+      });
+    }
+    if (filters.minPrice != null) {
+      qb.andWhere('l.price_lkr >= :minPrice', { minPrice: filters.minPrice });
+    }
+    if (filters.maxPrice != null) {
+      qb.andWhere('l.price_lkr <= :maxPrice', { maxPrice: filters.maxPrice });
+    }
+    if (filters.condition) {
+      qb.andWhere('l.condition = :condition', { condition: filters.condition });
+    }
+    if (filters.brandId || filters.modelId) {
+      const clauses = ['f.part_listing_id = l.id'];
+      const params: Record<string, string> = {};
+      if (filters.brandId) {
+        clauses.push('f.brand_id = :brandId');
+        params.brandId = filters.brandId;
+      }
+      if (filters.modelId) {
+        clauses.push('(f.model_id = :modelId OR f.model_id IS NULL)');
+        params.modelId = filters.modelId;
+      }
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM part_listing_fitments f WHERE ${clauses.join(' AND ')})`,
+        params,
+      );
+    }
+    if (filters.q?.trim()) {
+      const tokens = searchTokens(filters.q);
+      for (let i = 0; i < tokens.length; i++) {
+        const key = `q${i}`;
+        qb.andWhere(`l.title ILIKE :${key} ESCAPE '\\'`, {
+          [key]: `%${escapeLikePattern(tokens[i])}%`,
+        });
+      }
+    }
+  }
+
+  private applyPublicListSort(
+    qb: SelectQueryBuilder<PartListing>,
+    sort?: string,
+  ) {
+    switch (sort) {
+      case 'oldest':
+        qb.orderBy('l.publishedAt', 'ASC', 'NULLS LAST');
+        break;
+      case 'price_asc':
+        qb.orderBy('l.priceLkr', 'ASC');
+        break;
+      case 'price_desc':
+        qb.orderBy('l.priceLkr', 'DESC');
+        break;
+      default:
+        qb.orderBy('l.publishedAt', 'DESC', 'NULLS LAST');
+        break;
+    }
   }
 
   private toBrowseCard(

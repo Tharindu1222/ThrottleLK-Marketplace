@@ -39,7 +39,7 @@ export function AdminGate({
 
   if (!ready) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--admin-muted)]">
+      <div className="flex min-h-svh items-center justify-center p-6 text-sm text-[var(--admin-muted)]">
         Loading…
       </div>
     );
@@ -47,32 +47,36 @@ export function AdminGate({
 
   if (!token) {
     return (
-      <div className="admin-card p-8 text-center">
-        <p className="text-[var(--admin-muted)]">
-          <Link
-            href={loginHref(locale, `/${locale}/admin`)}
-            className="font-medium text-[var(--admin-accent-2)] underline"
-          >
-            Log in
-          </Link>{' '}
-          as admin to continue.
-        </p>
+      <div className="flex min-h-svh items-center justify-center p-6">
+        <div className="admin-card max-w-md p-8 text-center">
+          <p className="text-[var(--admin-muted)]">
+            <Link
+              href={loginHref(locale, `/${locale}/admin`)}
+              className="font-medium text-[var(--admin-accent-2)] underline"
+            >
+              Log in
+            </Link>{' '}
+            as admin to continue.
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="admin-card p-8 text-center">
-        <p className="text-[var(--admin-muted)]">
-          Your account does not have the admin role.
-        </p>
-        <Link
-          href={`/${locale}`}
-          className="mt-4 inline-block text-sm font-medium text-[var(--admin-accent-2)] underline"
-        >
-          Back to marketplace
-        </Link>
+      <div className="flex min-h-svh items-center justify-center p-6">
+        <div className="admin-card max-w-md p-8 text-center">
+          <p className="text-[var(--admin-muted)]">
+            Your account does not have the admin role.
+          </p>
+          <Link
+            href={`/${locale}`}
+            className="mt-4 inline-block text-sm font-medium text-[var(--admin-accent-2)] underline"
+          >
+            Back to marketplace
+          </Link>
+        </div>
       </div>
     );
   }

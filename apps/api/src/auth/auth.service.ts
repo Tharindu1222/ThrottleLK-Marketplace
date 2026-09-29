@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -26,6 +27,8 @@ import { classifyRefreshSession } from './refresh-reuse';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -44,8 +47,13 @@ export class AuthService {
     ]);
     try {
       await this.sendEmailVerification(user);
-    } catch {
+    } catch (err) {
       // Token is stored; the user can resend. Do not fail registration.
+      this.logger.warn(
+        `Verification email failed userId=${user.id}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     }
     return this.issueTokens(user);
   }
@@ -163,8 +171,13 @@ export class AuthService {
           'Reset your ThrottleLK password',
           `<p>Reset your password:</p><p><a href="${link}">${link}</a></p><p>This link expires in 60 minutes.</p>`,
         );
-      } catch {
+      } catch (err) {
         // Still return 200 so this endpoint cannot enumerate emails.
+        this.logger.warn(
+          `Password-reset email failed userId=${user.id}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
       }
     }
     return {

@@ -180,6 +180,8 @@ export class DealersService {
       dealer.facebookUrl = input.facebookUrl;
     }
     if (input.tiktokUrl !== undefined) dealer.tiktokUrl = input.tiktokUrl;
+    if (input.coverFocusX !== undefined) dealer.coverFocusX = input.coverFocusX;
+    if (input.coverFocusY !== undefined) dealer.coverFocusY = input.coverFocusY;
   }
 
   async listPending(paging?: {

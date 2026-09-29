@@ -4,6 +4,21 @@ import type { NextRequest } from 'next/server';
 const locales = ['en', 'si'] as const;
 const defaultLocale = 'en';
 
+function localeFromPath(pathname: string): (typeof locales)[number] {
+  return (
+    locales.find(
+      (item) => pathname === `/${item}` || pathname.startsWith(`/${item}/`),
+    ) ?? defaultLocale
+  );
+}
+
+function hasAccessCookie(request: NextRequest): boolean {
+  return Boolean(
+    request.cookies.get('__Host-tlk_access')?.value ||
+      request.cookies.get('tlk_access')?.value,
+  );
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -27,10 +42,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const locale =
-    locales.find(
-      (item) => pathname === `/${item}` || pathname.startsWith(`/${item}/`),
-    ) ?? defaultLocale;
+  const locale = localeFromPath(pathname);
+  const isAccount =
+    pathname === `/${locale}/account` ||
+    pathname.startsWith(`/${locale}/account/`);
+  if (isAccount && !hasAccessCookie(request)) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/login`;
+    url.search = '';
+    url.searchParams.set(
+      'next',
+      `${pathname}${request.nextUrl.search || ''}`,
+    );
+    return NextResponse.redirect(url);
+  }
+
   const headers = new Headers(request.headers);
   headers.set('x-throttlelk-locale', locale);
   return NextResponse.next({ request: { headers } });

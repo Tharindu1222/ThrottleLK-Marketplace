@@ -8,6 +8,7 @@ import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { loginHref } from '@/lib/login-href';
 import { composeListingTitle } from '@/lib/listing-title';
+import { listingConditionLabel } from '@/lib/listing-labels';
 import {
   loadFavouriteIds,
   patchFavouriteIdsCache,
@@ -575,7 +576,7 @@ export function ListingCard({
           {listing.condition ? (
             <SpecCell
               label={t(locale, 'condition')}
-              value={listing.condition.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              value={listingConditionLabel(locale, listing.condition)}
             >
               <CardIcon>
                 <path d="M12 3l7 4v5c0 5-3.5 8.5-7 10-4.5-1.5-8-5-8-10V7l7-4z" />

@@ -3,6 +3,7 @@ import { t } from '@/lib/i18n';
 import { pickPopularHomeBrands } from '@/lib/home-shop';
 import { HomeHeroRail } from './home-hero-rail';
 import { HomeHeroShowcase } from './home-hero-showcase';
+import { homeHeroHeadingClass, homeHeroSectionClass, homeHeroSupportClass } from './home-hero-layout';
 
 export type HomeHeroDistrict = { id: string; name: string };
 export type HomeHeroBrand = {
@@ -23,7 +24,8 @@ export function HomeHero({
   const popular = pickPopularHomeBrands(brands);
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#090909]">
+    <section className={homeHeroSectionClass()}>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       <div
         aria-hidden
         className="absolute inset-0"
@@ -47,9 +49,10 @@ export function HomeHero({
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-[28%] bg-gradient-to-b from-transparent to-[#0d0d0d]"
       />
+      </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-[1360px] gap-6 px-5 pt-8 pb-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-stretch lg:gap-x-8 lg:gap-y-6 lg:px-10 lg:pt-10 lg:pb-12 xl:px-12">
-        <div className="relative z-20 order-1 flex min-w-0 flex-col justify-center">
+      <div className="relative z-10 mx-auto grid w-full min-w-0 max-w-[1360px] gap-6 px-5 pt-8 pb-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-stretch lg:gap-x-8 lg:gap-y-6 lg:px-10 lg:pt-10 lg:pb-12 xl:px-12">
+        <div className="relative z-20 order-1 flex min-w-0 w-full flex-col justify-center">
             <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] text-white/65 uppercase">
               <span
                 aria-hidden
@@ -57,11 +60,11 @@ export function HomeHero({
               />
               {t(locale, 'tagline')}
             </p>
-            <h1 className="mt-3 font-[family-name:var(--font-display)] text-[3.15rem] leading-[1.02] font-semibold text-white sm:text-6xl lg:text-[4.6rem] xl:text-[5rem]">
+            <h1 className={homeHeroHeadingClass(locale)}>
               <span className="block">{t(locale, 'homeHeroLine1')}</span>
               <span className="text-accent">{t(locale, 'homeHeroAccent')}</span>
             </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg">
+            <p className={homeHeroSupportClass()}>
               {t(locale, 'support')}
             </p>
           </div>
@@ -73,7 +76,7 @@ export function HomeHero({
           action={`/${locale}/bikes`}
           method="get"
           role="search"
-          className="relative z-20 order-2 rounded-2xl bg-white p-1.5 shadow-[0_22px_48px_-20px_rgba(0,0,0,0.65)] lg:order-3 lg:col-span-2"
+          className="relative z-20 order-2 min-w-0 w-full rounded-2xl bg-white p-1.5 shadow-[0_22px_48px_-20px_rgba(0,0,0,0.65)] lg:order-3 lg:col-span-2"
         >
           <div className="flex flex-col sm:flex-row sm:items-stretch">
             <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5">

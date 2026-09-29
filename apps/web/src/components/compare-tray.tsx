@@ -9,6 +9,8 @@ import {
 } from '@/lib/compare';
 import { t, type Locale } from '@/lib/i18n';
 
+const COMPARE_TRAY_OFFSET = '4.75rem';
+
 export function CompareTray({ locale }: { locale: Locale }) {
   const [items, setItems] = useState<CompareItem[]>([]);
 
@@ -22,6 +24,20 @@ export function CompareTray({ locale }: { locale: Locale }) {
       window.removeEventListener('storage', sync);
     };
   }, []);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      document.documentElement.style.removeProperty('--compare-tray-offset');
+      return;
+    }
+    document.documentElement.style.setProperty(
+      '--compare-tray-offset',
+      COMPARE_TRAY_OFFSET,
+    );
+    return () => {
+      document.documentElement.style.removeProperty('--compare-tray-offset');
+    };
+  }, [items.length]);
 
   if (items.length === 0) return null;
 

@@ -8,6 +8,7 @@ import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { listingConditionLabel } from '@/lib/listing-labels';
 
 export type BrowsePartCard = {
   id: string;
@@ -328,7 +329,9 @@ export function PartCard({
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {part.condition ? (
             <MetaBit>
-              <span className="capitalize">{part.condition}</span>
+              <span className="capitalize">
+                {listingConditionLabel(locale, part.condition)}
+              </span>
             </MetaBit>
           ) : null}
           {part.categoryName ? <MetaBit>{part.categoryName}</MetaBit> : null}

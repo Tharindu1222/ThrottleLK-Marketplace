@@ -26,14 +26,7 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
     const data = await apiGet<PartCategory[]>('/api/v1/admin/part-categories', {
       token: access,
     });
-    setRows(
-      [...data].sort((a, b) => {
-        const pa = a.parentName ?? '';
-        const pb = b.parentName ?? '';
-        if (pa !== pb) return pa.localeCompare(pb);
-        return a.name.localeCompare(b.name);
-      }),
-    );
+    setRows(data);
   }
 
   useEffect(() => {
@@ -46,20 +39,60 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
   }, []);
 
   const parents = useMemo(
-    () => rows.filter((r) => !r.parentId).sort((a, b) => a.name.localeCompare(b.name)),
+    () =>
+      rows
+        .filter((r) => !r.parentId)
+        .sort((a, b) => a.name.localeCompare(b.name)),
     [rows],
   );
 
-  const filtered = useMemo(() => {
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string, PartCategory[]>();
+    for (const row of rows) {
+      if (!row.parentId) continue;
+      const list = map.get(row.parentId) ?? [];
+      list.push(row);
+      map.set(row.parentId, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return map;
+  }, [rows]);
+
+  /** Flat tree order: parent, then its children. Orphans last. */
+  const treeRows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
-      (row) =>
-        row.name.toLowerCase().includes(q) ||
-        row.slug.toLowerCase().includes(q) ||
-        (row.parentName?.toLowerCase().includes(q) ?? false),
-    );
-  }, [rows, search]);
+    const matches = (row: PartCategory) =>
+      !q ||
+      row.name.toLowerCase().includes(q) ||
+      row.slug.toLowerCase().includes(q) ||
+      (row.parentName?.toLowerCase().includes(q) ?? false);
+
+    const out: Array<PartCategory & { depth: 0 | 1 }> = [];
+    const seen = new Set<string>();
+
+    for (const parent of parents) {
+      const kids = (childrenByParent.get(parent.id) ?? []).filter(matches);
+      const parentMatch = matches(parent);
+      if (!parentMatch && kids.length === 0) continue;
+      if (parentMatch || kids.length > 0) {
+        out.push({ ...parent, depth: 0 });
+        seen.add(parent.id);
+      }
+      for (const kid of kids) {
+        out.push({ ...kid, depth: 1 });
+        seen.add(kid.id);
+      }
+    }
+
+    for (const row of rows) {
+      if (seen.has(row.id) || !matches(row)) continue;
+      out.push({ ...row, depth: row.parentId ? 1 : 0 });
+    }
+
+    return out;
+  }, [parents, childrenByParent, rows, search]);
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -123,17 +156,11 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
 
   if (!token) return null;
 
+  const topCount = parents.length;
+  const childCount = rows.length - topCount;
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[var(--admin-text)]">
-          Part categories
-        </h1>
-        <p className="mt-1 text-sm text-[var(--admin-muted)]">
-          Categories used when listing spare and modified parts.
-        </p>
-      </div>
-
       {error ? (
         <p className="text-sm text-[var(--admin-danger)]" role="alert">
           {error}
@@ -142,18 +169,19 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
 
       <form
         onSubmit={onCreate}
-        className="flex flex-wrap items-end gap-2 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-4"
+        className="admin-card flex flex-wrap items-end gap-3 p-4"
       >
-        <label className="grid min-w-[180px] flex-1 gap-1.5">
-          <span className="text-[11px] tracking-wide text-[var(--admin-faint)] uppercase">
-            Parent (optional)
+        <label className="grid min-w-[11rem] flex-1 gap-1">
+          <span className="text-[11px] font-medium tracking-wide text-[var(--admin-faint)] uppercase">
+            Parent
           </span>
           <select
             value={parentId}
             onChange={(e) => setParentId(e.target.value)}
-            className="admin-input"
+            className="admin-field"
+            aria-label="Parent category"
           >
-            <option value="">Top-level category</option>
+            <option value="">Top-level</option>
             {parents.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -161,117 +189,163 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
             ))}
           </select>
         </label>
-        <label className="grid min-w-[220px] flex-1 gap-1.5">
-          <span className="text-[11px] tracking-wide text-[var(--admin-faint)] uppercase">
-            New category
+        <label className="grid min-w-[14rem] flex-[2] gap-1">
+          <span className="text-[11px] font-medium tracking-wide text-[var(--admin-faint)] uppercase">
+            Name
           </span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="admin-input"
+            className="admin-field"
             placeholder="e.g. Brake pads"
           />
         </label>
-        <button type="submit" disabled={busy} className="admin-btn">
-          {busy ? '…' : 'Add'}
+        <button
+          type="submit"
+          disabled={busy || !name.trim()}
+          className="admin-btn-primary h-[38px] shrink-0 px-5 text-sm disabled:opacity-50"
+        >
+          {busy ? 'Adding…' : 'Add category'}
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)]">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-[var(--admin-border)] bg-[var(--admin-surface)] text-[11px] tracking-wide text-[var(--admin-faint)] uppercase">
-            <tr>
-              <th className="px-4 py-3 font-medium">Parent</th>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Slug</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+      <div className="admin-card overflow-hidden">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--admin-border)] px-4 py-2.5">
+          <p className="text-sm text-[var(--admin-muted)]">
+            {rows.length === 0
+              ? 'No categories yet'
+              : `${topCount} top-level · ${childCount} sub`}
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-left text-sm">
+            <thead className="border-b border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-[11px] tracking-wide text-[var(--admin-faint)] uppercase">
               <tr>
-                <td
-                  colSpan={4}
-                  className="px-4 py-8 text-center text-[var(--admin-muted)]"
-                >
-                  No part categories yet.
-                </td>
+                <th className="px-4 py-2.5 font-medium">Category</th>
+                <th className="w-[28%] px-4 py-2.5 font-medium">Slug</th>
+                <th className="w-[9rem] px-4 py-2.5 text-right font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
-            ) : (
-              filtered.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-[var(--admin-border)] last:border-0"
-                >
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">
-                    {row.parentName ?? '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    {editingId === row.id ? (
-                      <input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="admin-input"
-                      />
-                    ) : (
-                      <span className="font-medium text-[var(--admin-text)]">
-                        {row.name}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-[var(--admin-muted)]">
-                    {row.slug}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      {editingId === row.id ? (
-                        <>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            className="admin-btn"
-                            onClick={() => void onSave(row.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            className="admin-btn-ghost"
-                            onClick={() => setEditingId(null)}
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            className="admin-btn-ghost"
-                            onClick={() => {
-                              setEditingId(row.id);
-                              setEditName(row.name);
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            className="admin-btn-ghost text-[var(--admin-danger)]"
-                            onClick={() => void onDelete(row.id)}
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
-                    </div>
+            </thead>
+            <tbody>
+              {treeRows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-4 py-10 text-center text-[var(--admin-muted)]"
+                  >
+                    {search.trim()
+                      ? 'No categories match your search.'
+                      : 'Add a top-level category to get started.'}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                treeRows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/40"
+                  >
+                    <td className="px-4 py-2">
+                      {editingId === row.id ? (
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="admin-field"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              void onSave(row.id);
+                            }
+                            if (e.key === 'Escape') setEditingId(null);
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className={`flex items-center gap-2 ${
+                            row.depth === 1 ? 'pl-5' : ''
+                          }`}
+                        >
+                          {row.depth === 1 ? (
+                            <span
+                              className="text-[var(--admin-faint)]"
+                              aria-hidden
+                            >
+                              └
+                            </span>
+                          ) : null}
+                          <span
+                            className={
+                              row.depth === 0
+                                ? 'font-medium text-[var(--admin-text)]'
+                                : 'text-[var(--admin-text)]'
+                            }
+                          >
+                            {row.name}
+                          </span>
+                          {row.depth === 0 ? (
+                            <span className="rounded-md bg-[var(--admin-surface-2)] px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-[var(--admin-faint)] uppercase">
+                              Top
+                            </span>
+                          ) : null}
+                        </div>
+                      )}
+                    </td>
+                    <td className="truncate px-4 py-2 font-mono text-xs text-[var(--admin-muted)]">
+                      {row.slug}
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center justify-end gap-1">
+                        {editingId === row.id ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              className="admin-btn-primary px-2.5 py-1 text-xs"
+                              onClick={() => void onSave(row.id)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-btn-ghost px-2.5 py-1 text-xs"
+                              onClick={() => setEditingId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="admin-btn-ghost px-2.5 py-1 text-xs"
+                              onClick={() => {
+                                setEditingId(row.id);
+                                setEditName(row.name);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              className="rounded-lg px-2.5 py-1 text-xs text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-50"
+                              onClick={() => void onDelete(row.id)}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

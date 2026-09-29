@@ -64,6 +64,12 @@ export class PartsDealer {
   @Column({ name: 'tiktok_url', type: 'varchar', length: 500, nullable: true })
   tiktokUrl!: string | null;
 
+  @Column({ name: 'cover_focus_x', type: 'double precision', default: 50 })
+  coverFocusX!: number;
+
+  @Column({ name: 'cover_focus_y', type: 'double precision', default: 50 })
+  coverFocusY!: number;
+
   @Column({ name: 'district_id' })
   districtId!: string;
 

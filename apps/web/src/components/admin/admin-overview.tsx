@@ -83,16 +83,7 @@ export function AdminOverview({ locale }: { locale: Locale }) {
   ] as const;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-[var(--admin-text)]">
-          Overview
-        </h1>
-        <p className="mt-1 text-sm text-[var(--admin-muted)]">
-          Marketplace health and moderation queues at a glance.
-        </p>
-      </div>
-
+    <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <Link
@@ -105,9 +96,10 @@ export function AdminOverview({ locale }: { locale: Locale }) {
                 {card.label}
               </span>
               <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${card.iconBg}`}
+                className={`flex h-8 w-8 items-center justify-center rounded-full ${card.iconBg}`}
+                aria-hidden
               >
-                {card.value > 99 ? '99+' : card.value}
+                <span className="h-2 w-2 rounded-full bg-current opacity-80" />
               </span>
             </div>
             <p className="mt-4 font-[family-name:var(--font-display)] text-3xl text-[var(--admin-text)]">

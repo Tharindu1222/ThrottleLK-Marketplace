@@ -12,6 +12,7 @@ import {
 import { createPortal } from 'react-dom';
 import { getAccessToken, getStoredUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 function useIsLoggedIn() {
   const [ready, setReady] = useState(false);
@@ -44,12 +45,15 @@ export function LoginRequiredDialog({
   hint?: string;
 }) {
   const titleId = useId();
+  const reactId = useId();
+  const dialogId = `login-required-${reactId.replace(/:/g, '')}`;
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const loginHref = `/${locale}/login?next=${encodeURIComponent(nextPath)}`;
   const onLoginPage = pathname?.includes('/login') ?? false;
   const dialogTitle = title ?? t(locale, 'loginToPostAd');
   const dialogHint = hint ?? t(locale, 'loginToPostAdHint');
+  useDialogFocusTrap(Boolean(mounted && open && !onLoginPage), dialogId);
 
   useEffect(() => setMounted(true), []);
 
@@ -78,10 +82,12 @@ export function LoginRequiredDialog({
 
   return createPortal(
     <div
+      id={dialogId}
       className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      tabIndex={-1}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
       }}
@@ -115,6 +121,7 @@ export function LoginRequiredDialog({
         <div className="mt-6 flex flex-col gap-2.5">
           <Link
             href={loginHref}
+            autoFocus
             onClick={() => onClose?.()}
             className="inline-flex min-h-11 items-center justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2"
           >

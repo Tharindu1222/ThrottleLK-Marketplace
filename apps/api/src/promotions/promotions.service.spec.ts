@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PromotionsService } from './promotions.service';
 import type { User } from '../users/user.entity';
@@ -38,29 +39,29 @@ function makeService(overrides?: {
   };
 
   const requests = {
-    findOne: jest.fn(async () => overrides?.pending ?? null),
+    findOne: jest.fn(async (_query?: unknown) => overrides?.pending ?? null),
     create: jest.fn((v: unknown) => v),
     save: jest.fn(async (v: unknown) => ({ id: 'req-1', ...(v as object) })),
     createQueryBuilder: jest.fn(),
   };
   const placements = {
-    findOne: jest.fn(async () => overrides?.live ?? null),
+    findOne: jest.fn(async (_query?: unknown) => overrides?.live ?? null),
     create: jest.fn((v: unknown) => v),
     save: jest.fn(async (v: unknown) => ({ id: 'place-1', ...(v as object) })),
     createQueryBuilder: jest.fn(),
   };
   const packages = {
-    findOne: jest.fn(async () => pkg),
+    findOne: jest.fn(async (_query?: unknown) => pkg),
     find: jest.fn(async () => [pkg]),
   };
   const accounts = {
-    findOne: jest.fn(async () => bank),
+    findOne: jest.fn(async (_query?: unknown) => bank),
   };
   const listings = {
-    findOne: jest.fn(async () => listing),
+    findOne: jest.fn(async (_query?: unknown) => listing),
   };
   const partListings = {
-    findOne: jest.fn(async () => overrides?.partListing ?? null),
+    findOne: jest.fn(async (_query?: unknown) => overrides?.partListing ?? null),
   };
   const storage = {
     putObject: jest.fn(async () => ({ storageKey: 'k', publicUrl: 'u' })),
@@ -84,11 +85,57 @@ function makeService(overrides?: {
     listPublic: jest.fn(async () => ({ items: [] })),
   };
   const cache = { invalidateDashboard: jest.fn() };
+  const dataSource = {
+    transaction: jest.fn(async (cb: (manager: unknown) => Promise<unknown>) => {
+      const manager = {
+        getRepository: (entity: { name?: string } | Function) => {
+          const name =
+            typeof entity === 'function'
+              ? entity.name
+              : (entity as { name?: string }).name;
+          if (name === 'PromoRequest') {
+            return {
+              ...requests,
+              createQueryBuilder: () => {
+                const state: {
+                  where?: { id?: string };
+                } = {};
+                const qb = {
+                  setLock: () => qb,
+                  leftJoinAndSelect: () => qb,
+                  where: (_sql: string, params: { id: string }) => {
+                    state.where = params;
+                    return qb;
+                  },
+                  getOne: async () =>
+                    requests.findOne({
+                      where: { id: state.where?.id ?? 'unknown' },
+                    }),
+                };
+                return qb;
+              },
+            };
+          }
+          if (name === 'HomepagePlacement') return placements;
+          return {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn((v: unknown) => v),
+          };
+        },
+      };
+      return cb(manager);
+    }),
+  };
 
   const service = new PromotionsService(
     packages as never,
     accounts as never,
-    { findOne: jest.fn(async () => ({ id: 'default', whatsapp: '0770000000' })), save: jest.fn(async (v) => v), create: jest.fn((v) => v) } as never,
+    {
+      findOne: jest.fn(async () => ({ id: 'default', whatsapp: '0770000000' })),
+      save: jest.fn(async (v: unknown) => v),
+      create: jest.fn((v: unknown) => v),
+    } as never,
     requests as never,
     placements as never,
     listings as never,
@@ -98,6 +145,7 @@ function makeService(overrides?: {
     storage as never,
     notifications as never,
     cache as never,
+    dataSource as never,
   );
 
   return {

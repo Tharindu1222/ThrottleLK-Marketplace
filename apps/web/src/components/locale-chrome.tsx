@@ -33,13 +33,10 @@ export function LocaleChrome({
   if (isAdmin) {
     return (
       <>
-        <a
-          href="#main-content"
-          className="skip-link"
-        >
+        <a href="#main-content" className="skip-link">
           {t(locale, 'skipToContent')}
         </a>
-        <div id="main-content">{children}</div>
+        {children}
       </>
     );
   }

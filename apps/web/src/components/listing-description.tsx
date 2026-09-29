@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { t, type Locale } from '@/lib/i18n';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 export function ListingDescription({
   locale,
@@ -20,9 +21,14 @@ export function ListingDescription({
   const previewRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
+  const reactId = useId();
+  const dialogId = `listing-description-${reactId.replace(/:/g, '')}`;
   const [expanded, setExpanded] = useState(false);
   const [needsMore, setNeedsMore] = useState(false);
   const [mounted, setMounted] = useState(false);
+  useDialogFocusTrap(Boolean(mounted && expanded), dialogId, {
+    initialFocusRef: closeRef,
+  });
 
   useEffect(() => setMounted(true), []);
 
@@ -46,18 +52,11 @@ export function ListingDescription({
   useEffect(() => {
     if (!expanded) return;
 
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    closeRef.current?.focus();
-
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setExpanded(false);
     }
     window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener('keydown', onKey);
-    };
+    return () => window.removeEventListener('keydown', onKey);
   }, [expanded]);
 
   return (
@@ -84,10 +83,12 @@ export function ListingDescription({
       {mounted && expanded
         ? createPortal(
             <div
+              id={dialogId}
               className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
+              tabIndex={-1}
               onClick={(e) => {
                 if (e.target === e.currentTarget) setExpanded(false);
               }}
@@ -103,6 +104,7 @@ export function ListingDescription({
                   <button
                     ref={closeRef}
                     type="button"
+                    autoFocus
                     className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-black/10 text-muted transition hover:border-black/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                     aria-label={t(locale, 'close')}
                     onClick={() => setExpanded(false)}

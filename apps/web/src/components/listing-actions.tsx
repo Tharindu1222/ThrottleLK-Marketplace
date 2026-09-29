@@ -162,7 +162,10 @@ export function ListingToolbar({
 
   async function onFavourite() {
     if (!token) {
-      window.location.href = `/${locale}/login`;
+      const next = encodeURIComponent(
+        `${window.location.pathname}${window.location.search}`,
+      );
+      window.location.href = `/${locale}/login?next=${next}`;
       return;
     }
     setMessage(null);
@@ -263,9 +266,11 @@ export function ListingContactBar({
   const hasChat = Boolean(chatNumber);
 
   return (
-    <div>
+    <div
+      className={`fixed inset-x-0 bottom-[var(--compare-tray-offset,0px)] z-[45] border-t border-black/10 bg-white/95 p-3 backdrop-blur transition-[bottom] md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none`}
+    >
       <div
-        className={`grid grid-cols-1 gap-2.5 sm:gap-3 ${
+        className={`mx-auto grid max-w-6xl grid-cols-1 gap-2.5 sm:gap-3 ${
           hasCall && hasChat ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
         }`}
       >

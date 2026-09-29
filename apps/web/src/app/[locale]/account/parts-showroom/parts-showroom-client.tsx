@@ -6,14 +6,17 @@ import { useRouter } from 'next/navigation';
 import {
   FormEvent,
   useEffect,
-  useRef,
+  useId,
   useState,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { ShowroomCoverEditor } from '@/components/showroom-cover-editor';
 import { apiGet, apiSend, apiUpload } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
+import { clampCoverFocus } from '@/lib/cover-crop';
 import { t, type Locale } from '@/lib/i18n';
+import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 const DealerMapPicker = dynamic(
   () =>
@@ -45,6 +48,8 @@ type DealerShop = {
   longitude: number | null;
   facebookUrl: string | null;
   tiktokUrl: string | null;
+  coverFocusX?: number | null;
+  coverFocusY?: number | null;
 };
 
 type DealerImage = {
@@ -91,7 +96,9 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const reactId = useId();
+  const dialogId = `parts-showroom-saved-${reactId.replace(/:/g, '')}`;
+  useDialogFocusTrap(Boolean(mounted && ok && dealer), dialogId);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -108,6 +115,8 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [facebookUrl, setFacebookUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
+  const [coverFocusX, setCoverFocusX] = useState(50);
+  const [coverFocusY, setCoverFocusY] = useState(50);
 
   useEffect(() => {
     setMounted(true);
@@ -147,6 +156,8 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
     setLongitude(shop.longitude);
     setFacebookUrl(shop.facebookUrl ?? '');
     setTiktokUrl(shop.tiktokUrl ?? '');
+    setCoverFocusX(clampCoverFocus(shop.coverFocusX));
+    setCoverFocusY(clampCoverFocus(shop.coverFocusY));
   }
 
   async function loadImages(access: string, dealerId: string) {
@@ -197,25 +208,42 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
     ).then(setCities);
   }, [districtId]);
 
-  async function onFileChange(file: File) {
+  async function onUploadCover(file: File) {
     if (!token || !dealer) return;
     setBusy(true);
     setError(null);
     setOk(null);
     try {
-      if (image) {
-        await apiSend(`/api/v1/parts-dealers/id/${dealer.id}/images/${image.id}`, {
-          method: 'DELETE',
-          token,
-        });
-      }
-      await apiUpload(`/api/v1/parts-dealers/id/${dealer.id}/images`, file, token);
-      await loadImages(token, dealer.id);
+      const uploaded = await apiUpload<DealerImage>(
+        `/api/v1/parts-dealers/id/${dealer.id}/images`,
+        file,
+        token,
+      );
+      setImage(uploaded);
+      setCoverFocusX(50);
+      setCoverFocusY(50);
+      setDealer({ ...dealer, coverFocusX: 50, coverFocusY: 50 });
     } catch (err) {
       setError(err instanceof Error ? err.message : t(locale, 'uploadFailed'));
+      throw err;
     } finally {
       setBusy(false);
-      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  async function onSaveCoverFocus(x: number, y: number) {
+    if (!token || !dealer) return;
+    setError(null);
+    try {
+      const updated = await apiSend<DealerShop>('/api/v1/parts-dealers/mine', {
+        method: 'PATCH',
+        token,
+        body: { coverFocusX: x, coverFocusY: y },
+      });
+      applyDealer(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t(locale, 'deleteFailed'));
+      throw err;
     }
   }
 
@@ -347,6 +375,9 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
         token,
       });
       setImage(null);
+      setCoverFocusX(50);
+      setCoverFocusY(50);
+      setDealer({ ...dealer, coverFocusX: 50, coverFocusY: 50 });
     } catch (err) {
       setError(err instanceof Error ? err.message : t(locale, 'deleteFailed'));
     } finally {
@@ -393,10 +424,12 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
     mounted && ok && dealer
       ? createPortal(
           <div
+            id={dialogId}
             className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="showroom-saved-title"
+            tabIndex={-1}
           >
             <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-black/10 bg-white p-6 text-center shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
@@ -497,78 +530,19 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
     <div className="space-y-5">
       {successPopup}
 
-      {/* Full-width cover banner */}
-      <section className="overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-[0_1px_2px_rgba(15,15,15,0.04)]">
-        <div className="relative isolate min-h-[14rem] bg-zinc-200 sm:min-h-[16rem] lg:min-h-[18rem]">
-          {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={image.imageUrl}
-              alt={dealer.name}
-              className="absolute inset-0 h-full w-full object-contain bg-zinc-100"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(145deg,#eceef1_0%,#f7f8f9_50%,#e8eaed_100%)]">
-              <p className="text-sm text-muted">{t(locale, 'noShowroomCover')}</p>
-            </div>
-          )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-4 pt-16 pb-4 sm:px-6 sm:pb-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="min-w-0 text-white">
-                <p className="text-[10px] tracking-[0.2em] text-white/70 uppercase">
-                  {t(locale, 'showroomCover')}
-                </p>
-                <h2 className="mt-1 truncate font-[family-name:var(--font-display)] text-2xl tracking-wide sm:text-3xl">
-                  {name || dealer.name}
-                </h2>
-                <Link
-                  href={`/${locale}/parts-dealers/${dealer.slug}`}
-                  className="mt-1 inline-flex text-sm font-medium text-white/90 underline-offset-2 hover:underline"
-                >
-                  {t(locale, 'viewShowroom')} →
-                </Link>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label
-                  className={`inline-flex cursor-pointer items-center justify-center rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-accent/90 ${
-                    busy ? 'pointer-events-none opacity-60' : ''
-                  }`}
-                >
-                  {busy
-                    ? t(locale, 'uploading')
-                    : image
-                      ? t(locale, 'replaceCover')
-                      : t(locale, 'uploadCover')}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    disabled={busy}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void onFileChange(file);
-                    }}
-                  />
-                </label>
-                {image ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void onRemoveCover()}
-                    className="rounded-full border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-60"
-                  >
-                    {t(locale, 'removeCover')}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-        <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs text-muted sm:px-6">
-          {t(locale, 'photoHint')}
-        </p>
-      </section>
+      {/* Full-width cover banner — matches public showroom framing */}
+      <ShowroomCoverEditor
+        locale={locale}
+        shopName={name || dealer.name}
+        showroomHref={`/${locale}/parts-dealers/${dealer.slug}`}
+        imageUrl={image?.imageUrl ?? null}
+        coverFocusX={coverFocusX}
+        coverFocusY={coverFocusY}
+        busy={busy}
+        onUpload={onUploadCover}
+        onRemove={onRemoveCover}
+        onSaveFocus={onSaveCoverFocus}
+      />
 
       <form onSubmit={(e) => void onSaveDetails(e)} className="space-y-5">
         {/* Shop + Contact equal columns */}

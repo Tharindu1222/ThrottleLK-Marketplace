@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { apiGet } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 
@@ -51,6 +51,25 @@ export type BrowseFilterState = {
 const fieldClass =
   'w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
 
+function FilterField({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={id} className="text-xs font-medium text-muted">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 export function BrowseFilters({
   locale,
   brands,
@@ -64,6 +83,7 @@ export function BrowseFilters({
   categories: Category[];
   initial: BrowseFilterState;
 }) {
+  const uid = useId();
   const [brandId, setBrandId] = useState(initial.brandId ?? '');
   const [districtId, setDistrictId] = useState(initial.districtId ?? '');
   const [models, setModels] = useState<Model[]>([]);
@@ -142,191 +162,254 @@ export function BrowseFilters({
         <p className="hidden font-[family-name:var(--font-display)] text-lg tracking-wide lg:block">
           {t(locale, 'filters')}
         </p>
-        <input
-          name="q"
-          defaultValue={initial.q}
-          placeholder={t(locale, 'searchPlaceholder')}
-          className={fieldClass}
-        />
-        <select
-          name="brandId"
-          value={brandId}
-          onChange={(e) => setBrandId(e.target.value)}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'brandFilter')}</option>
-          {brands.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
+        <FilterField id={`${uid}-q`} label={t(locale, 'searchLabel')}>
+          <input
+            id={`${uid}-q`}
+            name="q"
+            defaultValue={initial.q}
+            placeholder={t(locale, 'searchPlaceholder')}
+            className={fieldClass}
+          />
+        </FilterField>
+        <FilterField id={`${uid}-brand`} label={t(locale, 'brandFilter')}>
+          <select
+            id={`${uid}-brand`}
+            name="brandId"
+            value={brandId}
+            onChange={(e) => setBrandId(e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'brandFilter')}</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-model`} label={t(locale, 'modelFilter')}>
+          <select
+            id={`${uid}-model`}
+            name="modelId"
+            defaultValue={initial.modelId}
+            disabled={!brandId}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'modelFilter')}</option>
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-category`} label={t(locale, 'categoryFilter')}>
+          <select
+            id={`${uid}-category`}
+            name="categoryId"
+            defaultValue={initial.categoryId}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'categoryFilter')}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-district`} label={t(locale, 'districtFilter')}>
+          <select
+            id={`${uid}-district`}
+            name="districtId"
+            value={districtId}
+            onChange={(e) => setDistrictId(e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'districtFilter')}</option>
+            {districts.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-city`} label={t(locale, 'cityFilter')}>
+          <select
+            id={`${uid}-city`}
+            name="cityId"
+            defaultValue={initial.cityId}
+            disabled={!districtId}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'cityFilter')}</option>
+            {cities.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-condition`} label={t(locale, 'condition')}>
+          <select
+            id={`${uid}-condition`}
+            name="condition"
+            defaultValue={initial.condition}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'condition')}</option>
+            <option value="new">{t(locale, 'conditionNew')}</option>
+            <option value="used">{t(locale, 'conditionUsed')}</option>
+            <option value="reconditioned">
+              {t(locale, 'conditionReconditioned')}
             </option>
-          ))}
-        </select>
-        <select
-          name="modelId"
-          defaultValue={initial.modelId}
-          disabled={!brandId}
-          className={fieldClass}
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-fuel`} label={t(locale, 'fuelFilter')}>
+          <select
+            id={`${uid}-fuel`}
+            name="fuelType"
+            defaultValue={initial.fuelType}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'fuelFilter')}</option>
+            <option value="petrol">{t(locale, 'fuelPetrol')}</option>
+            <option value="diesel">{t(locale, 'fuelDiesel')}</option>
+            <option value="electric">{t(locale, 'fuelElectric')}</option>
+            <option value="hybrid">{t(locale, 'fuelHybrid')}</option>
+          </select>
+        </FilterField>
+        <FilterField
+          id={`${uid}-transmission`}
+          label={t(locale, 'transmissionFilter')}
         >
-          <option value="">{t(locale, 'modelFilter')}</option>
-          {models.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
+          <select
+            id={`${uid}-transmission`}
+            name="transmission"
+            defaultValue={initial.transmission}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'transmissionFilter')}</option>
+            <option value="manual">{t(locale, 'transmissionManual')}</option>
+            <option value="automatic">
+              {t(locale, 'transmissionAutomatic')}
             </option>
-          ))}
-        </select>
-        <select
-          name="categoryId"
-          defaultValue={initial.categoryId}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'categoryFilter')}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
+            <option value="semi_automatic">
+              {t(locale, 'transmissionSemi')}
             </option>
-          ))}
-        </select>
-        <select
-          name="districtId"
-          value={districtId}
-          onChange={(e) => setDistrictId(e.target.value)}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'districtFilter')}</option>
-          {districts.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="cityId"
-          defaultValue={initial.cityId}
-          disabled={!districtId}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'cityFilter')}</option>
-          {cities.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="condition"
-          defaultValue={initial.condition}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'condition')}</option>
-          <option value="new">{t(locale, 'conditionNew')}</option>
-          <option value="used">{t(locale, 'conditionUsed')}</option>
-          <option value="reconditioned">
-            {t(locale, 'conditionReconditioned')}
-          </option>
-        </select>
-        <select
-          name="fuelType"
-          defaultValue={initial.fuelType}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'fuelFilter')}</option>
-          <option value="petrol">{t(locale, 'fuelPetrol')}</option>
-          <option value="diesel">{t(locale, 'fuelDiesel')}</option>
-          <option value="electric">{t(locale, 'fuelElectric')}</option>
-          <option value="hybrid">{t(locale, 'fuelHybrid')}</option>
-        </select>
-        <select
-          name="transmission"
-          defaultValue={initial.transmission}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'transmissionFilter')}</option>
-          <option value="manual">{t(locale, 'transmissionManual')}</option>
-          <option value="automatic">{t(locale, 'transmissionAutomatic')}</option>
-          <option value="semi_automatic">
-            {t(locale, 'transmissionSemi')}
-          </option>
-        </select>
-        <select
-          name="sellerType"
-          defaultValue={initial.sellerType}
-          className={fieldClass}
-        >
-          <option value="">{t(locale, 'sellerTypeAny')}</option>
-          <option value="private">{t(locale, 'sellerTypePrivate')}</option>
-          <option value="dealer">{t(locale, 'sellerTypeDealer')}</option>
-        </select>
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-seller`} label={t(locale, 'sellerTypeFilter')}>
+          <select
+            id={`${uid}-seller`}
+            name="sellerType"
+            defaultValue={initial.sellerType}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'sellerTypeAny')}</option>
+            <option value="private">{t(locale, 'sellerTypePrivate')}</option>
+            <option value="dealer">{t(locale, 'sellerTypeDealer')}</option>
+          </select>
+        </FilterField>
         <div className="grid grid-cols-2 gap-3">
-          <input
-            name="minPrice"
-            defaultValue={initial.minPrice}
-            placeholder={t(locale, 'minPrice')}
-            className={fieldClass}
-          />
-          <input
-            name="maxPrice"
-            defaultValue={initial.maxPrice}
-            placeholder={t(locale, 'maxPrice')}
-            className={fieldClass}
-          />
+          <FilterField id={`${uid}-minPrice`} label={t(locale, 'minPrice')}>
+            <input
+              id={`${uid}-minPrice`}
+              name="minPrice"
+              defaultValue={initial.minPrice}
+              placeholder={t(locale, 'minPrice')}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxPrice`} label={t(locale, 'maxPrice')}>
+            <input
+              id={`${uid}-maxPrice`}
+              name="maxPrice"
+              defaultValue={initial.maxPrice}
+              placeholder={t(locale, 'maxPrice')}
+              className={fieldClass}
+            />
+          </FilterField>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input
-            name="minYear"
-            defaultValue={initial.minYear}
-            placeholder={t(locale, 'minYear')}
-            className={fieldClass}
-          />
-          <input
-            name="maxYear"
-            defaultValue={initial.maxYear}
-            placeholder={t(locale, 'maxYear')}
-            className={fieldClass}
-          />
+          <FilterField id={`${uid}-minYear`} label={t(locale, 'minYear')}>
+            <input
+              id={`${uid}-minYear`}
+              name="minYear"
+              defaultValue={initial.minYear}
+              placeholder={t(locale, 'minYear')}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxYear`} label={t(locale, 'maxYear')}>
+            <input
+              id={`${uid}-maxYear`}
+              name="maxYear"
+              defaultValue={initial.maxYear}
+              placeholder={t(locale, 'maxYear')}
+              className={fieldClass}
+            />
+          </FilterField>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input
-            name="minRegistrationYear"
-            defaultValue={initial.minRegistrationYear}
-            placeholder={t(locale, 'minRegYear')}
-            aria-label={t(locale, 'minRegYear')}
-            className={fieldClass}
-          />
-          <input
-            name="maxRegistrationYear"
-            defaultValue={initial.maxRegistrationYear}
-            placeholder={t(locale, 'maxRegYear')}
-            aria-label={t(locale, 'maxRegYear')}
-            className={fieldClass}
-          />
+          <FilterField id={`${uid}-minReg`} label={t(locale, 'minRegYear')}>
+            <input
+              id={`${uid}-minReg`}
+              name="minRegistrationYear"
+              defaultValue={initial.minRegistrationYear}
+              placeholder={t(locale, 'minRegYear')}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxReg`} label={t(locale, 'maxRegYear')}>
+            <input
+              id={`${uid}-maxReg`}
+              name="maxRegistrationYear"
+              defaultValue={initial.maxRegistrationYear}
+              placeholder={t(locale, 'maxRegYear')}
+              className={fieldClass}
+            />
+          </FilterField>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input
-            name="minMileage"
-            defaultValue={initial.minMileage}
-            placeholder={t(locale, 'minMileage')}
-            className={fieldClass}
-          />
-          <input
-            name="maxMileage"
-            defaultValue={initial.maxMileage}
-            placeholder={t(locale, 'maxMileage')}
-            className={fieldClass}
-          />
+          <FilterField id={`${uid}-minMileage`} label={t(locale, 'minMileage')}>
+            <input
+              id={`${uid}-minMileage`}
+              name="minMileage"
+              defaultValue={initial.minMileage}
+              placeholder={t(locale, 'minMileage')}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxMileage`} label={t(locale, 'maxMileage')}>
+            <input
+              id={`${uid}-maxMileage`}
+              name="maxMileage"
+              defaultValue={initial.maxMileage}
+              placeholder={t(locale, 'maxMileage')}
+              className={fieldClass}
+            />
+          </FilterField>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input
-            name="minEngineCc"
-            defaultValue={initial.minEngineCc}
-            placeholder={t(locale, 'minEngineCc')}
-            className={fieldClass}
-          />
-          <input
-            name="maxEngineCc"
-            defaultValue={initial.maxEngineCc}
-            placeholder={t(locale, 'maxEngineCc')}
-            className={fieldClass}
-          />
+          <FilterField id={`${uid}-minCc`} label={t(locale, 'minEngineCc')}>
+            <input
+              id={`${uid}-minCc`}
+              name="minEngineCc"
+              defaultValue={initial.minEngineCc}
+              placeholder={t(locale, 'minEngineCc')}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxCc`} label={t(locale, 'maxEngineCc')}>
+            <input
+              id={`${uid}-maxCc`}
+              name="maxEngineCc"
+              defaultValue={initial.maxEngineCc}
+              placeholder={t(locale, 'maxEngineCc')}
+              className={fieldClass}
+            />
+          </FilterField>
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -346,17 +429,20 @@ export function BrowseFilters({
           />
           {t(locale, 'negotiableOnly')}
         </label>
-        <select
-          name="sort"
-          defaultValue={initial.sort ?? 'newest'}
-          className={fieldClass}
-        >
-          {SORTS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {t(locale, s.labelKey)}
-            </option>
-          ))}
-        </select>
+        <FilterField id={`${uid}-sort`} label={t(locale, 'sortLabel')}>
+          <select
+            id={`${uid}-sort`}
+            name="sort"
+            defaultValue={initial.sort ?? 'newest'}
+            className={fieldClass}
+          >
+            {SORTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {t(locale, s.labelKey)}
+              </option>
+            ))}
+          </select>
+        </FilterField>
         <button
           type="submit"
           className="bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
