@@ -8,6 +8,7 @@ import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { loginHref } from '@/lib/login-href';
 import { listingConditionLabel } from '@/lib/listing-labels';
 import {
   promoCardBadgeLabel,
@@ -97,13 +98,41 @@ function kindLabel(locale: Locale, kind: string) {
     : t(locale, 'sparePartBadge');
 }
 
+function OverlayTip({
+  label,
+  align,
+  children,
+}: {
+  label: string;
+  align: 'left' | 'right';
+  children: ReactNode;
+}) {
+  return (
+    <span className="pointer-events-auto relative inline-flex">
+      {children}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute top-[calc(100%+6px)] z-30 whitespace-nowrap rounded-sm bg-black/85 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-sm transition duration-150 peer-hover:opacity-100 peer-focus-visible:opacity-100 ${
+          align === 'left' ? 'left-0' : 'right-0'
+        }`}
+      >
+        {label}
+      </span>
+    </span>
+  );
+}
+
 function FavouriteHeart({
   locale,
   partListingId,
+  partSlug,
+  partKind,
   onChange,
 }: {
   locale: Locale;
   partListingId: string;
+  partSlug: string;
+  partKind: string;
   onChange?: (partListingId: string, favourited: boolean) => void;
 }) {
   const [favourited, setFavourited] = useState(false);
@@ -118,80 +147,112 @@ function FavouriteHeart({
       .catch(() => undefined);
   }, [partListingId]);
 
-  async function toggle(e: MouseEvent) {
+  function stopCardNav(e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const access = getAccessToken();
-    if (!access) {
-      window.location.href = `/${locale}/login?next=${encodeURIComponent(window.location.pathname)}`;
+  }
+
+  async function onToggle(e: MouseEvent) {
+    stopCardNav(e);
+    const token = getAccessToken();
+    if (!token) {
+      window.location.href = loginHref(
+        locale,
+        kindHref(locale, partKind, partSlug),
+      );
       return;
     }
     if (busy) return;
+
+    const next = !favourited;
     setBusy(true);
     setError(null);
-    const next = !favourited;
     setFavourited(next);
+
     try {
       if (next) {
-        await apiSend(`/api/v1/part-favourites/${partListingId}`, {
-          token: access,
-        });
+        try {
+          await apiSend(`/api/v1/part-favourites/${partListingId}`, {
+            token,
+          });
+        } catch (err) {
+          if (
+            !(
+              err instanceof ApiRequestError &&
+              err.body?.error?.code === 'ALREADY_FAVOURITED'
+            )
+          ) {
+            throw err;
+          }
+        }
       } else {
-        await apiSend(`/api/v1/part-favourites/${partListingId}`, {
-          method: 'DELETE',
-          token: access,
-        });
+        try {
+          await apiSend(`/api/v1/part-favourites/${partListingId}`, {
+            method: 'DELETE',
+            token,
+          });
+        } catch (err) {
+          if (
+            !(
+              err instanceof ApiRequestError &&
+              err.body?.error?.code === 'FAVOURITE_NOT_FOUND'
+            )
+          ) {
+            throw err;
+          }
+        }
       }
       onChange?.(partListingId, next);
     } catch (err) {
       setFavourited(!next);
-      setError(
-        err instanceof ApiRequestError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : 'Failed',
-      );
+      setError(err instanceof Error ? err.message : 'Failed');
     } finally {
       setBusy(false);
     }
   }
 
+  const favLabel = favourited
+    ? t(locale, 'unfavourite')
+    : t(locale, 'addFavourite');
+
   return (
-    <span className="pointer-events-auto relative inline-flex">
-      <button
-        type="button"
-        aria-pressed={favourited}
-        aria-label={t(locale, 'addFavourite')}
-        disabled={busy}
-        onClick={toggle}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 ${
-          favourited
-            ? 'border-accent bg-accent text-white shadow-accent/25'
-            : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
-        }`}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-[18px] w-[18px]"
-          fill={favourited ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          strokeWidth="1.75"
-          aria-hidden
+    <>
+      <OverlayTip label={favLabel} align="right">
+        <button
+          type="button"
+          disabled={busy}
+          aria-pressed={favourited}
+          aria-label={favLabel}
+          title={favLabel}
+          onClick={(e) => void onToggle(e)}
+          onMouseDown={stopCardNav}
+          onPointerDown={stopCardNav}
+          className={`peer pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 disabled:opacity-60 ${
+            favourited
+              ? 'border-accent bg-accent text-white shadow-accent/25'
+              : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
+          }`}
         >
-          <path d="M12 19s-6.5-4.1-8.2-7.2C2.5 9.5 3.6 6.8 6.3 6.2c1.6-.3 3.1.4 3.9 1.6.8-1.2 2.3-1.9 3.9-1.6 2.7.6 3.8 3.3 2.5 5.6C18.5 14.9 12 19 12 19Z" />
-        </svg>
-      </button>
+          <svg
+            viewBox="0 0 24 24"
+            className="h-[18px] w-[18px]"
+            fill={favourited ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth={favourited ? '0' : '1.75'}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M16.5 3.5c-1.74 0-3.41.81-4.5 2.09A6.03 6.03 0 0 0 7.5 3.5 5.5 5.5 0 0 0 2 9c0 6.16 8.5 11.5 10 11.5S22 15.16 22 9a5.5 5.5 0 0 0-5.5-5.5z" />
+          </svg>
+        </button>
+      </OverlayTip>
       {error ? (
-        <span className="absolute top-[calc(100%+4px)] right-0 max-w-[9rem] rounded bg-black/75 px-1.5 py-0.5 text-[10px] leading-tight text-white">
+        <span className="max-w-[9rem] rounded bg-black/75 px-1.5 py-0.5 text-[10px] leading-tight text-white">
           {error}
         </span>
       ) : null}
-    </span>
+    </>
   );
 }
 
@@ -301,6 +362,8 @@ export function PartCard({
               <FavouriteHeart
                 locale={locale}
                 partListingId={part.id}
+                partSlug={part.slug}
+                partKind={part.kind}
                 onChange={onFavouriteChange}
               />
             ) : null}

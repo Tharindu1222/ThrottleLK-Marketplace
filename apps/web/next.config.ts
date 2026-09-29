@@ -86,7 +86,7 @@ const nextConfig: NextConfig = {
               "frame-src https://challenges.cloudflare.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
-              "form-action 'self'",
+              "form-action 'self' https://sandbox.payhere.lk https://www.payhere.lk",
               "object-src 'none'",
             ].join('; '),
           },

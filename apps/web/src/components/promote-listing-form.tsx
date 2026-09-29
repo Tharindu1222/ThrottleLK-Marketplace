@@ -40,7 +40,10 @@ type PayHereCheckout = {
   first_name: string;
   last_name: string;
   email: string;
-  phone?: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
   custom_1: string;
 };
 
@@ -86,9 +89,12 @@ function submitPayHereForm(checkout: PayHereCheckout) {
     first_name: checkout.first_name,
     last_name: checkout.last_name,
     email: checkout.email,
+    phone: checkout.phone,
+    address: checkout.address,
+    city: checkout.city,
+    country: checkout.country,
     custom_1: checkout.custom_1,
   };
-  if (checkout.phone) fields.phone = checkout.phone;
 
   for (const [name, value] of Object.entries(fields)) {
     const input = document.createElement('input');

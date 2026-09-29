@@ -64,6 +64,15 @@ export class PayHereService {
     return Number(amountLkr).toFixed(2);
   }
 
+  /** PayHere requires a valid phone; fall back for local sandbox tests. */
+  normalizePhone(phone: string | null | undefined): string {
+    const raw = (phone ?? '').replace(/[^\d+]/g, '');
+    if (/^0\d{9}$/.test(raw)) return raw;
+    if (/^\+94\d{9}$/.test(raw)) return `0${raw.slice(3)}`;
+    if (/^94\d{9}$/.test(raw)) return `0${raw.slice(2)}`;
+    return '0770000000';
+  }
+
   /** Checkout hash: md5(merchant_id + order_id + amount + currency + md5(secret).toUpperCase()).toUpperCase() */
   buildCheckoutHash(params: {
     merchantId: string;

@@ -331,7 +331,10 @@ export class PromotionsService {
       first_name: seller.firstName || 'Seller',
       last_name: seller.lastName || 'ThrottleLK',
       email: seller.email,
-      phone: seller.phone ?? undefined,
+      phone: this.payhere.normalizePhone(seller.phone),
+      address: 'Sri Lanka',
+      city: 'Colombo',
+      country: 'Sri Lanka',
       custom_1: saved.id,
     };
   }
@@ -474,15 +477,19 @@ export class PromotionsService {
   ) {
     const { saved, title, endsAt, alreadyActive } =
       await this.dataSource.transaction(async (manager) => {
-        const request = await manager
+        // Lock only promo_requests — Postgres forbids FOR UPDATE on nullable LEFT JOIN sides.
+        const locked = await manager
           .getRepository(PromoRequest)
           .createQueryBuilder('r')
           .setLock('pessimistic_write')
-          .leftJoinAndSelect('r.package', 'package')
-          .leftJoinAndSelect('r.listing', 'listing')
-          .leftJoinAndSelect('r.partListing', 'partListing')
           .where('r.id = :id', { id: requestId })
           .getOne();
+        if (!locked) this.notFound('Request');
+
+        const request = await manager.getRepository(PromoRequest).findOne({
+          where: { id: requestId },
+          relations: ['package', 'listing', 'partListing'],
+        });
         if (!request) this.notFound('Request');
 
         if (

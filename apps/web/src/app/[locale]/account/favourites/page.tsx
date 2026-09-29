@@ -17,11 +17,9 @@ export default async function FavouritesPage({
       <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
         {t(locale, 'favourites')}
       </h1>
-      <div className="mt-8">
-        <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
-          <FavouritesClient locale={locale} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<p className="mt-8 text-sm text-muted">Loading…</p>}>
+        <FavouritesClient locale={locale} />
+      </Suspense>
     </div>
   );
 }
