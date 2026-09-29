@@ -13,21 +13,20 @@ export default async function SellPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
-          {t(locale, 'postAnAdEyebrow')}
-        </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {t(locale, 'postAnAd')}
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          {t(locale, 'postAnAdHint')}
-        </p>
+    <main className="flex flex-1 flex-col bg-[#f4f4f5]">
+      <div className="mx-auto w-full max-w-5xl flex-1 px-4 pt-8 pb-8 sm:px-6 md:pt-10 md:pb-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-foreground sm:text-[2.5rem]">
+            {t(locale, 'postAnAd')}
+          </h1>
+          <p className="mx-auto mt-2.5 max-w-lg text-sm leading-relaxed text-muted sm:text-[15px]">
+            {t(locale, 'postAnAdHint')}
+          </p>
+        </div>
+        <SellLoginGate locale={locale}>
+          <SellForm locale={locale} />
+        </SellLoginGate>
       </div>
-      <SellLoginGate locale={locale}>
-        <SellForm locale={locale} />
-      </SellLoginGate>
     </main>
   );
 }

@@ -13,7 +13,7 @@ type BrandLogoProps = {
 
 const sizeClass: Record<NonNullable<BrandLogoProps['size']>, string> = {
   header: 'h-9 w-auto sm:h-10',
-  footer: 'mx-auto h-12 w-auto',
+  footer: 'mx-auto h-8 w-auto',
   admin: 'h-8 w-auto',
 };
 

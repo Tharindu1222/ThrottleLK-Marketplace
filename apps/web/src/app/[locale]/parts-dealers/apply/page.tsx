@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { PartsDealerApplyForm } from './apply-form';
 
-export default async function DealerApplyPage({
+export default async function PartsDealerApplyPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -12,7 +12,7 @@ export default async function DealerApplyPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-8 sm:px-8 sm:py-12 lg:px-10">
+    <main className="bg-white">
       <PartsDealerApplyForm locale={locale} />
     </main>
   );

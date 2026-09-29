@@ -28,7 +28,18 @@ export function LocaleChrome({
   const isCompare = /\/(en|si)\/compare(\/|$)/.test(pathname);
   const isDealersMap = /\/(en|si)\/dealers\/map(\/|$)/.test(pathname);
   const isHome = /^\/(en|si)\/?$/.test(pathname);
-  const showTray = !isAuth && !isAccount && !isCompare && !isDealersMap;
+  const isSell = /\/(en|si)\/sell(\/|$)/.test(pathname);
+  const isDealerApply =
+    /\/(en|si)\/(dealers|parts-dealers)\/apply(\/|$)/.test(pathname);
+  const showTray =
+    !isAuth &&
+    !isAccount &&
+    !isCompare &&
+    !isDealersMap &&
+    !isSell &&
+    !isDealerApply;
+  const showBreadcrumbs =
+    !isAuth && !isAccount && !isHome && !isDealerApply;
 
   if (isAdmin) {
     return (
@@ -51,10 +62,11 @@ export function LocaleChrome({
           {t(locale, 'skipToContent')}
         </a>
         <SiteHeader locale={locale} />
-        {!isAuth && !isAccount && !isHome ? (
-          <SiteBreadcrumbs locale={locale} />
-        ) : null}
-        <div id="main-content" className={`flex-1 ${showTray ? 'pb-20' : ''}`}>
+        {showBreadcrumbs ? <SiteBreadcrumbs locale={locale} /> : null}
+        <div
+          id="main-content"
+          className={`${isDealerApply ? '' : 'flex flex-1 flex-col'} ${showTray ? 'pb-20' : ''}`}
+        >
           {children}
         </div>
         {!isAuth && !isAccount && !isDealersMap ? (

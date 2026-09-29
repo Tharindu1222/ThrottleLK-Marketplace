@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ListingImageManager } from '@/components/listing-image-manager';
 import {
   SearchableCombobox,
@@ -48,16 +48,228 @@ type FormState = {
 };
 
 const STEPS = [
-  { id: 1, labelKey: 'sellStepBike' },
-  { id: 2, labelKey: 'sellStepSpecs' },
-  { id: 3, labelKey: 'sellStepDetails' },
-  { id: 4, labelKey: 'sellStepPhotos' },
+  {
+    id: 1,
+    labelKey: 'sellStepBike',
+    titleKey: 'sellStepBikeTitle',
+    hintKey: 'sellStepBikeHint',
+  },
+  {
+    id: 2,
+    labelKey: 'sellStepSpecs',
+    titleKey: 'sellStepSpecsTitle',
+    hintKey: 'sellStepSpecsHint',
+  },
+  {
+    id: 3,
+    labelKey: 'sellStepDetails',
+    titleKey: 'sellStepDetailsTitle',
+    hintKey: 'sellStepDetailsHint',
+  },
+  {
+    id: 4,
+    labelKey: 'sellStepPhotos',
+    titleKey: 'sellStepPhotosTitle',
+    hintKey: 'sellStepPhotosHint',
+  },
 ] as const;
 
 const fieldClass =
-  'w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35';
-const labelClass = 'mb-1.5 block text-sm text-muted';
+  'h-12 w-full appearance-none rounded-xl border border-[#d4d4d8] bg-white px-3.5 py-2.5 pr-10 text-sm text-foreground outline-none transition placeholder:text-[#9ca3af] focus:border-accent/45 focus:ring-2 focus:ring-accent/15 disabled:cursor-not-allowed disabled:bg-[#fafafa] disabled:opacity-60';
+const textareaClass =
+  'min-h-[120px] w-full resize-y rounded-xl border border-[#d4d4d8] bg-white px-3.5 py-3 text-sm text-foreground outline-none transition placeholder:text-[#9ca3af] focus:border-accent/45 focus:ring-2 focus:ring-accent/15';
+const labelClass = 'mb-1.5 block text-sm font-semibold text-foreground';
+const requiredMark = <span className="text-accent"> *</span>;
 
+function ChevronDownIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <path
+        d="M5 12h14M13 6l6 6-6 6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function StepRailIcon({ step }: { step: number }) {
+  const cls = 'h-[18px] w-[18px]';
+  if (step === 1) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={cls}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden
+      >
+        <path
+          d="M4 15.5h1.8l1.2-3.2h7.2l1.4 3.2H18M7.2 12.3 8.5 7.5h5.2l1.4 4.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="8" cy="16.2" r="1.6" />
+        <circle cx="16" cy="16.2" r="1.6" />
+      </svg>
+    );
+  }
+  if (step === 2) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={cls}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden
+      >
+        <rect x="5" y="3.5" width="14" height="17" rx="2" />
+        <path d="M8.5 8h7M8.5 12h7M8.5 16h4.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (step === 3) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={cls}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden
+      >
+        <path
+          d="M4.5 19.5h3.8L19 8.8a2 2 0 0 0-2.8-2.8L5.5 16.7v2.8z"
+          strokeLinejoin="round"
+        />
+        <path d="m14.8 7.2 2 2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={cls}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      aria-hidden
+    >
+      <rect x="3.5" y="5" width="17" height="14" rx="2" />
+      <circle cx="9" cy="11" r="1.6" />
+      <path
+        d="m20.5 16.5-4.2-4.2L9.5 19"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SelectShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative">
+      {children}
+      <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[#9ca3af]">
+        <ChevronDownIcon />
+      </span>
+    </div>
+  );
+}
+
+function HorizontalStepper({
+  locale,
+  step,
+}: {
+  locale: Locale;
+  step: number;
+}) {
+  return (
+    <ol
+      className="mx-auto flex w-full max-w-[28rem]"
+      aria-label={t(locale, 'sellFormSteps')}
+    >
+      {STEPS.map((s, i) => {
+        const active = s.id === step;
+        const done = s.id < step;
+        const isFirst = i === 0;
+        const isLast = i === STEPS.length - 1;
+        const leftFilled = !isFirst && s.id <= step;
+        const rightFilled = !isLast && done;
+        return (
+          <li key={s.id} className="flex min-w-0 flex-1 flex-col items-center">
+            <div className="flex w-full items-center">
+              <div
+                className={`h-px min-w-0 flex-1 ${
+                  isFirst
+                    ? 'bg-transparent'
+                    : leftFilled
+                      ? 'bg-accent/40'
+                      : 'bg-[#d4d4d8]'
+                }`}
+                aria-hidden
+              />
+              <span
+                className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${
+                  active || done
+                    ? 'bg-accent text-white'
+                    : 'bg-[#e5e5e7] text-[#8a8a8e]'
+                }`}
+              >
+                {s.id}
+              </span>
+              <div
+                className={`h-px min-w-0 flex-1 ${
+                  isLast
+                    ? 'bg-transparent'
+                    : rightFilled
+                      ? 'bg-accent/40'
+                      : 'bg-[#d4d4d8]'
+                }`}
+                aria-hidden
+              />
+            </div>
+            <span
+              className={`mt-2.5 text-xs font-semibold tracking-tight ${
+                active
+                  ? 'text-accent'
+                  : done
+                    ? 'text-foreground'
+                    : 'text-[#8a8a8e]'
+              }`}
+            >
+              {t(locale, s.labelKey)}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 const emptyForm: FormState = {
   brandId: '',
   brandLabel: '',
@@ -395,521 +607,571 @@ export function SellForm({ locale }: { locale: Locale }) {
   }
 
   const categoryChoices = categories;
+  const currentStep = STEPS[step - 1] ?? STEPS[0];
+  const btnPrimary =
+    'inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-white shadow-sm shadow-accent/20 transition hover:bg-[#c90500] disabled:opacity-50';
+  const btnBack =
+    'inline-flex h-11 items-center justify-center rounded-xl border border-black/12 bg-white px-5 text-sm font-medium text-foreground transition hover:bg-black/[0.02] disabled:opacity-50';
 
   return (
-    <div className="mx-auto mt-8 max-w-2xl">
+    <div className="mx-auto mt-8 max-w-5xl">
       <VerifyEmailCallout locale={locale} />
-      <ol
-        className="mb-8 flex flex-wrap justify-center gap-2"
-        aria-label={t(locale, 'sellFormSteps')}
-      >
-        {STEPS.map((s) => {
-          const active = s.id === step;
-          const done = s.id < step;
-          return (
-            <li
-              key={s.id}
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs tracking-wide ring-1 ${
-                active
-                  ? 'bg-accent/10 text-accent ring-accent/30'
-                  : done
-                    ? 'bg-white text-foreground ring-black/[0.08]'
-                    : 'bg-white/60 text-muted ring-black/[0.06]'
-              }`}
-            >
-              <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${
-                  active || done
-                    ? 'bg-accent text-white'
-                    : 'bg-black/5 text-muted'
-                }`}
-              >
-                {s.id}
-              </span>
-              {t(locale, s.labelKey)}
-            </li>
-          );
-        })}
-      </ol>
 
-      {step === 1 ? (
-        <div className="grid gap-4 rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:p-6">
-          <div>
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
-              {t(locale, 'sellStepBike')}
-            </p>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {t(locale, 'sellStepBike')}
-            </h2>
-          </div>
-          <SearchableCombobox
-            label={t(locale, 'brandFilter')}
-            required
-            placeholder={t(locale, 'searchOrSelectBrand')}
-            valueId={form.brandId}
-            valueLabel={form.brandLabel}
-            options={brandOptions}
-            loading={brandsLoading}
-            emptyText={t(locale, 'emptyResults')}
-            loadingText={t(locale, 'searching')}
-            clearText={t(locale, 'clear')}
-            onQueryChange={setBrandQuery}
-            onSelect={(opt) => {
-              setForm((f) => ({
-                ...f,
-                brandId: opt.id,
-                brandLabel: opt.label,
-                modelId: '',
-                modelLabel: '',
-              }));
-              setCategoryTouched(false);
-              setEngineTouched(false);
-              setFuelTouched(false);
-              setModelQuery('');
-            }}
-            onClear={() => {
-              setForm((f) => ({
-                ...f,
-                brandId: '',
-                brandLabel: '',
-                modelId: '',
-                modelLabel: '',
-              }));
-              setModelOptions([]);
-            }}
-          />
-          <SearchableCombobox
-            label={t(locale, 'modelFilter')}
-            required
-            placeholder={
-              form.brandId
-                ? t(locale, 'searchOrSelectModel')
-                : t(locale, 'selectBrandFirst')
-            }
-            valueId={form.modelId}
-            valueLabel={form.modelLabel}
-            options={modelOptions}
-            disabled={!form.brandId}
-            loading={modelsLoading}
-            emptyText={t(locale, 'emptyResults')}
-            loadingText={t(locale, 'searching')}
-            clearText={t(locale, 'clear')}
-            onQueryChange={setModelQuery}
-            onSelect={(opt) => {
-              const meta = modelMeta.find((m) => m.id === opt.id);
-              if (meta) applyModelAutofill(meta);
-              else
-                setForm((f) => ({
-                  ...f,
-                  modelId: opt.id,
-                  modelLabel: opt.label,
-                }));
-            }}
-            onClear={() =>
-              setForm((f) => ({ ...f, modelId: '', modelLabel: '' }))
-            }
-          />
-          <div>
-            <label className={labelClass} htmlFor="categoryId">
-              {t(locale, 'categoryFilter')} *
-            </label>
-            <select
-              id="categoryId"
-              required
-              className={fieldClass}
-              value={form.categoryId}
-              onChange={(e) => {
-                setCategoryTouched(true);
-                setField('categoryId', e.target.value);
-              }}
-            >
-              <option value="">{t(locale, 'selectCategory')}</option>
-              {categoryChoices.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      ) : null}
+      <HorizontalStepper locale={locale} step={step} />
 
-      {step === 2 ? (
-        <div className="grid gap-4 rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:grid-cols-2 sm:p-6">
-          <div className="sm:col-span-2">
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
-              {t(locale, 'sellStepSpecs')}
-            </p>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {t(locale, 'sellStepSpecs')}
-            </h2>
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="manufactureYear">
-              {t(locale, 'manufactureYear')} *
-            </label>
-            <input
-              id="manufactureYear"
-              type="number"
-              required
-              min={1970}
-              max={2100}
-              className={fieldClass}
-              value={form.manufactureYear}
-              onChange={(e) => setField('manufactureYear', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="engineCc">
-              {t(locale, 'engineCapacity')}
-              {isElectric ? '' : ' *'}
-            </label>
-            <input
-              id="engineCc"
-              type="number"
-              required={!isElectric}
-              min={1}
-              disabled={isElectric}
-              placeholder={isElectric ? t(locale, 'engineNaElectric') : undefined}
-              className={fieldClass}
-              value={form.engineCc}
-              onChange={(e) => {
-                setEngineTouched(true);
-                setField('engineCc', e.target.value);
-              }}
-            />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="fuelType">
-              {t(locale, 'fuelType')} *
-            </label>
-            <select
-              id="fuelType"
-              required
-              className={fieldClass}
-              value={form.fuelType}
-              onChange={(e) => {
-                setFuelTouched(true);
-                setField('fuelType', e.target.value as FormState['fuelType']);
-              }}
-            >
-              <option value="petrol">{t(locale, 'fuelPetrol')}</option>
-              <option value="electric">{t(locale, 'fuelElectric')}</option>
-              <option value="other">{t(locale, 'fuelOther')}</option>
-            </select>
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="condition">
-              {t(locale, 'condition')} *
-            </label>
-            <select
-              id="condition"
-              required
-              className={fieldClass}
-              value={form.condition}
-              onChange={(e) => setField('condition', e.target.value)}
-            >
-              <option value="used">{t(locale, 'conditionUsed')}</option>
-              <option value="new">{t(locale, 'conditionNew')}</option>
-              <option value="reconditioned">
-                {t(locale, 'conditionReconditioned')}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="transmission">
-              {t(locale, 'transmission')} *
-            </label>
-            <select
-              id="transmission"
-              required
-              className={fieldClass}
-              value={form.transmission}
-              onChange={(e) => setField('transmission', e.target.value)}
-            >
-              <option value="manual">{t(locale, 'transManual')}</option>
-              <option value="automatic">{t(locale, 'transAuto')}</option>
-              <option value="semi_automatic">{t(locale, 'transSemi')}</option>
-              <option value="other">{t(locale, 'transOther')}</option>
-            </select>
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="mileage">
-              {t(locale, 'mileageKm')} *
-            </label>
-            <input
-              id="mileage"
-              type="number"
-              required
-              min={0}
-              className={fieldClass}
-              value={form.mileage}
-              onChange={(e) => setField('mileage', e.target.value)}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className={labelClass} htmlFor="priceLkr">
-              {t(locale, 'priceLkr')} *
-            </label>
-            <input
-              id="priceLkr"
-              type="number"
-              required
-              min={1}
-              className={fieldClass}
-              value={form.priceLkr}
-              onChange={(e) => setField('priceLkr', e.target.value)}
-            />
-          </div>
-          {dealers.length > 0 ? (
-            <>
-              <div>
-                <label className={labelClass} htmlFor="purchaseDate">
-                  {t(locale, 'inventoryPurchaseDate')}
-                </label>
-                <input
-                  id="purchaseDate"
-                  type="date"
-                  className={fieldClass}
-                  value={form.purchaseDate}
-                  onChange={(e) => setField('purchaseDate', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="costPriceLkr">
-                  {t(locale, 'inventoryCostPrice')}
-                </label>
-                <input
-                  id="costPriceLkr"
-                  type="number"
-                  min={1}
-                  step={1}
-                  className={fieldClass}
-                  value={form.costPriceLkr}
-                  onChange={(e) => setField('costPriceLkr', e.target.value)}
-                />
-              </div>
-              <p className="sm:col-span-2 text-xs text-muted">
-                {t(locale, 'inventoryPrivateHint')}
-              </p>
-            </>
-          ) : null}
-          {autoTitle ? (
-            <p className="sm:col-span-2 text-sm text-muted">
-              {t(locale, 'titleWillBe')}{' '}
-              <span className="text-foreground">{autoTitle}</span>
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="mt-7 overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_10px_28px_rgba(0,0,0,0.06)] md:grid md:h-[640px] md:grid-cols-[232px_minmax(0,1fr)] lg:grid-cols-[256px_minmax(0,1fr)]">
+        <aside className="hidden h-full flex-col border-r border-black/[0.05] bg-[#fafafa] p-3.5 md:flex lg:p-4">
+          <ul className="space-y-0.5">
+            {STEPS.map((s) => {
+              const active = s.id === step;
+              const done = s.id < step;
+              return (
+                <li key={s.id}>
+                  <div
+                    className={`flex items-center gap-2.5 rounded-full px-3 py-2.5 transition ${
+                      active ? 'bg-accent/[0.09]' : ''
+                    }`}
+                  >
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        active || done
+                          ? 'bg-accent text-white'
+                          : 'bg-[#e5e5e7] text-[#8a8a8e]'
+                      }`}
+                    >
+                      {s.id}
+                    </span>
+                    <span
+                      className={`flex-1 text-sm font-semibold ${
+                        active
+                          ? 'text-accent'
+                          : done
+                            ? 'text-foreground'
+                            : 'text-[#8a8a8e]'
+                      }`}
+                    >
+                      {t(locale, s.labelKey)}
+                    </span>
+                    <span
+                      className={
+                        active ? 'text-accent' : 'text-[#b0b0b4]'
+                      }
+                    >
+                      <StepRailIcon step={s.id} />
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
 
-      {step === 3 ? (
-        <div className="grid gap-4 rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:p-6">
-          <div>
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
-              {t(locale, 'sellStepDetails')}
+          <div className="mt-auto rounded-xl bg-[#eeeeef] p-4">
+            <p className="text-sm font-semibold text-foreground">
+              {t(locale, 'sellNeedHelp')}
             </p>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-              {t(locale, 'sellStepDetails')}
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              {t(locale, 'sellNeedHelpHint')}
+            </p>
+            <Link
+              href={`/${locale}/guides`}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-accent transition hover:underline"
+            >
+              {t(locale, 'sellViewGuide')} →
+            </Link>
+          </div>
+        </aside>
+
+        <div className="flex min-h-[560px] flex-col p-6 sm:p-8 md:h-full md:min-h-0 lg:p-9">
+          <div className="mb-6 shrink-0">
+            <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-[1.375rem]">
+              {t(locale, currentStep.titleKey)}
             </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+              {t(locale, currentStep.hintKey)}
+            </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelClass} htmlFor="districtId">
-                {t(locale, 'districtFilter')} *
-              </label>
-              <select
-                id="districtId"
-                required
-                className={fieldClass}
-                value={form.districtId}
-                onChange={(e) => {
-                  setField('districtId', e.target.value);
-                  setField('cityId', '');
-                }}
-              >
-                <option value="">{t(locale, 'selectDistrict')}</option>
-                {districts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="cityId">
-                {t(locale, 'city')} *
-              </label>
-              <select
-                id="cityId"
-                required
-                className={fieldClass}
-                value={form.cityId}
-                disabled={!form.districtId}
-                onChange={(e) => setField('cityId', e.target.value)}
-              >
-                <option value="">{t(locale, 'selectCity')}</option>
-                {cities.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="description">
-              {t(locale, 'description')} *
-            </label>
-            <textarea
-              id="description"
-              required
-              minLength={20}
-              rows={5}
-              className={fieldClass}
-              value={form.description}
-              onChange={(e) => setField('description', e.target.value)}
-              placeholder={t(locale, 'descriptionPlaceholder')}
-            />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="phone">
-              {t(locale, 'phoneNumber')} *
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              required
-              minLength={9}
-              className={fieldClass}
-              value={form.phone}
-              onChange={(e) => setField('phone', e.target.value)}
-              placeholder="07XXXXXXXX"
-            />
-          </div>
-          {dealers.length > 0 ? (
-            <div>
-              <p className={labelClass}>{t(locale, 'listUnderDealer')}</p>
-              {dealers.length === 1 ? (
-                <p className="rounded-md bg-surface px-3 py-2.5 text-sm text-foreground">
-                  {dealers[0].name}
-                </p>
-              ) : (
-                <select
-                  id="dealerId"
-                  className={fieldClass}
-                  value={form.dealerId}
-                  onChange={(e) => setField('dealerId', e.target.value)}
+
+          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+            {step === 1 ? (
+              <div className="grid max-w-md gap-5 text-left">
+                <SearchableCombobox
+                  label={t(locale, 'brandFilter')}
                   required
-                >
-                  {dealers.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <p className="mt-1.5 text-xs text-muted">
-                {t(locale, 'dealerListingNote')}
-              </p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+                  placeholder={t(locale, 'searchOrSelectBrand')}
+                  valueId={form.brandId}
+                  valueLabel={form.brandLabel}
+                  options={brandOptions}
+                  loading={brandsLoading}
+                  emptyText={t(locale, 'emptyResults')}
+                  loadingText={t(locale, 'searching')}
+                  clearText={t(locale, 'clear')}
+                  onQueryChange={setBrandQuery}
+                  onSelect={(opt) => {
+                    setForm((f) => ({
+                      ...f,
+                      brandId: opt.id,
+                      brandLabel: opt.label,
+                      modelId: '',
+                      modelLabel: '',
+                    }));
+                    setCategoryTouched(false);
+                    setEngineTouched(false);
+                    setFuelTouched(false);
+                    setModelQuery('');
+                  }}
+                  onClear={() => {
+                    setForm((f) => ({
+                      ...f,
+                      brandId: '',
+                      brandLabel: '',
+                      modelId: '',
+                      modelLabel: '',
+                    }));
+                    setModelOptions([]);
+                  }}
+                />
+                <SearchableCombobox
+                  label={t(locale, 'modelFilter')}
+                  required
+                  placeholder={
+                    form.brandId
+                      ? t(locale, 'searchOrSelectModel')
+                      : t(locale, 'selectBrandFirst')
+                  }
+                  valueId={form.modelId}
+                  valueLabel={form.modelLabel}
+                  options={modelOptions}
+                  disabled={!form.brandId}
+                  loading={modelsLoading}
+                  emptyText={t(locale, 'emptyResults')}
+                  loadingText={t(locale, 'searching')}
+                  clearText={t(locale, 'clear')}
+                  onQueryChange={setModelQuery}
+                  onSelect={(opt) => {
+                    const meta = modelMeta.find((m) => m.id === opt.id);
+                    if (meta) applyModelAutofill(meta);
+                    else
+                      setForm((f) => ({
+                        ...f,
+                        modelId: opt.id,
+                        modelLabel: opt.label,
+                      }));
+                  }}
+                  onClear={() =>
+                    setForm((f) => ({ ...f, modelId: '', modelLabel: '' }))
+                  }
+                />
+                <div>
+                  <label className={labelClass} htmlFor="categoryId">
+                    {t(locale, 'categoryFilter')}
+                    {requiredMark}
+                  </label>
+                  <SelectShell>
+                    <select
+                      id="categoryId"
+                      required
+                      className={fieldClass}
+                      value={form.categoryId}
+                      onChange={(e) => {
+                        setCategoryTouched(true);
+                        setField('categoryId', e.target.value);
+                      }}
+                    >
+                      <option value="">{t(locale, 'selectCategory')}</option>
+                      {categoryChoices.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </SelectShell>
+                </div>
+              </div>
+            ) : null}
 
-      {step === 4 && listingId ? (
-        <div className="rounded-2xl bg-white p-5 text-left ring-1 ring-black/[0.06] sm:p-6">
-          <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
-            {t(locale, 'sellStepPhotos')}
-          </p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-            {t(locale, 'sellStepPhotos')}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            {t(locale, 'photosHint')}
-          </p>
-          <div className="mt-5">
-          <ListingImageManager
-            listingId={listingId}
-            locale={locale}
-            onChange={() => {
-              void apiGet<{ id: string }[]>(
-                `/api/v1/listings/${listingId}/images`,
-                { token: token! },
-              )
-                .then((imgs) => setPhotoCount(imgs.length))
-                .catch(() => undefined);
-            }}
-          />
+            {step === 2 ? (
+              <div className="grid gap-5 text-left sm:grid-cols-2">
+                <div>
+                  <label className={labelClass} htmlFor="manufactureYear">
+                    {t(locale, 'manufactureYear')}
+                    {requiredMark}
+                  </label>
+                  <input
+                    id="manufactureYear"
+                    type="number"
+                    required
+                    min={1970}
+                    max={2100}
+                    className={fieldClass}
+                    value={form.manufactureYear}
+                    onChange={(e) => setField('manufactureYear', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="engineCc">
+                    {t(locale, 'engineCapacity')}
+                    {isElectric ? null : requiredMark}
+                  </label>
+                  <input
+                    id="engineCc"
+                    type="number"
+                    required={!isElectric}
+                    min={1}
+                    disabled={isElectric}
+                    placeholder={
+                      isElectric ? t(locale, 'engineNaElectric') : undefined
+                    }
+                    className={fieldClass}
+                    value={form.engineCc}
+                    onChange={(e) => {
+                      setEngineTouched(true);
+                      setField('engineCc', e.target.value);
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="fuelType">
+                    {t(locale, 'fuelType')}
+                    {requiredMark}
+                  </label>
+                  <SelectShell>
+                    <select
+                      id="fuelType"
+                      required
+                      className={fieldClass}
+                      value={form.fuelType}
+                      onChange={(e) => {
+                        setFuelTouched(true);
+                        setField(
+                          'fuelType',
+                          e.target.value as FormState['fuelType'],
+                        );
+                      }}
+                    >
+                      <option value="petrol">{t(locale, 'fuelPetrol')}</option>
+                      <option value="electric">
+                        {t(locale, 'fuelElectric')}
+                      </option>
+                      <option value="other">{t(locale, 'fuelOther')}</option>
+                    </select>
+                  </SelectShell>
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="condition">
+                    {t(locale, 'condition')}
+                    {requiredMark}
+                  </label>
+                  <SelectShell>
+                    <select
+                      id="condition"
+                      required
+                      className={fieldClass}
+                      value={form.condition}
+                      onChange={(e) => setField('condition', e.target.value)}
+                    >
+                      <option value="used">{t(locale, 'conditionUsed')}</option>
+                      <option value="new">{t(locale, 'conditionNew')}</option>
+                      <option value="reconditioned">
+                        {t(locale, 'conditionReconditioned')}
+                      </option>
+                    </select>
+                  </SelectShell>
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="transmission">
+                    {t(locale, 'transmission')}
+                    {requiredMark}
+                  </label>
+                  <SelectShell>
+                    <select
+                      id="transmission"
+                      required
+                      className={fieldClass}
+                      value={form.transmission}
+                      onChange={(e) => setField('transmission', e.target.value)}
+                    >
+                      <option value="manual">{t(locale, 'transManual')}</option>
+                      <option value="automatic">{t(locale, 'transAuto')}</option>
+                      <option value="semi_automatic">
+                        {t(locale, 'transSemi')}
+                      </option>
+                      <option value="other">{t(locale, 'transOther')}</option>
+                    </select>
+                  </SelectShell>
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="mileage">
+                    {t(locale, 'mileageKm')}
+                    {requiredMark}
+                  </label>
+                  <input
+                    id="mileage"
+                    type="number"
+                    required
+                    min={0}
+                    className={fieldClass}
+                    value={form.mileage}
+                    onChange={(e) => setField('mileage', e.target.value)}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass} htmlFor="priceLkr">
+                    {t(locale, 'priceLkr')}
+                    {requiredMark}
+                  </label>
+                  <input
+                    id="priceLkr"
+                    type="number"
+                    required
+                    min={1}
+                    className={fieldClass}
+                    value={form.priceLkr}
+                    onChange={(e) => setField('priceLkr', e.target.value)}
+                  />
+                </div>
+                {dealers.length > 0 ? (
+                  <>
+                    <div>
+                      <label className={labelClass} htmlFor="purchaseDate">
+                        {t(locale, 'inventoryPurchaseDate')}
+                      </label>
+                      <input
+                        id="purchaseDate"
+                        type="date"
+                        className={fieldClass}
+                        value={form.purchaseDate}
+                        onChange={(e) =>
+                          setField('purchaseDate', e.target.value)
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass} htmlFor="costPriceLkr">
+                        {t(locale, 'inventoryCostPrice')}
+                      </label>
+                      <input
+                        id="costPriceLkr"
+                        type="number"
+                        min={1}
+                        step={1}
+                        className={fieldClass}
+                        value={form.costPriceLkr}
+                        onChange={(e) =>
+                          setField('costPriceLkr', e.target.value)
+                        }
+                      />
+                    </div>
+                    <p className="sm:col-span-2 text-xs text-muted">
+                      {t(locale, 'inventoryPrivateHint')}
+                    </p>
+                  </>
+                ) : null}
+                {autoTitle ? (
+                  <p className="sm:col-span-2 text-sm text-muted">
+                    {t(locale, 'titleWillBe')}{' '}
+                    <span className="text-foreground">{autoTitle}</span>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div className="grid gap-5 text-left">
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass} htmlFor="districtId">
+                      {t(locale, 'districtFilter')}
+                      {requiredMark}
+                    </label>
+                    <SelectShell>
+                      <select
+                        id="districtId"
+                        required
+                        className={fieldClass}
+                        value={form.districtId}
+                        onChange={(e) => {
+                          setField('districtId', e.target.value);
+                          setField('cityId', '');
+                        }}
+                      >
+                        <option value="">{t(locale, 'selectDistrict')}</option>
+                        {districts.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    </SelectShell>
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="cityId">
+                      {t(locale, 'city')}
+                      {requiredMark}
+                    </label>
+                    <SelectShell>
+                      <select
+                        id="cityId"
+                        required
+                        className={fieldClass}
+                        value={form.cityId}
+                        disabled={!form.districtId}
+                        onChange={(e) => setField('cityId', e.target.value)}
+                      >
+                        <option value="">{t(locale, 'selectCity')}</option>
+                        {cities.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </SelectShell>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="description">
+                    {t(locale, 'description')}
+                    {requiredMark}
+                  </label>
+                  <textarea
+                    id="description"
+                    required
+                    minLength={20}
+                    rows={5}
+                    className={textareaClass}
+                    value={form.description}
+                    onChange={(e) => setField('description', e.target.value)}
+                    placeholder={t(locale, 'descriptionPlaceholder')}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="phone">
+                    {t(locale, 'phoneNumber')}
+                    {requiredMark}
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    required
+                    minLength={9}
+                    className={fieldClass}
+                    value={form.phone}
+                    onChange={(e) => setField('phone', e.target.value)}
+                    placeholder="07XXXXXXXX"
+                  />
+                </div>
+                {dealers.length > 0 ? (
+                  <div>
+                    <p className={labelClass}>{t(locale, 'listUnderDealer')}</p>
+                    {dealers.length === 1 ? (
+                      <p className="rounded-lg bg-surface px-3 py-2.5 text-sm text-foreground">
+                        {dealers[0].name}
+                      </p>
+                    ) : (
+                      <SelectShell>
+                        <select
+                          id="dealerId"
+                          className={fieldClass}
+                          value={form.dealerId}
+                          onChange={(e) => setField('dealerId', e.target.value)}
+                          required
+                        >
+                          {dealers.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                      </SelectShell>
+                    )}
+                    <p className="mt-1.5 text-xs text-muted">
+                      {t(locale, 'dealerListingNote')}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {step === 4 && listingId ? (
+              <div className="text-left">
+                <p className="text-sm leading-relaxed text-muted">
+                  {t(locale, 'photosHint')}
+                </p>
+                <div className="mt-5">
+                  <ListingImageManager
+                    listingId={listingId}
+                    locale={locale}
+                    onChange={() => {
+                      void apiGet<{ id: string }[]>(
+                        `/api/v1/listings/${listingId}/images`,
+                        { token: token! },
+                      )
+                        .then((imgs) => setPhotoCount(imgs.length))
+                        .catch(() => undefined);
+                    }}
+                  />
+                </div>
+                {photoCount < 1 ? (
+                  <p className="mt-3 text-sm text-accent">
+                    {t(locale, 'uploadOnePhoto')}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm text-muted">
+                    {photoCount === 1
+                      ? t(locale, 'photosReadyOne')
+                      : t(locale, 'photosReady').replace(
+                          '{n}',
+                          String(photoCount),
+                        )}
+                  </p>
+                )}
+              </div>
+            ) : null}
           </div>
-          {photoCount < 1 ? (
-            <p className="mt-3 text-sm text-accent">
-              {t(locale, 'uploadOnePhoto')}
-            </p>
-          ) : (
-            <p className="mt-3 text-sm text-muted">
-              {photoCount === 1
-                ? t(locale, 'photosReadyOne')
-                : t(locale, 'photosReady').replace('{n}', String(photoCount))}
-            </p>
-          )}
+
+          {error ? (
+            <p className="mt-4 text-sm text-red-600">{error}</p>
+          ) : null}
+
+          <div className="mt-auto flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-black/[0.06] pt-5">
+            {step > 1 ? (
+              <button
+                type="button"
+                className={btnBack}
+                onClick={() => {
+                  setError(null);
+                  setStep((s) => s - 1);
+                }}
+                disabled={busy}
+              >
+                {t(locale, 'back')}
+              </button>
+            ) : null}
+            {step === 4 ? (
+              <button
+                type="button"
+                disabled={busy || photoCount < 1}
+                className={btnPrimary}
+                onClick={() => void submitAd()}
+              >
+                {busy ? t(locale, 'posting') : t(locale, 'postAd')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={busy}
+                className={btnPrimary}
+                onClick={() => void goNext()}
+              >
+                {busy
+                  ? t(locale, 'saving')
+                  : step === 3
+                    ? t(locale, 'continueToPhotos')
+                    : t(locale, 'continue')}
+                {!busy ? <ArrowRightIcon /> : null}
+              </button>
+            )}
+          </div>
         </div>
-      ) : null}
-
-      {error ? (
-        <p className="mt-4 text-center text-sm text-red-600">{error}</p>
-      ) : null}
-
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        {step > 1 && step < 4 ? (
-          <button
-            type="button"
-            className="rounded-md border border-black/15 bg-white px-4 py-2.5 text-sm text-foreground transition hover:border-black/25"
-            onClick={() => {
-              setError(null);
-              setStep((s) => s - 1);
-            }}
-            disabled={busy}
-          >
-            {t(locale, 'back')}
-          </button>
-        ) : null}
-        {step === 4 ? (
-          <>
-            <button
-              type="button"
-              className="rounded-md border border-black/15 bg-white px-4 py-2.5 text-sm text-foreground transition hover:border-black/25"
-              onClick={() => {
-                setError(null);
-                setStep(3);
-              }}
-              disabled={busy}
-            >
-              {t(locale, 'back')}
-            </button>
-            <button
-              type="button"
-              disabled={busy || photoCount < 1}
-              className="rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50"
-              onClick={() => void submitAd()}
-            >
-              {busy ? t(locale, 'posting') : t(locale, 'postAd')}
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            disabled={busy}
-            className="rounded-md bg-[#0a0a0a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:opacity-50"
-            onClick={() => void goNext()}
-          >
-            {busy
-              ? t(locale, 'saving')
-              : step === 3
-                ? t(locale, 'continueToPhotos')
-                : t(locale, 'continue')}
-          </button>
-        )}
       </div>
     </div>
   );

@@ -31,6 +31,52 @@ type Props = {
   onClear?: () => void;
 };
 
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16.2 16.2 3.3 3.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ClearIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-3.5 w-3.5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function SearchableCombobox({
   label,
   required,
@@ -104,11 +150,17 @@ export function SearchableCombobox({
 
   return (
     <div ref={rootRef} className="relative text-left">
-      <label className="mb-1.5 block text-sm text-muted" htmlFor={inputId}>
+      <label
+        className="mb-1.5 block text-sm font-semibold text-foreground"
+        htmlFor={inputId}
+      >
         {label}
-        {required ? ' *' : ''}
+        {required ? <span className="text-accent"> *</span> : null}
       </label>
       <div className="relative">
+        <span className="pointer-events-none absolute top-1/2 left-3.5 z-[1] -translate-y-1/2 text-[#9ca3af]">
+          <SearchIcon />
+        </span>
         <input
           id={inputId}
           role="combobox"
@@ -119,7 +171,7 @@ export function SearchableCombobox({
           disabled={disabled}
           placeholder={placeholder}
           value={display}
-          className="w-full bg-background px-3 py-2.5 pr-16 text-sm text-foreground outline-none ring-1 ring-black/10 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-12 w-full rounded-xl border border-[#d4d4d8] bg-white py-2.5 pr-16 pl-10 text-sm text-foreground outline-none transition placeholder:text-[#9ca3af] focus:border-accent/45 focus:ring-2 focus:ring-accent/15 disabled:cursor-not-allowed disabled:bg-[#fafafa] disabled:opacity-60"
           onFocus={() => {
             if (disabled) return;
             setOpen(true);
@@ -133,26 +185,32 @@ export function SearchableCombobox({
           }}
           onKeyDown={onKeyDown}
         />
-        {valueId ? (
-          <button
-            type="button"
-            className="absolute top-1/2 right-2 -translate-y-1/2 text-xs text-muted underline hover:text-accent"
-            onClick={() => {
-              onClear?.();
-              setQuery('');
-              onQueryChange('');
-              setOpen(false);
-            }}
-          >
-            {clearText}
-          </button>
-        ) : null}
+        <div className="absolute top-1/2 right-3 z-[1] flex -translate-y-1/2 items-center gap-1">
+          {valueId && onClear ? (
+            <button
+              type="button"
+              aria-label={clearText}
+              className="rounded p-0.5 text-[#9ca3af] transition hover:text-accent"
+              onClick={() => {
+                onClear();
+                setQuery('');
+                onQueryChange('');
+                setOpen(false);
+              }}
+            >
+              <ClearIcon />
+            </button>
+          ) : null}
+          <span className="pointer-events-none text-[#9ca3af]">
+            <ChevronIcon />
+          </span>
+        </div>
       </div>
       {open && !disabled ? (
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto border border-black/15 bg-background shadow-lg"
+          className="absolute z-30 mt-1.5 max-h-56 w-full overflow-y-auto rounded-xl border border-black/10 bg-white py-1 shadow-lg"
         >
           {loading ? (
             <li className="px-3 py-2.5 text-sm text-muted">{loadingText}</li>
@@ -169,8 +227,8 @@ export function SearchableCombobox({
                   aria-selected={selected}
                   className={`cursor-pointer px-3 py-2.5 text-sm ${
                     active || selected
-                      ? 'bg-accent/15 text-accent'
-                      : 'text-foreground hover:bg-black/5'
+                      ? 'bg-accent/10 text-accent'
+                      : 'text-foreground hover:bg-black/[0.03]'
                   }`}
                   onMouseEnter={() => setActiveIndex(index)}
                   onMouseDown={(e) => e.preventDefault()}
