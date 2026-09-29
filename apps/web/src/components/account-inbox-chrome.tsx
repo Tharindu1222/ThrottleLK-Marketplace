@@ -75,8 +75,8 @@ export function InboxSkeleton({ rows = 5 }: { rows?: number }) {
         >
           <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-black/[0.06]" />
           <div className="min-w-0 flex-1 space-y-2 py-0.5">
-            <div className="h-3.5 w-2/5 max-w-[10rem] animate-pulse rounded bg-black/[0.06]" />
-            <div className="h-3 w-4/5 max-w-[18rem] animate-pulse rounded bg-black/[0.05]" />
+            <div className="h-3.5 w-40 max-w-full animate-pulse rounded bg-black/[0.06]" />
+            <div className="h-3 w-64 max-w-full animate-pulse rounded bg-black/[0.05]" />
           </div>
           <div className="h-3 w-10 shrink-0 animate-pulse rounded bg-black/[0.05]" />
         </div>

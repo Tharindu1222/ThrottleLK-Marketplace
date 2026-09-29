@@ -1,7 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  InboxEmpty,
+  InboxSkeleton,
+  InboxToolbar,
+  inboxCardClass,
+  type InboxFilter,
+} from '@/components/account-inbox-chrome';
 import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -30,9 +37,6 @@ type ConversationRow = {
   unread?: boolean;
 };
 
-const cardClass =
-  'overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-18px_rgba(0,0,0,0.22)]';
-
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -58,11 +62,7 @@ function formatWhen(iso: string | null, locale: Locale) {
   });
 }
 
-function Avatar({
-  counterpart,
-}: {
-  counterpart: Counterpart | null;
-}) {
+function Avatar({ counterpart }: { counterpart: Counterpart | null }) {
   const name = counterpart?.fullName || counterpart?.displayName || '?';
   if (counterpart?.avatarUrl) {
     return (
@@ -70,13 +70,13 @@ function Avatar({
       <img
         src={counterpart.avatarUrl}
         alt=""
-        className="h-14 w-14 shrink-0 rounded-full object-cover ring-1 ring-black/10"
+        className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-black/10 sm:h-12 sm:w-12"
       />
     );
   }
   return (
     <span
-      className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground ring-1 ring-black/10"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground ring-1 ring-black/10 sm:h-12 sm:w-12 sm:text-base"
       aria-hidden
     >
       {initials(name)}
@@ -90,12 +90,16 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
   const [items, setItems] = useState<ConversationRow[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<InboxFilter>('all');
 
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
-    if (!access) return;
+    if (!access) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     void apiGetWithMeta<ConversationRow[]>('/api/v1/conversations', {
       token: access,
@@ -116,9 +120,19 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
       .finally(() => setLoading(false));
   }, [page, goTo]);
 
+  const unreadCount = useMemo(
+    () => items.filter((row) => row.unread).length,
+    [items],
+  );
+
+  const visible = useMemo(() => {
+    if (filter === 'unread') return items.filter((row) => row.unread);
+    return items;
+  }, [filter, items]);
+
   if (!token) {
     return (
-      <div className={`${cardClass} mt-8 p-6 sm:p-8`}>
+      <div className={`${inboxCardClass} mt-8 p-6 sm:p-8`}>
         <p className="text-sm text-muted">
           <Link
             href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/account/messages`)}`}
@@ -132,22 +146,39 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="mt-8">
-      {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
-      <div aria-busy={loading} className={loading ? 'pointer-events-none opacity-60' : undefined}>
-      {items.length === 0 ? (
-        <div className={`${cardClass} px-6 py-12 text-center`}>
-          <p className="text-muted">{t(locale, 'noMessages')}</p>
-          <Link
-            href={`/${locale}/bikes`}
-            className="mt-5 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
-          >
-            {t(locale, 'browse')}
-          </Link>
-        </div>
+    <div className="mt-6 space-y-4 sm:mt-8">
+      <InboxToolbar
+        locale={locale}
+        filter={filter}
+        onFilterChange={setFilter}
+        unreadCount={unreadCount}
+      />
+
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+      {loading ? (
+        <InboxSkeleton />
+      ) : visible.length === 0 ? (
+        <InboxEmpty
+          title={
+            filter === 'unread'
+              ? t(locale, 'inboxNoUnread')
+              : t(locale, 'noMessages')
+          }
+          action={
+            filter === 'all' ? (
+              <Link
+                href={`/${locale}/bikes`}
+                className="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
+              >
+                {t(locale, 'browse')}
+              </Link>
+            ) : null
+          }
+        />
       ) : (
-        <div className={cardClass}>
-          {items.map((row) => {
+        <div className={inboxCardClass}>
+          {visible.map((row) => {
             const name =
               row.counterpart?.fullName ||
               row.counterpart?.displayName ||
@@ -157,7 +188,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
               <Link
                 key={row.id}
                 href={`/${locale}/account/messages/${row.id}`}
-                className={`flex gap-4 border-b border-black/10 px-4 py-4 transition last:border-b-0 hover:bg-surface/60 sm:px-5 ${
+                className={`flex gap-3.5 border-b border-black/10 px-4 py-3.5 transition last:border-b-0 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 sm:px-5 ${
                   unread ? 'bg-accent/[0.04]' : ''
                 }`}
               >
@@ -165,7 +196,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
                   <Avatar counterpart={row.counterpart} />
                   {unread ? (
                     <span
-                      className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-accent ring-2 ring-white"
+                      className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-white"
                       aria-hidden
                     />
                   ) : null}
@@ -174,7 +205,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p
-                        className={`truncate font-[family-name:var(--font-display)] text-lg tracking-wide ${
+                        className={`truncate font-[family-name:var(--font-display)] text-base tracking-wide sm:text-lg ${
                           unread
                             ? 'font-semibold text-foreground'
                             : 'text-foreground'
@@ -201,11 +232,6 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
                       ) : null}
                     </div>
                   </div>
-                  {row.counterpart?.phone ? (
-                    <p className="mt-1.5 text-sm text-foreground/80">
-                      {row.counterpart.phone}
-                    </p>
-                  ) : null}
                   {row.lastMessagePreview ? (
                     <p
                       className={`mt-1.5 line-clamp-1 text-sm ${
@@ -229,22 +255,24 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
           })}
         </div>
       )}
-      </div>
-      <Pagination
-        page={meta.page}
-        totalPages={meta.totalPages}
-        hasPreviousPage={meta.hasPreviousPage}
-        hasNextPage={meta.hasNextPage}
-        total={meta.total}
-        limit={meta.limit}
-        ariaLabel={t(locale, 'pagination')}
-        previousLabel={t(locale, 'pagePrev')}
-        nextLabel={t(locale, 'pageNext')}
-        pageOfTemplate={t(locale, 'pageOf')}
-        showingTemplate={t(locale, 'showingRange')}
-        disabled={loading}
-        onPage={goTo}
-      />
+
+      {filter === 'all' ? (
+        <Pagination
+          page={meta.page}
+          totalPages={meta.totalPages}
+          hasPreviousPage={meta.hasPreviousPage}
+          hasNextPage={meta.hasNextPage}
+          total={meta.total}
+          limit={meta.limit}
+          ariaLabel={t(locale, 'pagination')}
+          previousLabel={t(locale, 'pagePrev')}
+          nextLabel={t(locale, 'pageNext')}
+          pageOfTemplate={t(locale, 'pageOf')}
+          showingTemplate={t(locale, 'showingRange')}
+          disabled={loading}
+          onPage={goTo}
+        />
+      ) : null}
     </div>
   );
 }
