@@ -3,6 +3,7 @@ import {
   type BrowseListingCard,
 } from '@/components/listing-card';
 import { PartCard, type BrowsePartCard } from '@/components/part-card';
+import { PromotedAutoplayStrip } from '@/components/promoted-autoplay-strip';
 import { apiGet } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 
@@ -26,7 +27,7 @@ export async function PromotedListingsRail({
   limit?: number;
   /** Current listing/part id — API does not exclude it. */
   excludeId?: string;
-  /** browse = 3-col results density; detail = 4-col like similar row */
+  /** browse = compact autoplay strip; detail = card grid */
   variant?: 'browse' | 'detail';
 }) {
   const cards =
@@ -52,15 +53,23 @@ export async function PromotedListingsRail({
 
   if (items.length === 0) return null;
 
-  const gridClass =
-    variant === 'detail'
-      ? 'mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4'
-      : 'mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3';
+  if (variant === 'browse') {
+    return (
+      <PromotedAutoplayStrip
+        locale={locale}
+        eyebrow={t(
+          locale,
+          kind === 'part' ? 'homeLatestPartsEyebrow' : 'homeLatestBikesEyebrow',
+        )}
+        heading={t(locale, 'promotedSection')}
+        bikes={kind === 'bike' ? (items as PromotedBikeCard[]) : undefined}
+        parts={kind === 'part' ? (items as PromotedPartCard[]) : undefined}
+      />
+    );
+  }
 
-  const sectionClass =
-    variant === 'detail'
-      ? 'mt-14 border-t border-black/10 pt-10'
-      : 'mb-8 border-b border-black/10 pb-8';
+  const gridClass = 'mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4';
+  const sectionClass = 'mt-14 border-t border-black/10 pt-10';
 
   return (
     <section

@@ -184,3 +184,44 @@ textarea:focus-visible {
   background: var(--admin-bg-elevated);
   color: var(--admin-text);
 }
+
+@keyframes promo-strip-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.promo-strip-scroller {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 1.25rem,
+    #000 calc(100% - 1.25rem),
+    transparent
+  );
+}
+
+.promo-strip-track {
+  animation: promo-strip-scroll var(--promo-strip-duration, 36s) linear infinite;
+}
+
+.promo-strip-track[data-paused='true'],
+.promo-strip-scroller:hover .promo-strip-track,
+.promo-strip-scroller:focus-within .promo-strip-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-strip-scroller {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    mask-image: none;
+  }
+
+  .promo-strip-track {
+    animation: none;
+  }
+}

@@ -178,7 +178,7 @@ export default async function BikePartsPage({
           />
         </aside>
 
-        <div>
+        <div className="min-w-0">
           <PromotedListingsRail
             locale={locale}
             surface="browse"

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { isLocale, t, type Locale } from '@/lib/i18n';
-import { ProfileForm } from './profile-form';
+import { ProfileForm } from './profile-details-form';
 
 export default async function ProfilePage({
   params,

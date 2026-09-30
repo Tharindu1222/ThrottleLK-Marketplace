@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { AccountSidebar } from '@/components/account-sidebar';
+import { AccountSidebar } from '@/components/account/account-sidebar';
 import { isLocale, type Locale } from '@/lib/i18n';
 
 export default async function AccountLayout({

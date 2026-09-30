@@ -95,7 +95,7 @@ export async function BikesBrowse({
           <SaveSearchButton locale={locale} filters={filterState} />
         </aside>
 
-        <div>
+        <div className="min-w-0">
           <PromotedListingsRail
             locale={locale}
             surface="browse"
