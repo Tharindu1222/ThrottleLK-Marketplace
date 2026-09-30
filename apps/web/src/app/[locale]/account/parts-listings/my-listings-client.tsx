@@ -12,13 +12,30 @@ import {
 import { createPortal } from 'react-dom';
 import { PartCard, type BrowsePartCard } from '@/components/part-card';
 import { Pagination } from '@/components/pagination';
-import { apiGetWithMeta, apiSend } from '@/lib/api';
+import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 import { useUrlPage } from '@/lib/use-url-page';
 import type { PaginationMeta } from '@throttlelk/types';
+
+function formatPromoDate(iso: string, locale: Locale) {
+  return new Date(iso).toLocaleDateString(locale === 'si' ? 'si-LK' : 'en-LK', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+type PromoMine = {
+  pending: {
+    listingId: string | null;
+    partListingId: string | null;
+    paymentStatus?: string | null;
+  }[];
+  live: { listingId: string | null; partListingId: string | null; endsAt: string }[];
+};
 
 type PartListing = BrowsePartCard & {
   status: string;
@@ -264,6 +281,8 @@ function ListingActions({
   runAction,
   onMarkSold,
   onDelete,
+  promotedUntil,
+  awaitingApproval = false,
   dense = false,
 }: {
   locale: Locale;
@@ -272,6 +291,8 @@ function ListingActions({
   runAction: (listingId: string, path: string) => void;
   onMarkSold: (listing: PartListing) => void;
   onDelete: (listing: PartListing) => void;
+  promotedUntil?: string | null;
+  awaitingApproval?: boolean;
   dense?: boolean;
 }) {
   const editHref = `/${locale}/account/parts-listings/${listing.id}/edit`;
@@ -347,7 +368,13 @@ function ListingActions({
           {soldBtn}
           <Link
             href={`/${locale}/account/parts-listings/${listing.id}/promote`}
-            className={`${btnAccent} col-span-1 w-full basis-full shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] sm:col-span-2`}
+            className={`${
+              awaitingApproval ? btnGhost : btnAccent
+            } col-span-1 w-full basis-full ${
+              awaitingApproval
+                ? ''
+                : 'shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)]'
+            } sm:col-span-2`}
           >
             <ActionIcon>
               <path d="M12 3v18" />
@@ -355,7 +382,13 @@ function ListingActions({
               <path d="M5 14h14" />
               <path d="M7 18h10" />
             </ActionIcon>
-            <span className="truncate">{t(locale, 'promoteListing')}</span>
+            <span className="truncate">
+              {awaitingApproval
+                ? t(locale, 'promoteWaitApproval')
+                : promotedUntil
+                  ? t(locale, 'promoteViewDetails')
+                  : t(locale, 'promoteListing')}
+            </span>
           </Link>
         </>
       ) : null}
@@ -425,17 +458,35 @@ export function MyPartsListingsClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [soldDialog, setSoldDialog] = useState<SoldDialogState | null>(null);
+  const [promotedUntil, setPromotedUntil] = useState<Record<string, string>>({});
+  const [awaitingApproval, setAwaitingApproval] = useState<Record<string, true>>(
+    {},
+  );
 
   async function load(access: string, pageNum = page) {
     setLoading(true);
     try {
-      const { data, meta: nextMeta } = await apiGetWithMeta<PartListing[]>(
-        '/api/v1/part-listings/mine',
-        {
+      const [{ data, meta: nextMeta }, promo] = await Promise.all([
+        apiGetWithMeta<PartListing[]>('/api/v1/part-listings/mine', {
           token: access,
           searchParams: { page: String(pageNum), limit: '20' },
-        },
-      );
+        }),
+        apiGet<PromoMine>('/api/v1/promotions/mine', { token: access }).catch(
+          () => null,
+        ),
+      ]);
+      const until: Record<string, string> = {};
+      for (const row of promo?.live ?? []) {
+        if (row.partListingId) until[row.partListingId] = row.endsAt;
+      }
+      const waiting: Record<string, true> = {};
+      for (const row of promo?.pending ?? []) {
+        if (row.partListingId && row.paymentStatus !== 'failed' && !until[row.partListingId]) {
+          waiting[row.partListingId] = true;
+        }
+      }
+      setPromotedUntil(until);
+      setAwaitingApproval(waiting);
       const clamp = clampedPage(nextMeta, data.length);
       if (clamp != null && clamp !== pageNum) {
         goTo(clamp);
@@ -586,17 +637,38 @@ export function MyPartsListingsClient({
                       label: statusLabel(locale, listing.status),
                       status: listing.status,
                     }}
+                    promotionStatus={
+                      promotedUntil[listing.id]
+                        ? t(locale, 'promoteCardStatus')
+                        : null
+                    }
                     showFavourite={false}
                     footer={
-                      <ListingActions
-                        locale={locale}
-                        listing={listing}
-                        busy={busy}
-                        runAction={runAction}
-                        onMarkSold={openSoldDialog}
-                        onDelete={deleteListing}
-                        dense
-                      />
+                      <div className="flex flex-col gap-2.5">
+                        {promotedUntil[listing.id] ? (
+                          <p className="text-xs font-medium text-foreground">
+                            {t(locale, 'promoteLiveUntil').replace(
+                              '{date}',
+                              formatPromoDate(promotedUntil[listing.id], locale),
+                            )}
+                          </p>
+                        ) : awaitingApproval[listing.id] ? (
+                          <p className="text-xs font-medium text-foreground">
+                            {t(locale, 'promoteWaitApproval')}
+                          </p>
+                        ) : null}
+                        <ListingActions
+                          locale={locale}
+                          listing={listing}
+                          busy={busy}
+                          runAction={runAction}
+                          onMarkSold={openSoldDialog}
+                          onDelete={deleteListing}
+                          promotedUntil={promotedUntil[listing.id]}
+                          awaitingApproval={Boolean(awaitingApproval[listing.id])}
+                          dense
+                        />
+                      </div>
                     }
                   />
                 </li>
@@ -637,6 +709,18 @@ export function MyPartsListingsClient({
                         >
                           {statusLabel(locale, listing.status)}
                         </span>
+                        {promotedUntil[listing.id] ? (
+                          <span className="inline-flex shrink-0 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent ring-1 ring-accent/25">
+                            {t(locale, 'promoteLiveUntil').replace(
+                              '{date}',
+                              formatPromoDate(promotedUntil[listing.id], locale),
+                            )}
+                          </span>
+                        ) : awaitingApproval[listing.id] ? (
+                          <span className="inline-flex shrink-0 rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-500/30">
+                            {t(locale, 'promoteWaitApproval')}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="mt-1 text-sm text-accent">
                         {formatLkr(listing.priceLkr)}
@@ -650,6 +734,8 @@ export function MyPartsListingsClient({
                     runAction={runAction}
                     onMarkSold={openSoldDialog}
                     onDelete={deleteListing}
+                    promotedUntil={promotedUntil[listing.id]}
+                    awaitingApproval={Boolean(awaitingApproval[listing.id])}
                   />
                 </li>
               );

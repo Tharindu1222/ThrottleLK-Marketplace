@@ -252,38 +252,6 @@ export function BrowseFilters({
             <option value="hybrid">{t(locale, 'fuelHybrid')}</option>
           </select>
         </FilterField>
-        <FilterField
-          id={`${uid}-transmission`}
-          label={t(locale, 'transmissionFilter')}
-        >
-          <select
-            id={`${uid}-transmission`}
-            name="transmission"
-            defaultValue={initial.transmission}
-            className={fieldClass}
-          >
-            <option value="">{t(locale, 'transmissionFilter')}</option>
-            <option value="manual">{t(locale, 'transmissionManual')}</option>
-            <option value="automatic">
-              {t(locale, 'transmissionAutomatic')}
-            </option>
-            <option value="semi_automatic">
-              {t(locale, 'transmissionSemi')}
-            </option>
-          </select>
-        </FilterField>
-        <FilterField id={`${uid}-seller`} label={t(locale, 'sellerTypeFilter')}>
-          <select
-            id={`${uid}-seller`}
-            name="sellerType"
-            defaultValue={initial.sellerType}
-            className={fieldClass}
-          >
-            <option value="">{t(locale, 'sellerTypeAny')}</option>
-            <option value="private">{t(locale, 'sellerTypePrivate')}</option>
-            <option value="dealer">{t(locale, 'sellerTypeDealer')}</option>
-          </select>
-        </FilterField>
         <div className="grid min-w-0 grid-cols-2 gap-3">
           <FilterField id={`${uid}-minPrice`} label={t(locale, 'minPrice')}>
             <input
@@ -300,86 +268,6 @@ export function BrowseFilters({
               name="maxPrice"
               defaultValue={initial.maxPrice}
               placeholder={t(locale, 'maxPrice')}
-              className={fieldClass}
-            />
-          </FilterField>
-        </div>
-        <div className="grid min-w-0 grid-cols-2 gap-3">
-          <FilterField id={`${uid}-minYear`} label={t(locale, 'minYear')}>
-            <input
-              id={`${uid}-minYear`}
-              name="minYear"
-              defaultValue={initial.minYear}
-              placeholder={t(locale, 'minYear')}
-              className={fieldClass}
-            />
-          </FilterField>
-          <FilterField id={`${uid}-maxYear`} label={t(locale, 'maxYear')}>
-            <input
-              id={`${uid}-maxYear`}
-              name="maxYear"
-              defaultValue={initial.maxYear}
-              placeholder={t(locale, 'maxYear')}
-              className={fieldClass}
-            />
-          </FilterField>
-        </div>
-        <div className="grid min-w-0 grid-cols-2 gap-3">
-          <FilterField id={`${uid}-minReg`} label={t(locale, 'minRegYear')}>
-            <input
-              id={`${uid}-minReg`}
-              name="minRegistrationYear"
-              defaultValue={initial.minRegistrationYear}
-              placeholder={t(locale, 'minRegYear')}
-              className={fieldClass}
-            />
-          </FilterField>
-          <FilterField id={`${uid}-maxReg`} label={t(locale, 'maxRegYear')}>
-            <input
-              id={`${uid}-maxReg`}
-              name="maxRegistrationYear"
-              defaultValue={initial.maxRegistrationYear}
-              placeholder={t(locale, 'maxRegYear')}
-              className={fieldClass}
-            />
-          </FilterField>
-        </div>
-        <div className="grid min-w-0 grid-cols-2 gap-3">
-          <FilterField id={`${uid}-minMileage`} label={t(locale, 'minMileage')}>
-            <input
-              id={`${uid}-minMileage`}
-              name="minMileage"
-              defaultValue={initial.minMileage}
-              placeholder={t(locale, 'minMileage')}
-              className={fieldClass}
-            />
-          </FilterField>
-          <FilterField id={`${uid}-maxMileage`} label={t(locale, 'maxMileage')}>
-            <input
-              id={`${uid}-maxMileage`}
-              name="maxMileage"
-              defaultValue={initial.maxMileage}
-              placeholder={t(locale, 'maxMileage')}
-              className={fieldClass}
-            />
-          </FilterField>
-        </div>
-        <div className="grid min-w-0 grid-cols-2 gap-3">
-          <FilterField id={`${uid}-minCc`} label={t(locale, 'minEngineCc')}>
-            <input
-              id={`${uid}-minCc`}
-              name="minEngineCc"
-              defaultValue={initial.minEngineCc}
-              placeholder={t(locale, 'minEngineCc')}
-              className={fieldClass}
-            />
-          </FilterField>
-          <FilterField id={`${uid}-maxCc`} label={t(locale, 'maxEngineCc')}>
-            <input
-              id={`${uid}-maxCc`}
-              name="maxEngineCc"
-              defaultValue={initial.maxEngineCc}
-              placeholder={t(locale, 'maxEngineCc')}
               className={fieldClass}
             />
           </FilterField>

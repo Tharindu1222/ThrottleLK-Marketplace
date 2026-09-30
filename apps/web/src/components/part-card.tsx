@@ -288,6 +288,7 @@ export function PartCard({
   part,
   href,
   statusBadge,
+  promotionStatus,
   showFavourite = true,
   footer,
   onFavouriteChange,
@@ -296,6 +297,8 @@ export function PartCard({
   part: BrowsePartCard;
   href?: string;
   statusBadge?: { label: string; status: string };
+  /** Seller's own card: this listing already has a live promotion. */
+  promotionStatus?: string | null;
   showFavourite?: boolean;
   footer?: ReactNode;
   onFavouriteChange?: (partListingId: string, favourited: boolean) => void;
@@ -344,9 +347,9 @@ export function PartCard({
             <span className="inline-flex rounded-sm bg-black/70 px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-white uppercase">
               {kindLabel(locale, part.kind)}
             </span>
-            {promoBadge ? (
+            {promotionStatus || promoBadge ? (
               <span className="inline-flex rounded-sm bg-accent px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-white uppercase">
-                {promoBadge}
+                {promotionStatus || promoBadge}
               </span>
             ) : null}
           </div>

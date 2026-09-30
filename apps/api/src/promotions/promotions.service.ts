@@ -160,9 +160,7 @@ export class PromotionsService {
             paymentStatus: pending.paymentStatus,
           }
         : null,
-      live: live
-        ? { id: live.id, endsAt: live.endsAt.toISOString() }
-        : null,
+      live: live ? await this.liveStatus(live.id) : null,
       rejected:
         latest?.status === 'rejected'
           ? { reason: latest.rejectionReason }
@@ -189,6 +187,8 @@ export class PromotionsService {
         id: row.id,
         listingId: row.listingId,
         partListingId: row.partListingId,
+        paymentProvider: row.paymentProvider,
+        paymentStatus: row.paymentStatus,
       })),
       live: mineLive.map((row) => ({
         id: row.id,
@@ -1088,6 +1088,33 @@ export class PromotionsService {
       row.isDefault = false;
       await this.accounts.save(row);
     }
+  }
+
+  private async liveStatus(placementId: string) {
+    const row = await this.placements.findOne({
+      where: { id: placementId },
+      relations: ['request', 'request.package'],
+    });
+    if (!row) return null;
+    const request = row.request ?? null;
+    const pkg = request?.package ?? null;
+    return {
+      id: row.id,
+      tier: row.tier,
+      startsAt: row.startsAt.toISOString(),
+      endsAt: row.endsAt.toISOString(),
+      package: pkg
+        ? {
+            id: pkg.id,
+            name: pkg.name,
+            tier: pkg.tier,
+            durationDays: pkg.durationDays,
+            priceLkr: pkg.priceLkr,
+          }
+        : null,
+      paidAt: request?.paidAt ? request.paidAt.toISOString() : null,
+      approvedAt: request?.reviewedAt ? request.reviewedAt.toISOString() : null,
+    };
   }
 
   private async findPending(listingId: string | null, partListingId: string | null) {

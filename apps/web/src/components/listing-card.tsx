@@ -428,6 +428,7 @@ export function ListingCard({
   href,
   badge,
   statusBadge,
+  promotionStatus,
   showFavourite = true,
   footer,
   headingLevel = 'h2',
@@ -438,6 +439,8 @@ export function ListingCard({
   href?: string;
   badge?: string;
   statusBadge?: { label: string; status: string };
+  /** Seller's own card: this listing already has a live promotion. */
+  promotionStatus?: string | null;
   showFavourite?: boolean;
   footer?: ReactNode;
   headingLevel?: 'h2' | 'h3';
@@ -522,9 +525,9 @@ export function ListingCard({
           aria-hidden
           className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 via-black/20 to-transparent"
         />
-        {promoBadge ? (
+        {promotionStatus || promoBadge ? (
           <span className="absolute top-3 right-3 z-[2] rounded-sm bg-accent px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-white uppercase">
-            {promoBadge}
+            {promotionStatus || promoBadge}
           </span>
         ) : null}
         {statusBadge ? (

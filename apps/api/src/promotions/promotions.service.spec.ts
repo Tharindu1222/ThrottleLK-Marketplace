@@ -607,3 +607,74 @@ describe('PromotionsService.listRequests', () => {
     });
   });
 });
+
+describe('PromotionsService.statusFor', () => {
+  it('returns the selected package and promotion dates for a live listing', async () => {
+    const startsAt = new Date('2026-09-28T04:30:00.000Z');
+    const endsAt = new Date('2026-10-05T04:30:00.000Z');
+    const paidAt = new Date('2026-09-28T04:12:00.000Z');
+    const reviewedAt = new Date('2026-09-28T04:20:00.000Z');
+    const { service } = makeService({
+      live: {
+        id: 'place-1',
+        tier: 'featured',
+        startsAt,
+        endsAt,
+        request: {
+          paidAt,
+          reviewedAt,
+          package: {
+            id: 'pkg-1',
+            name: 'Featured',
+            tier: 'featured',
+            durationDays: 7,
+            priceLkr: 2500,
+          },
+        },
+      },
+    });
+
+    const status = await service.statusFor(seller.id, 'listing-1');
+
+    expect(status.canRequest).toBe(false);
+    expect(status.live).toEqual({
+      id: 'place-1',
+      tier: 'featured',
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+      package: {
+        id: 'pkg-1',
+        name: 'Featured',
+        tier: 'featured',
+        durationDays: 7,
+        priceLkr: 2500,
+      },
+      paidAt: paidAt.toISOString(),
+      approvedAt: reviewedAt.toISOString(),
+    });
+  });
+
+  it('omits payment dates when a live placement has no request', async () => {
+    const startsAt = new Date('2026-09-01T00:00:00.000Z');
+    const endsAt = new Date('2026-10-01T00:00:00.000Z');
+    const { service } = makeService({
+      live: {
+        id: 'place-admin',
+        tier: 'premium',
+        startsAt,
+        endsAt,
+        request: null,
+      },
+    });
+
+    const status = await service.statusFor(seller.id, 'listing-1');
+
+    expect(status.live).toMatchObject({
+      id: 'place-admin',
+      tier: 'premium',
+      package: null,
+      paidAt: null,
+      approvedAt: null,
+    });
+  });
+});

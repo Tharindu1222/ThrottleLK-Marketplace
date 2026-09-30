@@ -166,8 +166,13 @@ export function AuthShell({
   );
 }
 
-export const authFieldClass =
-  'w-full min-w-0 rounded-xl border border-black/10 bg-surface/90 px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20 sm:px-5 sm:py-3';
+const authFieldBase =
+  'w-full min-w-0 rounded-xl border border-black/10 bg-surface/90 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20 sm:py-3';
+
+export const authFieldClass = `${authFieldBase} px-4 sm:px-5`;
+
+/** Icon sits in the inline start. Keep this off `px-*` so wide screens do not pull the text back over the icon. */
+export const authIconFieldClass = `${authFieldBase} ps-11 pe-4 sm:ps-12 sm:pe-5`;
 
 export const authPrimaryBtnClass =
   'inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] transition hover:brightness-110 disabled:opacity-60';

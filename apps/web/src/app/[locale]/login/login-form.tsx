@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
-import { authFieldClass, authPrimaryBtnClass } from '@/components/auth/auth-shell';
+import { authIconFieldClass, authPrimaryBtnClass } from '@/components/auth/auth-shell';
 import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
@@ -69,7 +69,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
             required
             autoComplete="email"
             placeholder={t(locale, 'email')}
-            className={`${authFieldClass} pl-10`}
+            className={authIconFieldClass}
           />
         </div>
       </label>
@@ -99,7 +99,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
             minLength={8}
             autoComplete="current-password"
             placeholder={t(locale, 'password')}
-            className={`${authFieldClass} pl-10`}
+            className={authIconFieldClass}
           />
         </div>
       </label>
