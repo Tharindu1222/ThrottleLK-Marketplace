@@ -9,7 +9,7 @@ const DealerMapMulti = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full min-h-[420px] w-full animate-pulse bg-zinc-100" />
+      <div className="h-[50vh] min-h-[240px] w-full max-w-full animate-pulse bg-zinc-100 lg:h-full lg:min-h-[420px]" />
     ),
   },
 );

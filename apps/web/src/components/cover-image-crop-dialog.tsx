@@ -84,7 +84,7 @@ export function CoverImageCropDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 p-3 sm:items-center"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !busy) handleCancel();
@@ -95,7 +95,7 @@ export function CoverImageCropDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${dialogId}-title`}
-        className="flex max-h-[min(92dvh,720px)] w-full max-w-3xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl"
+        className="flex max-h-[90dvh] w-[min(100vw-1.5rem,48rem)] flex-col overflow-y-auto rounded-2xl bg-white shadow-xl"
       >
         <header className="flex items-center justify-between border-b border-black/10 px-4 py-3 sm:px-5">
           <h2
@@ -144,7 +144,7 @@ export function CoverImageCropDialog({
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid min-w-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2">
             <div className="space-y-1">
               <p className="text-[10px] tracking-wide text-muted uppercase">
                 {t(locale, 'cropPreviewDesktop')}
@@ -186,10 +186,10 @@ export function CoverImageCropDialog({
           )}
         </div>
 
-        <footer className="flex justify-end gap-2 border-t border-black/10 px-4 py-3 sm:px-5">
+        <footer className="flex flex-col-reverse gap-2 border-t border-black/10 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
           <button
             type="button"
-            className="rounded-full border border-black/10 px-4 py-2.5 text-sm font-medium hover:bg-black/[0.03]"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 px-4 py-2.5 text-sm font-medium hover:bg-black/[0.03]"
             onClick={handleCancel}
             disabled={busy}
           >
@@ -197,7 +197,7 @@ export function CoverImageCropDialog({
           </button>
           <button
             type="button"
-            className="rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-accent px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-60"
             onClick={() => void handleConfirm()}
             disabled={busy || !croppedAreaPixels}
           >

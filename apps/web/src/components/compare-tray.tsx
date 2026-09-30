@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   clearCompare,
   getCompareItems,
@@ -9,10 +9,9 @@ import {
 } from '@/lib/compare';
 import { t, type Locale } from '@/lib/i18n';
 
-const COMPARE_TRAY_OFFSET = '4.75rem';
-
 export function CompareTray({ locale }: { locale: Locale }) {
   const [items, setItems] = useState<CompareItem[]>([]);
+  const trayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const sync = () => setItems(getCompareItems());
@@ -26,31 +25,42 @@ export function CompareTray({ locale }: { locale: Locale }) {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
     if (items.length === 0) {
-      document.documentElement.style.removeProperty('--compare-tray-offset');
+      root.style.removeProperty('--compare-tray-offset');
       return;
     }
-    document.documentElement.style.setProperty(
-      '--compare-tray-offset',
-      COMPARE_TRAY_OFFSET,
-    );
+
+    const el = trayRef.current;
+    if (!el) return;
+
+    const apply = () => {
+      root.style.setProperty('--compare-tray-offset', `${el.offsetHeight}px`);
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
     return () => {
-      document.documentElement.style.removeProperty('--compare-tray-offset');
+      observer.disconnect();
+      root.style.removeProperty('--compare-tray-offset');
     };
   }, [items.length]);
 
   if (items.length === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">
-        <p className="text-sm text-muted">
+    <div
+      ref={trayRef}
+      className="fixed inset-x-0 bottom-0 z-40 max-w-full border-t border-black/10 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+    >
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-6">
+        <p className="min-w-0 max-w-full text-sm break-words text-muted line-clamp-2">
           {t(locale, 'compare')}: {items.map((i) => i.title).join(' · ')}
         </p>
-        <div className="flex gap-3">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
           <button
             type="button"
-            className="text-sm text-muted underline"
+            className="inline-flex min-h-11 items-center px-2 text-sm text-muted underline sm:min-h-0 sm:px-0"
             onClick={() => {
               clearCompare();
               setItems([]);
@@ -60,7 +70,7 @@ export function CompareTray({ locale }: { locale: Locale }) {
           </button>
           <Link
             href={`/${locale}/compare`}
-            className="bg-accent px-3 py-1.5 text-sm text-white"
+            className="inline-flex min-h-11 flex-1 items-center justify-center bg-accent px-4 text-sm text-white sm:flex-none sm:px-3 sm:py-1.5"
           >
             {t(locale, 'viewCompare')}
           </Link>

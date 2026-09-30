@@ -14,5 +14,5 @@ export function homeHeroHeadingClass(locale: Locale) {
 }
 
 export function homeHeroSupportClass() {
-  return 'mt-5 w-full min-w-0 max-w-full text-pretty text-base leading-relaxed text-white/70 sm:max-w-lg sm:text-lg';
+  return 'mt-5 w-full min-w-0 max-w-full text-pretty break-words [overflow-wrap:anywhere] text-base leading-relaxed text-white/70 sm:max-w-lg sm:text-lg';
 }

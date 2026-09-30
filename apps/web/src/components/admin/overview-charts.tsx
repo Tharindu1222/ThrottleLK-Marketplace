@@ -128,7 +128,7 @@ export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
           <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
             Workload split
           </h2>
-          <div className="mt-4 flex items-center gap-5">
+          <div className="mt-4 flex flex-wrap items-center gap-5">
             <svg viewBox="0 0 120 120" className="h-28 w-28 shrink-0">
               {arcs.map((arc) => (
                 <path
@@ -159,7 +159,7 @@ export function OverviewCharts({ dash }: { dash: AdminDashboard }) {
                 active
               </text>
             </svg>
-            <ul className="space-y-2 text-xs">
+            <ul className="min-w-0 flex-1 space-y-2 text-xs">
               {slices.map((s) => (
                 <li
                   key={s.label}

@@ -79,7 +79,7 @@ export function AdminNotificationsBell({ locale }: { locale: Locale }) {
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        className="relative rounded-xl border border-[var(--admin-border-strong)] bg-[var(--admin-surface)] p-2.5 text-[var(--admin-muted)] hover:border-[var(--admin-accent)] hover:text-[var(--admin-text)]"
+        className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--admin-border-strong)] bg-[var(--admin-surface)] text-[var(--admin-muted)] hover:border-[var(--admin-accent)] hover:text-[var(--admin-text)]"
         aria-label="Notifications"
         aria-expanded={open}
         onClick={() => {
@@ -105,7 +105,7 @@ export function AdminNotificationsBell({ locale }: { locale: Locale }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-xl">
+        <div className="absolute right-0 z-50 mt-2 w-[min(100vw-1.5rem,22rem)] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-xl">
           <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-4 py-3">
             <p className="text-sm font-semibold text-[var(--admin-text)]">
               Notifications

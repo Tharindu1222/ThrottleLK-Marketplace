@@ -301,7 +301,7 @@ function MarkSoldDialog({
     >
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 text-left shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] ring-1 ring-black/[0.06]"
+        className="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 text-left shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] ring-1 ring-black/[0.06]"
       >
         <h2
           id={titleId}
@@ -432,13 +432,13 @@ function ListingActions({
 
   const wrap =
     listing.status === 'active' || listing.status === 'paused'
-      ? 'grid grid-cols-3 gap-1.5'
+      ? 'grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2'
       : ['draft', 'rejected'].includes(listing.status)
-        ? 'grid grid-cols-2 gap-1.5'
-        : 'grid grid-cols-1 gap-1.5';
+        ? 'grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2'
+        : 'grid min-w-0 grid-cols-1 gap-1.5';
 
   return (
-    <div className={dense ? wrap : 'flex flex-wrap gap-1.5'} aria-busy={busy}>
+    <div className={dense ? wrap : 'flex w-full min-w-0 flex-wrap gap-1.5'} aria-busy={busy}>
       {listing.status === 'active' ? (
         <>
           {viewBtn}
@@ -446,7 +446,7 @@ function ListingActions({
           {soldBtn}
           <Link
             href={`/${locale}/account/listings/${listing.id}/promote`}
-            className={`${btnAccent} w-full basis-full col-span-3 shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)]`}
+            className={`${btnAccent} col-span-1 w-full basis-full shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] sm:col-span-2`}
           >
             <ActionIcon>
               <path d="M12 3v18" />
@@ -622,7 +622,7 @@ export function MyListingsClient({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-3">
         <p className="text-sm leading-relaxed text-muted">
           {(meta.total || listings.length) === 1
             ? t(locale, 'resultCountOne')
@@ -655,11 +655,11 @@ export function MyListingsClient({
           </Link>
         </div>
       ) : layout === 'cards' ? (
-        <ul className="grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <ul className="grid min-w-0 auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {listings.map((listing) => {
             const busy = busyId === listing.id;
             return (
-              <li key={listing.id} className="min-h-0">
+              <li key={listing.id} className="min-h-0 min-w-0">
                 <ListingCard
                   locale={locale}
                   listing={listing}
@@ -698,7 +698,7 @@ export function MyListingsClient({
             return (
               <li
                 key={listing.id}
-                className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+                className="flex min-w-0 flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-4">
                   <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-background/80 ring-1 ring-black/[0.06] sm:h-20 sm:w-28">

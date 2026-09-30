@@ -23,7 +23,7 @@ export function HomeHeroShowcase({ locale }: { locale: Locale }) {
   if (!current) return null;
 
   return (
-    <div className="relative isolate h-[280px] overflow-visible sm:h-[360px] lg:h-[440px]">
+    <div className="relative isolate h-[280px] w-full max-w-full overflow-hidden sm:h-[360px] lg:h-[440px] lg:overflow-visible">
       <div
         aria-hidden
         className="absolute bottom-[8%] left-[8%] h-32 w-[80%] rounded-full bg-white/14 blur-3xl"
@@ -45,7 +45,7 @@ export function HomeHeroShowcase({ locale }: { locale: Locale }) {
         key={current.src}
         src={current.src}
         alt={current.alt}
-        className="absolute bottom-0 left-1/2 h-full w-auto max-w-none origin-bottom -translate-x-1/2 scale-[var(--hero-bike-scale)] object-contain object-bottom drop-shadow-[0_28px_50px_rgba(0,0,0,0.55)] lg:left-0 lg:translate-x-0"
+        className="absolute bottom-0 left-1/2 h-full w-auto max-w-full origin-bottom -translate-x-1/2 scale-[var(--hero-bike-scale)] object-contain object-bottom drop-shadow-[0_28px_50px_rgba(0,0,0,0.55)] lg:left-0 lg:max-w-none lg:translate-x-0"
         style={
           { '--hero-bike-scale': String(current.scale) } as CSSProperties
         }
@@ -64,7 +64,7 @@ export function HomeHeroShowcase({ locale }: { locale: Locale }) {
               role="tab"
               aria-selected={i === index}
               aria-label={`${t(locale, 'homeHeroFeaturedLabel')} ${i + 1}`}
-              className="relative h-11 w-9"
+              className="relative h-11 w-11 lg:w-9"
               onClick={() => setIndex(i)}
             >
               <span

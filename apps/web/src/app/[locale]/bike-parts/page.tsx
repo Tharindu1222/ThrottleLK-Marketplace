@@ -106,21 +106,21 @@ export default async function BikePartsPage({
 
   const total = pager?.total ?? result.data.length;
   const tabClass = (active: boolean) =>
-    `rounded-md px-4 py-2 text-sm font-semibold transition ${
+    `inline-flex min-h-11 items-center rounded-md px-4 py-2 text-sm font-semibold transition ${
       active
         ? 'bg-[#0a0a0a] text-white'
         : 'bg-background text-foreground ring-1 ring-black/10 hover:ring-accent/40'
     }`;
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10">
-      <header>
+    <main className="mx-auto w-full min-w-0 max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+      <header className="min-w-0">
         <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
           {t(locale, 'bikePartsBrowseEyebrow')}
         </p>
         <h1
           id="part-results"
-          className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+          className="mt-2 break-words text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
         >
           {t(locale, 'bikePartsTitle')}
         </h1>
@@ -129,7 +129,7 @@ export default async function BikePartsPage({
         </p>
       </header>
 
-      <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label={t(locale, 'partKindFilter')}>
+      <div className="mt-6 flex min-w-0 flex-wrap gap-2" role="group" aria-label={t(locale, 'partKindFilter')}>
         <Link
           href={hrefWithPage(
             `/${locale}/bike-parts`,
@@ -165,8 +165,8 @@ export default async function BikePartsPage({
         </Link>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
-        <aside className="space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
+      <div className="mt-8 grid w-full min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
+        <aside className="w-full min-w-0 space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
           <PartBrowseFilters
             key={filterState.kind ?? 'all'}
             locale={locale}
@@ -178,7 +178,7 @@ export default async function BikePartsPage({
           />
         </aside>
 
-        <div className="min-w-0">
+        <div className="w-full min-w-0">
           <PromotedListingsRail
             locale={locale}
             surface="browse"
@@ -191,7 +191,7 @@ export default async function BikePartsPage({
               ? t(locale, 'resultCountPartsOne')
               : t(locale, 'resultCountParts').replace('{count}', String(total))}
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {result.data.length === 0 ? (
               <p className="text-muted sm:col-span-2 xl:col-span-3">
                 {t(locale, 'noPartsYet')}

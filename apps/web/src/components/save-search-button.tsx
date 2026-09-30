@@ -131,8 +131,8 @@ export function SaveSearchButton({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <label className="flex items-center gap-2 text-sm text-muted">
+    <div className="flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm text-muted">
         <input
           type="checkbox"
           checked={notify}
@@ -143,13 +143,13 @@ export function SaveSearchButton({
       <button
         type="button"
         onClick={() => void onSave()}
-        className="border border-black/20 px-3 py-1.5 text-sm hover:border-accent"
+        className="inline-flex min-h-11 items-center justify-center border border-black/20 px-4 text-sm hover:border-accent"
       >
         {t(locale, 'saveSearch')}
       </button>
       <Link
         href={`/${locale}/account/saved-searches`}
-        className="text-sm text-accent underline"
+        className="inline-flex min-h-11 min-w-0 items-center text-sm text-accent underline"
       >
         {t(locale, 'savedSearches')}
       </Link>

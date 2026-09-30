@@ -199,10 +199,10 @@ export function AdminUsers({ search = '' }: { search?: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <button
           type="button"
-          className="admin-btn-primary ml-auto shrink-0 px-4 py-2 text-sm"
+          className="admin-btn-primary inline-flex min-h-11 w-full shrink-0 items-center justify-center px-4 py-2 text-sm sm:ml-auto sm:w-auto"
           onClick={openCreate}
         >
           + New user
@@ -334,11 +334,11 @@ export function AdminUsers({ search = '' }: { search?: string }) {
           role="dialog"
           aria-modal="true"
           tabIndex={-1}
-          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:p-4"
         >
           <form
             onSubmit={onSubmit}
-            className="admin-card my-8 w-full max-w-xl space-y-4 p-6"
+            className="admin-card my-4 w-full max-h-[90dvh] max-w-[min(100vw-1.5rem,36rem)] space-y-4 overflow-y-auto p-4 sm:my-8 sm:p-6"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -351,7 +351,7 @@ export function AdminUsers({ search = '' }: { search?: string }) {
               </div>
               <button
                 type="button"
-                className="admin-btn-ghost px-3 py-1.5 text-sm"
+                className="admin-btn-ghost inline-flex min-h-11 shrink-0 items-center px-3 py-1.5 text-sm"
                 onClick={() => setEditorOpen(false)}
               >
                 Close
@@ -471,7 +471,7 @@ export function AdminUsers({ search = '' }: { search?: string }) {
               <button
                 type="submit"
                 disabled={busy}
-                className="admin-btn-primary px-4 py-2 text-sm disabled:opacity-60"
+                className="admin-btn-primary inline-flex min-h-11 w-full items-center justify-center px-4 py-2 text-sm disabled:opacity-60 sm:w-auto"
               >
                 {busy ? 'Saving…' : editingId ? 'Save changes' : 'Create user'}
               </button>

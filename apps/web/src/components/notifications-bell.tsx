@@ -6,7 +6,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
-import { HeaderNavBadge, headerIconButtonClass } from './header-nav-badge';
+import {
+  HeaderDropdown,
+  HeaderNavBadge,
+  headerIconButtonClass,
+} from './header-nav-badge';
 
 export type AppNotification = {
   id: string;
@@ -199,7 +203,10 @@ export function NotificationsBell({ locale }: { locale: Locale }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-[min(100vw-2rem,22rem)] overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-20px_rgba(0,0,0,0.35)]">
+        <HeaderDropdown
+          anchorRef={rootRef}
+          className="w-[min(100vw-1rem,22rem)] max-w-[calc(100vw-1rem)] overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-20px_rgba(0,0,0,0.35)]"
+        >
           <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
             <p className="font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground">
               {t(locale, 'notifications')}
@@ -268,7 +275,7 @@ export function NotificationsBell({ locale }: { locale: Locale }) {
               {t(locale, 'viewAllNotifications')}
             </Link>
           </div>
-        </div>
+        </HeaderDropdown>
       ) : null}
     </div>
   );

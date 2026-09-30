@@ -82,7 +82,7 @@ export function AuthBikeStage({ className = '' }: { className?: string }) {
   return (
     <div
       ref={rootRef}
-      className={`pointer-events-none relative flex h-full w-full items-center justify-center ${className}`}
+      className={`pointer-events-none relative flex h-full w-full items-center justify-center overflow-hidden ${className}`}
     >
       <div
         ref={glowRef}
@@ -94,7 +94,7 @@ export function AuthBikeStage({ className = '' }: { className?: string }) {
         ref={bikeRef}
         src={BIKE_SRC}
         alt=""
-        className="relative z-[1] max-h-full w-auto max-w-[125%] object-contain drop-shadow-[0_28px_50px_rgba(0,0,0,0.55)] select-none sm:max-w-[135%] lg:max-w-[145%]"
+        className="relative z-[1] max-h-full w-auto max-w-full object-contain drop-shadow-[0_28px_50px_rgba(0,0,0,0.55)] select-none sm:max-w-[125%] lg:max-w-[145%]"
         draggable={false}
       />
       <div

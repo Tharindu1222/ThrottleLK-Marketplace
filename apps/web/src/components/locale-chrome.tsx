@@ -54,7 +54,7 @@ export function LocaleChrome({
 
   return (
     <BreadcrumbLabelProvider>
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen min-w-0 max-w-full flex-col">
         <a
           href="#main-content"
           className="skip-link"
@@ -65,7 +65,12 @@ export function LocaleChrome({
         {showBreadcrumbs ? <SiteBreadcrumbs locale={locale} /> : null}
         <div
           id="main-content"
-          className={`${isDealerApply ? '' : 'flex flex-1 flex-col'} ${showTray ? 'pb-20' : ''}`}
+          className={`${isDealerApply ? '' : 'flex min-w-0 flex-1 flex-col'} max-w-full`}
+          style={
+            showTray
+              ? { paddingBottom: 'max(5rem, var(--compare-tray-offset, 0px))' }
+              : undefined
+          }
         >
           {children}
         </div>

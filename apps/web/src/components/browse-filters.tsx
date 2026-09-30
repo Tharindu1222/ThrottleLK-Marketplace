@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { apiGet } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 
@@ -49,7 +49,7 @@ export type BrowseFilterState = {
 };
 
 const fieldClass =
-  'w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
+  'w-full min-w-0 max-w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
 
 function FilterField({
   id,
@@ -61,7 +61,7 @@ function FilterField({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-xs font-medium text-muted">
         {label}
       </label>
@@ -89,36 +89,7 @@ export function BrowseFilters({
   const [models, setModels] = useState<Model[]>([]);
   const [cities, setCities] = useState<City[]>([]);
 
-  const hasActiveFilters = useMemo(
-    () =>
-      Boolean(
-        initial.q ||
-          initial.brandId ||
-          initial.modelId ||
-          initial.categoryId ||
-          initial.districtId ||
-          initial.cityId ||
-          initial.minPrice ||
-          initial.maxPrice ||
-          initial.minYear ||
-          initial.maxYear ||
-          initial.minRegistrationYear ||
-          initial.maxRegistrationYear ||
-          initial.minMileage ||
-          initial.maxMileage ||
-          initial.minEngineCc ||
-          initial.maxEngineCc ||
-          initial.condition ||
-          initial.fuelType ||
-          initial.transmission ||
-          initial.sellerType ||
-          initial.featured ||
-          initial.negotiable,
-      ),
-    [initial],
-  );
-
-  const [open, setOpen] = useState(hasActiveFilters);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!brandId) {
@@ -141,10 +112,10 @@ export function BrowseFilters({
   }, [districtId]);
 
   return (
-    <div>
+    <div className="min-w-0 w-full">
       <button
         type="button"
-        className="flex w-full items-center justify-between border border-black/15 bg-surface/60 px-4 py-3 text-left font-[family-name:var(--font-display)] tracking-wide lg:hidden"
+        className="flex min-h-11 w-full items-center justify-between border border-black/15 bg-surface/60 px-4 py-3 text-left font-[family-name:var(--font-display)] tracking-wide lg:hidden"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
@@ -155,9 +126,11 @@ export function BrowseFilters({
       <form
         method="get"
         action={`/${locale}/bikes`}
-        className={`mt-3 flex flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 ${
-          open ? 'flex' : 'hidden lg:flex'
-        }`}
+        className={
+          open
+            ? 'mt-3 flex w-full min-w-0 flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0'
+            : 'mt-3 hidden w-full min-w-0 flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 lg:flex'
+        }
       >
         <p className="hidden font-[family-name:var(--font-display)] text-lg tracking-wide lg:block">
           {t(locale, 'filters')}
@@ -311,7 +284,7 @@ export function BrowseFilters({
             <option value="dealer">{t(locale, 'sellerTypeDealer')}</option>
           </select>
         </FilterField>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-2 gap-3">
           <FilterField id={`${uid}-minPrice`} label={t(locale, 'minPrice')}>
             <input
               id={`${uid}-minPrice`}
@@ -331,7 +304,7 @@ export function BrowseFilters({
             />
           </FilterField>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-2 gap-3">
           <FilterField id={`${uid}-minYear`} label={t(locale, 'minYear')}>
             <input
               id={`${uid}-minYear`}
@@ -351,7 +324,7 @@ export function BrowseFilters({
             />
           </FilterField>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-2 gap-3">
           <FilterField id={`${uid}-minReg`} label={t(locale, 'minRegYear')}>
             <input
               id={`${uid}-minReg`}
@@ -371,7 +344,7 @@ export function BrowseFilters({
             />
           </FilterField>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-2 gap-3">
           <FilterField id={`${uid}-minMileage`} label={t(locale, 'minMileage')}>
             <input
               id={`${uid}-minMileage`}
@@ -391,7 +364,7 @@ export function BrowseFilters({
             />
           </FilterField>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-2 gap-3">
           <FilterField id={`${uid}-minCc`} label={t(locale, 'minEngineCc')}>
             <input
               id={`${uid}-minCc`}
@@ -411,7 +384,7 @@ export function BrowseFilters({
             />
           </FilterField>
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm">
           <input
             type="checkbox"
             name="featured"
@@ -420,7 +393,7 @@ export function BrowseFilters({
           />
           {t(locale, 'featuredOnly')}
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm">
           <input
             type="checkbox"
             name="negotiable"
@@ -445,7 +418,7 @@ export function BrowseFilters({
         </FilterField>
         <button
           type="submit"
-          className="bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
+          className="min-h-11 bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
         >
           {t(locale, 'applyFilters')}
         </button>

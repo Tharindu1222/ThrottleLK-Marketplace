@@ -224,7 +224,7 @@ function BrandsPanel({
           <button
             type="submit"
             disabled={busy}
-            className="admin-btn-primary w-full px-3 py-2 text-sm disabled:opacity-60"
+            className="admin-btn-primary inline-flex min-h-11 w-full items-center justify-center px-3 py-2 text-sm disabled:opacity-60"
           >
             {busy ? 'Saving…' : 'Add brand'}
           </button>
@@ -301,7 +301,7 @@ function BrandsPanel({
               <p className="mt-1 text-sm text-[var(--admin-muted)]">
                 Add the names buyers search for, such as Activa or CBR600RR.
               </p>
-              <form onSubmit={addModel} className="mt-3 flex gap-2">
+              <form onSubmit={addModel} className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <label className="sr-only" htmlFor="model-name">
                   Model name
                 </label>
@@ -311,12 +311,12 @@ function BrandsPanel({
                   onChange={(e) => setModelName(e.target.value)}
                   required
                   placeholder="Activa"
-                  className="admin-field"
+                  className="admin-field min-w-0"
                 />
                 <button
                   type="submit"
                   disabled={busy}
-                  className="admin-btn-primary shrink-0 px-3 py-2 text-sm disabled:opacity-60"
+                  className="admin-btn-primary inline-flex min-h-11 w-full shrink-0 items-center justify-center px-3 py-2 text-sm disabled:opacity-60 sm:w-auto"
                 >
                   Add
                 </button>
@@ -463,7 +463,7 @@ function LocationsPanel({
           <button
             type="submit"
             disabled={busy}
-            className="admin-btn-primary w-full px-3 py-2 text-sm disabled:opacity-60"
+            className="admin-btn-primary inline-flex min-h-11 w-full items-center justify-center px-3 py-2 text-sm disabled:opacity-60"
           >
             {busy ? 'Saving…' : 'Add district'}
           </button>
@@ -508,7 +508,7 @@ function LocationsPanel({
             <p className="mt-1 text-sm text-[var(--admin-muted)]">
               Cities that appear when a seller chooses this district.
             </p>
-            <form onSubmit={addCity} className="mt-3 flex max-w-md gap-2">
+            <form onSubmit={addCity} className="mt-3 flex max-w-md flex-col gap-2 sm:flex-row sm:items-center">
               <label className="sr-only" htmlFor="city-name">
                 City name
               </label>
@@ -518,12 +518,12 @@ function LocationsPanel({
                 onChange={(e) => setCityName(e.target.value)}
                 required
                 placeholder="Nugegoda"
-                className="admin-field"
+                className="admin-field min-w-0"
               />
               <button
                 type="submit"
                 disabled={busy}
-                className="admin-btn-primary shrink-0 px-3 py-2 text-sm disabled:opacity-60"
+                className="admin-btn-primary inline-flex min-h-11 w-full shrink-0 items-center justify-center px-3 py-2 text-sm disabled:opacity-60 sm:w-auto"
               >
                 Add city
               </button>

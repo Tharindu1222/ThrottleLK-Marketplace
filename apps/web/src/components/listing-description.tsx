@@ -71,7 +71,7 @@ export function ListingDescription({
         {needsMore ? (
           <button
             type="button"
-            className="text-sm font-medium text-accent transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-accent transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2"
             onClick={() => setExpanded(true)}
             aria-haspopup="dialog"
           >
@@ -84,7 +84,7 @@ export function ListingDescription({
         ? createPortal(
             <div
               id={dialogId}
-              className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-4 backdrop-blur-[2px] sm:items-center"
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
@@ -93,7 +93,7 @@ export function ListingDescription({
                 if (e.target === e.currentTarget) setExpanded(false);
               }}
             >
-              <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-black/10 bg-white shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:max-h-[80vh] sm:rounded-2xl">
+              <div className="flex max-h-[90dvh] w-full max-w-md flex-col overflow-y-auto rounded-2xl border border-black/10 bg-white shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
                 <div className="flex items-start justify-between gap-3 border-b border-black/10 px-5 py-4">
                   <h2
                     id={titleId}
@@ -105,7 +105,7 @@ export function ListingDescription({
                     ref={closeRef}
                     type="button"
                     autoFocus
-                    className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-black/10 text-muted transition hover:border-black/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/10 text-muted transition hover:border-black/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                     aria-label={t(locale, 'close')}
                     onClick={() => setExpanded(false)}
                   >

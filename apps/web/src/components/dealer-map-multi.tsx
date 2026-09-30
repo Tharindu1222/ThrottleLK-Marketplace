@@ -119,10 +119,10 @@ export function DealerMapMulti({
         dealer.kind && kindLabels ? kindLabels[dealer.kind] : '';
       const cover =
         dealer.coverImageUrl != null && dealer.coverImageUrl !== ''
-          ? `<img src="${escapeHtml(dealer.coverImageUrl)}" alt="" width="200" height="125" style="display:block;width:200px;height:125px;object-fit:cover;border-radius:4px;margin-bottom:8px" loading="lazy" />`
+          ? `<img src="${escapeHtml(dealer.coverImageUrl)}" alt="" width="200" height="125" style="display:block;width:100%;max-width:200px;height:auto;aspect-ratio:8/5;object-fit:cover;border-radius:4px;margin-bottom:8px" loading="lazy" />`
           : '';
       const html = `
-        <div style="width:200px;font:14px/1.4 system-ui,sans-serif">
+        <div style="width:min(200px,100%);max-width:200px;font:14px/1.4 system-ui,sans-serif">
           ${cover}
           ${
             kindLabel
@@ -178,7 +178,7 @@ export function DealerMapMulti({
   return (
     <div
       ref={containerRef}
-      className={`z-0 w-full overflow-hidden bg-zinc-100 ${className || 'h-full min-h-[420px]'}`}
+      className={`z-0 w-full min-w-0 max-w-full overflow-hidden bg-zinc-100 ${className || 'h-[50vh] min-h-[240px] lg:h-full lg:min-h-[420px]'}`}
     />
   );
 }

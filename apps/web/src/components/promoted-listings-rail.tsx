@@ -68,7 +68,8 @@ export async function PromotedListingsRail({
     );
   }
 
-  const gridClass = 'mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4';
+  const gridClass =
+    'mt-4 grid w-full min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4';
   const sectionClass = 'mt-14 border-t border-black/10 pt-10';
 
   return (
@@ -81,14 +82,14 @@ export async function PromotedListingsRail({
       </p>
       <h2
         id="promoted-listings-heading"
-        className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl"
+        className="mt-1 break-words font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl"
       >
         {t(locale, 'promotedSection')}
       </h2>
       <ul className={gridClass}>
         {kind === 'bike'
           ? (items as PromotedBikeCard[]).map((listing) => (
-              <li key={listing.id}>
+              <li key={listing.id} className="min-w-0">
                 <ListingCard
                   locale={locale}
                   listing={listing}
@@ -98,7 +99,7 @@ export async function PromotedListingsRail({
               </li>
             ))
           : (items as PromotedPartCard[]).map((part) => (
-              <li key={part.id}>
+              <li key={part.id} className="min-w-0">
                 <PartCard
                   locale={locale}
                   part={part}

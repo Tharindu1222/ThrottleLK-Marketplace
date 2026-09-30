@@ -169,9 +169,9 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
 
       <form
         onSubmit={onCreate}
-        className="admin-card flex flex-wrap items-end gap-3 p-4"
+        className="admin-card flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-end"
       >
-        <label className="grid min-w-[11rem] flex-1 gap-1">
+        <label className="grid w-full min-w-0 flex-1 gap-1 sm:min-w-[11rem]">
           <span className="text-[11px] font-medium tracking-wide text-[var(--admin-faint)] uppercase">
             Parent
           </span>
@@ -189,7 +189,7 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
             ))}
           </select>
         </label>
-        <label className="grid min-w-[14rem] flex-[2] gap-1">
+        <label className="grid w-full min-w-0 flex-[2] gap-1 sm:min-w-[14rem]">
           <span className="text-[11px] font-medium tracking-wide text-[var(--admin-faint)] uppercase">
             Name
           </span>
@@ -204,7 +204,7 @@ export function AdminPartCategories({ search = '' }: { search?: string }) {
         <button
           type="submit"
           disabled={busy || !name.trim()}
-          className="admin-btn-primary h-[38px] shrink-0 px-5 text-sm disabled:opacity-50"
+          className="admin-btn-primary inline-flex min-h-11 w-full shrink-0 items-center justify-center px-5 text-sm disabled:opacity-50 sm:w-auto"
         >
           {busy ? 'Adding…' : 'Add category'}
         </button>

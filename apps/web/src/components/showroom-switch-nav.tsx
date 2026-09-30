@@ -41,10 +41,10 @@ export function ShowroomSwitchNav({ locale }: { locale: Locale }) {
   if (!bike && !parts) return null;
 
   const buttonClass =
-    'inline-flex items-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent';
+    'inline-flex max-w-full items-center justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-accent';
 
   return (
-    <nav aria-label={t(locale, 'viewShowroom')} className="mt-4 flex flex-wrap gap-2">
+    <nav aria-label={t(locale, 'viewShowroom')} className="mt-4 flex min-w-0 flex-wrap gap-2">
       {bike ? (
         <Link href={ownedDealerHref(locale, 'bike', bike)} className={buttonClass}>
           {t(locale, 'viewDealerShowrooms')} →

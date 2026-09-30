@@ -272,28 +272,30 @@ export function ListingSpecSheet({
   return (
     <section
       aria-labelledby="listing-overview-heading"
-      className="flex h-full min-h-0 flex-col border border-black/10 bg-white"
+      className="flex h-full min-h-0 min-w-0 flex-col border border-black/10 bg-white"
     >
-      <div className="flex items-baseline justify-between gap-3 border-b border-black/10 px-4 py-3 sm:px-5">
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-black/10 px-4 py-3 sm:px-5">
         <h2
           id="listing-overview-heading"
-          className="font-[family-name:var(--font-display)] text-xl tracking-wide text-foreground sm:text-2xl"
+          className="min-w-0 break-words font-[family-name:var(--font-display)] text-xl tracking-wide text-foreground sm:text-2xl"
         >
           {t(locale, 'listingDetails')}
         </h2>
-        {views ? <p className="shrink-0 text-sm text-muted">{views}</p> : null}
+        {views ? (
+          <p className="min-w-0 break-words text-sm text-muted">{views}</p>
+        ) : null}
       </div>
-      <dl className="flex flex-1 flex-col">
+      <dl className="flex min-w-0 flex-1 flex-col">
         {rows.map((row) => (
           <div
             key={row.key}
-            className="flex items-center justify-between gap-4 border-b border-black/[0.06] px-4 py-2.5 last:border-b-0 sm:px-5"
+            className="flex min-w-0 items-start justify-between gap-3 border-b border-black/[0.06] px-4 py-2.5 last:border-b-0 sm:gap-4 sm:px-5"
           >
-            <dt className="flex min-w-0 items-center gap-2.5 text-[13px] text-muted">
-              <span className="text-foreground/55">{row.icon}</span>
-              <span>{row.label}</span>
+            <dt className="flex min-w-0 flex-1 items-start gap-2.5 text-[13px] text-muted">
+              <span className="mt-0.5 shrink-0 text-foreground/55">{row.icon}</span>
+              <span className="min-w-0 break-words">{row.label}</span>
             </dt>
-            <dd className="max-w-[58%] text-right text-[14px] font-medium leading-snug text-foreground sm:text-[15px]">
+            <dd className="min-w-0 max-w-[58%] break-words text-right text-[14px] font-medium leading-snug text-foreground sm:text-[15px]">
               {row.value}
             </dd>
           </div>

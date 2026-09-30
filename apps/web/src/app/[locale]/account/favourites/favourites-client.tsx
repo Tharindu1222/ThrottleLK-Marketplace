@@ -128,11 +128,11 @@ export function FavouritesClient({ locale }: { locale: Locale }) {
     tab === 'parts' ? partRows.length === 0 : bikeRows.length === 0;
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="mt-8 min-w-0 space-y-6">
       <div
         role="tablist"
         aria-label={t(locale, 'favourites')}
-        className="inline-flex rounded-md bg-white p-0.5 ring-1 ring-black/[0.06]"
+        className="inline-flex max-w-full min-w-0 overflow-x-auto rounded-md bg-white p-0.5 ring-1 ring-black/[0.06]"
       >
         {(
           [
@@ -147,10 +147,10 @@ export function FavouritesClient({ locale }: { locale: Locale }) {
               type="button"
               role="tab"
               aria-selected={active}
-              className={`rounded-md px-3.5 py-1.5 text-sm transition ${
+              className={`min-h-11 shrink-0 rounded-md px-3.5 text-sm whitespace-nowrap transition ${
                 active
-                  ? 'bg-accent/10 font-medium text-accent'
-                  : 'text-muted hover:text-foreground'
+                  ? 'bg-accent/10 font-semibold text-accent underline decoration-2 underline-offset-4'
+                  : 'font-medium text-muted hover:text-foreground'
               }`}
               onClick={() => setTab(value)}
             >
@@ -162,7 +162,7 @@ export function FavouritesClient({ locale }: { locale: Locale }) {
 
       <div
         aria-busy={loading}
-        className={`grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3 ${
+        className={`grid min-w-0 auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3 ${
           loading ? 'pointer-events-none opacity-60' : ''
         }`}
       >

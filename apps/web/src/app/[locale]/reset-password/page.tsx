@@ -31,8 +31,8 @@ export default async function ResetPasswordPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <main className="mx-auto w-full min-w-0 max-w-6xl overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12">
+      <h1 className="break-words font-[family-name:var(--font-display)] text-3xl tracking-wide sm:text-4xl">
         Reset password
       </h1>
       <Suspense fallback={<p className="mt-8 text-muted">Loading…</p>}>

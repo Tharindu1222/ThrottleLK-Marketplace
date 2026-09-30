@@ -62,7 +62,7 @@ function CloseIcon() {
 }
 
 const controlBtn =
-  'flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white shadow-sm transition hover:bg-black/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
+  'flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-sm transition hover:bg-black/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
 export function ListingGallery({
   locale,
@@ -154,7 +154,7 @@ export function ListingGallery({
 
   if (!current) {
     return (
-      <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-3 border border-black/10 bg-[linear-gradient(160deg,#f0f0f0_0%,#fafafa_50%,#ececec_100%)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-20px_rgba(0,0,0,0.25)]">
+      <div className="flex aspect-[16/10] w-full max-w-full flex-col items-center justify-center gap-3 border border-black/10 bg-[linear-gradient(160deg,#f0f0f0_0%,#fafafa_50%,#ececec_100%)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-20px_rgba(0,0,0,0.25)]">
         <MarketplaceImage
           src={BRAND_LOGO_SRC}
           alt=""
@@ -221,7 +221,7 @@ export function ListingGallery({
                   src={current}
                   alt={title}
                   sizes="100vw"
-                  className="object-contain"
+                  className="max-w-full object-contain"
                 />
               </div>
 
@@ -245,24 +245,24 @@ export function ListingGallery({
       : null;
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 w-full max-w-full space-y-3">
       <div
-        className="group relative overflow-hidden border border-black/10 bg-zinc-100 shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-24px_rgba(0,0,0,0.35)] outline-none"
+        className="group relative max-w-full overflow-hidden border border-black/10 bg-zinc-100 shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-24px_rgba(0,0,0,0.35)] outline-none"
         tabIndex={multi ? 0 : undefined}
         onKeyDown={multi ? onCoverKeyDown : undefined}
       >
         <button
           type="button"
           onClick={openLightbox}
-          className="block w-full cursor-zoom-in"
+          className="block w-full max-w-full cursor-zoom-in"
           aria-label={t(locale, 'galleryExpand')}
         >
-          <span className="relative block aspect-[16/10] w-full bg-zinc-100">
+          <span className="relative block aspect-[16/10] w-full max-w-full bg-zinc-100">
             <MarketplaceImage
               src={current}
               alt={title}
               sizes="(max-width: 1024px) 100vw, 70vw"
-              className="object-contain"
+              className="max-w-full object-contain"
               priority
             />
           </span>
@@ -300,7 +300,7 @@ export function ListingGallery({
       </div>
 
       {ordered.length > 1 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1">
           {ordered.map((image, index) => {
             const selected = index === activeIndex;
             return (
@@ -310,18 +310,18 @@ export function ListingGallery({
                 onClick={() => setActiveIndex(index)}
                 aria-label={`Photo ${index + 1} of ${ordered.length}`}
                 aria-pressed={selected}
-                className={`overflow-hidden border bg-surface transition ${
+                className={`shrink-0 overflow-hidden border bg-surface transition min-h-11 min-w-11 ${
                   selected
                     ? 'border-accent ring-2 ring-accent/30'
                     : 'border-black/10 hover:border-accent/50'
                 }`}
               >
-                <span className="relative block h-16 w-20 sm:h-[4.5rem] sm:w-24">
+                <span className="relative block h-16 w-20 max-w-full sm:h-[4.5rem] sm:w-24">
                   <MarketplaceImage
                     src={image.imageUrl}
                     alt=""
                     sizes="96px"
-                    className="object-cover"
+                    className="max-w-full object-cover"
                   />
                 </span>
               </button>

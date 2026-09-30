@@ -106,7 +106,7 @@ export function ShowroomCoverEditor({
             </div>
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-4 pt-16 pb-4 sm:px-6 sm:pb-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0 text-white">
                 <p className="text-[10px] tracking-[0.2em] text-white/70 uppercase">
                   {t(locale, 'showroomCover')}
@@ -123,7 +123,7 @@ export function ShowroomCoverEditor({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <label
-                  className={`inline-flex cursor-pointer items-center justify-center rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-accent/90 ${
+                  className={`inline-flex max-w-full cursor-pointer items-center justify-center rounded-full bg-accent px-4 py-2.5 text-center text-sm font-medium text-white shadow-sm transition hover:bg-accent/90 ${
                     busy ? 'pointer-events-none opacity-60' : ''
                   }`}
                 >
@@ -147,7 +147,7 @@ export function ShowroomCoverEditor({
                       type="button"
                       disabled={busy}
                       onClick={() => setFraming((v) => !v)}
-                      className="rounded-full border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-60"
+                      className="max-w-full rounded-full border border-white/40 bg-white/10 px-4 py-2.5 text-center text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-60"
                     >
                       {t(locale, 'adjustCoverFraming')}
                     </button>
@@ -155,7 +155,7 @@ export function ShowroomCoverEditor({
                       type="button"
                       disabled={busy}
                       onClick={() => void onRemove()}
-                      className="rounded-full border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-60"
+                      className="max-w-full rounded-full border border-white/40 bg-white/10 px-4 py-2.5 text-center text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-60"
                     >
                       {t(locale, 'removeCover')}
                     </button>
@@ -172,7 +172,7 @@ export function ShowroomCoverEditor({
             id={framingId}
           >
             <p className="text-xs text-muted">{t(locale, 'coverFramingHint')}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-3 lg:grid-cols-2">
               <label className="block space-y-1.5">
                 <span className="text-xs tracking-wide text-muted uppercase">
                   {t(locale, 'coverFocusHorizontal')}

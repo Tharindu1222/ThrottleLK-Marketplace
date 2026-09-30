@@ -38,7 +38,7 @@ const STEPS = [
 ];
 
 const fieldClass =
-  'w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35';
+  'w-full min-w-0 max-w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35';
 const labelClass = 'mb-1.5 block text-sm text-muted';
 
 const emptyForm: FormState = {
@@ -355,7 +355,7 @@ export function NewPartListingForm({
   }
 
   return (
-    <div className="mt-8 w-full">
+    <div className="mt-8 w-full min-w-0">
       <VerifyEmailCallout locale={locale} />
       {isEdit && status === 'active' ? (
         <p className="mb-5 rounded-md border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -363,7 +363,7 @@ export function NewPartListingForm({
         </p>
       ) : null}
       <ol
-        className="mb-6 flex w-full flex-wrap gap-2"
+        className="mb-6 flex w-full min-w-0 flex-wrap gap-2"
         aria-label={t(locale, 'sellFormSteps')}
       >
         {STEPS.map((s) => {
@@ -372,7 +372,7 @@ export function NewPartListingForm({
           return (
             <li
               key={s.id}
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs tracking-wide ring-1 ${
+              className={`inline-flex max-w-full min-w-0 items-center gap-2 rounded-md px-3 py-1.5 text-xs tracking-wide ring-1 ${
                 active
                   ? 'bg-accent/10 text-accent ring-accent/30'
                   : done
@@ -396,7 +396,7 @@ export function NewPartListingForm({
       </ol>
 
       {step === 1 ? (
-        <div className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-4 rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6 lg:grid-cols-3">
           <div className="lg:col-span-3">
             <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
               {t(locale, 'listPartStepDetails')}
@@ -537,7 +537,7 @@ export function NewPartListingForm({
       ) : null}
 
       {step === 2 ? (
-        <div className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-4 rounded-2xl bg-white p-5 ring-1 ring-black/[0.06] sm:p-6 lg:grid-cols-2 xl:grid-cols-3">
           <div className="lg:col-span-2 xl:col-span-3">
             <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
               {t(locale, 'listPartStepFitment')}

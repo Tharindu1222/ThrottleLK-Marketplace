@@ -112,7 +112,7 @@ export function BecomeDealerButton({
                 if (e.target === e.currentTarget) setOpen(false);
               }}
             >
-              <div className="w-full max-w-3xl overflow-hidden rounded-t-2xl border border-black/10 bg-white p-5 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:rounded-2xl sm:p-6">
+              <div className="max-h-[90dvh] w-full max-w-[min(100vw-1.5rem,48rem)] overflow-y-auto rounded-t-2xl border border-black/10 bg-white p-5 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:rounded-2xl sm:p-6">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2
@@ -131,7 +131,7 @@ export function BecomeDealerButton({
                   <button
                     ref={closeRef}
                     type="button"
-                    className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-accent/35 text-muted transition hover:border-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                    className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-accent/35 text-muted transition hover:border-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                     aria-label={t(locale, 'close')}
                     onClick={() => setOpen(false)}
                   >

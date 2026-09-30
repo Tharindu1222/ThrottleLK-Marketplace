@@ -105,12 +105,12 @@ export default async function SparePartDetailPage({
   const waHref = part.whatsapp ? whatsappHref(part.whatsapp) : null;
 
   return (
-    <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
+    <main className="mx-auto w-full min-w-0 max-w-7xl px-4 pt-8 pb-[calc(2rem+var(--compare-tray-offset,0px))] sm:px-8 lg:px-10 lg:pb-8">
       <BreadcrumbLabels labels={{ [slug]: part.title }} />
       <PartViewTracker partListingId={part.id} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-start lg:gap-x-10">
-        <header className="space-y-3 lg:col-span-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-start lg:gap-x-10">
+        <header className="min-w-0 space-y-3 lg:col-span-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex border border-accent/25 bg-accent/5 px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] text-accent uppercase">
               {t(locale, 'sparePartBadge')}
@@ -122,20 +122,20 @@ export default async function SparePartDetailPage({
               <VerifiedDealerBadge locale={locale} />
             ) : null}
           </div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl leading-[0.95] tracking-tight text-foreground sm:text-4xl">
+          <h1 className="break-words font-[family-name:var(--font-display)] text-3xl leading-[0.95] tracking-tight text-foreground sm:text-4xl">
             {part.title}
           </h1>
-          <p className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-accent">
-            {formatLkr(part.priceLkr)}
+          <p className="flex min-w-0 flex-col gap-1 font-[family-name:var(--font-display)] text-3xl tracking-wide text-accent sm:block">
+            <span className="break-words">{formatLkr(part.priceLkr)}</span>
             {part.negotiable ? (
-              <span className="ml-2 align-middle text-sm font-sans font-normal tracking-normal text-muted">
+              <span className="break-words font-sans text-sm font-normal tracking-normal text-muted sm:ml-2 sm:align-middle">
                 · {t(locale, 'negotiable')}
               </span>
             ) : null}
           </p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
             {location ? (
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex min-w-0 items-center gap-1.5 break-words">
                 <LocationPinIcon />
                 {location}
               </span>
@@ -165,16 +165,16 @@ export default async function SparePartDetailPage({
           }))}
         />
 
-        <div className="space-y-6">
-          <section className="space-y-3 rounded-xl border border-black/10 bg-white p-5">
-            <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide">
+        <div className="min-w-0 space-y-6">
+          <section className="space-y-3 rounded-xl border border-black/10 bg-white p-4 sm:p-5">
+            <h2 className="break-words font-[family-name:var(--font-display)] text-xl tracking-wide">
               {t(locale, 'contactSeller')}
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               {part.phone ? (
                 <a
                   href={`tel:${part.phone}`}
-                  className="inline-flex h-11 items-center rounded-full bg-accent px-5 text-sm font-semibold text-white"
+                  className="inline-flex min-h-11 w-full min-w-0 items-center justify-center break-all rounded-full bg-accent px-5 text-center text-sm font-semibold text-white sm:w-auto"
                 >
                   {t(locale, 'call')} · {part.phone}
                 </a>
@@ -184,7 +184,7 @@ export default async function SparePartDetailPage({
                   href={waHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex h-11 items-center rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white sm:w-auto"
                 >
                   {t(locale, 'whatsapp')}
                 </a>
@@ -193,16 +193,16 @@ export default async function SparePartDetailPage({
           </section>
 
           {fitmentLabel ? (
-            <section className="space-y-2 rounded-xl border border-black/10 bg-white p-5">
+            <section className="space-y-2 rounded-xl border border-black/10 bg-white p-4 sm:p-5">
               <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide">
                 Fitment
               </h2>
-              <p className="text-sm text-muted">{fitmentLabel}</p>
+              <p className="min-w-0 break-words text-sm text-muted">{fitmentLabel}</p>
             </section>
           ) : null}
         </div>
 
-        <section className="space-y-3 border-t border-black/10 pt-8 lg:col-start-1 lg:border-t-0 lg:pt-0">
+        <section className="min-w-0 space-y-3 border-t border-black/10 pt-8 lg:col-start-1 lg:border-t-0 lg:pt-0">
           <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground">
             {t(locale, 'description')}
           </h2>

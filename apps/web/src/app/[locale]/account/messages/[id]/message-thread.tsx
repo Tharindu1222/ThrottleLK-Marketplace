@@ -169,19 +169,19 @@ export function MessageThread({
     t(locale, 'seller');
 
   return (
-    <div className="mx-auto mt-4 flex h-[min(72vh,640px)] max-w-2xl flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06] lg:max-w-none">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06] lg:mx-auto lg:mt-4 lg:h-[min(72vh,640px)] lg:max-w-none lg:flex-none">
       {/* Top bar */}
-      <div className="flex items-center justify-between gap-3 border-b border-black/[0.06] px-4 py-2.5">
+      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-black/[0.06] px-3 py-2 sm:px-4">
         <Link
           href={`/${locale}/account/messages`}
-          className="text-xs text-muted transition hover:text-foreground"
+          className="inline-flex min-h-11 shrink-0 items-center text-xs text-muted transition hover:text-foreground"
         >
           ← {t(locale, 'backToInbox')}
         </Link>
         {thread.listingSlug ? (
           <Link
             href={`/${locale}/bikes/${thread.listingSlug}`}
-            className="truncate text-xs font-medium text-muted transition hover:text-accent"
+            className="inline-flex min-h-11 min-w-0 items-center truncate text-xs font-medium text-muted transition hover:text-accent"
           >
             {t(locale, 'viewListing')}
           </Link>
@@ -189,7 +189,7 @@ export function MessageThread({
       </div>
 
       {/* Contact header */}
-      <div className="flex items-center gap-3 border-b border-black/[0.06] px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3 border-b border-black/[0.06] px-3 py-3 sm:px-4">
         <Avatar counterpart={thread.counterpart} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-bold leading-tight tracking-tight text-foreground">
@@ -206,7 +206,7 @@ export function MessageThread({
         {thread.counterpart?.phone ? (
           <a
             href={`tel:${thread.counterpart.phone}`}
-            className="shrink-0 rounded-md bg-[#0a0a0a] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-accent"
+            className="inline-flex min-h-11 shrink-0 items-center rounded-md bg-[#0a0a0a] px-3 text-xs font-semibold text-white transition hover:bg-accent"
             title={thread.counterpart.phone}
           >
             {t(locale, 'call')}
@@ -217,7 +217,7 @@ export function MessageThread({
       {/* Messages */}
       <div
         ref={scrollerRef}
-        className="flex-1 space-y-2 overflow-y-auto bg-[#f7f7f7] px-3 py-4 sm:px-4"
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain bg-[#f7f7f7] px-3 py-4 sm:px-4"
       >
         {thread.messages.map((m) => (
           <div
@@ -248,14 +248,14 @@ export function MessageThread({
       {/* Composer */}
       <form
         onSubmit={onReply}
-        className="flex items-end gap-2 border-t border-black/[0.06] bg-white p-3"
+        className="flex min-w-0 items-end gap-2 border-t border-black/[0.06] bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
         <textarea
           name="message"
           required
           rows={1}
           placeholder={t(locale, 'message')}
-          className="max-h-28 min-h-[42px] flex-1 resize-none rounded-md border border-black/10 bg-[#f5f5f5] px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/15"
+          className="max-h-28 min-h-[42px] w-full min-w-0 flex-1 resize-none rounded-md border border-black/10 bg-[#f5f5f5] px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/15"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();

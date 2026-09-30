@@ -59,7 +59,7 @@ type DealerImage = {
 };
 
 const fieldClass =
-  'w-full rounded-md border border-black/10 bg-surface/90 px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
+  'w-full min-w-0 max-w-full rounded-md border border-black/10 bg-surface/90 px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
 
 const areaClass =
   'w-full resize-y rounded-2xl border border-black/10 bg-surface/90 px-4 py-3 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
@@ -434,7 +434,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
             aria-labelledby="showroom-saved-title"
             tabIndex={-1}
           >
-            <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 text-center ring-1 ring-black/[0.06] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
+            <div className="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 text-center ring-1 ring-black/[0.06] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                 <svg
                   viewBox="0 0 24 24"
@@ -532,7 +532,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       {successPopup}
 
       {/* Full-width cover banner — matches public showroom framing */}
@@ -551,7 +551,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
 
       <form onSubmit={(e) => void onSaveDetails(e)} className="space-y-5">
         {/* Shop + Contact equal columns */}
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-2">
           <section className={cardClass}>
             <header className="border-b border-black/[0.06] px-4 py-3.5 sm:px-5">
               <h2 className="text-lg font-bold tracking-tight text-foreground">
@@ -589,7 +589,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
                 {t(locale, 'showroomContact')}
               </h2>
             </header>
-            <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+            <div className="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-2">
               <Field label={t(locale, 'phoneLabel')} htmlFor="shop-phone">
                 <input
                   id="shop-phone"
@@ -641,9 +641,9 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
               {t(locale, 'showroomLocation')}
             </h2>
           </header>
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+          <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
             <div className="space-y-4 border-b border-black/[0.06] p-4 sm:p-5 lg:border-r lg:border-b-0">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid min-w-0 gap-4 lg:grid-cols-2">
                 <Field label={t(locale, 'districtLabel')} htmlFor="shop-district">
                   <select
                     id="shop-district"
@@ -737,7 +737,7 @@ export function ShowroomClient({ locale }: { locale: Locale }) {
         {/* Social + save */}
         <section className={cardClass}>
           <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
               <Field label={t(locale, 'facebookUrl')} htmlFor="shop-fb">
                 <input
                   id="shop-fb"

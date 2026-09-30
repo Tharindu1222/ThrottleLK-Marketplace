@@ -98,12 +98,12 @@ export function AuthShell({
       />
 
       {/* Bike layer — bleeds under the form on desktop */}
-      <div className="pointer-events-none absolute inset-x-0 top-[2%] bottom-[20%] z-[1] sm:top-[0%] sm:bottom-[16%] lg:inset-y-[2%] lg:right-[28%] lg:left-[-8%] lg:bottom-[26%]">
+      <div className="pointer-events-none absolute inset-x-0 top-[2%] bottom-[20%] z-[1] overflow-hidden sm:top-[0%] sm:bottom-[16%] lg:inset-y-[2%] lg:right-[28%] lg:left-[-8%] lg:bottom-[26%]">
         <AuthBikeStage />
       </div>
 
       {/* Content overlay */}
-      <div className="relative z-[2] mx-auto flex min-h-[calc(100vh-4.25rem)] max-w-7xl flex-col justify-between px-5 py-8 sm:px-8 lg:px-10 xl:px-14">
+      <div className="relative z-[2] mx-auto flex min-h-[calc(100vh-4.25rem)] w-full min-w-0 max-w-7xl flex-col justify-between px-4 py-8 sm:px-8 lg:px-10 xl:px-14">
         <div data-auth-fade className="relative">
           <BrandLogo size="header" tone="white" />
         </div>
@@ -117,13 +117,13 @@ export function AuthShell({
             <p className="font-[family-name:var(--font-display)] text-xs tracking-[0.4em] text-accent uppercase sm:text-sm">
               ThrottleLK
             </p>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl leading-[0.95] tracking-tight text-white sm:text-4xl xl:text-5xl">
+            <h2 className="mt-3 break-words font-[family-name:var(--font-display)] text-3xl leading-[0.95] tracking-tight text-white sm:text-4xl xl:text-5xl">
               {t(locale, 'tagline')}
             </h2>
             <p className="mt-4 max-w-md text-sm text-white/75 sm:text-base">
               {t(locale, 'support')}
             </p>
-            <div className="mt-6 flex gap-5 text-[11px] tracking-[0.22em] text-white/45 uppercase">
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[11px] tracking-[0.22em] text-white/45 uppercase">
               <span>Buy</span>
               <span className="text-accent">·</span>
               <span>Sell</span>
@@ -136,10 +136,10 @@ export function AuthShell({
           <div className="order-1 flex justify-center lg:order-2 lg:justify-end lg:self-center">
             <div
               ref={cardRef}
-              className="w-full max-w-md border border-black/12 bg-white p-7 shadow-[0_1px_0_rgba(0,0,0,0.06),0_8px_28px_-12px_rgba(0,0,0,0.22)] sm:p-9"
+              className="w-full min-w-0 max-w-md border border-black/12 bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.06),0_8px_28px_-12px_rgba(0,0,0,0.22)] sm:p-9"
             >
               <div className="mb-1 h-1 w-12 bg-accent" />
-              <h1 className="mt-4 font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
+              <h1 className="mt-4 break-words font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground sm:text-4xl">
                 {title}
               </h1>
               <p className="mt-2 text-muted">{subtitle}</p>
@@ -153,10 +153,10 @@ export function AuthShell({
 }
 
 export const authFieldClass =
-  'w-full rounded-full border border-black/10 bg-surface/90 px-5 py-3.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
+  'w-full min-w-0 rounded-full border border-black/10 bg-surface/90 px-5 py-3.5 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20';
 
 export const authPrimaryBtnClass =
-  'inline-flex flex-1 items-center justify-center rounded-full bg-accent px-5 py-3.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] transition hover:brightness-110 disabled:opacity-60';
+  'inline-flex min-h-11 w-full flex-1 items-center justify-center rounded-full bg-accent px-5 py-3.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] transition hover:brightness-110 disabled:opacity-60';
 
 export const authSecondaryBtnClass =
-  'inline-flex flex-1 items-center justify-center rounded-full border border-black/15 px-5 py-3.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground transition hover:border-accent hover:text-accent';
+  'inline-flex min-h-11 w-full flex-1 items-center justify-center rounded-full border border-black/15 px-5 py-3.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground transition hover:border-accent hover:text-accent';

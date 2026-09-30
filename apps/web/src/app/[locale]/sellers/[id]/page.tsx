@@ -74,10 +74,10 @@ export default async function SellerProfilePage({
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto w-full min-w-0 max-w-6xl overflow-x-hidden px-4 py-8 sm:px-6 sm:py-10">
       <BreadcrumbLabels labels={{ [id]: seller.displayName }} />
       <p className="text-sm tracking-[0.25em] text-accent uppercase">Seller</p>
-      <h1 className="mt-2 font-[family-name:var(--font-display)] text-5xl tracking-wide">
+      <h1 className="mt-2 break-words font-[family-name:var(--font-display)] text-3xl tracking-wide sm:text-4xl lg:text-5xl">
         {seller.displayName}
       </h1>
       <p className="mt-3 text-sm text-muted">

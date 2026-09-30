@@ -2,6 +2,7 @@ import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
 import { pickPopularHomeBrands } from '@/lib/home-shop';
 import { HomeHeroRail } from './home-hero-rail';
+import { HomeHeroSearch } from './home-hero-search';
 import { HomeHeroShowcase } from './home-hero-showcase';
 import { homeHeroHeadingClass, homeHeroSectionClass, homeHeroSupportClass } from './home-hero-layout';
 
@@ -24,7 +25,7 @@ export function HomeHero({
   const popular = pickPopularHomeBrands(brands);
 
   return (
-    <section className={homeHeroSectionClass()}>
+    <section className={`${homeHeroSectionClass()} min-w-0 max-w-full`}>
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       <div
         aria-hidden
@@ -53,12 +54,14 @@ export function HomeHero({
 
       <div className="relative z-10 mx-auto grid w-full min-w-0 max-w-[1360px] gap-6 px-5 pt-8 pb-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-stretch lg:gap-x-8 lg:gap-y-6 lg:px-10 lg:pt-10 lg:pb-12 xl:px-12">
         <div className="relative z-20 order-1 flex min-w-0 w-full flex-col justify-center">
-            <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] text-white/65 uppercase">
+            <p className="flex w-full min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold tracking-[0.16em] text-white/65 uppercase">
               <span
                 aria-hidden
-                className="inline-block h-1.5 w-1.5 rounded-full bg-accent"
+                className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
               />
-              {t(locale, 'tagline')}
+              <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+                {t(locale, 'tagline')}
+              </span>
             </p>
             <h1 className={homeHeroHeadingClass(locale)}>
               <span className="block">{t(locale, 'homeHeroLine1')}</span>
@@ -68,119 +71,15 @@ export function HomeHero({
               {t(locale, 'support')}
             </p>
           </div>
-          <div className="order-3 lg:order-2">
+          <div className="order-3 min-w-0 max-w-full lg:order-2">
             <HomeHeroShowcase locale={locale} />
           </div>
 
-        <form
-          action={`/${locale}/bikes`}
-          method="get"
-          role="search"
-          className="relative z-20 order-2 min-w-0 w-full rounded-2xl bg-white p-1.5 shadow-[0_22px_48px_-20px_rgba(0,0,0,0.65)] lg:order-3 lg:col-span-2"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-stretch">
-            <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f4f4f4] text-black/45"
-              >
-                <SearchIcon />
-              </span>
-              <div className="min-w-0 flex-1">
-                <label
-                  htmlFor="hero-bike-search"
-                  className="block text-xs font-medium text-black/50"
-                >
-                  {t(locale, 'homeHeroSearchLabel')}
-                </label>
-                <input
-                  id="hero-bike-search"
-                  name="q"
-                  type="search"
-                  placeholder={t(locale, 'homeHeroSearchHint')}
-                  autoComplete="off"
-                  className="mt-0.5 w-full bg-transparent text-[15px] text-black outline-none placeholder:text-black/35"
-                />
-              </div>
-            </div>
-
-            {districts.length > 0 ? (
-              <div className="flex items-center gap-3 border-t border-black/8 px-3 py-2.5 sm:w-[16rem] sm:border-t-0 sm:border-l">
-                <span
-                  aria-hidden
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f4f4f4] text-black/45"
-                >
-                  <PinIcon />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <label
-                    htmlFor="hero-district"
-                    className="block text-xs font-medium text-black/50"
-                  >
-                    {t(locale, 'homeHeroLocationLabel')}
-                  </label>
-                  <select
-                    id="hero-district"
-                    name="districtId"
-                    defaultValue=""
-                    className="mt-0.5 w-full max-w-full bg-transparent text-[15px] text-black outline-none"
-                  >
-                    <option value="">{t(locale, 'homeAllSriLanka')}</option>
-                    {districts.map((district) => (
-                      <option key={district.id} value={district.id}>
-                        {district.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-white transition hover:brightness-110 sm:self-center sm:px-7"
-            >
-              <SearchIcon className="h-4 w-4 text-white" />
-              {t(locale, 'search')}
-            </button>
-          </div>
-        </form>
+        <HomeHeroSearch locale={locale} districts={districts} />
 
         <HomeHeroRail locale={locale} popular={popular} />
       </div>
     </section>
-  );
-}
-
-function SearchIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3-3" />
-    </svg>
-  );
-}
-
-function PinIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
-      <path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z" />
-      <circle cx="12" cy="9" r="2.2" />
-    </svg>
   );
 }
 

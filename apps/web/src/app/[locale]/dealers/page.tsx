@@ -124,22 +124,22 @@ export default async function DealersIndexPage({
   const mapHref = `/${locale}/dealers/map`;
 
   const tabClass = (active: boolean) =>
-    `rounded-md px-4 py-2 text-sm font-semibold transition ${
+    `inline-flex min-h-11 items-center rounded-md px-4 py-2 text-sm font-semibold transition ${
       active
         ? 'bg-[#0a0a0a] text-white'
         : 'bg-background text-foreground ring-1 ring-black/10 hover:ring-accent/40'
     }`;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <main className="mx-auto w-full min-w-0 max-w-6xl overflow-x-hidden px-4 py-8 sm:px-6 sm:py-12">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <header>
           <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
             {t(locale, 'dealersBrowseEyebrow')}
           </p>
           <h1
             id="dealer-results"
-            className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+            className="mt-2 break-words text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
           >
             {t(locale, 'dealersNav')}
           </h1>
@@ -147,16 +147,16 @@ export default async function DealersIndexPage({
             {t(locale, 'dealersHubSubtitle')}
           </p>
         </header>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           <Link
             href={mapHref}
-            className="inline-flex items-center justify-center rounded-md bg-background px-4 py-2.5 text-sm font-semibold text-foreground ring-1 ring-black/10 transition hover:ring-accent/40"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-background px-4 py-2.5 text-sm font-semibold text-foreground ring-1 ring-black/10 transition hover:ring-accent/40 sm:w-auto"
           >
             {t(locale, 'dealersMapView')}
           </Link>
           <BecomeDealerButton
             locale={locale}
-            className="inline-flex items-center justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:w-auto"
           />
         </div>
       </div>
@@ -185,18 +185,18 @@ export default async function DealersIndexPage({
       <form
         method="get"
         action={`/${locale}/dealers`}
-        className="mt-8 flex flex-wrap gap-2"
+        className="mt-8 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
       >
         {typeQuery ? <input type="hidden" name="type" value={typeQuery} /> : null}
         <input
           name="q"
           defaultValue={q}
           placeholder={t(locale, 'searchPlaceholder')}
-          className="min-w-[220px] flex-1 rounded-md bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent"
+          className="min-h-11 w-full min-w-0 flex-1 rounded-md bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent"
         />
         <button
           type="submit"
-          className="rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
+          className="min-h-11 w-full rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent sm:w-auto"
         >
           {t(locale, 'search')}
         </button>

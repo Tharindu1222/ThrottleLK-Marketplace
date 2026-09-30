@@ -194,16 +194,16 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
       aria-label="Breadcrumb"
       className="border-b border-black/[0.06] bg-surface/40"
     >
-      <ol className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-2 gap-y-1 px-6 py-3 text-[11px] tracking-[0.14em] uppercase sm:text-xs">
+      <ol className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 text-[11px] tracking-[0.14em] uppercase sm:px-6 sm:text-xs">
         {items.map((item, i) => {
           const last = i === items.length - 1;
           return (
             <li
               key={`${item.label}-${i}`}
-              className="flex min-w-0 items-center gap-2"
+              className="flex max-w-full min-w-0 items-center gap-2"
             >
               {i > 0 ? (
-                <span className="text-muted/50" aria-hidden>
+                <span className="shrink-0 text-muted/50" aria-hidden>
                   ›
                 </span>
               ) : null}
@@ -211,8 +211,8 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
                 <span
                   className={
                     last
-                      ? 'truncate font-medium text-foreground'
-                      : 'truncate text-muted'
+                      ? 'min-w-0 break-words font-medium text-foreground'
+                      : 'min-w-0 break-words text-muted'
                   }
                   aria-current={last ? 'page' : undefined}
                 >
@@ -221,7 +221,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
               ) : (
                 <Link
                   href={item.href}
-                  className="truncate text-muted transition hover:text-foreground"
+                  className="min-w-0 break-words text-muted transition hover:text-foreground"
                 >
                   {item.label}
                 </Link>

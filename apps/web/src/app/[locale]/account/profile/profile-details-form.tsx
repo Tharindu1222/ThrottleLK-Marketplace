@@ -33,7 +33,7 @@ type Profile = {
 };
 
 const fieldClass =
-  'w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35 disabled:bg-[#f4f5f7] disabled:text-muted';
+  'w-full min-w-0 max-w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35 disabled:bg-[#f4f5f7] disabled:text-muted';
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -384,7 +384,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)] xl:items-start"
+      className="grid min-w-0 gap-5 xl:grid-cols-[20rem_minmax(0,1fr)] xl:items-start"
     >
       <input
         ref={fileRef}
@@ -558,7 +558,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
               </Icon>
             }
           >
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
               <Field
                 label={t(locale, 'firstName')}
                 htmlFor={`${uid}-first`}
@@ -689,7 +689,7 @@ export function ProfileForm({ locale }: { locale: Locale }) {
           }
         >
           {editing ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
               <Field
                 label={t(locale, 'currentPassword')}
                 htmlFor={`${uid}-current`}

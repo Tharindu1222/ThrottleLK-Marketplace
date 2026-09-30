@@ -59,25 +59,25 @@ export function PartListingImageManager({
   const remaining = MAX_PHOTOS - images.length;
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="mt-4 min-w-0 max-w-full space-y-3">
       <p className="text-sm text-muted">
         {t(locale, 'photosCount')
           .replace('{n}', String(images.length))
           .replace('{max}', String(MAX_PHOTOS))}
         {images.length > 0 ? t(locale, 'photosCoverHint') : ''}
       </p>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto">
         {images.map((image, index) => (
-          <div key={image.id} className="w-28">
+          <div key={image.id} className="w-28 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image.imageUrl}
               alt={t(locale, 'photoN').replace('{n}', String(index + 1))}
-              className="h-20 w-28 object-cover ring-1 ring-black/10"
+              className="h-20 w-full max-w-full object-cover ring-1 ring-black/10"
             />
             <button
               type="button"
-              className="mt-1 text-[11px] text-muted underline"
+              className="mt-1 inline-flex min-h-11 w-full items-center justify-center text-center text-xs text-muted underline"
               onClick={() => {
                 void apiSend(
                   `/api/v1/part-listings/${listingId}/images/${image.id}`,
@@ -99,7 +99,7 @@ export function PartListingImageManager({
         ))}
       </div>
       {remaining > 0 ? (
-        <label className="inline-flex cursor-pointer items-center gap-2 border border-black/20 px-3 py-2 text-sm transition hover:border-accent">
+        <label className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 border border-black/20 px-3 py-2 text-sm transition hover:border-accent sm:w-auto sm:justify-start">
           {busy
             ? t(locale, 'uploading')
             : t(locale, 'addPhotoLeft').replace('{n}', String(remaining))}

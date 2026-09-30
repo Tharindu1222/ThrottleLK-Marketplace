@@ -20,17 +20,17 @@ export async function HomeShop({
   const types = resolveHomeBikeTypes(locale, apiCategories);
 
   return (
-    <section className="bg-white">
+    <section className="w-full min-w-0 max-w-full bg-white">
       <div className={`${HOME_SHELL} pt-10 pb-5 sm:pt-12 sm:pb-6`}>
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] lg:gap-10">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
               {t(locale, 'homeShopNav')}
             </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <h2 className="mt-2 text-2xl font-bold tracking-tight break-words text-foreground sm:text-3xl [overflow-wrap:anywhere]">
               {t(locale, 'homeShopTitle')}
             </h2>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">
+            <p className="mt-2 max-w-sm text-sm leading-relaxed break-words text-muted [overflow-wrap:anywhere]">
               {t(locale, 'homeShopSubtitle')}
             </p>
           </div>
@@ -50,25 +50,25 @@ export async function HomeShop({
               <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
                 {t(locale, 'homeBrowseEyebrow')}
               </p>
-              <h3 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              <h3 className="mt-2 text-2xl font-bold tracking-tight break-words text-foreground sm:text-3xl [overflow-wrap:anywhere]">
                 {t(locale, 'homeChooseRide')}
               </h3>
-              <p className="mt-2 text-sm text-muted">
+              <p className="mt-2 text-sm break-words text-muted [overflow-wrap:anywhere]">
                 {t(locale, 'homeChooseRideSubtitle')}
               </p>
             </div>
             <Link
               href={`/${locale}/bikes`}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-accent"
+              className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-accent lg:min-h-0"
             >
               {t(locale, 'homeViewAllCategories')}
               <span aria-hidden>→</span>
             </Link>
           </div>
 
-          <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <ul className="mt-6 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {types.map((category) => (
-              <li key={category.slug}>
+              <li key={category.slug} className="min-w-0">
                 <BikeCategoryCard
                   locale={locale}
                   category={category}

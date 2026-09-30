@@ -108,7 +108,7 @@ function docStatusClass(status: DocStatus) {
 }
 
 const inputClass =
-  'mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-accent';
+  'mt-1 w-full min-w-0 max-w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-accent';
 const labelClass = 'block text-xs font-medium text-muted';
 const btnAccent =
   'inline-flex h-10 items-center justify-center rounded-md bg-accent px-4 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50';
@@ -194,7 +194,7 @@ export function InventoryClient({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">
           {items ? `${items.length} items` : '…'}
@@ -223,8 +223,8 @@ export function InventoryClient({ locale }: { locale: Locale }) {
       ) : null}
 
       {items && items.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-black/10">
-          <table className="min-w-full text-left text-sm">
+        <div className="min-w-0 overflow-x-auto rounded-lg border border-black/10">
+          <table className="w-full min-w-[44rem] text-left text-sm">
             <thead className="bg-[#f7f7f7] text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-3 py-2 font-medium">
@@ -378,8 +378,8 @@ function AddBikePanel({
       <h2 className="text-lg font-medium text-foreground">
         {t(locale, 'inventoryAddBike')}
       </h2>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="sm:col-span-2">
+      <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-2">
+        <label className="lg:col-span-2">
           <span className={labelClass}>{t(locale, 'inventoryTitle')}</span>
           <input
             className={inputClass}
@@ -649,8 +649,8 @@ function DetailPanel({
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="sm:col-span-2">
+      <div className="mt-4 grid min-w-0 gap-3 lg:grid-cols-2">
+        <label className="lg:col-span-2">
           <span className={labelClass}>{t(locale, 'inventoryTitle')}</span>
           <input
             className={inputClass}
@@ -690,7 +690,7 @@ function DetailPanel({
             disabled={Boolean(item.listingId)}
           />
         </label>
-        <p className="sm:col-span-2 text-xs text-muted">
+        <p className="lg:col-span-2 text-xs text-muted">
           {t(locale, 'inventoryPrivateHint')}
         </p>
       </div>
@@ -719,7 +719,7 @@ function DetailPanel({
           <h3 className="text-sm font-medium text-foreground">
             {t(locale, 'markSold')}
           </h3>
-          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+          <div className="mt-2 grid min-w-0 gap-3 lg:grid-cols-2">
             <label>
               <span className={labelClass}>
                 {t(locale, 'inventorySoldPrice')}
@@ -795,11 +795,11 @@ function DetailPanel({
                       </a>
                     ) : null}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
                     {needsExpiry ? (
                       <input
                         type="date"
-                        className="rounded-md border border-black/10 px-2 py-1.5 text-xs"
+                        className="w-full min-w-0 max-w-full rounded-md border border-black/10 px-2 py-1.5 text-xs sm:w-auto"
                         value={expiryByType[type] ?? ''}
                         onChange={(e) =>
                           setExpiryByType((prev) => ({

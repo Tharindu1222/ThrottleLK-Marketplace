@@ -30,16 +30,16 @@ export default async function ContactPage({
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim();
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <main className="mx-auto w-full min-w-0 max-w-3xl overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12">
+      <h1 className="break-words font-[family-name:var(--font-display)] text-3xl tracking-wide sm:text-4xl">
         {t(locale, 'contactTitle')}
       </h1>
-      <p className="mt-4 text-lg text-muted">{t(locale, 'contactLead')}</p>
-      <div className="mt-8 space-y-4 leading-relaxed text-foreground/90">
+      <p className="mt-4 max-w-prose text-base leading-relaxed text-muted sm:text-lg">{t(locale, 'contactLead')}</p>
+      <div className="mt-8 max-w-prose space-y-4 leading-relaxed break-words text-foreground/90">
         {supportEmail ? (
           <p>
             {t(locale, 'contactSupportEmail')}:{' '}
-            <a className="text-accent underline" href={`mailto:${supportEmail}`}>
+            <a className="break-all text-accent underline" href={`mailto:${supportEmail}`}>
               {supportEmail}
             </a>
           </p>

@@ -154,11 +154,11 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
             ← Back to parts shops
           </Link>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           {shop?.slug ? (
             <Link
               href={`/${locale}/parts-dealers/${shop.slug}`}
-              className="admin-btn-ghost px-4 py-2 text-sm"
+              className="admin-btn-ghost inline-flex min-h-11 w-full items-center justify-center px-4 py-2 text-sm sm:w-auto"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -167,7 +167,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
           ) : null}
           <Link
             href={`/${locale}/admin/part-listings?partsDealerId=${id}`}
-            className="admin-btn-primary px-4 py-2 text-sm"
+            className="admin-btn-primary inline-flex min-h-11 w-full items-center justify-center px-4 py-2 text-sm sm:w-auto"
           >
             + Add part
           </Link>
@@ -332,7 +332,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
           </div>
           <Link
             href={`/${locale}/admin/part-listings?partsDealerId=${id}`}
-            className="admin-btn-ghost px-3 py-1.5 text-sm"
+            className="admin-btn-ghost inline-flex min-h-11 shrink-0 items-center px-3 py-1.5 text-sm"
           >
             Manage all in Part listings
           </Link>

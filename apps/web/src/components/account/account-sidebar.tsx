@@ -303,12 +303,12 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
   return (
     <aside
       data-account-nav="grouped"
-      className="flex flex-col gap-3 px-4 pt-4 lg:sticky lg:top-[4.25rem] lg:h-[calc(100svh-4.25rem)] lg:w-[260px] lg:shrink-0 lg:gap-0 lg:self-start lg:px-0 lg:pt-0 xl:w-[280px]"
+      className="flex w-full min-w-0 flex-col gap-3 px-4 pt-4 lg:sticky lg:top-[4.25rem] lg:h-[calc(100svh-4.25rem)] lg:w-[260px] lg:shrink-0 lg:gap-0 lg:self-start lg:px-0 lg:pt-0 xl:w-[280px]"
     >
       {/* Mobile chips — same order as desktop, no section titles */}
       <nav
         aria-label={t(locale, 'accountNav')}
-        className="flex gap-2 overflow-x-auto pb-1 lg:hidden"
+        className="flex w-full min-w-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 lg:hidden"
       >
         {items.map((item) => {
           const active = item.match(pathname);
@@ -319,10 +319,10 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
               href={itemHref(item)}
               aria-current={active ? 'page' : undefined}
               aria-label={unreadName(item, count)}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm whitespace-nowrap transition ${
+              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 text-sm whitespace-nowrap transition ${
                 active
-                  ? 'border-black/20 bg-white text-accent shadow-[0_1px_0_rgba(0,0,0,0.06)]'
-                  : 'border-black/15 bg-white text-muted hover:border-black/25 hover:text-foreground'
+                  ? 'border-accent bg-white font-semibold text-accent underline decoration-2 underline-offset-4 shadow-[0_1px_0_rgba(0,0,0,0.06)]'
+                  : 'border-black/15 bg-white font-medium text-muted hover:border-black/25 hover:text-foreground'
               }`}
             >
               <span className={active ? 'text-accent' : 'text-muted'}>

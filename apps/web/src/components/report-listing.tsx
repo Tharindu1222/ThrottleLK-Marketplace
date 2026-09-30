@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -32,6 +33,15 @@ export function ReportListing({
   useEffect(() => {
     setToken(getAccessToken());
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -68,7 +78,7 @@ export function ReportListing({
       {!open ? (
         <button
           type="button"
-          className="text-sm text-muted underline hover:text-foreground"
+          className="inline-flex min-h-11 items-center text-sm text-muted underline hover:text-foreground"
           onClick={() => {
             if (!token) {
               window.location.href = signInHref;
@@ -79,15 +89,28 @@ export function ReportListing({
         >
           {t(locale, 'reportListing')}
         </button>
-      ) : (
-        <form onSubmit={onSubmit} className="grid max-w-md gap-3">
+      ) : typeof document !== 'undefined' ? (
+        createPortal(
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
+        <form
+          onSubmit={onSubmit}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t(locale, 'reportListing')}
+          className="grid max-h-[90dvh] w-full max-w-md gap-3 overflow-y-auto rounded-2xl border border-black/10 bg-white p-5 shadow-xl"
+        >
           <p className="text-sm text-muted">{t(locale, 'reportListing')}</p>
           <label className="grid gap-1 text-sm">
             <span>{t(locale, 'reportReasonLabel')}</span>
             <select
               name="reason"
               required
-              className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
+              className="min-h-11 w-full bg-background px-3 py-2 text-sm ring-1 ring-black/10"
             >
               <option value="spam">{t(locale, 'reportReasonSpam')}</option>
               <option value="fraud">{t(locale, 'reportReasonFraud')}</option>
@@ -107,20 +130,20 @@ export function ReportListing({
               minLength={10}
               rows={3}
               placeholder={t(locale, 'reportDetails')}
-              className="bg-background px-3 py-2 text-sm ring-1 ring-black/10"
+              className="min-h-11 w-full bg-background px-3 py-2 text-sm ring-1 ring-black/10"
             />
           </label>
           <TurnstileField onToken={setCaptchaToken} />
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="submit"
-              className="bg-foreground px-3 py-1.5 text-sm text-background"
+              className="inline-flex min-h-11 w-full items-center justify-center bg-foreground px-3 text-sm text-background sm:w-auto sm:px-5"
             >
               {t(locale, 'submitReport')}
             </button>
             <button
               type="button"
-              className="text-sm text-muted underline"
+              className="inline-flex min-h-11 w-full items-center justify-center text-sm text-muted underline sm:w-auto"
               onClick={() => setOpen(false)}
             >
               {t(locale, 'cancel')}
@@ -135,7 +158,10 @@ export function ReportListing({
             </p>
           ) : null}
         </form>
-      )}
+        </div>,
+        document.body,
+        )
+      ) : null}
       {status ? <p className="mt-2 text-sm text-accent">{status}</p> : null}
       {error ? <p className="mt-2 text-sm text-red-400">{error}</p> : null}
     </div>

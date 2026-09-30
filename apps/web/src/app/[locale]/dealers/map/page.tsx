@@ -48,10 +48,10 @@ export default async function DealersMapPage({
   );
 
   return (
-    <main className="flex min-h-[calc(100dvh-8.5rem)] flex-col">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <div>
-          <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide sm:text-3xl">
+    <main className="flex w-full min-w-0 max-w-full flex-col overflow-x-hidden lg:min-h-[calc(100dvh-8.5rem)]">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6">
+        <div className="min-w-0">
+          <h1 className="break-words font-[family-name:var(--font-display)] text-2xl tracking-wide sm:text-3xl">
             {t(locale, 'dealersMap')}
           </h1>
           <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
@@ -70,24 +70,24 @@ export default async function DealersMapPage({
         </div>
         <Link
           href={`/${locale}/dealers`}
-          className="inline-flex items-center justify-center rounded-full border border-black/15 bg-background px-4 py-2 text-sm font-medium transition hover:border-accent/40"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-black/15 bg-background px-4 py-2 text-sm font-medium transition hover:border-accent/40 sm:w-auto"
         >
           {t(locale, 'dealersListView')}
         </Link>
       </div>
 
       {dealers.length === 0 ? (
-        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-start justify-center gap-4 px-6 pb-16">
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-start justify-center gap-4 px-4 pb-16 sm:px-6">
           <p className="text-muted">{t(locale, 'dealersMapEmpty')}</p>
           <Link
             href={`/${locale}/dealers`}
-            className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-accent px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.75)] transition hover:brightness-110"
           >
             {t(locale, 'dealersListView')}
           </Link>
         </div>
       ) : (
-        <div className="relative min-h-[420px] flex-1 border-t border-black/10">
+        <div className="relative h-[50vh] min-h-[240px] w-full min-w-0 max-w-full overflow-hidden border-t border-black/10 lg:h-auto lg:min-h-[420px] lg:flex-1">
           <DealerMapMultiEmbed
             dealers={dealers}
             locale={locale}
@@ -98,7 +98,7 @@ export default async function DealersMapPage({
               bike: t(locale, 'bikeDealersTab'),
               parts: t(locale, 'partsDealersTab'),
             }}
-            className="absolute inset-0 h-full min-h-[420px] border-0"
+            className="absolute inset-0 h-full w-full max-w-full border-0"
           />
         </div>
       )}

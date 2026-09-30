@@ -47,7 +47,7 @@ export function AdminTopbar({
     <header className="z-30 flex flex-wrap items-center gap-3 border-b border-[var(--admin-border)] bg-[var(--admin-bg)]/90 px-4 py-3 backdrop-blur-md sm:gap-4 sm:px-6 lg:px-8">
       <button
         type="button"
-        className="rounded-xl border border-[var(--admin-border-strong)] bg-[var(--admin-surface)] p-2 text-[var(--admin-muted)] lg:hidden"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--admin-border-strong)] bg-[var(--admin-surface)] text-[var(--admin-muted)] lg:hidden"
         onClick={onMenuClick}
         aria-label="Open menu"
         aria-expanded={menuExpanded}
@@ -58,8 +58,8 @@ export function AdminTopbar({
         </svg>
       </button>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-3">
+      <div className="min-w-0 flex-1 basis-0 overflow-hidden">
+        <div className="flex min-w-0 items-center gap-3">
           <div
             className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--admin-accent-soft)] text-sm font-semibold text-[var(--admin-accent-2)] ring-1 ring-[var(--admin-accent)]/30 sm:flex"
             title={name}
@@ -67,19 +67,19 @@ export function AdminTopbar({
           >
             {name.slice(0, 1).toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <h1 className="truncate font-[family-name:var(--font-display)] text-lg tracking-wide text-[var(--admin-text)] sm:text-xl">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <h1 className="min-w-0 truncate font-[family-name:var(--font-display)] text-lg tracking-wide text-[var(--admin-text)] sm:text-xl">
               {title}
             </h1>
             {subtitle ? (
-              <p className="truncate text-xs text-[var(--admin-faint)]">{subtitle}</p>
+              <p className="min-w-0 truncate text-xs text-[var(--admin-faint)]">{subtitle}</p>
             ) : null}
           </div>
         </div>
       </div>
 
       {onSearchChange ? (
-        <label className="relative w-full max-w-md sm:flex-1">
+        <label className="relative order-last w-full min-w-0 sm:order-none sm:w-auto sm:max-w-md sm:flex-1">
           <span className="sr-only">Search {title}</span>
           <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--admin-faint)]">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

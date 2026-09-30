@@ -31,12 +31,12 @@ export default async function GuidesIndexPage({
   const locale = raw as Locale;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <main className="mx-auto w-full min-w-0 max-w-6xl overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12">
+      <h1 className="break-words font-[family-name:var(--font-display)] text-3xl tracking-wide sm:text-4xl">
         {t(locale, 'guidesTitle')}
       </h1>
       <p className="mt-2 max-w-2xl text-muted">{t(locale, 'guidesLead')}</p>
-      <div className="mt-10 grid gap-6 md:grid-cols-2">
+      <div className="mt-10 grid gap-4 sm:gap-6 lg:grid-cols-2">
         {guides.map((guide) => (
           <Link
             key={guide.slug}
@@ -46,7 +46,7 @@ export default async function GuidesIndexPage({
             <p className="text-xs tracking-wide text-muted uppercase">
               {guide.publishedAt}
             </p>
-            <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-wide">
+            <h2 className="mt-2 break-words font-[family-name:var(--font-display)] text-2xl tracking-wide">
               {locale === 'si' ? guide.titleSi : guide.title}
             </h2>
             <p className="mt-3 text-sm text-muted">

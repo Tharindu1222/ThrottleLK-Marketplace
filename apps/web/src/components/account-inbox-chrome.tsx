@@ -22,12 +22,12 @@ export function InboxToolbar({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div
           role="tablist"
           aria-label={t(locale, 'inboxFilters')}
-          className="inline-flex rounded-md bg-white p-0.5 ring-1 ring-black/[0.06]"
+          className="inline-flex max-w-full min-w-0 overflow-x-auto rounded-md bg-white p-0.5 ring-1 ring-black/[0.06]"
         >
           {(
             [
@@ -42,10 +42,10 @@ export function InboxToolbar({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className={`rounded-md px-3.5 py-1.5 text-sm transition ${
+                className={`min-h-11 shrink-0 rounded-md px-3.5 text-sm transition ${
                   active
-                    ? 'bg-accent/10 font-medium text-accent'
-                    : 'text-muted hover:text-foreground'
+                    ? 'bg-accent/10 font-semibold text-accent underline decoration-2 underline-offset-4'
+                    : 'font-medium text-muted hover:text-foreground'
                 }`}
                 onClick={() => onFilterChange(value)}
               >
@@ -60,7 +60,7 @@ export function InboxToolbar({
           </span>
         ) : null}
       </div>
-      {action ? <div className="sm:shrink-0">{action}</div> : null}
+      {action ? <div className="min-w-0 sm:shrink-0">{action}</div> : null}
     </div>
   );
 }

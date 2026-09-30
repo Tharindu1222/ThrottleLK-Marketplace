@@ -16,7 +16,7 @@ import { loginHref } from '@/lib/login-href';
 import { AuthRequiredLink } from './auth-required-link';
 import { BrandLogo } from './brand-logo';
 import { CompareNavIcon } from './compare-nav-icon';
-import { headerIconButtonClass } from './header-nav-badge';
+import { HeaderDropdown, headerIconButtonClass } from './header-nav-badge';
 import { LanguageSwitcher } from './language-switcher';
 import { MessagesNavIcon } from './messages-nav-icon';
 import { NotificationsBell } from './notifications-bell';
@@ -109,7 +109,21 @@ export function SiteHeader({
   useEffect(() => {
     setMenuOpen(false);
     setAccountOpen(false);
-  }, [locale]);
+  }, [pathname, locale]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -150,16 +164,23 @@ export function SiteHeader({
   const iconWrapClass = dark
     ? '[&_button]:text-white/80 [&_button]:hover:bg-white/10 [&_button]:hover:text-white [&_a]:text-white/80 [&_a]:hover:bg-white/10 [&_a]:hover:text-white'
     : '';
+  const mobileLinkClass = dark
+    ? 'flex min-h-11 items-center rounded-sm text-base text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+    : 'flex min-h-11 items-center rounded-sm text-base text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
+  const mobileMutedClass = dark
+    ? 'flex min-h-11 items-center rounded-sm pl-2 text-base text-white/75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+    : 'flex min-h-11 items-center rounded-sm pl-2 text-base text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
+  const mobileRuleClass = dark ? 'border-white/10' : 'border-black/10';
 
   return (
     <header
       className={
         dark
-          ? 'sticky top-0 z-40 border-b border-white/10 bg-black'
-          : 'sticky top-0 z-40 border-b border-black/10 bg-background/95'
+          ? 'sticky top-0 z-40 max-w-full border-b border-white/10 bg-black'
+          : 'sticky top-0 z-40 max-w-full border-b border-black/10 bg-background/95'
       }
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-6 sm:h-[4.25rem]">
+      <div className="mx-auto flex h-16 min-w-0 max-w-7xl items-center gap-3 px-4 sm:h-[4.25rem] md:gap-4 md:px-6">
         <Link
           href={`/${locale}`}
           className="shrink-0"
@@ -207,9 +228,10 @@ export function SiteHeader({
                   </svg>
                 </button>
                 {accountOpen ? (
-                  <div
+                  <HeaderDropdown
+                    anchorRef={accountRef}
                     role="menu"
-                    className="absolute right-0 mt-2 w-52 border border-black/10 bg-background py-1 shadow-lg shadow-black/40"
+                    className="w-52 max-w-[min(100vw-1rem,22rem)] border border-black/10 bg-background py-1 shadow-lg shadow-black/40"
                   >
                     <Link
                       role="menuitem"
@@ -280,7 +302,7 @@ export function SiteHeader({
                     >
                       {t(locale, 'logout')}
                     </button>
-                  </div>
+                  </HeaderDropdown>
                 ) : null}
               </div>
             </>
@@ -298,24 +320,17 @@ export function SiteHeader({
           </AuthRequiredLink>
         </div>
 
-        <div className={`ml-auto flex items-center gap-0.5 md:hidden ${iconWrapClass}`}>
-          <LanguageSwitcher locale={locale} />
-          <CompareNavIcon locale={locale} />
-          {user ? (
-            <>
-              <MessagesNavIcon locale={locale} />
-              <NotificationsBell locale={locale} />
-            </>
-          ) : null}
+        <div className="ml-auto flex shrink-0 items-center md:hidden">
           <button
             type="button"
             className={
               dark
-                ? 'inline-flex min-h-11 min-w-11 items-center justify-center border border-white/20 text-white'
-                : 'inline-flex min-h-11 min-w-11 items-center justify-center border border-black/15 text-foreground'
+                ? 'inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border border-white/20 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+                : 'inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border border-black/15 text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
             }
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
+            aria-controls="site-mobile-menu"
             onClick={() => setMenuOpen((o) => !o)}
           >
           {menuOpen ? (
@@ -344,72 +359,88 @@ export function SiteHeader({
       </div>
 
       {menuOpen ? (
-        <div className="border-t border-black/10 bg-background md:hidden">
+        <div
+          id="site-mobile-menu"
+          className={
+            dark
+              ? 'max-h-[calc(100dvh-4rem)] w-full max-w-full overflow-y-auto overscroll-contain border-t border-white/10 bg-black sm:max-h-[calc(100dvh-4.25rem)] md:hidden'
+              : 'max-h-[calc(100dvh-4rem)] w-full max-w-full overflow-y-auto overscroll-contain border-t border-black/10 bg-background sm:max-h-[calc(100dvh-4.25rem)] md:hidden'
+          }
+        >
           <nav
-            className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4"
+            className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-1 px-4 py-3"
             aria-label="Mobile"
           >
             <Link
               href={`/${locale}/bikes`}
-              className="py-3 text-base text-foreground"
+              className={mobileLinkClass}
               onClick={() => setMenuOpen(false)}
             >
               {t(locale, 'browse')}
             </Link>
             <Link
               href={`/${locale}/bike-parts`}
-              className="py-3 text-base text-foreground"
+              className={mobileLinkClass}
               onClick={() => setMenuOpen(false)}
             >
               {t(locale, 'bikePartsNav')}
             </Link>
             <Link
               href={`/${locale}/dealers`}
-              className="py-3 text-base text-foreground"
+              className={mobileLinkClass}
               onClick={() => setMenuOpen(false)}
             >
               {t(locale, 'dealersNav')}
             </Link>
-            <div className="my-2 border-t border-black/10" />
+            <div className={`my-1 flex max-w-full flex-wrap items-center gap-1 border-y py-1 ${mobileRuleClass} ${iconWrapClass}`}>
+              <LanguageSwitcher locale={locale} />
+              <CompareNavIcon locale={locale} />
+              {user ? (
+                <>
+                  <MessagesNavIcon locale={locale} />
+                  <NotificationsBell locale={locale} />
+                </>
+              ) : null}
+            </div>
             {user ? (
               <>
-                <div className="flex items-center gap-3 py-2">
+                <div className="flex min-w-0 items-center gap-3 py-2">
                   <AccountAvatar user={user} size="md" />
-                  <span className="text-sm text-muted">
+                  <span className={`min-w-0 truncate text-sm ${dark ? 'text-white/70' : 'text-muted'}`}>
                     {user.firstName} {user.lastName}
                   </span>
                 </div>
                 <Link
                   href={`/${locale}/account/profile`}
-                  className="py-3 pl-2 text-base text-muted"
+                  className={mobileMutedClass}
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'accountDetails')}
                 </Link>
                 <Link
                   href={`/${locale}/account/listings`}
-                  className="py-3 pl-2 text-base text-muted"
+                  className={mobileMutedClass}
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'myListings')}
                 </Link>
                 <Link
                   href={`/${locale}/account/messages`}
-                  className="py-3 pl-2 text-base text-muted"
+                  className={mobileMutedClass}
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'messages')}
                 </Link>
                 <Link
                   href={`/${locale}/account/notifications`}
-                  className="py-3 pl-2 text-base text-muted"
+                  className={mobileMutedClass}
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'notifications')}
                 </Link>
                 <Link
                   href={`/${locale}/account/favourites`}
-                  className="py-3 pl-2 text-base text-muted"
+                  className={mobileMutedClass}
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'savedListings')}
@@ -417,7 +448,7 @@ export function SiteHeader({
                 {isDealer ? (
                   <Link
                     href={`/${locale}/account/showroom`}
-                    className="py-3 pl-2 text-base text-muted"
+                    className={mobileMutedClass}
                     onClick={() => setMenuOpen(false)}
                   >
                     {t(locale, 'dealerShowroom')}
@@ -426,7 +457,7 @@ export function SiteHeader({
                 {isPartsDealer ? (
                   <Link
                     href={`/${locale}/account/parts-showroom`}
-                    className="py-3 pl-2 text-base text-muted"
+                    className={mobileMutedClass}
                     onClick={() => setMenuOpen(false)}
                   >
                     {t(locale, 'partsShowroom')}
@@ -434,14 +465,14 @@ export function SiteHeader({
                 ) : null}
                 <Link
                   href={`/${locale}/compare`}
-                  className="py-3 pl-2 text-base text-muted"
+                  className={mobileMutedClass}
                   onClick={() => setMenuOpen(false)}
                 >
                   {t(locale, 'compare')}
                 </Link>
                 <button
                   type="button"
-                  className="py-3 text-left text-base text-muted"
+                  className={`${mobileMutedClass} w-full pl-0 text-left`}
                   onClick={() => void logout()}
                 >
                   {t(locale, 'logout')}
@@ -450,7 +481,7 @@ export function SiteHeader({
             ) : (
               <Link
                 href={signInHref}
-                className="py-3 text-base text-muted"
+                className={mobileMutedClass}
                 onClick={() => setMenuOpen(false)}
               >
                 {t(locale, 'login')}
@@ -459,7 +490,7 @@ export function SiteHeader({
             <AuthRequiredLink
               locale={locale}
               href={`/${locale}/sell`}
-              className="mt-2 inline-flex items-center justify-center bg-accent px-4 py-3 text-sm font-semibold tracking-normal text-white"
+              className="mt-2 inline-flex min-h-11 w-full items-center justify-center bg-accent px-4 py-3 text-sm font-semibold tracking-normal text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               onNavigate={() => setMenuOpen(false)}
             >
               {t(locale, 'postAnAd')}

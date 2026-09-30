@@ -84,12 +84,13 @@ type PlacementRow = {
   partListing?: { id: string; title: string } | null;
 };
 
-const inline = 'admin-field-inline';
+const inline =
+  'admin-field-inline w-full! min-w-0! max-w-none! sm:w-auto! sm:min-w-[9rem]! sm:max-w-[16rem]!';
 const full = 'admin-field';
-const btn = 'admin-btn-primary shrink-0 px-3 py-2 text-sm disabled:opacity-50';
-const btnGhost = 'admin-btn-ghost shrink-0 px-3 py-2 text-sm disabled:opacity-50';
+const btn = 'admin-btn-primary inline-flex min-h-11 shrink-0 items-center px-3 py-2 text-sm disabled:opacity-50';
+const btnGhost = 'admin-btn-ghost inline-flex min-h-11 shrink-0 items-center px-3 py-2 text-sm disabled:opacity-50';
 const btnDanger =
-  'rounded-lg px-3 py-2 text-sm text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-50';
+  'inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-50';
 
 export function AdminHomepageAds() {
   const [tab, setTab] = useState<Tab>('requests');
@@ -439,7 +440,7 @@ export function AdminHomepageAds() {
                   </button>
                 </div>
                 {rejectId === row.id ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                     <input
                       className={`${inline} min-w-[12rem] flex-1 max-w-none`}
                       placeholder="Reason"
@@ -477,7 +478,7 @@ export function AdminHomepageAds() {
             <p className="text-sm font-medium text-[var(--admin-text)]">
               Add manually
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <select
                 className={inline}
                 value={placeKind}
@@ -587,7 +588,7 @@ export function AdminHomepageAds() {
         <div className="space-y-4">
           <section className="admin-card p-4">
             <h2 className="text-lg font-medium text-[var(--admin-text)]">Packages</h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <select
                 className={inline}
                 value={pkgKind}
@@ -644,7 +645,7 @@ export function AdminHomepageAds() {
                 Add
               </button>
             </div>
-            <fieldset className="mt-3 flex flex-wrap items-center gap-3">
+            <fieldset className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
               <legend className="sr-only">Surfaces</legend>
               <span className="text-xs text-[var(--admin-muted)]">Surfaces</span>
               {ALL_SURFACES.map((surface) => (
@@ -774,7 +775,7 @@ export function AdminHomepageAds() {
             <h2 className="text-lg font-medium text-[var(--admin-text)]">
               WhatsApp number
             </h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <input
                 className={`${inline} min-w-[12rem] flex-1 max-w-none`}
                 value={whatsapp}
@@ -800,7 +801,7 @@ export function AdminHomepageAds() {
           aria-modal="true"
           aria-label="Payment slip"
           tabIndex={-1}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-3 sm:p-6"
         >
           <button
             type="button"
@@ -812,7 +813,7 @@ export function AdminHomepageAds() {
           <img
             src={slipUrl}
             alt="Payment slip"
-            className="relative z-10 max-h-[90vh] max-w-[90vw] rounded-lg"
+            className="relative z-10 max-h-[90dvh] max-w-[min(100vw-1.5rem,90vw)] rounded-lg object-contain"
           />
         </div>
       ) : null}

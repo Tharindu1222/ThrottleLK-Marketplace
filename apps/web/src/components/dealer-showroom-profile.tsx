@@ -160,7 +160,7 @@ export function DealerShowroomProfile({
           <div
             className={`relative grid ${hasMap ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-stretch' : ''}`}
           >
-            <div className="flex flex-col space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+            <div className="flex min-w-0 flex-col space-y-5 px-4 py-5 sm:px-6 sm:py-6">
               <header className="flex items-start gap-4 text-left">
                 <div
                   className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl font-[family-name:var(--font-display)] text-xl tracking-wide text-white shadow-[0_12px_28px_-14px_rgba(15,15,15,0.45)] ring-1 ring-white/40 sm:h-[4.5rem] sm:w-[4.5rem] sm:text-2xl ${
@@ -348,7 +348,7 @@ export function DealerShowroomProfile({
 
             {hasMap ? (
               <div
-                className="relative h-52 border-t border-black/10 sm:h-60 lg:h-auto lg:min-h-full lg:border-t-0 lg:border-l lg:border-black/10"
+                className="relative h-[50vh] min-h-[240px] w-full min-w-0 max-w-full overflow-hidden border-t border-black/10 lg:h-auto lg:min-h-full lg:border-t-0 lg:border-l lg:border-black/10"
                 role="region"
                 aria-label={t(locale, 'mapLocation')}
               >

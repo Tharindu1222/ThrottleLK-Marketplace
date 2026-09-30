@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { t, type Locale } from '@/lib/i18n';
-import { headerIconButtonClass } from './header-nav-badge';
+import { HeaderDropdown, headerIconButtonClass } from './header-nav-badge';
 
 const OPTIONS: { locale: Locale; labelKey: 'languageEnglish' | 'languageSinhala' }[] =
   [
@@ -75,9 +75,10 @@ export function LanguageSwitcher({ locale }: { locale: Locale }) {
         </svg>
       </button>
       {open ? (
-        <div
+        <HeaderDropdown
+          anchorRef={rootRef}
           role="menu"
-          className="absolute right-0 z-50 mt-2 min-w-[11.5rem] overflow-hidden border border-black/10 bg-white py-1 shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-20px_rgba(0,0,0,0.35)]"
+          className="w-max min-w-[11.5rem] max-w-[min(100vw-1rem,22rem)] overflow-hidden border border-black/10 bg-white py-1 shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-20px_rgba(0,0,0,0.35)]"
         >
           {OPTIONS.map((option) => {
             const active = option.locale === locale;
@@ -86,7 +87,7 @@ export function LanguageSwitcher({ locale }: { locale: Locale }) {
                 key={option.locale}
                 role="menuitem"
                 href={hrefFor(option.locale, pathname, search)}
-                className={`flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm transition hover:bg-black/[0.04] ${
+                className={`flex min-h-11 items-center justify-between gap-3 px-3.5 py-2.5 text-sm transition hover:bg-black/[0.04] ${
                   active ? 'text-foreground' : 'text-muted hover:text-foreground'
                 }`}
                 onClick={() => setOpen(false)}
@@ -107,7 +108,7 @@ export function LanguageSwitcher({ locale }: { locale: Locale }) {
               </Link>
             );
           })}
-        </div>
+        </HeaderDropdown>
       ) : null}
     </div>
   );

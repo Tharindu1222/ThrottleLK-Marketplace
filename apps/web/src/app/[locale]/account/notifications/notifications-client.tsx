@@ -112,7 +112,7 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="mt-6 space-y-4 sm:mt-8">
+    <div className="mt-6 min-w-0 space-y-4 sm:mt-8">
       <InboxToolbar
         locale={locale}
         filter={filter}

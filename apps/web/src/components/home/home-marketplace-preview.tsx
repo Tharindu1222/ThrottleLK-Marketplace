@@ -17,8 +17,8 @@ export function HomeMarketplacePreview({
   parts: BrowsePartCard[];
 }) {
   return (
-    <div className="bg-surface">
-      <div className="mx-auto max-w-6xl space-y-16 px-5 py-14 sm:px-6 sm:py-16 lg:px-8">
+    <div className="min-w-0 bg-surface">
+      <div className="mx-auto w-full min-w-0 max-w-6xl space-y-16 px-5 py-14 sm:px-6 sm:py-16 lg:px-8">
         <PreviewSection
           eyebrow={t(locale, 'homeLatestBikesEyebrow')}
           titleId="home-latest-bikes"
@@ -30,7 +30,7 @@ export function HomeMarketplacePreview({
           emptyMessage={t(locale, 'homeNoBikesPreview')}
         >
           {bikes.map((listing) => (
-            <li key={listing.id}>
+            <li key={listing.id} className="min-w-0">
               <ListingCard
                 locale={locale}
                 listing={listing}
@@ -52,7 +52,7 @@ export function HomeMarketplacePreview({
           emptyMessage={t(locale, 'homeNoPartsPreview')}
         >
           {parts.map((part) => (
-            <li key={part.id}>
+            <li key={part.id} className="min-w-0">
               <PartCard locale={locale} part={part} showFavourite={false} />
             </li>
           ))}
@@ -86,21 +86,21 @@ function PreviewSection({
   return (
     <section aria-labelledby={titleId} data-reveal>
       <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-2xl">
-          <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+        <div className="min-w-0 max-w-2xl">
+          <p className="text-[11px] font-semibold tracking-[0.18em] break-words text-accent uppercase [overflow-wrap:anywhere]">
             {eyebrow}
           </p>
           <h2
             id={titleId}
-            className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+            className="mt-1 text-2xl font-bold tracking-tight break-words text-foreground sm:text-3xl [overflow-wrap:anywhere]"
           >
             {title}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{subtitle}</p>
+          <p className="mt-2 text-sm leading-relaxed break-words text-muted [overflow-wrap:anywhere]">{subtitle}</p>
         </div>
         <Link
           href={browseHref}
-          className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent lg:min-h-0"
         >
           {browseLabel}
         </Link>
@@ -117,7 +117,7 @@ function PreviewSection({
           </Link>
         </p>
       ) : (
-        <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <ul className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {children}
         </ul>
       )}

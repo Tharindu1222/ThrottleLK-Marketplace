@@ -57,7 +57,7 @@ export function Pagination({
     current?: boolean;
   }) => {
     const className = cx(
-      'inline-flex min-h-10 min-w-10 items-center justify-center px-3 text-sm transition',
+      'inline-flex min-h-11 min-w-11 max-w-full items-center justify-center whitespace-normal px-3 text-center text-sm transition',
       isAdmin
         ? 'rounded-lg border border-[var(--admin-border-strong)] text-[var(--admin-muted)] disabled:opacity-40'
         : 'rounded-md border border-black/10 text-muted disabled:opacity-40',
@@ -114,33 +114,33 @@ export function Pagination({
   return (
     <nav
       className={cx(
-        'mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+        'mt-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between',
         isAdmin && 'text-[var(--admin-muted)]',
       )}
       aria-label={ariaLabel}
     >
       {showing ? (
-        <p className={cx('text-sm', isAdmin ? 'text-[var(--admin-faint)]' : 'text-muted')}>
+        <p className={cx('min-w-0 break-words text-sm', isAdmin ? 'text-[var(--admin-faint)]' : 'text-muted')}>
           {showing}
         </p>
       ) : (
         <span />
       )}
       {totalPages > 1 ? (
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {btn({
             label: previousLabel,
             target: page - 1,
             enabled: hasPreviousPage,
           })}
-          <span className="px-2 text-sm sm:hidden">
+          <span className="inline-flex min-h-11 items-center px-2 text-sm sm:hidden">
             {pageOfTemplate
               ? pageOfTemplate
                   .replace('{page}', String(page))
                   .replace('{pages}', String(totalPages))
               : `${page} / ${totalPages}`}
           </span>
-          <div className="hidden items-center gap-1.5 sm:flex">
+          <div className="hidden min-w-0 flex-wrap items-center gap-1.5 sm:flex">
             {numbers.map((item, i) =>
               item === 'ellipsis' ? (
                 <span

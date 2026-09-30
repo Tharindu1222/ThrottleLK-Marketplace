@@ -106,7 +106,7 @@ export function DealerMapPicker({
   return (
     <div
       ref={containerRef}
-      className={`z-0 w-full overflow-hidden border border-black/10 bg-zinc-100 ${className || 'h-64'}`}
+      className={`z-0 w-full min-w-0 max-w-full overflow-hidden border border-black/10 bg-zinc-100 ${className || 'h-[50vh] min-h-[240px]'}`}
     />
   );
 }

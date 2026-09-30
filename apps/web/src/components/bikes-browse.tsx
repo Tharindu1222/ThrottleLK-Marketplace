@@ -65,14 +65,14 @@ export async function BikesBrowse({
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10">
-      <header>
+    <main className="mx-auto w-full min-w-0 max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+      <header className="min-w-0">
         <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
           {t(locale, 'homeBrowseEyebrow')}
         </p>
         <h1
           id="listing-results"
-          className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+          className="mt-2 break-words text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
         >
           {heading ?? t(locale, 'browse')}
         </h1>
@@ -83,8 +83,8 @@ export async function BikesBrowse({
         ) : null}
       </header>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
-        <aside className="space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
+      <div className="mt-8 grid w-full min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
+        <aside className="w-full min-w-0 space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
           <BrowseFilters
             locale={locale}
             brands={brands}
@@ -95,7 +95,7 @@ export async function BikesBrowse({
           <SaveSearchButton locale={locale} filters={filterState} />
         </aside>
 
-        <div className="min-w-0">
+        <div className="w-full min-w-0">
           <PromotedListingsRail
             locale={locale}
             surface="browse"
@@ -108,7 +108,7 @@ export async function BikesBrowse({
               ? t(locale, 'resultCountOne')
               : t(locale, 'resultCount').replace('{count}', String(total))}
           </p>
-          <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid w-full min-w-0 auto-rows-fr grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {listings.length === 0 ? (
               <p className="text-muted sm:col-span-2 xl:col-span-3">
                 {emptyHint ?? t(locale, 'noListings')}
@@ -149,7 +149,7 @@ export async function BikesBrowse({
               __html: safeJsonLd(faqPageJsonLd(faqItems)),
             }}
           />
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="break-words text-2xl font-bold tracking-tight text-foreground">
             {faqTitle}
           </h2>
           <dl className="mt-4 space-y-5 text-sm leading-relaxed text-foreground/90">

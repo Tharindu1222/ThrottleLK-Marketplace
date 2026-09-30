@@ -275,8 +275,8 @@ export function CompareClient({ locale }: { locale: Locale }) {
 
   if (loading) {
     return (
-      <div className="mt-8 overflow-hidden rounded-xl border border-black/10 bg-white">
-        <div className="grid grid-cols-[8.5rem_repeat(2,minmax(0,1fr))] gap-px bg-black/[0.06]">
+      <div className="mt-8 max-w-full overflow-x-auto rounded-xl border border-black/10 bg-white">
+        <div className="grid min-w-[32rem] grid-cols-[8.5rem_repeat(2,minmax(0,1fr))] gap-px bg-black/[0.06]">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="h-16 animate-pulse bg-white" />
           ))}
@@ -316,11 +316,11 @@ export function CompareClient({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="mt-6 min-w-0 max-w-full space-y-4">
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="inline-flex items-center gap-2 text-sm text-muted">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <p className="inline-flex min-w-0 items-center gap-2 break-words text-sm text-muted">
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-surface text-foreground/70">
             <Icon className="h-4 w-4">
               <rect x="3.5" y="4.5" width="7" height="15" rx="1.5" />
@@ -331,7 +331,7 @@ export function CompareClient({ locale }: { locale: Locale }) {
         </p>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-full border border-black/15 px-3.5 py-2 text-sm text-foreground transition hover:border-accent hover:text-accent"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-black/15 px-3.5 py-2 text-sm text-foreground transition hover:border-accent hover:text-accent sm:w-auto"
           onClick={onClear}
         >
           <Icon className="h-4 w-4">
@@ -341,11 +341,11 @@ export function CompareClient({ locale }: { locale: Locale }) {
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-24px_rgba(0,0,0,0.28)]">
+      <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-xl border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_16px_40px_-24px_rgba(0,0,0,0.28)]">
         <table className="w-full min-w-[32rem] border-collapse text-left sm:min-w-[40rem]">
           <thead>
             <tr className="border-b border-black/10">
-              <th className="sticky left-0 z-20 w-[9.5rem] bg-white px-4 py-4 align-bottom text-[11px] font-medium tracking-[0.14em] text-muted uppercase">
+              <th className="sticky left-0 z-20 w-[9.5rem] max-w-[9.5rem] bg-white px-3 py-4 align-bottom text-[11px] font-medium tracking-[0.14em] break-words text-muted uppercase sm:px-4">
                 {t(locale, 'compareSpecs')}
               </th>
               {listings.map((listing) => {
@@ -381,7 +381,7 @@ export function CompareClient({ locale }: { locale: Locale }) {
                         </div>
                         <button
                           type="button"
-                          className="absolute top-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-white shadow-sm transition hover:bg-accent"
+                          className="absolute top-2 right-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/65 text-white shadow-sm transition hover:bg-accent"
                           onClick={() => removeListing(listing)}
                           aria-label={t(locale, 'removeCompare')}
                           title={t(locale, 'removeCompare')}
@@ -443,15 +443,15 @@ export function CompareClient({ locale }: { locale: Locale }) {
                 >
                   <th
                     scope="row"
-                    className={`sticky left-0 z-10 border-b border-black/5 px-4 py-3 text-left ${
+                    className={`sticky left-0 z-10 max-w-[9.5rem] border-b border-black/5 px-3 py-3 text-left sm:px-4 ${
                       index % 2 === 0 ? 'bg-white' : 'bg-surface'
                     }`}
                   >
-                    <span className="inline-flex items-center gap-2 text-[13px] font-medium text-foreground/80">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-black/[0.04] text-foreground/70">
+                    <span className="flex min-w-0 items-start gap-2 text-[13px] font-medium text-foreground/80">
+                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-black/[0.04] text-foreground/70">
                         {rowIcon(row.key)}
                       </span>
-                      {t(locale, row.labelKey)}
+                      <span className="min-w-0 break-words">{t(locale, row.labelKey)}</span>
                     </span>
                   </th>
                   {listings.map((listing) => {
@@ -459,7 +459,7 @@ export function CompareClient({ locale }: { locale: Locale }) {
                     return (
                       <td
                         key={listing.id}
-                        className={`border-b border-l border-black/5 px-4 py-3 text-sm ${
+                        className={`min-w-0 break-words border-b border-l border-black/5 px-4 py-3 text-sm ${
                           isPrice
                             ? 'font-[family-name:var(--font-display)] tracking-wide text-accent'
                             : 'text-foreground'

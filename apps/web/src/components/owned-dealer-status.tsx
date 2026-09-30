@@ -8,7 +8,7 @@ import {
 } from '@/lib/owned-dealer';
 
 const cardClass =
-  'overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-18px_rgba(0,0,0,0.22)]';
+  'w-full min-w-0 overflow-hidden border border-black/10 bg-white shadow-[0_1px_0_rgba(0,0,0,0.06),0_12px_32px_-18px_rgba(0,0,0,0.22)]';
 
 function statusLabel(status: string) {
   return status.replace(/_/g, ' ');
@@ -27,11 +27,11 @@ export function OwnedDealerStatus({
 }) {
   const pending = dealer.status !== 'active';
   return (
-    <div className={`${cardClass} p-6 sm:p-8`}>
+    <div className={`${cardClass} p-5 sm:p-8`}>
       <p className="text-[11px] tracking-[0.14em] text-muted uppercase">
         {t(locale, kind === 'parts' ? 'yourPartsDealer' : 'yourBikeDealer')}
       </p>
-      <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
+      <h2 className="mt-2 break-words font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
         {dealer.name}
       </h2>
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -50,16 +50,16 @@ export function OwnedDealerStatus({
           {t(locale, 'dealerPendingHint')}
         </p>
       ) : (
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Link
             href={ownedDealerHref(locale, kind, dealer)}
-            className="inline-flex items-center justify-center rounded-full border border-black/15 px-5 py-2.5 text-sm text-foreground transition hover:border-accent hover:text-accent"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-black/15 px-5 py-2.5 text-sm text-foreground transition hover:border-accent hover:text-accent sm:w-auto"
           >
             {t(locale, 'viewShowroom')}
           </Link>
           <Link
             href={ownedDealerManageHref(locale, kind, dealer)}
-            className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 text-sm text-white transition hover:brightness-110"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-accent px-5 py-2.5 text-sm text-white transition hover:brightness-110 sm:w-auto"
           >
             {t(locale, 'manageShowroom')}
           </Link>

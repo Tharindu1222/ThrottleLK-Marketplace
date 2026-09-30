@@ -143,6 +143,7 @@ export default async function ListingDetailPage({
         : null;
 
   const sold = listing.status === 'sold';
+  const showContactBar = !sold && !listing.contactHidden;
   const jsonLd = listingJsonLd({
     title: heading,
     description: listing.description,
@@ -193,7 +194,7 @@ export default async function ListingDetailPage({
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
+    <main className="mx-auto w-full min-w-0 max-w-7xl px-4 py-8 sm:px-8 lg:px-10">
       <BreadcrumbLabels labels={{ [slug]: heading }} />
       <ListingViewTracker listingId={listing.id} />
       <script
@@ -212,9 +213,9 @@ export default async function ListingDetailPage({
         }}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch lg:gap-x-10 lg:gap-y-8">
-        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-5 md:grid-cols-[minmax(0,1fr)_minmax(20rem,36rem)] md:gap-x-8 lg:col-span-2">
-          <div className="min-w-0 space-y-3 md:row-span-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch lg:gap-x-10 lg:gap-y-8">
+        <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 lg:col-span-2 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,36rem)] lg:gap-x-8">
+          <div className="min-w-0 space-y-3 lg:row-span-2">
             <div className="flex flex-wrap items-center gap-2">
               {sold ? (
                 <span className="inline-flex border border-black/20 bg-black px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] text-white uppercase">
@@ -240,17 +241,17 @@ export default async function ListingDetailPage({
                 )
               ) : null}
             </div>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl leading-[0.95] tracking-tight text-foreground sm:text-4xl">
+            <h1 className="break-words font-[family-name:var(--font-display)] text-3xl leading-[0.95] tracking-tight text-foreground sm:text-4xl">
               {heading}
             </h1>
-            <p className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-accent">
-              {formatLkr(listing.priceLkr)}
+            <p className="flex min-w-0 flex-col gap-1 font-[family-name:var(--font-display)] text-3xl tracking-wide text-accent sm:block">
+              <span className="break-words">{formatLkr(listing.priceLkr)}</span>
               {sold ? (
-                <span className="ml-2 align-middle text-sm font-sans font-normal tracking-normal text-muted">
+                <span className="font-sans text-sm font-normal tracking-normal text-muted sm:ml-2 sm:align-middle">
                   · {t(locale, 'soldAskingPrice')}
                 </span>
               ) : listing.negotiable ? (
-                <span className="ml-2 align-middle text-sm font-sans font-normal tracking-normal text-muted">
+                <span className="break-words font-sans text-sm font-normal tracking-normal text-muted sm:ml-2 sm:align-middle">
                   · {t(locale, 'negotiable')}
                 </span>
               ) : null}
@@ -260,9 +261,9 @@ export default async function ListingDetailPage({
                 {t(locale, 'soldListingHint')}
               </p>
             ) : null}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
               {location ? (
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex min-w-0 items-center gap-1.5 break-words">
                   <LocationPinIcon />
                   {location}
                 </span>
@@ -281,8 +282,8 @@ export default async function ListingDetailPage({
             </div>
           </div>
           <ListingToolbar locale={locale} listing={listing} />
-          {!sold && !listing.contactHidden ? (
-            <div className="col-span-2 md:col-span-1 md:col-start-2 md:self-center">
+          {showContactBar ? (
+            <div className="col-span-2 h-0 lg:col-span-1 lg:col-start-2 lg:h-auto lg:self-center">
               <ListingContactBar locale={locale} listing={listing} />
             </div>
           ) : null}
@@ -297,7 +298,7 @@ export default async function ListingDetailPage({
 
         <ListingSpecSheet locale={locale} listing={listing} />
 
-        <section className="space-y-3 border-t border-black/10 pt-8 lg:col-start-1 lg:border-t-0 lg:pt-0">
+        <section className="min-w-0 space-y-3 border-t border-black/10 pt-8 lg:col-start-1 lg:border-t-0 lg:pt-0">
           <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground">
             {t(locale, 'description')}
           </h2>

@@ -212,7 +212,7 @@ export function ListingMessagePopup({
 
   const ui = (
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-end bg-black/25 p-4 pb-20 sm:p-5"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/25 p-4 pb-[calc(1rem+var(--compare-tray-offset,0px))] sm:justify-end sm:p-5 sm:pb-[calc(1.25rem+var(--compare-tray-offset,0px))]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -223,10 +223,10 @@ export function ListingMessagePopup({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="flex w-full max-w-[22.5rem] flex-col items-end gap-3"
+        className="flex max-h-[90dvh] w-[min(100vw-2rem,28rem)] max-w-md flex-col overflow-y-auto"
       >
-        <section className="flex h-[min(32rem,calc(100dvh-10rem))] w-full flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
-          <header className="flex items-center gap-3 bg-accent px-4 py-3 text-white">
+        <section className="flex h-[min(32rem,calc(90dvh-4.5rem))] w-full min-h-0 flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
+          <header className="flex shrink-0 items-center gap-3 bg-accent px-4 py-3 text-white">
             <div className="min-w-0 flex-1">
               <p
                 id={titleId}
@@ -242,7 +242,7 @@ export function ListingMessagePopup({
               type="button"
               onClick={onClose}
               aria-label={t(locale, 'closeChat')}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden>
                 <path
@@ -255,7 +255,7 @@ export function ListingMessagePopup({
             </button>
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-[#f6f6f6] px-3 py-4">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-[#f6f6f6] px-3 py-4">
             {messages.length === 0 ? (
               <p className="rounded-2xl bg-white px-3.5 py-3 text-center text-[13px] leading-relaxed text-muted shadow-sm">
                 {t(locale, 'chatEmpty')}
@@ -288,7 +288,7 @@ export function ListingMessagePopup({
 
           <form
             onSubmit={(e) => void onSend(e)}
-            className="flex items-center gap-2 border-t border-black/10 bg-white px-3 py-3"
+            className="flex shrink-0 items-center gap-2 border-t border-black/10 bg-white px-3 py-3"
           >
             <label htmlFor={inputId} className="sr-only">
               {t(locale, 'message')}
@@ -328,7 +328,7 @@ export function ListingMessagePopup({
           ) : null}
         </section>
 
-        <div className="flex items-center gap-2.5">
+        <div className="mt-3 flex shrink-0 items-center justify-end gap-2.5">
           <Link
             href={`/${locale}/account/messages${conversationId ? `/${conversationId}` : ''}`}
             aria-label={t(locale, 'openConversation')}

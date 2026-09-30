@@ -146,7 +146,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="mt-6 space-y-4 sm:mt-8">
+    <div className="mt-6 min-w-0 space-y-4 sm:mt-8">
       <InboxToolbar
         locale={locale}
         filter={filter}
@@ -188,7 +188,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
               <Link
                 key={row.id}
                 href={`/${locale}/account/messages/${row.id}`}
-          className={`flex gap-3.5 border-b border-black/[0.06] px-4 py-3.5 transition last:border-b-0 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 sm:px-5 ${
+          className={`flex min-w-0 gap-3.5 border-b border-black/[0.06] px-4 py-3.5 transition last:border-b-0 hover:bg-black/[0.02] focus-visible:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 sm:px-5 ${
                   unread ? 'bg-accent/[0.04]' : ''
                 }`}
               >

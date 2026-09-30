@@ -211,7 +211,7 @@ export function PromoPackageCard({
       }`}
     >
       {isPopular ? (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-md bg-[#0a0a0a] px-3 py-1 text-[11px] font-semibold tracking-wide text-white whitespace-nowrap">
+        <span className="absolute -top-3 left-1/2 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-md bg-[#0a0a0a] px-3 py-1 text-center text-[11px] font-semibold tracking-wide text-white">
           {t(locale, 'promoMostPopular')}
         </span>
       ) : null}

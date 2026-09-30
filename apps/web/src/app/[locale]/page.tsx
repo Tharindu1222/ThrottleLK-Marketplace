@@ -65,7 +65,7 @@ export default async function HomePage({
   const previewParts = preview.parts.slice(0, 8);
 
   return (
-    <main>
+    <main className="w-full min-w-0 max-w-full max-lg:overflow-x-clip">
       <HomeHero locale={locale} districts={districts} brands={brands} />
       <HomeShop locale={locale} brands={brands} />
 

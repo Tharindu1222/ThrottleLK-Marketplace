@@ -18,13 +18,13 @@ export function HomeDiscover({
 
   return (
     <section
-      className={`${HOME_SHELL} pt-14 pb-20`}
+      className={`${HOME_SHELL} min-w-0 pt-14 pb-20`}
       aria-labelledby="home-discover"
       data-reveal
     >
       <h2
         id="home-discover"
-        className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+        className="text-2xl font-bold tracking-tight break-words text-foreground sm:text-3xl [overflow-wrap:anywhere]"
       >
         {t(locale, 'homeDiscoverTitle')}
       </h2>
@@ -55,7 +55,7 @@ export function HomeDiscover({
                 <li key={district.id}>
                   <Link
                     href={`/${locale}/bikes?districtId=${district.id}`}
-                    className="inline-flex rounded-md bg-surface px-3.5 py-2 text-sm font-medium text-foreground ring-1 ring-black/10 transition hover:bg-white hover:text-accent hover:ring-accent"
+                    className="inline-flex max-w-full min-h-11 items-center rounded-md bg-surface px-3.5 py-2 text-sm font-medium break-words text-foreground ring-1 ring-black/10 transition hover:bg-white hover:text-accent hover:ring-accent [overflow-wrap:anywhere] lg:min-h-0"
                   >
                     {district.name}
                   </Link>

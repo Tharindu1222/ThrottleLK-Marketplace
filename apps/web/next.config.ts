@@ -64,7 +64,9 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
+          // U-Eyes and phone preview tools embed the local site in a frame.
+          // Production still refuses framing.
+          ...(isDev ? [] : [{ key: 'X-Frame-Options', value: 'DENY' }]),
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Permissions-Policy',
@@ -84,7 +86,9 @@ const nextConfig: NextConfig = {
               "font-src 'self' data:",
               "connect-src 'self' https:",
               "frame-src https://challenges.cloudflare.com",
-              "frame-ancestors 'none'",
+              // Omit in dev. `frame-ancestors *` still blocks chrome-extension
+              // parents, which is how U-Eyes embeds the phone preview.
+              ...(isDev ? [] : ["frame-ancestors 'none'"]),
               "base-uri 'self'",
               "form-action 'self' https://sandbox.payhere.lk https://www.payhere.lk",
               "object-src 'none'",

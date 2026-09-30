@@ -61,7 +61,7 @@ export function HomeHeroRail({
 
   return (
     <div
-      className="order-4 flex items-center gap-4 lg:col-span-2"
+      className="order-4 flex min-w-0 max-w-full items-center gap-4 overflow-hidden lg:col-span-2"
       onMouseEnter={pause}
       onMouseLeave={play}
       onFocusCapture={pause}
@@ -116,7 +116,7 @@ export function HomeHeroRail({
                     <Link
                       href={`/${locale}/bikes?brandId=${brand.id}`}
                       aria-label={brand.name}
-                      className="inline-flex h-10 items-center opacity-80 transition hover:opacity-100 focus-visible:rounded-sm focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      className="inline-flex h-11 items-center opacity-80 transition hover:opacity-100 focus-visible:rounded-sm focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:h-10"
                       tabIndex={copy === 1 ? -1 : 0}
                     >
                       <Image

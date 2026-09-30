@@ -12,7 +12,7 @@ export default async function MessageThreadPage({
   const locale = raw as Locale;
 
   return (
-    <div>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:block">
       <h1 className="sr-only">{t(locale, 'messages')}</h1>
       <MessageThread locale={locale} conversationId={id} />
     </div>

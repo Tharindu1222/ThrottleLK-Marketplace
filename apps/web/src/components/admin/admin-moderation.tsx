@@ -140,7 +140,7 @@ function RejectInline({
           placeholder="Explain why this is being rejected"
           aria-required="true"
           disabled={busy}
-          className="admin-field-inline min-w-[12rem] max-w-none flex-1"
+          className="admin-field-inline w-full! min-w-0! max-w-none! flex-1 sm:min-w-[12rem]!"
           onKeyDown={(e) => {
             if (e.key === 'Escape') onCancel();
           }}
@@ -545,7 +545,7 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                   >
                     <button
                       type="button"
-                      className="admin-btn-primary px-3 py-1.5 text-sm disabled:opacity-50"
+                      className="admin-btn-primary inline-flex min-h-11 items-center px-3 py-1.5 text-sm disabled:opacity-50"
                       disabled={busy}
                       aria-label={`Approve listing ${listing.title}`}
                       onClick={() =>
@@ -674,7 +674,7 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                   >
                     <button
                       type="button"
-                      className="admin-btn-primary px-3 py-1.5 text-sm disabled:opacity-50"
+                      className="admin-btn-primary inline-flex min-h-11 items-center px-3 py-1.5 text-sm disabled:opacity-50"
                       disabled={busy}
                       aria-label={`Approve part listing ${listing.title}`}
                       onClick={() =>
@@ -805,7 +805,7 @@ export function AdminModeration({ search = '' }: { search?: string }) {
                   >
                     <button
                       type="button"
-                      className="admin-btn-primary px-3 py-1.5 text-sm disabled:opacity-50"
+                      className="admin-btn-primary inline-flex min-h-11 items-center px-3 py-1.5 text-sm disabled:opacity-50"
                       disabled={busy}
                       aria-label={`${approveLabel} ${dealer.name}`}
                       onClick={() =>

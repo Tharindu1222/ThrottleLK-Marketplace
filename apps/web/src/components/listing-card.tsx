@@ -227,7 +227,7 @@ function FavouriteHeart({
           onClick={(e) => void onToggle(e)}
           onMouseDown={stopCardNav}
           onPointerDown={stopCardNav}
-          className={`peer pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 disabled:opacity-60 ${
+          className={`peer pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 disabled:opacity-60 ${
             favourited
               ? 'border-accent bg-accent text-white shadow-accent/25'
               : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
@@ -315,7 +315,7 @@ function CompareToggle({
           onClick={onToggle}
           onMouseDown={stopCardNav}
           onPointerDown={stopCardNav}
-          className={`peer pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 ${
+          className={`peer pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 ${
             inCompare
               ? 'border-accent bg-accent text-white shadow-accent/25'
               : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
@@ -397,7 +397,7 @@ function SpecCell({
 
 function MetaBit({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 text-xs tracking-wide text-muted">
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 break-words text-xs tracking-wide text-muted">
       {children}
     </span>
   );
@@ -485,7 +485,7 @@ export function ListingCard({
   );
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden border border-black/10 bg-white shadow-[0_1px_2px_rgba(15,15,15,0.06),0_10px_28px_-16px_rgba(15,15,15,0.22)] transition duration-300 ease-out hover:-translate-y-1 hover:border-accent/35 hover:shadow-[0_4px_8px_rgba(15,15,15,0.06),0_18px_36px_-16px_rgba(15,15,15,0.28)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+    <article className="group relative flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden border border-black/10 bg-white shadow-[0_1px_2px_rgba(15,15,15,0.06),0_10px_28px_-16px_rgba(15,15,15,0.22)] transition duration-300 ease-out hover:-translate-y-1 hover:border-accent/35 hover:shadow-[0_4px_8px_rgba(15,15,15,0.06),0_18px_36px_-16px_rgba(15,15,15,0.28)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       {/* Stretched link: whole card navigates; favourite stays above with pointer-events */}
       <Link
         href={cardHref}
@@ -493,13 +493,13 @@ export function ListingCard({
         aria-label={displayTitle}
       />
 
-      <div className="pointer-events-none relative aspect-[4/3] shrink-0 overflow-hidden bg-surface">
+      <div className="pointer-events-none relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-surface">
         {listing.coverImageUrl ? (
           <MarketplaceImage
             src={listing.coverImageUrl}
             alt=""
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
+            className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
             fallbackClassName="object-contain p-10 opacity-80 brightness-0"
           />
         ) : (
@@ -562,20 +562,20 @@ export function ListingCard({
       ) : null}
 
       <div
-        className={`pointer-events-none relative z-[1] flex flex-1 flex-col gap-2.5 px-3.5 pt-3 ${
+        className={`pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col gap-2.5 px-3.5 pt-3 ${
           footer ? 'pb-2.5' : 'pb-3.5'
         }`}
       >
         <div className="min-w-0">
-          <TitleTag className="line-clamp-2 font-[family-name:var(--font-display)] text-[1.05rem] leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent">
+          <TitleTag className="line-clamp-2 break-words font-[family-name:var(--font-display)] text-[1.05rem] leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent">
             {displayTitle}
           </TitleTag>
-          <p className="mt-1 font-[family-name:var(--font-display)] text-xl leading-none tracking-wide text-accent">
+          <p className="mt-1 break-words font-[family-name:var(--font-display)] text-xl leading-none tracking-wide text-accent">
             {formatLkr(listing.priceLkr)}
           </p>
         </div>
 
-        <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-black/[0.06] bg-black/[0.06]">
+        <ul className="grid min-w-0 grid-cols-2 gap-px overflow-hidden rounded-md border border-black/[0.06] bg-black/[0.06]">
           {listing.manufactureYear != null ? (
             <SpecCell label={t(locale, 'year')} value={String(listing.manufactureYear)}>
               <CardIcon>
@@ -616,19 +616,17 @@ export function ListingCard({
         </ul>
 
         {location || listedLabel || views ? (
-          <div className="mt-auto flex items-center justify-between gap-2 border-t border-black/[0.06] pt-2.5">
+          <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-black/[0.06] pt-2.5">
             {location ? (
               <MetaBit>
                 <CardIcon className="h-3.5 w-3.5 text-foreground/55">
                   <path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z" />
                   <circle cx="12" cy="10" r="2.5" />
                 </CardIcon>
-                <span className="truncate">{location}</span>
+                <span className="min-w-0 break-words">{location}</span>
               </MetaBit>
-            ) : (
-              <span />
-            )}
-            <div className="flex shrink-0 items-center gap-2.5">
+            ) : null}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
               {views ? (
                 <MetaBit>
                   <CardIcon className="h-3.5 w-3.5 text-foreground/55">

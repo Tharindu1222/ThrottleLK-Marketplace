@@ -62,7 +62,7 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="mt-8 space-y-4">
+    <div className="mt-8 min-w-0 space-y-4">
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
       {rows.length === 0 ? (
         <p className="text-muted">
@@ -75,13 +75,13 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
         rows.map((row) => (
           <div
             key={row.id}
-            className="flex flex-wrap items-center justify-between gap-3 border border-black/10 bg-surface/40 p-4"
+            className="flex min-w-0 flex-col gap-3 border border-black/10 bg-surface/40 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
           >
-            <div>
-              <h2 className="font-[family-name:var(--font-display)] text-xl">
+            <div className="min-w-0">
+              <h2 className="break-words font-[family-name:var(--font-display)] text-xl">
                 {row.name}
               </h2>
-              <p className="text-sm text-muted">
+              <p className="break-words text-sm text-muted">
                 {[
                   row.query.q,
                   row.query.brandId ? `brand:${row.query.brandId.slice(0, 8)}` : null,
@@ -95,10 +95,10 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
                   .join(' · ') || 'All bikes'}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex w-full min-w-0 flex-wrap gap-2">
               <button
                 type="button"
-                className="border border-black/20 px-3 py-1.5 text-sm"
+                className="inline-flex min-h-11 items-center border border-black/20 px-3 py-1.5 text-sm"
                 onClick={() => {
                   void apiSend(`/api/v1/saved-searches/${row.id}`, {
                     method: 'PATCH',
@@ -117,13 +117,13 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
               </button>
               <Link
                 href={toBrowseHref(locale, row.query)}
-                className="bg-accent px-3 py-1.5 text-sm text-white"
+                className="inline-flex min-h-11 items-center bg-accent px-3 py-1.5 text-sm text-white"
               >
                 {t(locale, 'runSearch')}
               </Link>
               <button
                 type="button"
-                className="border border-black/20 px-3 py-1.5 text-sm"
+                className="inline-flex min-h-11 items-center border border-black/20 px-3 py-1.5 text-sm"
                 onClick={() => {
                   void apiSend(`/api/v1/saved-searches/${row.id}`, {
                     method: 'DELETE',

@@ -34,11 +34,11 @@ export async function LegalDocumentPage({
   if (!page) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-wide">
+    <main className="mx-auto w-full min-w-0 max-w-3xl overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12">
+      <h1 className="break-words font-[family-name:var(--font-display)] text-3xl tracking-wide sm:text-4xl">
         {t(locale, page.titleKey as I18nKey)}
       </h1>
-      <p className="mt-4 text-lg text-muted">
+      <p className="mt-4 max-w-prose text-base leading-relaxed text-muted sm:text-lg">
         {t(locale, page.descriptionKey as I18nKey)}
       </p>
       <p className="mt-3 text-sm text-muted">
@@ -49,10 +49,10 @@ export async function LegalDocumentPage({
       <div className="mt-10 space-y-10">
         {page.sections.map((section) => (
           <section key={section.headingKey}>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide">
+            <h2 className="break-words font-[family-name:var(--font-display)] text-xl tracking-wide sm:text-2xl">
               {t(locale, section.headingKey as I18nKey)}
             </h2>
-            <div className="mt-4 space-y-4 leading-relaxed text-foreground/90">
+            <div className="mt-4 max-w-prose space-y-4 leading-relaxed break-words text-foreground/90">
               {section.bodyKeys.map((key) => (
                 <p key={key}>{t(locale, key as I18nKey)}</p>
               ))}

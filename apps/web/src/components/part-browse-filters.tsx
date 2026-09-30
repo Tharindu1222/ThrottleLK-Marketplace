@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { apiGet } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 import { listingConditionLabel } from '@/lib/listing-labels';
@@ -25,7 +25,7 @@ const SORTS = [
 const CONDITIONS = ['new', 'used', 'reconditioned'] as const;
 
 const fieldClass =
-  'w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
+  'w-full min-w-0 max-w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
 
 function FilterField({
   id,
@@ -37,7 +37,7 @@ function FilterField({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-xs font-medium text-muted">
         {label}
       </label>
@@ -78,23 +78,7 @@ export function PartBrowseFilters({
   const [brandId, setBrandId] = useState(initial.brandId ?? '');
   const [models, setModels] = useState<Model[]>([]);
 
-  const hasActiveFilters = useMemo(
-    () =>
-      Boolean(
-        initial.q ||
-          initial.brandId ||
-          initial.modelId ||
-          initial.categoryId ||
-          initial.districtId ||
-          initial.minPrice ||
-          initial.maxPrice ||
-          initial.condition ||
-          initial.kind,
-      ),
-    [initial],
-  );
-
-  const [open, setOpen] = useState(hasActiveFilters);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!brandId) {
@@ -107,10 +91,10 @@ export function PartBrowseFilters({
   }, [brandId]);
 
   return (
-    <div>
+    <div className="min-w-0 w-full">
       <button
         type="button"
-        className="flex w-full items-center justify-between border border-black/15 bg-surface/60 px-4 py-3 text-left font-[family-name:var(--font-display)] tracking-wide lg:hidden"
+        className="flex min-h-11 w-full items-center justify-between border border-black/15 bg-surface/60 px-4 py-3 text-left font-[family-name:var(--font-display)] tracking-wide lg:hidden"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
@@ -121,9 +105,11 @@ export function PartBrowseFilters({
       <form
         method="get"
         action={actionPath}
-        className={`mt-3 flex flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 ${
-          open ? 'flex' : 'hidden lg:flex'
-        }`}
+        className={
+          open
+            ? 'mt-3 flex w-full min-w-0 flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0'
+            : 'mt-3 hidden w-full min-w-0 flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 lg:flex'
+        }
       >
         <p className="hidden font-[family-name:var(--font-display)] text-lg tracking-wide lg:block">
           {t(locale, 'filters')}
@@ -232,7 +218,7 @@ export function PartBrowseFilters({
             ))}
           </select>
         </FilterField>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2">
           <FilterField id={`${uid}-minPrice`} label={t(locale, 'minPrice')}>
             <input
               id={`${uid}-minPrice`}
@@ -287,7 +273,7 @@ export function PartBrowseFilters({
         </FilterField>
         <button
           type="submit"
-          className="bg-foreground px-4 py-2.5 text-sm text-white transition hover:bg-foreground/90"
+          className="min-h-11 bg-foreground px-4 py-2.5 text-sm text-white transition hover:bg-foreground/90"
         >
           {t(locale, 'applyFilters')}
         </button>

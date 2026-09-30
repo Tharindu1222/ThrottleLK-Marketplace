@@ -47,8 +47,8 @@ export function AdminGate({
 
   if (!token) {
     return (
-      <div className="flex min-h-svh items-center justify-center p-6">
-        <div className="admin-card max-w-md p-8 text-center">
+      <div className="flex min-h-svh items-center justify-center p-4 sm:p-6">
+        <div className="admin-card w-full max-w-md p-5 text-center sm:p-8">
           <p className="text-[var(--admin-muted)]">
             <Link
               href={loginHref(locale, `/${locale}/admin`)}
@@ -65,8 +65,8 @@ export function AdminGate({
 
   if (!isAdmin) {
     return (
-      <div className="flex min-h-svh items-center justify-center p-6">
-        <div className="admin-card max-w-md p-8 text-center">
+      <div className="flex min-h-svh items-center justify-center p-4 sm:p-6">
+        <div className="admin-card w-full max-w-md p-5 text-center sm:p-8">
           <p className="text-[var(--admin-muted)]">
             Your account does not have the admin role.
           </p>

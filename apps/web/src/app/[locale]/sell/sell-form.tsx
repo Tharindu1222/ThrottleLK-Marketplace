@@ -254,7 +254,7 @@ function HorizontalStepper({
               />
             </div>
             <span
-              className={`mt-2.5 text-xs font-semibold tracking-tight ${
+              className={`mt-2.5 px-0.5 text-center text-xs leading-tight font-semibold tracking-tight break-words ${
                 active
                   ? 'text-accent'
                   : done
@@ -598,7 +598,7 @@ export function SellForm({ locale }: { locale: Locale }) {
         </p>
         <Link
           href={`/${locale}/account/listings`}
-          className="mt-6 inline-flex rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
+          className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent sm:w-auto"
         >
           {t(locale, 'manageListings')}
         </Link>
@@ -609,9 +609,9 @@ export function SellForm({ locale }: { locale: Locale }) {
   const categoryChoices = categories;
   const currentStep = STEPS[step - 1] ?? STEPS[0];
   const btnPrimary =
-    'inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-white shadow-sm shadow-accent/20 transition hover:bg-[#c90500] disabled:opacity-50';
+    'inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-white shadow-sm shadow-accent/20 transition hover:bg-[#c90500] disabled:opacity-50 sm:w-auto';
   const btnBack =
-    'inline-flex h-11 items-center justify-center rounded-xl border border-black/12 bg-white px-5 text-sm font-medium text-foreground transition hover:bg-black/[0.02] disabled:opacity-50';
+    'inline-flex h-11 w-full items-center justify-center rounded-xl border border-black/12 bg-white px-5 text-sm font-medium text-foreground transition hover:bg-black/[0.02] disabled:opacity-50 sm:w-auto';
 
   return (
     <div className="mx-auto mt-8 max-w-5xl">
@@ -619,8 +619,8 @@ export function SellForm({ locale }: { locale: Locale }) {
 
       <HorizontalStepper locale={locale} step={step} />
 
-      <div className="mt-7 overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_10px_28px_rgba(0,0,0,0.06)] md:grid md:h-[640px] md:grid-cols-[232px_minmax(0,1fr)] lg:grid-cols-[256px_minmax(0,1fr)]">
-        <aside className="hidden h-full flex-col border-r border-black/[0.05] bg-[#fafafa] p-3.5 md:flex lg:p-4">
+      <div className="mt-7 min-w-0 overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_10px_28px_rgba(0,0,0,0.06)] lg:grid lg:h-[640px] lg:grid-cols-[232px_minmax(0,1fr)] xl:grid-cols-[256px_minmax(0,1fr)]">
+        <aside className="hidden h-full flex-col border-r border-black/[0.05] bg-[#fafafa] p-3.5 lg:flex lg:p-4">
           <ul className="space-y-0.5">
             {STEPS.map((s) => {
               const active = s.id === step;
@@ -681,7 +681,7 @@ export function SellForm({ locale }: { locale: Locale }) {
           </div>
         </aside>
 
-        <div className="flex min-h-[560px] flex-col p-6 sm:p-8 md:h-full md:min-h-0 lg:p-9">
+        <div className="flex min-w-0 flex-col p-4 sm:p-8 lg:h-full lg:min-h-0 lg:p-9">
           <div className="mb-6 shrink-0">
             <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-[1.375rem]">
               {t(locale, currentStep.titleKey)}
@@ -691,9 +691,9 @@ export function SellForm({ locale }: { locale: Locale }) {
             </p>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="min-w-0 pr-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             {step === 1 ? (
-              <div className="grid max-w-md gap-5 text-left">
+              <div className="grid min-w-0 max-w-md gap-5 text-left">
                 <SearchableCombobox
                   label={t(locale, 'brandFilter')}
                   required
@@ -790,7 +790,7 @@ export function SellForm({ locale }: { locale: Locale }) {
             ) : null}
 
             {step === 2 ? (
-              <div className="grid gap-5 text-left sm:grid-cols-2">
+              <div className="grid min-w-0 gap-5 text-left sm:grid-cols-2">
                 <div>
                   <label className={labelClass} htmlFor="manufactureYear">
                     {t(locale, 'manufactureYear')}
@@ -977,7 +977,7 @@ export function SellForm({ locale }: { locale: Locale }) {
 
             {step === 3 ? (
               <div className="grid gap-5 text-left">
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid min-w-0 gap-5 sm:grid-cols-2">
                   <div>
                     <label className={labelClass} htmlFor="districtId">
                       {t(locale, 'districtFilter')}
@@ -1132,7 +1132,7 @@ export function SellForm({ locale }: { locale: Locale }) {
             <p className="mt-4 text-sm text-red-600">{error}</p>
           ) : null}
 
-          <div className="mt-auto flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-black/[0.06] pt-5">
+          <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-black/[0.06] pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             {step > 1 ? (
               <button
                 type="button"

@@ -77,20 +77,20 @@ function PromoChip({
       className="w-44 shrink-0 sm:w-48"
       aria-hidden={hidden || undefined}
     >
-      <article className="overflow-hidden border border-black/10 bg-white shadow-[0_1px_2px_rgba(15,15,15,0.06)] transition duration-200 hover:border-accent/40">
+      <article className="w-full min-w-0 overflow-hidden border border-black/10 bg-white shadow-[0_1px_2px_rgba(15,15,15,0.06)] transition duration-200 hover:border-accent/40">
         <Link
           href={card.href}
           tabIndex={hidden ? -1 : undefined}
           className="block"
           aria-label={hidden ? undefined : card.title}
         >
-          <div className="relative aspect-[5/3] bg-surface">
+          <div className="relative aspect-[5/3] w-full bg-surface">
             {card.imageUrl ? (
               <MarketplaceImage
                 src={card.imageUrl}
                 alt=""
                 sizes="192px"
-                className="object-cover"
+                className="h-full w-full object-cover"
                 fallbackClassName="object-contain p-6 opacity-80 brightness-0"
               />
             ) : (
@@ -112,11 +112,11 @@ function PromoChip({
               </span>
             ) : null}
           </div>
-          <div className="px-2.5 py-2">
+          <div className="min-w-0 px-2.5 py-2">
             <p className="truncate font-[family-name:var(--font-display)] text-sm leading-snug tracking-wide text-foreground">
               {card.title}
             </p>
-            <p className="mt-0.5 font-[family-name:var(--font-display)] text-sm leading-none tracking-wide text-accent">
+            <p className="mt-0.5 truncate font-[family-name:var(--font-display)] text-sm leading-none tracking-wide text-accent">
               {card.price}
             </p>
           </div>
@@ -163,16 +163,16 @@ export function PromotedAutoplayStrip({
     <section
       aria-labelledby="promoted-listings-heading"
       aria-roledescription="carousel"
-      className="mb-8 min-w-0 max-w-full border-b border-black/10 pb-6"
+      className="mb-8 w-full min-w-0 max-w-full border-b border-black/10 pb-6"
     >
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
             {eyebrow}
           </p>
           <h2
             id="promoted-listings-heading"
-            className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl"
+            className="mt-1 break-words font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl"
           >
             {heading}
           </h2>
@@ -181,7 +181,7 @@ export function PromotedAutoplayStrip({
           <button
             type="button"
             onClick={() => setUserPaused((value) => !value)}
-            className="mb-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-accent/40 hover:text-accent"
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-full border border-black/10 bg-white px-4 text-xs font-medium text-foreground transition hover:border-accent/40 hover:text-accent"
           >
             {userPaused ? (
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
@@ -197,7 +197,7 @@ export function PromotedAutoplayStrip({
         )}
       </div>
 
-      <div className="promo-strip-scroller mt-4 w-full min-w-0 overflow-hidden">
+      <div className="promo-strip-scroller mt-4 w-full min-w-0 max-w-full touch-pan-x overflow-x-auto overscroll-x-contain px-4 pb-1">
         <div
           className="promo-strip-track flex w-max"
           data-paused={userPaused ? 'true' : 'false'}

@@ -45,7 +45,7 @@ type ListingDetail = {
 };
 
 const fieldClass =
-  'w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35';
+  'w-full min-w-0 max-w-full bg-white px-3 py-2.5 text-sm text-foreground outline-none ring-1 ring-black/10 transition focus:ring-2 focus:ring-accent/35';
 
 function statusLabel(locale: Locale, status: string) {
   switch (status) {
@@ -394,12 +394,12 @@ export function EditListingForm({
         </p>
       ) : null}
 
-      <form onSubmit={onSubmit} className="grid gap-5 xl:grid-cols-2">
+      <form onSubmit={onSubmit} className="grid min-w-0 gap-5 xl:grid-cols-2">
         <Section
           className="xl:col-span-2"
           title={t(locale, 'sellStepDetails')}
         >
-          <div className="grid gap-4 xl:grid-cols-[1fr_16rem] xl:items-start">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[1fr_16rem] xl:items-start">
             <Field
               label={t(locale, 'description')}
               htmlFor={`${uid}-description`}
@@ -478,7 +478,7 @@ export function EditListingForm({
         <Section
           title={t(locale, 'sellStepBike')}
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
             <Field
               label={t(locale, 'brandFilter')}
               htmlFor={`${uid}-brand`}
@@ -551,7 +551,7 @@ export function EditListingForm({
         <Section
           title={t(locale, 'sellStepSpecs')}
         >
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Field
               label={t(locale, 'manufactureYear')}
               htmlFor={`${uid}-year`}
@@ -599,7 +599,7 @@ export function EditListingForm({
               />
             </Field>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Field
               label={t(locale, 'fuelType')}
               htmlFor={`${uid}-fuel`}
@@ -660,7 +660,7 @@ export function EditListingForm({
           className="xl:col-span-2"
           title={t(locale, 'editLocationContact')}
         >
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-2 xl:grid-cols-3">
             <Field
               label={t(locale, 'districtFilter')}
               htmlFor={`${uid}-district`}
@@ -765,7 +765,7 @@ export function EditListingForm({
           onClick={goToMyListings}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 ring-1 ring-black/[0.06] shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)]"
+            className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 ring-1 ring-black/[0.06] shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)]"
             onClick={(event) => event.stopPropagation()}
           >
             <p

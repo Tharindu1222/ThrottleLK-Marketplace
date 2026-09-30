@@ -258,7 +258,7 @@ export function PromoteListingForm({
     status.pending.paymentProvider !== 'payhere';
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto min-w-0 max-w-5xl space-y-8">
       <div className="max-w-xl">
         <Link
           href={backHref}
@@ -334,7 +334,7 @@ export function PromoteListingForm({
                 {t(locale, 'promoteNoPackages')}
               </p>
             ) : (
-              <ul className="mt-6 grid list-none gap-4 md:grid-cols-3 md:items-stretch md:gap-5 md:pt-3">
+              <ul className="mt-6 grid min-w-0 list-none grid-cols-1 gap-4 md:grid-cols-3 md:items-stretch md:gap-5 md:pt-3">
                 {packages.map((pkg) => (
                   <li key={pkg.id} className="h-full">
                     <PromoPackageCard
@@ -353,7 +353,7 @@ export function PromoteListingForm({
 
       {payOpen && selected ? (
         <div
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 p-3 sm:items-center sm:p-4"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closePayModal();
           }}
@@ -363,7 +363,7 @@ export function PromoteListingForm({
             role="dialog"
             aria-modal="true"
             aria-labelledby={`${payDialogId}-title`}
-            className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)] ring-1 ring-black/[0.08] sm:rounded-2xl sm:p-6"
+            className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)] ring-1 ring-black/[0.08] sm:p-6"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -388,16 +388,16 @@ export function PromoteListingForm({
               </button>
             </div>
 
-            <dl className="mt-5 space-y-2 rounded-2xl bg-surface/60 px-4 py-3 text-sm ring-1 ring-black/[0.06]">
-              <div className="flex justify-between gap-4">
+            <dl className="mt-5 min-w-0 space-y-2 rounded-2xl bg-surface/60 px-4 py-3 text-sm ring-1 ring-black/[0.06]">
+              <div className="flex min-w-0 justify-between gap-4">
                 <dt className="text-muted">{t(locale, 'promotePayAmount')}</dt>
                 <dd className="font-semibold">{formatLkr(selected.priceLkr)}</dd>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">
+              <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4">
+                <dt className="shrink-0 text-muted">
                   {t(locale, 'promoteStepPackageEyebrow')}
                 </dt>
-                <dd className="text-right">
+                <dd className="min-w-0 break-words sm:text-right">
                   {selected.name} ·{' '}
                   {t(locale, 'promoteDays').replace(
                     '{n}',

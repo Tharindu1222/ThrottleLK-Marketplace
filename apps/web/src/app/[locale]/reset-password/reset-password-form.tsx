@@ -48,7 +48,7 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto mt-8 grid max-w-md gap-3">
+    <form onSubmit={onSubmit} className="mt-8 grid w-full min-w-0 max-w-md gap-3">
       {!token ? (
         <p className="text-sm text-red-400">
           Open the link from your email to reset your password.
@@ -63,13 +63,13 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
           minLength={8}
           autoComplete="new-password"
           placeholder="New password"
-          className="bg-background px-3 py-2 ring-1 ring-black/10"
+          className="w-full min-w-0 rounded-md bg-background px-3 py-3 text-sm ring-1 ring-black/10"
         />
       </label>
       <button
         type="submit"
         disabled={!token}
-        className="bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-white disabled:opacity-50"
+        className="inline-flex min-h-11 w-full items-center justify-center bg-accent px-4 py-2 font-[family-name:var(--font-display)] text-white disabled:opacity-50"
       >
         Reset password
       </button>

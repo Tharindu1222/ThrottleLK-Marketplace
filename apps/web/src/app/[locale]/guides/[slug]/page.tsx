@@ -40,7 +40,7 @@ export default async function GuideArticlePage({
   const copy = guideCopy(guide, locale);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <main className="mx-auto w-full min-w-0 max-w-3xl overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12">
       <BreadcrumbLabels labels={{ [slug]: copy.title }} />
       <p className="text-sm text-muted">
         <Link href={`/${locale}/guides`} className="hover:text-accent">
@@ -48,11 +48,11 @@ export default async function GuideArticlePage({
         </Link>{' '}
         · {guide.publishedAt}
       </p>
-      <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl tracking-wide sm:text-5xl">
+      <h1 className="mt-3 break-words font-[family-name:var(--font-display)] text-3xl tracking-wide sm:text-4xl lg:text-5xl">
         {copy.title}
       </h1>
-      <p className="mt-4 text-lg text-muted">{copy.description}</p>
-      <div className="mt-10 space-y-5 text-foreground/90 leading-relaxed">
+      <p className="mt-4 max-w-prose text-base leading-relaxed text-muted sm:text-lg">{copy.description}</p>
+      <div className="mt-10 max-w-prose space-y-5 break-words leading-relaxed text-foreground/90">
         {copy.body.map((paragraph) => (
           <p key={paragraph.slice(0, 24)}>{paragraph}</p>
         ))}

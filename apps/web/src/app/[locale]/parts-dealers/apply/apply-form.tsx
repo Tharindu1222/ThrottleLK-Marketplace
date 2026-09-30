@@ -142,7 +142,7 @@ function ApplyShell({
   children: ReactNode;
 }) {
   return (
-    <div className="relative min-h-[calc(100dvh-4.25rem)] w-full overflow-x-hidden lg:h-[calc(100dvh-4.25rem)] lg:overflow-hidden">
+    <div className="relative min-h-[calc(100dvh-4.25rem)] w-full max-w-full overflow-x-hidden lg:h-[calc(100dvh-4.25rem)] lg:overflow-hidden">
       <Image
         src="/images/dealers/become-parts-dealer-hero.png"
         alt=""
@@ -152,14 +152,14 @@ function ApplyShell({
         sizes="100vw"
       />
 
-      <div className="relative z-10 flex h-full w-full items-stretch">
-        <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-end lg:px-8 lg:py-8 xl:px-12">
-          <section className="flex w-full max-w-[560px] shrink-0 flex-col self-start lg:mt-2 lg:max-w-[640px] lg:self-center xl:max-w-[700px]">
+      <div className="relative z-10 block w-full min-w-0 lg:flex lg:h-full">
+        <div className="mx-auto flex w-full min-w-0 max-w-[1400px] flex-col gap-4 px-4 py-5 sm:px-6 lg:h-full lg:flex-row lg:items-center lg:justify-end lg:px-8 lg:py-8 xl:px-12">
+          <section className="flex w-full min-w-0 max-w-[560px] flex-col self-stretch lg:mt-2 lg:max-w-[640px] lg:shrink-0 lg:self-center xl:max-w-[700px]">
             <div className="mb-5 lg:-mt-6 xl:-mt-8">
               <p className="text-xs font-bold tracking-[0.16em] text-accent uppercase">
                 {t(locale, 'partsDealersNav')}
               </p>
-              <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.25rem] lg:leading-[1.08]">
+              <h1 className="mt-1 break-words font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.25rem] lg:leading-[1.08]">
                 {t(locale, 'becomePartsDealer')}
               </h1>
             </div>
@@ -172,7 +172,7 @@ function ApplyShell({
 }
 
 const formCardClass =
-  'rounded-2xl border border-accent/10 bg-white p-5 shadow-[0_4px_6px_-1px_rgba(225,6,0,0.08),0_16px_40px_-8px_rgba(225,6,0,0.22),0_28px_56px_-12px_rgba(225,6,0,0.18)] sm:p-6 lg:p-6';
+  'w-full min-w-0 rounded-2xl border border-accent/10 bg-white p-5 shadow-[0_4px_6px_-1px_rgba(225,6,0,0.08),0_16px_40px_-8px_rgba(225,6,0,0.22),0_28px_56px_-12px_rgba(225,6,0,0.18)] sm:p-6 lg:p-6';
 
 export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
   const [token, setToken] = useState<string | null>(null);
@@ -242,7 +242,7 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
           </p>
           <Link
             href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/parts-dealers/apply`)}`}
-            className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-white shadow-sm shadow-accent/20 transition hover:bg-[#c90500]"
+            className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-white shadow-sm shadow-accent/20 transition hover:bg-[#c90500] sm:w-auto"
           >
             {t(locale, 'login')}
             <ArrowRightIcon />
@@ -504,17 +504,17 @@ export function PartsDealerApplyForm({ locale }: { locale: Locale }) {
           {ok ? <p className="text-sm text-foreground">{ok}</p> : null}
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-3">
+          <div className="flex flex-col gap-3 border-t border-black/[0.06] pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <Link
               href={`/${locale}/parts-dealers`}
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-black/12 bg-white px-5 text-sm font-medium text-foreground transition hover:bg-black/[0.02]"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-black/12 bg-white px-5 text-sm font-medium text-foreground transition hover:bg-black/[0.02] sm:w-auto"
             >
               {t(locale, 'cancel')}
             </Link>
             <button
               type="submit"
               disabled={busy}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(225,6,0,0.7)] transition hover:bg-[#c90500] disabled:opacity-60"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(225,6,0,0.7)] transition hover:bg-[#c90500] disabled:opacity-60 sm:w-auto"
             >
               {busy ? '…' : t(locale, 'submitDealerApplication')}
               {!busy ? <ArrowRightIcon /> : null}

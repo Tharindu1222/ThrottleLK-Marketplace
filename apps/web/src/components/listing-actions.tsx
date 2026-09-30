@@ -254,6 +254,27 @@ export function ListingContactBar({
     setToken(getAccessToken());
   }, []);
 
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const stacked = window.matchMedia('(max-width: 639px)');
+    const apply = () => {
+      if (desktop.matches) {
+        document.body.style.paddingBottom = '';
+        return;
+      }
+      const bar = stacked.matches ? '15.5rem' : '7.5rem';
+      document.body.style.paddingBottom = `calc(${bar} + var(--compare-tray-offset, 0px))`;
+    };
+    apply();
+    desktop.addEventListener('change', apply);
+    stacked.addEventListener('change', apply);
+    return () => {
+      desktop.removeEventListener('change', apply);
+      stacked.removeEventListener('change', apply);
+      document.body.style.paddingBottom = '';
+    };
+  }, []);
+
   function onMessageClick() {
     if (!token) {
       setLoginOpen(true);
@@ -267,10 +288,10 @@ export function ListingContactBar({
 
   return (
     <div
-      className={`fixed inset-x-0 bottom-[var(--compare-tray-offset,0px)] z-[45] border-t border-black/10 bg-white/95 p-3 backdrop-blur transition-[bottom] md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none`}
+      className="fixed inset-x-0 bottom-[var(--compare-tray-offset,0px)] z-[45] border-t border-black/10 bg-white/95 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur transition-[bottom] lg:static lg:z-auto lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
     >
       <div
-        className={`mx-auto grid max-w-6xl grid-cols-1 gap-2.5 sm:gap-3 ${
+        className={`mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 gap-2.5 sm:gap-3 ${
           hasCall && hasChat ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
         }`}
       >
@@ -278,10 +299,10 @@ export function ListingContactBar({
           <a
             href={`tel:${callNumber}`}
             onClick={() => recordContactClick(listing.id, 'phone')}
-            className={`${contactBtn} bg-accent text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] hover:brightness-110`}
+            className={`${contactBtn} min-w-0 bg-accent text-white shadow-[0_10px_24px_-12px_rgba(225,6,0,0.9)] hover:brightness-110`}
           >
             <PhoneIcon />
-            <span className="truncate">{callNumber}</span>
+            <span className="min-w-0 break-all text-center">{callNumber}</span>
           </a>
         ) : null}
         {chatNumber ? (

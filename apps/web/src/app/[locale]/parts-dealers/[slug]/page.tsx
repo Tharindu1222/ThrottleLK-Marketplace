@@ -135,7 +135,7 @@ export default async function PartsDealerShowroomPage({
                 { kind: undefined },
                 1,
               )}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-medium transition ${
                 !kind
                   ? 'bg-foreground text-white'
                   : 'border border-black/15 bg-background hover:border-accent/40'
@@ -150,7 +150,7 @@ export default async function PartsDealerShowroomPage({
                 { kind: 'spare' },
                 1,
               )}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-medium transition ${
                 kind === 'spare'
                   ? 'bg-foreground text-white'
                   : 'border border-black/15 bg-background hover:border-accent/40'
@@ -165,7 +165,7 @@ export default async function PartsDealerShowroomPage({
                 { kind: 'modified' },
                 1,
               )}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-medium transition ${
                 kind === 'modified'
                   ? 'bg-foreground text-white'
                   : 'border border-black/15 bg-background hover:border-accent/40'

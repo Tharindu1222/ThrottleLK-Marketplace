@@ -144,11 +144,11 @@ export function PartsPerformanceClient({ locale }: { locale: Locale }) {
   const metrics = data ?? emptyMetrics;
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       <div
         role="group"
         aria-label={t(locale, 'performance')}
-        className="flex flex-wrap gap-2"
+        className="flex min-w-0 gap-2 overflow-x-auto overscroll-x-contain pb-1"
       >
         {RANGES.map((value) => {
           const active = range === value;
@@ -158,10 +158,10 @@ export function PartsPerformanceClient({ locale }: { locale: Locale }) {
               type="button"
               aria-pressed={active}
               onClick={() => setRange(value)}
-              className={`inline-flex shrink-0 items-center rounded-full border px-3.5 py-2 text-sm whitespace-nowrap transition ${
+              className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-3.5 text-sm whitespace-nowrap transition ${
                 active
-                  ? 'border-black/20 bg-white text-accent shadow-[0_1px_0_rgba(0,0,0,0.06)]'
-                  : 'border-black/15 bg-white text-muted hover:border-black/25 hover:text-foreground'
+                  ? 'border-accent bg-white font-semibold text-accent underline decoration-2 underline-offset-4 shadow-[0_1px_0_rgba(0,0,0,0.06)]'
+                  : 'border-black/15 bg-white font-medium text-muted hover:border-black/25 hover:text-foreground'
               }`}
             >
               {t(locale, RANGE_LABEL[value])}
@@ -182,13 +182,13 @@ export function PartsPerformanceClient({ locale }: { locale: Locale }) {
       <div
         aria-busy={loading}
         aria-live="polite"
-        className={`grid gap-4 sm:grid-cols-2 xl:grid-cols-5 ${
+        className={`grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5 ${
           loading ? 'opacity-60' : ''
         }`}
       >
         {METRICS.map((metric) => (
-          <section key={metric.key} className={`${cardClass} p-4 sm:p-5`}>
-            <p className="text-[10px] tracking-[0.2em] text-muted uppercase">
+          <section key={metric.key} className={`${cardClass} min-w-0 p-4 sm:p-5`}>
+            <p className="break-words text-[10px] tracking-[0.2em] text-muted uppercase">
               {t(locale, metric.labelKey)}
             </p>
             <p className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground">

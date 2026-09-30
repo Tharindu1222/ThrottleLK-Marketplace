@@ -29,12 +29,15 @@ html {
   -moz-osx-font-smoothing: auto;
   letter-spacing: 0;
   word-spacing: 0;
+  overflow-x: clip;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 html[lang='si'] body {

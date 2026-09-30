@@ -227,7 +227,7 @@ function FavouriteHeart({
           onClick={(e) => void onToggle(e)}
           onMouseDown={stopCardNav}
           onPointerDown={stopCardNav}
-          className={`peer pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 disabled:opacity-60 ${
+          className={`peer pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition duration-200 disabled:opacity-60 ${
             favourited
               ? 'border-accent bg-accent text-white shadow-accent/25'
               : 'border-white/40 bg-black/45 text-white hover:border-white/70 hover:bg-black/60'
@@ -258,7 +258,7 @@ function FavouriteHeart({
 
 function MetaBit({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 text-xs tracking-wide text-muted">
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 break-words text-xs tracking-wide text-muted">
       {children}
     </span>
   );
@@ -317,14 +317,14 @@ export function PartCard({
   const promoBadge = promoCardBadgeLabel(locale, part.tier, part.isTop);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden border border-black/10 bg-white transition hover:border-accent/35 hover:shadow-[0_12px_28px_-18px_rgba(15,15,15,0.35)]">
-      <Link href={cardHref} className="relative block aspect-[16/10] bg-surface">
+    <article className="group flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden border border-black/10 bg-white transition hover:border-accent/35 hover:shadow-[0_12px_28px_-18px_rgba(15,15,15,0.35)]">
+      <Link href={cardHref} className="relative block aspect-[16/10] w-full overflow-hidden bg-surface">
         {part.coverImageUrl ? (
           <MarketplaceImage
             src={part.coverImageUrl}
             alt=""
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-surface">
@@ -339,8 +339,8 @@ export function PartCard({
             />
           </div>
         )}
-        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div className="absolute inset-x-0 top-0 flex min-w-0 flex-wrap items-start justify-between gap-2 p-2.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <span className="inline-flex rounded-sm bg-black/70 px-2 py-1 text-[10px] font-semibold tracking-[0.14em] text-white uppercase">
               {kindLabel(locale, part.kind)}
             </span>
@@ -350,7 +350,7 @@ export function PartCard({
               </span>
             ) : null}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
             {statusBadge ? (
               <span
                 className={`rounded-sm px-2 py-1 text-[10px] font-semibold tracking-wide uppercase ${statusRibbonClass(statusBadge.status)}`}
@@ -371,10 +371,10 @@ export function PartCard({
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
           <Link href={cardHref} className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 font-[family-name:var(--font-display)] text-lg leading-snug tracking-wide text-foreground transition group-hover:text-accent">
+            <h3 className="line-clamp-2 break-words font-[family-name:var(--font-display)] text-lg leading-snug tracking-wide text-foreground transition group-hover:text-accent">
               {part.title}
             </h3>
           </Link>
@@ -387,7 +387,7 @@ export function PartCard({
           ) : null}
         </div>
 
-        <p className="font-[family-name:var(--font-display)] text-xl tracking-wide text-accent">
+        <p className="min-w-0 break-words font-[family-name:var(--font-display)] text-xl tracking-wide text-accent">
           {formatLkr(part.priceLkr)}
           {part.negotiable ? (
             <span className="ml-1.5 align-middle text-xs font-sans font-normal tracking-normal text-muted">
@@ -396,7 +396,7 @@ export function PartCard({
           ) : null}
         </p>
 
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
+        <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1">
           {part.condition ? (
             <MetaBit>
               <span className="capitalize">
@@ -409,7 +409,7 @@ export function PartCard({
         </div>
 
         {part.partsDealerName ? (
-          <p className="truncate text-xs text-muted">
+          <p className="min-w-0 break-words text-xs text-muted">
             {part.partsDealerSlug ? (
               <Link
                 href={`/${locale}/parts-dealers/${part.partsDealerSlug}`}
