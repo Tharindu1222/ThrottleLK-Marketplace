@@ -379,12 +379,12 @@ function SpecCell({
   children: ReactNode;
 }) {
   return (
-    <li className="flex min-w-0 items-center gap-2 bg-white px-2.5 py-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface text-foreground/75">
+    <li className="flex min-w-0 items-center gap-1.5 bg-white px-1.5 py-1.5 sm:gap-2 sm:px-2.5 sm:py-2">
+      <span className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface text-foreground/75 sm:flex">
         {children}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-[13px] font-medium leading-tight text-foreground">
+        <span className="block truncate text-[11px] font-medium leading-tight text-foreground sm:text-[13px]">
           {value}
         </span>
         <span className="block text-[10px] tracking-wide text-muted uppercase">
@@ -498,7 +498,7 @@ export function ListingCard({
           <MarketplaceImage
             src={listing.coverImageUrl}
             alt=""
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="(max-width: 1280px) 50vw, 33vw"
             className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
             fallbackClassName="object-contain p-10 opacity-80 brightness-0"
           />
@@ -536,7 +536,7 @@ export function ListingCard({
             </span>
           </div>
         ) : (
-          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-sm bg-black/70 px-2 py-1 text-[11px] font-medium tracking-wide text-white backdrop-blur-sm">
+          <span className="absolute bottom-2 left-2 inline-flex max-w-[calc(100%-1rem)] items-center gap-1 truncate rounded-sm bg-black/70 px-1.5 py-1 text-[10px] font-medium tracking-wide text-white backdrop-blur-sm sm:bottom-3 sm:left-3 sm:max-w-[calc(100%-1.5rem)] sm:px-2 sm:text-[11px]">
             {showVerifiedIcon ? (
               <VerifiedDealerIcon className="h-3.5 w-3.5 text-emerald-500" />
             ) : null}
@@ -562,15 +562,15 @@ export function ListingCard({
       ) : null}
 
       <div
-        className={`pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col gap-2.5 px-3.5 pt-3 ${
-          footer ? 'pb-2.5' : 'pb-3.5'
+        className={`pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col gap-2 px-2.5 pt-2.5 sm:gap-2.5 sm:px-3.5 sm:pt-3 ${
+          footer ? 'pb-2.5' : 'pb-2.5 sm:pb-3.5'
         }`}
       >
         <div className="min-w-0">
-          <TitleTag className="line-clamp-2 break-words font-[family-name:var(--font-display)] text-[1.05rem] leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent">
+          <TitleTag className="line-clamp-2 break-words font-[family-name:var(--font-display)] text-sm leading-snug tracking-wide text-foreground transition duration-200 group-hover:text-accent sm:text-[1.05rem]">
             {displayTitle}
           </TitleTag>
-          <p className="mt-1 break-words font-[family-name:var(--font-display)] text-xl leading-none tracking-wide text-accent">
+          <p className="mt-1 break-words font-[family-name:var(--font-display)] text-base leading-none tracking-wide text-accent sm:text-xl">
             {formatLkr(listing.priceLkr)}
           </p>
         </div>

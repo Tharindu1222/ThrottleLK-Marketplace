@@ -117,7 +117,7 @@ function PreviewSection({
           </Link>
         </p>
       ) : (
-        <ul className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <ul className="grid min-w-0 grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">
           {children}
         </ul>
       )}

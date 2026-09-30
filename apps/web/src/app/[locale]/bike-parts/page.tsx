@@ -191,7 +191,7 @@ export default async function BikePartsPage({
               ? t(locale, 'resultCountPartsOne')
               : t(locale, 'resultCountParts').replace('{count}', String(total))}
           </p>
-          <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid w-full min-w-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
             {result.data.length === 0 ? (
               <p className="text-muted sm:col-span-2 xl:col-span-3">
                 {t(locale, 'noPartsYet')}

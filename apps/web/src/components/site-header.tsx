@@ -173,13 +173,14 @@ export function SiteHeader({
   const mobileRuleClass = dark ? 'border-white/10' : 'border-black/10';
 
   return (
-    <header
-      className={
-        dark
-          ? 'sticky top-0 z-40 max-w-full border-b border-white/10 bg-black'
-          : 'sticky top-0 z-40 max-w-full border-b border-black/10 bg-background/95'
-      }
-    >
+    <header className="h-16 sm:h-[4.25rem]">
+      <div
+        className={
+          dark
+            ? 'fixed inset-x-0 top-0 z-40 max-w-full border-b border-white/10 bg-black'
+            : 'fixed inset-x-0 top-0 z-40 max-w-full border-b border-black/10 bg-background/95'
+        }
+      >
       <div className="mx-auto flex h-16 min-w-0 max-w-7xl items-center gap-3 px-4 sm:h-[4.25rem] md:gap-4 md:px-6">
         <Link
           href={`/${locale}`}
@@ -363,8 +364,8 @@ export function SiteHeader({
           id="site-mobile-menu"
           className={
             dark
-              ? 'max-h-[calc(100dvh-4rem)] w-full max-w-full overflow-y-auto overscroll-contain border-t border-white/10 bg-black sm:max-h-[calc(100dvh-4.25rem)] md:hidden'
-              : 'max-h-[calc(100dvh-4rem)] w-full max-w-full overflow-y-auto overscroll-contain border-t border-black/10 bg-background sm:max-h-[calc(100dvh-4.25rem)] md:hidden'
+              ? 'absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-4rem)] w-full max-w-full overflow-y-auto overscroll-contain border-t border-white/10 bg-black shadow-[0_16px_40px_-20px_rgba(0,0,0,0.45)] sm:max-h-[calc(100dvh-4.25rem)] md:hidden'
+              : 'absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-4rem)] w-full max-w-full overflow-y-auto overscroll-contain border-t border-black/10 bg-background shadow-[0_16px_40px_-20px_rgba(0,0,0,0.28)] sm:max-h-[calc(100dvh-4.25rem)] md:hidden'
           }
         >
           <nav
@@ -498,6 +499,7 @@ export function SiteHeader({
           </nav>
         </div>
       ) : null}
+      </div>
     </header>
   );
 }

@@ -323,7 +323,7 @@ export function PartCard({
           <MarketplaceImage
             src={part.coverImageUrl}
             alt=""
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="(max-width: 1280px) 50vw, 33vw"
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
           />
         ) : (
@@ -371,10 +371,10 @@ export function PartCard({
         </div>
       </Link>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-2.5 sm:p-4">
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
           <Link href={cardHref} className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 break-words font-[family-name:var(--font-display)] text-lg leading-snug tracking-wide text-foreground transition group-hover:text-accent">
+            <h3 className="line-clamp-2 break-words font-[family-name:var(--font-display)] text-sm leading-snug tracking-wide text-foreground transition group-hover:text-accent sm:text-lg">
               {part.title}
             </h3>
           </Link>
@@ -387,7 +387,7 @@ export function PartCard({
           ) : null}
         </div>
 
-        <p className="min-w-0 break-words font-[family-name:var(--font-display)] text-xl tracking-wide text-accent">
+        <p className="min-w-0 break-words font-[family-name:var(--font-display)] text-base tracking-wide text-accent sm:text-xl">
           {formatLkr(part.priceLkr)}
           {part.negotiable ? (
             <span className="ml-1.5 align-middle text-xs font-sans font-normal tracking-normal text-muted">

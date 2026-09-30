@@ -102,7 +102,7 @@ export function BecomeDealerButton({
         ? createPortal(
             <div
               id={dialogId}
-              className="fixed inset-0 z-[90] flex items-end justify-center bg-black/50 p-0 backdrop-blur-[3px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-3 pt-4 pb-[max(5.5rem,env(safe-area-inset-bottom))] backdrop-blur-[3px] sm:p-4"
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
@@ -112,7 +112,7 @@ export function BecomeDealerButton({
                 if (e.target === e.currentTarget) setOpen(false);
               }}
             >
-              <div className="max-h-[90dvh] w-full max-w-[min(100vw-1.5rem,48rem)] overflow-y-auto rounded-t-2xl border border-black/10 bg-white p-5 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:rounded-2xl sm:p-6">
+              <div className="max-h-[calc(100dvh-8rem)] w-full max-w-[min(100vw-1.5rem,48rem)] overflow-y-auto overscroll-contain rounded-2xl border border-black/10 bg-white p-5 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:max-h-[90dvh] sm:p-6">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2
@@ -164,8 +164,8 @@ export function BecomeDealerButton({
                     </>
                   ) : (
                     <>
-                      <div className="aspect-[4/3] animate-pulse rounded-2xl bg-black/[0.06]" />
-                      <div className="aspect-[4/3] animate-pulse rounded-2xl bg-black/[0.06]" />
+                      <div className="aspect-[8/5] animate-pulse rounded-2xl bg-black/[0.06] sm:aspect-[4/3]" />
+                      <div className="aspect-[8/5] animate-pulse rounded-2xl bg-black/[0.06] sm:aspect-[4/3]" />
                     </>
                   )}
                 </div>
@@ -235,7 +235,7 @@ function DealerChoice({
   return (
     <Link
       href={href}
-      className="group relative isolate block aspect-[4/3] overflow-hidden rounded-2xl bg-white shadow-[0_14px_36px_-18px_rgba(15,15,15,0.35)] ring-1 ring-black/10 transition hover:ring-accent/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+      className="group relative isolate block aspect-[8/5] overflow-hidden rounded-2xl bg-white shadow-[0_14px_36px_-18px_rgba(15,15,15,0.35)] ring-1 ring-black/10 transition hover:ring-accent/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:aspect-[4/3]"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

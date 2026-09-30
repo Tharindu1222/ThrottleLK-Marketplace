@@ -655,7 +655,7 @@ export function MyListingsClient({
           </Link>
         </div>
       ) : layout === 'cards' ? (
-        <ul className="grid min-w-0 auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <ul className="grid min-w-0 auto-rows-fr grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3 2xl:grid-cols-4">
           {listings.map((listing) => {
             const busy = busyId === listing.id;
             return (

@@ -94,7 +94,7 @@ export default async function SellerProfilePage({
       >
         Active listings
       </h2>
-      <div className="mt-6 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {listings.length === 0 ? (
           <p className="text-muted sm:col-span-2 lg:col-span-3">
             No active bikes from this seller.

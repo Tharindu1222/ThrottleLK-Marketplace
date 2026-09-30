@@ -333,7 +333,7 @@ export default async function ListingDetailPage({
               </Link>
             ) : null}
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {similarRow.map((item) => (
               <ListingCard key={item.id} locale={locale} listing={item} />
             ))}
@@ -354,7 +354,7 @@ export default async function ListingDetailPage({
               {t(locale, 'seeMore')}
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {relatedSpare.map((item) => (
               <PartCard key={item.id} locale={locale} part={item} />
             ))}
@@ -375,7 +375,7 @@ export default async function ListingDetailPage({
               {t(locale, 'seeMore')}
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {relatedModified.map((item) => (
               <PartCard key={item.id} locale={locale} part={item} />
             ))}

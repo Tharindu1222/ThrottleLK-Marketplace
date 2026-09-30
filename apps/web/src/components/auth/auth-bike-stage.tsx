@@ -21,12 +21,14 @@ export function AuthBikeStage({ className = '' }: { className?: string }) {
     let cancelled = false;
     let revert: (() => void) | undefined;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const wide = window.matchMedia('(min-width: 1024px)').matches;
 
     void import('gsap').then(({ default: gsap }) => {
       if (cancelled || !rootRef.current || !bikeRef.current || !glowRef.current || !shadowRef.current) {
         return;
       }
-      if (reduced) {
+      // Stage is hidden below lg. Skip the x entrance and float so transforms never run on a phone.
+      if (reduced || !wide) {
         gsap.set([bike, glow, shadow], { opacity: 1, clearProps: 'transform' });
         return;
       }
@@ -94,7 +96,7 @@ export function AuthBikeStage({ className = '' }: { className?: string }) {
         ref={bikeRef}
         src={BIKE_SRC}
         alt=""
-        className="relative z-[1] max-h-full w-auto max-w-full object-contain drop-shadow-[0_28px_50px_rgba(0,0,0,0.55)] select-none sm:max-w-[125%] lg:max-w-[145%]"
+        className="relative z-[1] max-h-full w-auto max-w-full object-contain drop-shadow-[0_28px_50px_rgba(0,0,0,0.55)] select-none lg:max-w-[145%]"
         draggable={false}
       />
       <div

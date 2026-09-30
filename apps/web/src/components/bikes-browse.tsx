@@ -108,7 +108,7 @@ export async function BikesBrowse({
               ? t(locale, 'resultCountOne')
               : t(locale, 'resultCount').replace('{count}', String(total))}
           </p>
-          <div className="grid w-full min-w-0 auto-rows-fr grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid w-full min-w-0 auto-rows-fr grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
             {listings.length === 0 ? (
               <p className="text-muted sm:col-span-2 xl:col-span-3">
                 {emptyHint ?? t(locale, 'noListings')}

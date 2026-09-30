@@ -202,9 +202,9 @@ export default async function DealersIndexPage({
         </button>
       </form>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid min-w-0 grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-3">
         {dealers.length === 0 ? (
-          <p className="text-muted">{emptyCopy(locale, type)}</p>
+          <p className="col-span-2 text-muted lg:col-span-3">{emptyCopy(locale, type)}</p>
         ) : (
           dealers.map((dealer) => {
             const location = [dealer.city?.name, dealer.district?.name]
@@ -214,23 +214,25 @@ export default async function DealersIndexPage({
               <Link
                 key={`${dealer.kind}-${dealer.id}`}
                 href={dealerHref(locale, dealer)}
-                className="overflow-hidden bg-surface/40 ring-1 ring-black/10 transition hover:ring-accent/40"
+                className="min-w-0 overflow-hidden bg-surface/40 ring-1 ring-black/10 transition hover:ring-accent/40"
               >
-                {dealer.coverImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={dealer.coverImageUrl}
-                    alt={dealer.name}
-                    className="aspect-[16/10] w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-[16/10] items-center justify-center bg-background/50 text-sm text-muted">
-                    No photo
-                  </div>
-                )}
-                <div className="p-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-xl font-bold tracking-tight text-foreground">
+                <div className="relative aspect-[16/10] w-full overflow-hidden bg-background/50">
+                  {dealer.coverImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={dealer.coverImageUrl}
+                      alt={dealer.name}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center px-2 text-center text-xs text-muted sm:text-sm">
+                      No photo
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 sm:p-5">
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
+                    <h2 className="min-w-0 break-words text-base font-bold tracking-tight text-foreground sm:text-xl">
                       {dealer.name}
                     </h2>
                     {dealer.verifiedAt ? (
@@ -243,10 +245,10 @@ export default async function DealersIndexPage({
                     </span>
                   </div>
                   {location ? (
-                    <p className="mt-2 text-sm text-muted">{location}</p>
+                    <p className="mt-2 break-words text-xs text-muted sm:text-sm">{location}</p>
                   ) : null}
                   {dealer.address ? (
-                    <p className="mt-1 text-sm text-muted">{dealer.address}</p>
+                    <p className="mt-1 break-words text-xs text-muted sm:text-sm">{dealer.address}</p>
                   ) : null}
                 </div>
               </Link>

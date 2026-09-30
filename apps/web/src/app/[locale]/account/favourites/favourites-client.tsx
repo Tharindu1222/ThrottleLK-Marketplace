@@ -162,7 +162,7 @@ export function FavouritesClient({ locale }: { locale: Locale }) {
 
       <div
         aria-busy={loading}
-        className={`grid min-w-0 auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3 ${
+        className={`grid min-w-0 auto-rows-fr grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 ${
           loading ? 'pointer-events-none opacity-60' : ''
         }`}
       >

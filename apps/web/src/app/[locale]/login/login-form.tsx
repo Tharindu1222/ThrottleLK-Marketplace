@@ -2,11 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
-import {
-  authFieldClass,
-  authPrimaryBtnClass,
-  authSecondaryBtnClass,
-} from '@/components/auth/auth-shell';
+import { authFieldClass, authPrimaryBtnClass } from '@/components/auth/auth-shell';
 import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
@@ -57,7 +53,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
+    <form onSubmit={onSubmit} className="grid gap-3">
       <label className="grid gap-1.5">
         <span className="text-sm font-medium">{t(locale, 'email')}</span>
         <div className="relative">
@@ -118,14 +114,9 @@ export function LoginForm({ locale }: { locale: Locale }) {
         </Link>
       </p>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button type="submit" disabled={busy} className={authPrimaryBtnClass}>
-          {busy ? '…' : t(locale, 'login').toUpperCase()}
-        </button>
-        <Link href={registerHref} className={authSecondaryBtnClass}>
-          {t(locale, 'register').toUpperCase()}
-        </Link>
-      </div>
+      <button type="submit" disabled={busy} className={authPrimaryBtnClass}>
+        {busy ? '…' : t(locale, 'login').toUpperCase()}
+      </button>
 
       {error ? (
         <p className="text-center text-sm text-accent" role="alert">
