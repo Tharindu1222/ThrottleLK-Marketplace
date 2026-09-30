@@ -25,7 +25,7 @@ export function HomeHero({
   const popular = pickPopularHomeBrands(brands);
 
   return (
-    <section className={`${homeHeroSectionClass()} min-w-0 max-w-full`}>
+    <section className={`${homeHeroSectionClass()} min-w-0 max-w-full max-lg:min-h-[calc(100svh-4.25rem)]`}>
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       <div
         aria-hidden
@@ -54,7 +54,7 @@ export function HomeHero({
 
       <div className="relative z-10 mx-auto grid w-full min-w-0 max-w-[1360px] gap-6 px-5 pt-8 pb-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-stretch lg:gap-x-8 lg:gap-y-6 lg:px-10 lg:pt-10 lg:pb-12 xl:px-12">
         <div className="relative z-20 order-1 flex min-w-0 w-full flex-col justify-center">
-            <p className="flex w-full min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold tracking-[0.16em] text-white/65 uppercase">
+            <p className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-xs font-semibold tracking-[0.16em] text-white/65 uppercase lg:justify-start lg:text-left">
               <span
                 aria-hidden
                 className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
@@ -64,7 +64,7 @@ export function HomeHero({
               </span>
             </p>
             <h1 className={homeHeroHeadingClass(locale)}>
-              <span className="block">{t(locale, 'homeHeroLine1')}</span>
+              <span className="inline lg:block">{t(locale, 'homeHeroLine1')}</span>{' '}
               <span className="text-accent">{t(locale, 'homeHeroAccent')}</span>
             </h1>
             <p className={homeHeroSupportClass()}>

@@ -23,7 +23,7 @@ export function HomeHeroShowcase({ locale }: { locale: Locale }) {
   if (!current) return null;
 
   return (
-    <div className="relative isolate h-[280px] w-full max-w-full overflow-hidden sm:h-[360px] lg:h-[440px] lg:overflow-visible">
+    <div className="relative isolate h-[420px] w-full max-w-full overflow-hidden sm:h-[520px] lg:h-[440px] lg:overflow-visible">
       <div
         aria-hidden
         className="absolute bottom-[8%] left-[8%] h-32 w-[80%] rounded-full bg-white/14 blur-3xl"
