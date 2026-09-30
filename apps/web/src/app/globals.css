@@ -44,8 +44,8 @@ html[lang='si'] body {
   font-family: var(--font-si), var(--font-dm), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Sign-in art only when the window is both wide and tall enough to show it. */
-@media (max-width: 1023px), (max-height: 860px) {
+/* Sign-in art on desktop widths. Phone and tablet keep the red / gray / white bars. */
+@media (max-width: 1023px) {
   .auth-desktop-stage {
     display: none !important;
   }
