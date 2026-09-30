@@ -84,6 +84,11 @@ const titles: Record<
     subtitle: 'Promo requests, placements, and packages',
     placeholder: 'Search promotions…',
   },
+  monetize: {
+    title: 'Monetize',
+    subtitle: 'Promotion revenue, balances, and who paid',
+    placeholder: 'Search revenue…',
+  },
   audit: {
     title: 'Audit log',
     subtitle: 'Admin action history',

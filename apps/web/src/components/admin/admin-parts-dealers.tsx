@@ -274,6 +274,25 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
     }
   }
 
+  async function onToggleVerified(row: AdminPartsDealerRow) {
+    if (!token || row.status !== 'active') return;
+    const next = !row.verifiedAt;
+    setBusy(true);
+    setError(null);
+    try {
+      await apiSend(`/api/v1/admin/parts-dealers/${row.id}`, {
+        method: 'PATCH',
+        token,
+        body: { verified: next },
+      });
+      await loadList(token, statusFilter, search, page);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification update failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!token) return null;
 
   return (
@@ -317,6 +336,7 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
                 <th className="px-4 py-3 font-medium">Location</th>
                 <th className="px-4 py-3 font-medium">Parts</th>
                 <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Verified</th>
                 <th className="px-4 py-3 font-medium">Updated</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
@@ -325,7 +345,7 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-10 text-center text-[var(--admin-muted)]"
                   >
                     No dealer shops found.
@@ -405,6 +425,36 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(row.verifiedAt)}
+                      aria-label={
+                        row.verifiedAt
+                          ? `Turn off verification for ${row.name}`
+                          : `Verify ${row.name}`
+                      }
+                      title={
+                        row.status === 'active'
+                          ? undefined
+                          : 'Set the shop to active before verifying'
+                      }
+                      disabled={busy || row.status !== 'active'}
+                      onClick={() => void onToggleVerified(row)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                        row.verifiedAt
+                          ? 'bg-[var(--admin-success)]'
+                          : 'bg-[var(--admin-surface-2)] ring-1 ring-[var(--admin-border-strong)]'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${
+                          row.verifiedAt ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
                     {new Date(row.updatedAt).toLocaleDateString()}

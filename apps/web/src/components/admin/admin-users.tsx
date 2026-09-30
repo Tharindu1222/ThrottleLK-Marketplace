@@ -178,6 +178,41 @@ export function AdminUsers({ search = '' }: { search?: string }) {
     }
   }
 
+  async function onToggleVerified(user: AdminUser) {
+    if (!token) return;
+    const next = !user.emailVerifiedAt;
+    setUsers((rows) =>
+      rows.map((row) =>
+        row.id === user.id
+          ? {
+              ...row,
+              emailVerifiedAt: next ? new Date().toISOString() : null,
+            }
+          : row,
+      ),
+    );
+    setBusy(true);
+    setError(null);
+    try {
+      await apiSend(`/api/v1/admin/users/${user.id}`, {
+        method: 'PATCH',
+        token,
+        body: { emailVerified: next },
+      });
+    } catch (err) {
+      setUsers((rows) =>
+        rows.map((row) =>
+          row.id === user.id
+            ? { ...row, emailVerifiedAt: user.emailVerifiedAt ?? null }
+            : row,
+        ),
+      );
+      setError(err instanceof Error ? err.message : 'Verification update failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onQuickStatus(id: string, status: 'active' | 'suspended') {
     if (!token) return;
     setBusy(true);
@@ -225,6 +260,7 @@ export function AdminUsers({ search = '' }: { search?: string }) {
                 <th className="px-4 py-3 font-medium">Phone</th>
                 <th className="px-4 py-3 font-medium">Roles</th>
                 <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Verified</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -232,7 +268,7 @@ export function AdminUsers({ search = '' }: { search?: string }) {
               {users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-10 text-center text-[var(--admin-muted)]"
                   >
                     No users match your search.
@@ -289,6 +325,31 @@ export function AdminUsers({ search = '' }: { search?: string }) {
                         suspended
                       </option>
                     </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(user.emailVerifiedAt)}
+                      aria-label={
+                        user.emailVerifiedAt
+                          ? `Turn off email verification for ${user.firstName} ${user.lastName}`
+                          : `Verify ${user.firstName} ${user.lastName}`
+                      }
+                      disabled={busy}
+                      onClick={() => void onToggleVerified(user)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                        user.emailVerifiedAt
+                          ? 'bg-[var(--admin-success)]'
+                          : 'bg-[var(--admin-surface-2)] ring-1 ring-[var(--admin-border-strong)]'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${
+                          user.emailVerifiedAt ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">

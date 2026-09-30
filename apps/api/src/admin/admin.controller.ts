@@ -123,12 +123,14 @@ export class AdminController {
   async allListings(
     @Query('status') status?: string,
     @Query('q') q?: string,
+    @Query('dealerId') dealerId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
     const { items, meta } = await this.listingsService.listAllAdmin({
       status,
       q,
+      dealerId,
       page,
       limit,
     });

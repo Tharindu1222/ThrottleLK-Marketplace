@@ -5,7 +5,6 @@ import { ListingsModule } from '../listings/listings.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PartListing } from '../part-listings/part-listing.entity';
 import { PartListingsModule } from '../part-listings/part-listings.module';
-import { StorageModule } from '../storage/storage.module';
 import { AdminPromotionsController } from './admin-promotions.controller';
 import { HomeController } from './home.controller';
 import { HomepagePlacement } from './homepage-placement.entity';
@@ -31,7 +30,6 @@ import { PromotionsService } from './promotions.service';
     ListingsModule,
     PartListingsModule,
     NotificationsModule,
-    StorageModule,
   ],
   controllers: [
     PromotionsController,

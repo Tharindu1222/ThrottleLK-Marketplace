@@ -130,3 +130,38 @@ describe('UsersService.updateProfile', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
+
+describe('UsersService.adminUpdate email verification', () => {
+  it('turns email verification on and off', async () => {
+    const user = {
+      id: 'user-1',
+      firstName: 'A',
+      lastName: 'B',
+      email: 'a@b.com',
+      phone: null,
+      avatarUrl: null,
+      roles: [{ name: 'buyer' }],
+      status: 'active',
+      emailVerifiedAt: null,
+      createdAt: new Date(),
+    } as unknown as User;
+    const users = {
+      findOne: jest.fn(async () => user),
+      save: jest.fn(async (saved: User) => saved),
+    };
+    const service = new UsersService(
+      users as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+
+    const verified = await service.adminUpdate('user-1', { emailVerified: true });
+    expect(verified.emailVerifiedAt).toBeInstanceOf(Date);
+    const cleared = await service.adminUpdate('user-1', { emailVerified: false });
+    expect(cleared.emailVerifiedAt).toBeNull();
+  });
+});

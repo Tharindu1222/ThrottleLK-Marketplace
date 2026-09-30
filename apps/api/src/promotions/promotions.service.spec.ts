@@ -88,14 +88,6 @@ function makeService(overrides?: {
   const partListings = {
     findOne: jest.fn(async (_query?: unknown) => overrides?.partListing ?? null),
   };
-  const storage = {
-    putObject: jest.fn(async () => ({ storageKey: 'k', publicUrl: 'u' })),
-    deleteObject: jest.fn(async () => undefined),
-    getObject: jest.fn(async () => ({
-      buffer: Buffer.from('x'),
-      contentType: 'application/pdf',
-    })),
-  };
   const notifications = {
     promoApproved: jest.fn(async () => undefined),
     promoRejected: jest.fn(async () => undefined),
@@ -124,6 +116,7 @@ function makeService(overrides?: {
     ),
     webUrl: jest.fn(() => 'http://localhost:3000'),
     formatAmount: jest.fn((n: number) => Number(n).toFixed(2)),
+    normalizePhone: jest.fn((phone: string | null | undefined) => phone || ''),
     buildCheckoutHash: jest.fn(() => 'CHECKOUT_HASH'),
     buildNotifyHash: jest.fn(() => 'NOTIFY_HASH'),
     verifyNotifyHash: jest.fn(() => true),
@@ -185,7 +178,6 @@ function makeService(overrides?: {
     partListings as never,
     listingsService as never,
     partListingsService as never,
-    storage as never,
     notifications as never,
     cache as never,
     payhere as never,
@@ -199,85 +191,12 @@ function makeService(overrides?: {
     packages,
     accounts,
     listings,
-    storage,
     notifications,
     payhere,
     listing,
     pkg,
   };
 }
-
-describe('PromotionsService.createRequest', () => {
-  const file = {
-    mimetype: 'application/pdf',
-    size: 1000,
-    originalname: 'slip.pdf',
-    buffer: Buffer.from('%PDF-1.4'),
-  } as Express.Multer.File;
-
-  it('creates a pending request when listing is active and no live placement exists', async () => {
-    const { service, requests } = makeService();
-    const result = await service.createRequest(
-      seller,
-      { packageId: 'pkg-1', listingId: 'listing-1' },
-      file,
-    );
-    expect(result.status).toBe('pending');
-    expect(requests.save).toHaveBeenCalled();
-  });
-
-  it('rejects a second request while one is pending', async () => {
-    const { service } = makeService({
-      pending: { id: 'req-old', status: 'pending', sellerId: 'other' },
-    });
-    await expect(
-      service.createRequest(
-        seller,
-        { packageId: 'pkg-1', listingId: 'listing-1' },
-        file,
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException);
-  });
-
-  it('rejects when a live placement exists', async () => {
-    const { service } = makeService({
-      live: { id: 'p1', endsAt: new Date(Date.now() + 86_400_000) },
-    });
-    await expect(
-      service.createRequest(
-        seller,
-        { packageId: 'pkg-1', listingId: 'listing-1' },
-        file,
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException);
-  });
-
-  it('rejects an unverified seller', async () => {
-    const { service, requests } = makeService();
-    await expect(
-      service.createRequest(
-        { id: 'seller-1', emailVerifiedAt: null } as User,
-        { packageId: 'pkg-1', listingId: 'listing-1' },
-        file,
-      ),
-    ).rejects.toMatchObject({
-      response: { error: { code: 'EMAIL_UNVERIFIED' } },
-    });
-    expect(requests.save).not.toHaveBeenCalled();
-  });
-
-  it('rejects when there is no default bank account', async () => {
-    const { service, accounts } = makeService();
-    accounts.findOne.mockResolvedValueOnce(null as never);
-    await expect(
-      service.createRequest(
-        seller,
-        { packageId: 'pkg-1', listingId: 'listing-1' },
-        file,
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException);
-  });
-});
 
 describe('PromotionsService.createCheckout', () => {
   it('creates a payhere pending request and returns checkout fields', async () => {
@@ -292,8 +211,10 @@ describe('PromotionsService.createCheckout', () => {
       paymentProvider: string;
       paymentStatus: string;
       payhereOrderId: string;
+      chargedPriceLkr: number;
     };
     expect(saved.paymentProvider).toBe('payhere');
+    expect(saved.chargedPriceLkr).toBe(2500);
     expect(saved.paymentStatus).toBe('unpaid');
     expect(saved.payhereOrderId).toMatch(/^promo_/);
     expect(result.checkoutUrl).toBe('https://sandbox.payhere.lk/pay/checkout');
@@ -336,7 +257,7 @@ describe('PromotionsService.createCheckout', () => {
 });
 
 describe('PromotionsService.handlePayHereNotify', () => {
-  it('activates on status_code 2 and is idempotent on repeat', async () => {
+  it('marks paid on status_code 2 and waits for admin approval', async () => {
     const { service, requests, placements, notifications, payhere } =
       makeService();
     const pendingRow = {
@@ -381,14 +302,23 @@ describe('PromotionsService.handlePayHereNotify', () => {
       custom_1: 'req-1',
     });
     expect(first).toBe('OK');
-    expect(placements.save).toHaveBeenCalled();
-    expect(notifications.promoApproved).toHaveBeenCalled();
+    expect(placements.save).not.toHaveBeenCalled();
+    expect(notifications.promoApproved).not.toHaveBeenCalled();
+    const saved = requests.save.mock.calls[0][0] as {
+      status: string;
+      paymentStatus: string;
+      payherePaymentId: string;
+    };
+    expect(saved.status).toBe('pending');
+    expect(saved.paymentStatus).toBe('paid');
+    expect(saved.payherePaymentId).toBe('ph-1');
 
     notifications.promoApproved.mockClear();
     placements.save.mockClear();
+    requests.save.mockClear();
     requests.findOne.mockResolvedValue({
       ...pendingRow,
-      status: 'approved',
+      status: 'pending',
       paymentStatus: 'paid',
     } as never);
     const second = await service.handlePayHereNotify({
@@ -404,6 +334,7 @@ describe('PromotionsService.handlePayHereNotify', () => {
     expect(second).toBe('OK');
     expect(notifications.promoApproved).not.toHaveBeenCalled();
     expect(placements.save).not.toHaveBeenCalled();
+    expect(requests.save).not.toHaveBeenCalled();
   });
 
   it('marks payment failed on status_code -2', async () => {
@@ -443,6 +374,7 @@ describe('PromotionsService.approve', () => {
       subjectType: 'bike',
       listingId: 'listing-1',
       partListingId: null,
+      paymentStatus: 'paid',
       package: {
         durationDays: 7,
         name: '7 days',
@@ -477,6 +409,7 @@ describe('PromotionsService.approve', () => {
       subjectType: 'bike',
       listingId: 'listing-1',
       partListingId: null,
+      paymentStatus: 'paid',
       package: {
         durationDays: 7,
         tier: 'featured',

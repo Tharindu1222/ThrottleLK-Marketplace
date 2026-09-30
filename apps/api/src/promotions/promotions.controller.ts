@@ -5,29 +5,18 @@ import {
   Get,
   Header,
   HttpCode,
-  Param,
-  Patch,
   Post,
   Query,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import type { ApiSuccess } from '@throttlelk/types';
 import type { CreatePromoCheckoutInput } from '@throttlelk/validation';
-import {
-  createPromoCheckoutSchema,
-  createPromoRequestMetaSchema,
-} from '@throttlelk/validation';
+import { createPromoCheckoutSchema } from '@throttlelk/validation';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
 import { PromotionsService } from './promotions.service';
-import { SLIP_MAX_BYTES } from './promotions.util';
 import type { PromoSubjectType } from './promo-package.entity';
 
 @Controller('promotions')
@@ -114,61 +103,5 @@ export class PromotionsController {
     @Body() body: Record<string, string>,
   ): Promise<string> {
     return this.promotions.handlePayHereNotify(body ?? {});
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @RateLimit('upload')
-  @Post('requests')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: { fileSize: SLIP_MAX_BYTES },
-    }),
-  )
-  async create(
-    @CurrentUser() user: User,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: Record<string, string>,
-  ): Promise<ApiSuccess<unknown>> {
-    const parsed = createPromoRequestMetaSchema.safeParse({
-      packageId: body.packageId,
-      listingId: body.listingId || undefined,
-      partListingId: body.partListingId || undefined,
-    });
-    if (!parsed.success) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Request validation failed',
-          details: parsed.error.flatten(),
-        },
-      });
-    }
-    const meta = parsed.data;
-    return {
-      success: true,
-      data: await this.promotions.createRequest(user, meta, file),
-    };
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @RateLimit('upload')
-  @Patch('requests/:id/slip')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: { fileSize: SLIP_MAX_BYTES },
-    }),
-  )
-  async replaceSlip(
-    @CurrentUser() user: User,
-    @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<ApiSuccess<unknown>> {
-    return {
-      success: true,
-      data: await this.promotions.replaceSlip(user, id, file),
-    };
   }
 }

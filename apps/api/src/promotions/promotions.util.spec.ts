@@ -1,10 +1,8 @@
 import {
   addUtcDays,
-  assertSlipFile,
   buildPreviewIds,
   interleaveIds,
   normalizeWhatsappDigits,
-  SLIP_MAX_BYTES,
 } from './promotions.util';
 
 describe('buildPreviewIds', () => {
@@ -26,33 +24,6 @@ describe('interleaveIds', () => {
 
   it('keeps the second list when the first is empty', () => {
     expect(interleaveIds([], ['m1', 'm2'], 4)).toEqual(['m1', 'm2']);
-  });
-});
-
-describe('assertSlipFile', () => {
-  it('rejects missing files', () => {
-    expect(() => assertSlipFile(undefined)).toThrow('FILE_REQUIRED');
-  });
-
-  it('rejects disallowed types', () => {
-    expect(() =>
-      assertSlipFile({ mimetype: 'application/msword', size: 100 }),
-    ).toThrow('INVALID_TYPE');
-  });
-
-  it('rejects files over 5MB', () => {
-    expect(() =>
-      assertSlipFile({ mimetype: 'application/pdf', size: SLIP_MAX_BYTES + 1 }),
-    ).toThrow('FILE_TOO_LARGE');
-  });
-
-  it('accepts jpeg and pdf slips', () => {
-    expect(() =>
-      assertSlipFile({ mimetype: 'image/jpeg', size: 1000 }),
-    ).not.toThrow();
-    expect(() =>
-      assertSlipFile({ mimetype: 'application/pdf', size: 1000 }),
-    ).not.toThrow();
   });
 });
 

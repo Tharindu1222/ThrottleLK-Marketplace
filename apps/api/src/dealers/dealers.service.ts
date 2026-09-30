@@ -346,7 +346,43 @@ export class DealersService {
         error: { code: 'DEALER_NOT_FOUND', message: 'Dealer not found' },
       });
     }
-    return this.toAdminDealer(this.withCover(dealer));
+    const covered = this.toAdminDealer(this.withCover(dealer));
+    const counts = await this.listingCountsByDealerId([dealer.id]);
+    const byStatusRows: Array<{ status: string; count: string }> =
+      await this.listings
+        .createQueryBuilder('l')
+        .select('l.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .where('l.dealer_id = :id', { id: dealer.id })
+        .groupBy('l.status')
+        .getRawMany();
+    const listingsByStatus: Record<string, number> = {};
+    for (const row of byStatusRows) {
+      listingsByStatus[row.status] = Number(row.count);
+    }
+    return {
+      ...covered,
+      listingsCount: counts.get(dealer.id) ?? 0,
+      listingsByStatus,
+    };
+  }
+
+  private async listingCountsByDealerId(
+    dealerIds: string[],
+  ): Promise<Map<string, number>> {
+    const map = new Map<string, number>();
+    if (dealerIds.length === 0) return map;
+    const rows: Array<{ dealerId: string; count: string }> = await this.listings
+      .createQueryBuilder('l')
+      .select('l.dealer_id', 'dealerId')
+      .addSelect('COUNT(*)', 'count')
+      .where('l.dealer_id IN (:...dealerIds)', { dealerIds })
+      .groupBy('l.dealer_id')
+      .getRawMany();
+    for (const row of rows) {
+      map.set(row.dealerId, Number(row.count));
+    }
+    return map;
   }
 
   private toAdminDealer(dealer: Dealer & { coverImageUrl: string | null }) {

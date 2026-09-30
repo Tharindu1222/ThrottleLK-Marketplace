@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useId, useState } from 'react';
-import { apiBlob, apiGet, apiSend } from '@/lib/api';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
-import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type Tab = 'requests' | 'live' | 'settings';
 
@@ -56,20 +57,59 @@ type BankRow = {
   isActive: boolean;
 };
 
+type RequestListing = {
+  id: string;
+  title: string;
+  slug?: string;
+  priceLkr?: number;
+  status?: string;
+  manufactureYear?: number;
+  condition?: string;
+  coverImageUrl?: string | null;
+  brand?: { name: string } | null;
+  model?: { name: string } | null;
+  city?: { name: string } | null;
+  district?: { name: string } | null;
+};
+
+type RequestPart = {
+  id: string;
+  title: string;
+  slug?: string;
+  kind?: string;
+  priceLkr?: number;
+  status?: string;
+  condition?: string;
+  coverImageUrl?: string | null;
+  category?: { name: string } | null;
+  city?: { name: string } | null;
+  district?: { name: string } | null;
+};
+
 type RequestRow = {
   id: string;
   subjectType: string;
   status: string;
   createdAt: string;
+  chargedPriceLkr?: number | null;
   rejectionReason?: string | null;
-  slipContentType?: string | null;
   paymentProvider?: string | null;
   paymentStatus?: string | null;
   package?: { name: string; priceLkr: number; durationDays: number };
   seller?: { email: string; firstName: string; lastName: string };
-  listing?: { id: string; title: string } | null;
-  partListing?: { id: string; title: string } | null;
+  listing?: RequestListing | null;
+  partListing?: RequestPart | null;
 };
+
+function listingViewHref(locale: string, row: RequestRow) {
+  if (row.listing?.slug) return `/${locale}/bikes/${row.listing.slug}`;
+  if (row.partListing?.slug) {
+    return row.partListing.kind === 'modified'
+      ? `/${locale}/modified-parts/${row.partListing.slug}`
+      : `/${locale}/spare-parts/${row.partListing.slug}`;
+  }
+  return null;
+}
 
 type PlacementRow = {
   id: string;
@@ -93,6 +133,7 @@ const btnDanger =
   'inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-[var(--admin-danger)] hover:bg-[var(--admin-danger)]/10 disabled:opacity-50';
 
 export function AdminHomepageAds() {
+  const params = useParams<{ locale: string }>();
   const [tab, setTab] = useState<Tab>('requests');
   const [error, setError] = useState<string | null>(null);
   const [requests, setRequests] = useState<RequestRow[]>([]);
@@ -100,9 +141,6 @@ export function AdminHomepageAds() {
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [banks, setBanks] = useState<BankRow[]>([]);
   const [whatsapp, setWhatsapp] = useState('');
-  const [slipUrl, setSlipUrl] = useState<string | null>(null);
-  const slipDialogId = `admin-homepage-ad-slip-${useId().replace(/:/g, '')}`;
-  useDialogFocusTrap(Boolean(slipUrl), slipDialogId);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -164,21 +202,6 @@ export function AdminHomepageAds() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  async function viewSlip(id: string, contentType?: string) {
-    const access = token();
-    if (!access) return;
-    const blob = await apiBlob(
-      `/api/v1/admin/promotions/requests/${id}/slip`,
-      access,
-    );
-    const url = URL.createObjectURL(blob);
-    if (contentType === 'application/pdf') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    setSlipUrl(url);
-  }
 
   async function approve(id: string) {
     const access = token();
@@ -334,7 +357,9 @@ export function AdminHomepageAds() {
     await load();
   }
 
-  const pending = requests.filter((row) => row.status === 'pending');
+  const pending = requests.filter(
+    (row) => row.status === 'pending' && row.paymentStatus === 'paid',
+  );
 
   const tabs: { id: Tab; label: string }[] = [
     {
@@ -372,6 +397,12 @@ export function AdminHomepageAds() {
             </button>
           );
         })}
+        <Link
+          href={`/${params.locale}/admin/monetize`}
+          className="rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--admin-muted)] transition hover:bg-[var(--admin-surface-2)] hover:text-[var(--admin-text)]"
+        >
+          Monetize
+        </Link>
       </div>
 
       {error ? (
@@ -388,38 +419,87 @@ export function AdminHomepageAds() {
                 No pending requests
               </p>
               <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                When sellers submit promo payment slips, they appear here.
+                Paid PayHere promotions waiting for approval appear here.
               </p>
             </div>
           ) : null}
           {pending.map((row) => {
-            const title = row.listing?.title ?? row.partListing?.title ?? 'Listing';
+            const subject = row.partListing ?? row.listing;
+            const title = subject?.title ?? 'Listing';
+            const cover = subject?.coverImageUrl;
+            const viewHref = listingViewHref(params.locale, row);
+            const place = [subject?.city?.name, subject?.district?.name]
+              .filter(Boolean)
+              .join(', ');
+            const bikeBits = [
+              row.listing?.brand?.name,
+              row.listing?.model?.name,
+              row.listing?.manufactureYear
+                ? String(row.listing.manufactureYear)
+                : null,
+            ].filter(Boolean);
+            const partBits = [
+              row.partListing?.kind === 'modified' ? 'Modified' : row.partListing ? 'Spare' : null,
+              row.partListing?.category?.name,
+              row.partListing?.condition,
+            ].filter(Boolean);
+            const detailBits = [
+              ...(row.partListing ? partBits : bikeBits),
+              place || null,
+              subject?.priceLkr != null
+                ? `Rs. ${subject.priceLkr.toLocaleString('en-LK')}`
+                : null,
+            ].filter(Boolean);
+            const charged = row.chargedPriceLkr ?? row.package?.priceLkr;
             return (
               <article key={row.id} className="admin-card p-4">
-                <p className="text-sm font-medium text-[var(--admin-text)]">
-                  {title}{' '}
-                  <span className="text-[var(--admin-muted)]">
-                    · {row.subjectType} · {row.package?.name} · Rs.{' '}
-                    {row.package?.priceLkr.toLocaleString('en-LK')}
-                  </span>
-                </p>
-                <p className="mt-1 text-xs text-[var(--admin-muted)]">
-                  {row.seller?.firstName} {row.seller?.lastName} · {row.seller?.email}
-                  {row.paymentProvider
-                    ? ` · ${row.paymentProvider}${
-                        row.paymentStatus ? ` (${row.paymentStatus})` : ''
-                      }`
-                    : ''}
-                </p>
+                <div className="flex gap-4">
+                  <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)]">
+                    {cover ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={cover}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[var(--admin-faint)]">
+                        No photo
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[var(--admin-text)]">
+                      {title}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                      {detailBits.join(' · ') || row.subjectType}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                      {row.package?.name}
+                      {row.package?.durationDays
+                        ? ` · ${row.package.durationDays} days`
+                        : ''}
+                      {charged != null
+                        ? ` · Rs. ${charged.toLocaleString('en-LK')}`
+                        : ''}
+                      {' · Paid'}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--admin-faint)]">
+                      {row.seller?.firstName} {row.seller?.lastName} · {row.seller?.email}
+                    </p>
+                  </div>
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {row.slipContentType ? (
-                    <button
-                      type="button"
+                  {viewHref ? (
+                    <Link
+                      href={viewHref}
                       className={btnGhost}
-                      onClick={() => void viewSlip(row.id, row.slipContentType ?? undefined)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      View slip
-                    </button>
+                      View
+                    </Link>
                   ) : null}
                   <button
                     type="button"
@@ -791,30 +871,6 @@ export function AdminHomepageAds() {
               </button>
             </div>
           </section>
-        </div>
-      ) : null}
-
-      {slipUrl ? (
-        <div
-          id={slipDialogId}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Payment slip"
-          tabIndex={-1}
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-3 sm:p-6"
-        >
-          <button
-            type="button"
-            className="absolute inset-0"
-            aria-label="Close slip"
-            onClick={() => setSlipUrl(null)}
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slipUrl}
-            alt="Payment slip"
-            className="relative z-10 max-h-[90dvh] max-w-[min(100vw-1.5rem,90vw)] rounded-lg object-contain"
-          />
         </div>
       ) : null}
     </div>

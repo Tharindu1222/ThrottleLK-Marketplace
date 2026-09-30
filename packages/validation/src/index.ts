@@ -493,24 +493,6 @@ export const updatePromoSettingsSchema = z.object({
   whatsapp: z.string().trim().max(20).optional().nullable(),
 });
 
-export const createPromoRequestMetaSchema = z
-  .object({
-    packageId: z.string().uuid(),
-    listingId: z.string().uuid().optional(),
-    partListingId: z.string().uuid().optional(),
-  })
-  .superRefine((data, ctx) => {
-    const hasListing = Boolean(data.listingId);
-    const hasPart = Boolean(data.partListingId);
-    if (hasListing === hasPart) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Provide exactly one of listingId or partListingId',
-        path: ['listingId'],
-      });
-    }
-  });
-
 export const createPromoCheckoutSchema = z
   .object({
     packageId: z.string().uuid(),
@@ -596,6 +578,7 @@ export const adminUpdateUserSchema = z.object({
   password: z.string().min(8).max(128).optional(),
   roles: z.array(userRoleNameSchema).min(1).optional(),
   status: z.enum(['active', 'suspended']).optional(),
+  emailVerified: z.boolean().optional(),
 });
 
 export const adminCreateListingSchema = createListingSchema.extend({
@@ -701,9 +684,6 @@ export type UpdatePromoBankAccountInput = z.infer<
   typeof updatePromoBankAccountSchema
 >;
 export type UpdatePromoSettingsInput = z.infer<typeof updatePromoSettingsSchema>;
-export type CreatePromoRequestMetaInput = z.infer<
-  typeof createPromoRequestMetaSchema
->;
 export type CreatePromoCheckoutInput = z.infer<typeof createPromoCheckoutSchema>;
 export type RejectPromoRequestInput = z.infer<typeof rejectPromoRequestSchema>;
 export type AdminPlaceHomepageInput = z.infer<typeof adminPlaceHomepageSchema>;

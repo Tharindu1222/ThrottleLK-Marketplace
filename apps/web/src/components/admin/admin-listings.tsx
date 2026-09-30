@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminUser, Brand, District } from '@/lib/admin-types';
@@ -104,7 +104,9 @@ function statusTone(status: string) {
 
 export function AdminListings({ search = '' }: { search?: string }) {
   const params = useParams();
+  const urlSearchParams = useSearchParams();
   const locale = typeof params.locale === 'string' ? params.locale : 'en';
+  const dealerId = urlSearchParams.get('dealerId') ?? '';
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<ListingRow[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -144,6 +146,7 @@ export function AdminListings({ search = '' }: { search?: string }) {
         searchParams: {
           status: status || undefined,
           q: q || undefined,
+          dealerId: dealerId || undefined,
           page: String(pageNum),
           limit: '20',
         },
@@ -196,14 +199,14 @@ export function AdminListings({ search = '' }: { search?: string }) {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, dealerId]);
 
   useEffect(() => {
     if (!token) return;
     void loadList(token, statusFilter, search, page).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to filter'),
     );
-  }, [token, statusFilter, search, page]);
+  }, [token, statusFilter, search, page, dealerId]);
 
   useEffect(() => {
     if (!form.brandId) {

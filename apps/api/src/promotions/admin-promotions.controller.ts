@@ -6,10 +6,8 @@ import {
   Patch,
   Post,
   Query,
-  Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
   adminPlaceHomepageSchema,
@@ -36,6 +34,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
+import type { MonetizeRange } from './promo-ledger';
 import { PromotionsService } from './promotions.service';
 import type { PromoSubjectType } from './promo-package.entity';
 
@@ -104,20 +103,18 @@ export class AdminPromotionsController {
     return { success: true, data: await this.promotions.updateSettings(body) };
   }
 
+  @Get('monetize')
+  async monetize(@Query('range') range?: string): Promise<ApiSuccess<unknown>> {
+    const allowed: MonetizeRange =
+      range === 'month' || range === '30d' ? range : 'all';
+    return { success: true, data: await this.promotions.monetize(allowed) };
+  }
+
   @Get('requests')
   async requests(
     @Query('status') status?: string,
   ): Promise<ApiSuccess<unknown>> {
     return { success: true, data: await this.promotions.listRequests(status) };
-  }
-
-  @Get('requests/:id/slip')
-  async slip(@Param('id') id: string, @Res() res: Response) {
-    const { buffer, contentType, filename } = await this.promotions.getSlip(id);
-    const safe = filename.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80) || 'slip';
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${safe}"`);
-    res.send(buffer);
   }
 
   @Post('requests/:id/approve')

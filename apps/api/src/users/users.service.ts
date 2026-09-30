@@ -114,6 +114,11 @@ export class UsersService {
     if (input.lastName) user.lastName = input.lastName;
     if (input.phone !== undefined) user.phone = input.phone;
     if (input.status) user.status = input.status;
+    if (input.emailVerified === true) {
+      user.emailVerifiedAt = user.emailVerifiedAt ?? new Date();
+    } else if (input.emailVerified === false) {
+      user.emailVerifiedAt = null;
+    }
     if (input.password) {
       user.passwordHash = await hashPassword(input.password);
       await this.revokeRefreshSessions(user.id);

@@ -54,7 +54,9 @@ export class AdminService {
       this.dealers.count({ where: { status: 'pending' } }),
       this.partsDealers.count({ where: { status: 'pending' } }),
       this.partListings.count({ where: { status: 'pending_review' } }),
-      this.promoRequests.count({ where: { status: 'pending' } }),
+      this.promoRequests.count({
+        where: { status: 'pending', paymentStatus: 'paid' },
+      }),
       this.reports.count({ where: { status: 'open' } }),
     ]);
     const data = {

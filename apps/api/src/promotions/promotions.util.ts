@@ -1,14 +1,3 @@
-import { assertSafeImageBuffer } from '../common/image-bytes';
-
-export const SLIP_MAX_BYTES = 5 * 1024 * 1024;
-
-export const SLIP_MIMES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'application/pdf',
-]);
-
 export function buildPreviewIds(
   featuredIds: string[],
   fillIds: string[],
@@ -45,31 +34,6 @@ export function interleaveIds(
   return buildPreviewIds([], mixed, limit);
 }
 
-export function assertSlipFile(file?: {
-  mimetype: string;
-  size: number;
-  buffer?: Buffer;
-}): void {
-  if (!file) {
-    throw new Error('FILE_REQUIRED');
-  }
-  if (!SLIP_MIMES.has(file.mimetype)) {
-    throw new Error('INVALID_TYPE');
-  }
-  if (file.size > SLIP_MAX_BYTES) {
-    throw new Error('FILE_TOO_LARGE');
-  }
-  if (file.buffer?.length) {
-    if (file.mimetype === 'application/pdf') {
-      if (!file.buffer.subarray(0, 4).toString('ascii').startsWith('%PDF')) {
-        throw new Error('INVALID_TYPE');
-      }
-    } else {
-      assertSafeImageBuffer(file.buffer, file.mimetype);
-    }
-  }
-}
-
 export function normalizeWhatsappDigits(raw: string): string {
   const digits = raw.replace(/\D/g, '');
   if (digits.startsWith('94')) return digits;
@@ -79,11 +43,4 @@ export function normalizeWhatsappDigits(raw: string): string {
 
 export function addUtcDays(from: Date, days: number): Date {
   return new Date(from.getTime() + days * 86_400_000);
-}
-
-export function slipExtension(mimetype: string): string {
-  if (mimetype === 'image/png') return 'png';
-  if (mimetype === 'image/webp') return 'webp';
-  if (mimetype === 'application/pdf') return 'pdf';
-  return 'jpg';
 }

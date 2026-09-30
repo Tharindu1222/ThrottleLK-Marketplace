@@ -5,9 +5,41 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
-import type { AdminPartListing, AdminPartsDealerRow } from '@/lib/admin-types';
 import { Pagination } from '@/components/pagination';
 import { clampedPage } from '@/lib/pagination';
+
+type DealerShop = {
+  id: string;
+  name: string;
+  slug: string;
+  phone: string;
+  whatsapp: string | null;
+  email: string | null;
+  website: string | null;
+  address: string | null;
+  description: string | null;
+  status: string;
+  verifiedAt: string | null;
+  coverImageUrl?: string | null;
+  ownerUserId: string;
+  owner?: { firstName: string; lastName: string; email: string } | null;
+  city?: { name: string } | null;
+  district?: { name: string } | null;
+  listingsCount?: number;
+  listingsByStatus?: Record<string, number>;
+};
+
+type ShopListing = {
+  id: string;
+  title: string;
+  slug: string;
+  priceLkr: number;
+  status: string;
+  updatedAt: string;
+  coverImageUrl?: string | null;
+  brand?: { name: string };
+  model?: { name: string };
+};
 
 function dealerStatusTone(status: string) {
   switch (status) {
@@ -23,7 +55,7 @@ function dealerStatusTone(status: string) {
   }
 }
 
-function partStatusTone(status: string) {
+function listingStatusTone(status: string) {
   switch (status) {
     case 'active':
       return 'bg-[var(--admin-success)]/15 text-[var(--admin-success)]';
@@ -41,23 +73,13 @@ function partStatusTone(status: string) {
   }
 }
 
-function kindLabel(kind: string) {
-  return kind === 'modified' ? 'Modified' : 'Spare';
-}
-
-function partViewHref(locale: string, row: AdminPartListing) {
-  return row.kind === 'modified'
-    ? `/${locale}/modified-parts/${row.slug}`
-    : `/${locale}/spare-parts/${row.slug}`;
-}
-
-export function AdminPartsDealerDetail({ id }: { id: string }) {
+export function AdminDealerDetail({ id }: { id: string }) {
   const params = useParams();
   const locale = typeof params.locale === 'string' ? params.locale : 'en';
 
   const [token, setToken] = useState<string | null>(null);
-  const [shop, setShop] = useState<AdminPartsDealerRow | null>(null);
-  const [inventory, setInventory] = useState<AdminPartListing[]>([]);
+  const [shop, setShop] = useState<DealerShop | null>(null);
+  const [inventory, setInventory] = useState<ShopListing[]>([]);
   const [loadingShop, setLoadingShop] = useState(true);
   const [loadingInventory, setLoadingInventory] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +97,9 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
   async function loadShop(access: string) {
     setLoadingShop(true);
     try {
-      const data = await apiGet<AdminPartsDealerRow>(
-        `/api/v1/admin/parts-dealers/${id}`,
-        { token: access },
-      );
+      const data = await apiGet<DealerShop>(`/api/v1/admin/dealers/${id}`, {
+        token: access,
+      });
       setShop(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load shop');
@@ -90,12 +111,12 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
   async function loadInventory(access: string, pageNum = 1) {
     setLoadingInventory(true);
     try {
-      const { data, meta } = await apiGetWithMeta<AdminPartListing[]>(
-        '/api/v1/admin/part-listings',
+      const { data, meta } = await apiGetWithMeta<ShopListing[]>(
+        '/api/v1/admin/listings',
         {
           token: access,
           searchParams: {
-            partsDealerId: id,
+            dealerId: id,
             page: String(pageNum),
             limit: '20',
           },
@@ -120,7 +141,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
           : null,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load inventory');
+      setError(err instanceof Error ? err.message : 'Failed to load listings');
     } finally {
       setLoadingInventory(false);
     }
@@ -132,7 +153,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
     setSavingVerified(true);
     setError(null);
     try {
-      await apiSend(`/api/v1/admin/parts-dealers/${id}`, {
+      await apiSend(`/api/v1/admin/dealers/${id}`, {
         method: 'PATCH',
         token,
         body: { verified: next },
@@ -159,7 +180,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
 
   if (!token) return null;
 
-  const statusEntries = Object.entries(shop?.partsByStatus ?? {}).sort(
+  const statusEntries = Object.entries(shop?.listingsByStatus ?? {}).sort(
     ([a], [b]) => a.localeCompare(b),
   );
 
@@ -168,16 +189,16 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link
-            href={`/${locale}/admin/parts-dealers`}
+            href={`/${locale}/admin/dealers`}
             className="text-sm text-[var(--admin-muted)] hover:text-[var(--admin-text)] hover:underline"
           >
-            ← Back to parts shops
+            ← Back to dealer shops
           </Link>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           {shop?.slug ? (
             <Link
-              href={`/${locale}/parts-dealers/${shop.slug}`}
+              href={`/${locale}/dealers/${shop.slug}`}
               className="admin-btn-ghost inline-flex min-h-11 w-full items-center justify-center px-4 py-2 text-sm sm:w-auto"
               target="_blank"
               rel="noopener noreferrer"
@@ -186,10 +207,10 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
             </Link>
           ) : null}
           <Link
-            href={`/${locale}/admin/part-listings?partsDealerId=${id}`}
+            href={`/${locale}/admin/listings?dealerId=${id}`}
             className="admin-btn-primary inline-flex min-h-11 w-full items-center justify-center px-4 py-2 text-sm sm:w-auto"
           >
-            + Add part
+            Manage listings
           </Link>
         </div>
       </div>
@@ -224,39 +245,39 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
                   {shop.name}
                 </h2>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${dealerStatusTone(shop.status)}`}
-                >
-                  {shop.status}
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={Boolean(shop.verifiedAt)}
-                  aria-label={
-                    shop.verifiedAt
-                      ? `Turn off verification for ${shop.name}`
-                      : `Verify ${shop.name}`
-                  }
-                  title={
-                    shop.status === 'active'
-                      ? 'Verified badge on the public shop'
-                      : 'Set the shop to active before verifying'
-                  }
-                  disabled={savingVerified || shop.status !== 'active'}
-                  onClick={() => void onToggleVerified()}
-                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
-                    shop.verifiedAt
-                      ? 'bg-[var(--admin-success)]'
-                      : 'bg-[var(--admin-surface-2)] ring-1 ring-[var(--admin-border-strong)]'
-                  }`}
-                >
                   <span
-                    className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${
-                      shop.verifiedAt ? 'translate-x-5' : 'translate-x-0.5'
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${dealerStatusTone(shop.status)}`}
+                  >
+                    {shop.status}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(shop.verifiedAt)}
+                    aria-label={
+                      shop.verifiedAt
+                        ? `Turn off verification for ${shop.name}`
+                        : `Verify ${shop.name}`
+                    }
+                    title={
+                      shop.status === 'active'
+                        ? 'Verified badge on the public shop'
+                        : 'Set the shop to active before verifying'
+                    }
+                    disabled={savingVerified || shop.status !== 'active'}
+                    onClick={() => void onToggleVerified()}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                      shop.verifiedAt
+                        ? 'bg-[var(--admin-success)]'
+                        : 'bg-[var(--admin-surface-2)] ring-1 ring-[var(--admin-border-strong)]'
                     }`}
-                  />
-                </button>
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${
+                        shop.verifiedAt ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
 
@@ -299,21 +320,6 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
                     </dd>
                   ) : null}
                 </div>
-                {shop.website ? (
-                  <div className="sm:col-span-2">
-                    <dt className="text-[var(--admin-faint)]">Website</dt>
-                    <dd>
-                      <a
-                        href={shop.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[var(--admin-accent)] hover:underline"
-                      >
-                        {shop.website}
-                      </a>
-                    </dd>
-                  </div>
-                ) : null}
               </dl>
 
               {shop.description ? (
@@ -329,12 +335,12 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
 
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-[var(--admin-surface-2)] px-3 py-1 text-xs font-medium text-[var(--admin-text)]">
-                  Total parts: {shop.partsCount ?? 0}
+                  Total listings: {shop.listingsCount ?? 0}
                 </span>
                 {statusEntries.map(([status, count]) => (
                   <span
                     key={status}
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${partStatusTone(status)}`}
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${listingStatusTone(status)}`}
                   >
                     {status.replace('_', ' ')}: {count}
                   </span>
@@ -353,17 +359,17 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
-              Inventory
+              Listings
             </h2>
             <p className="text-sm text-[var(--admin-muted)]">
-              Parts listed by this shop.
+              Bikes listed by this shop.
             </p>
           </div>
           <Link
-            href={`/${locale}/admin/part-listings?partsDealerId=${id}`}
+            href={`/${locale}/admin/listings?dealerId=${id}`}
             className="admin-btn-ghost inline-flex min-h-11 shrink-0 items-center px-3 py-1.5 text-sm"
           >
-            Manage all in Part listings
+            Manage all in Listings
           </Link>
         </div>
 
@@ -372,7 +378,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-xs tracking-wide text-[var(--admin-faint)] uppercase">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Part</th>
+                  <th className="px-4 py-3 font-medium">Bike</th>
                   <th className="px-4 py-3 font-medium">Price</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Updated</th>
@@ -386,7 +392,7 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
                       colSpan={5}
                       className="px-4 py-10 text-center text-[var(--admin-muted)]"
                     >
-                      Loading inventory…
+                      Loading listings…
                     </td>
                   </tr>
                 ) : inventory.length === 0 ? (
@@ -395,74 +401,75 @@ export function AdminPartsDealerDetail({ id }: { id: string }) {
                       colSpan={5}
                       className="px-4 py-10 text-center text-[var(--admin-muted)]"
                     >
-                      No parts listed for this shop yet.
+                      No bikes listed for this shop yet.
                     </td>
                   </tr>
                 ) : (
                   inventory.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)]">
-                          {row.coverImageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={row.coverImageUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center px-1 text-center text-[10px] leading-tight text-[var(--admin-faint)]">
-                              No photo
-                            </div>
-                          )}
+                    <tr
+                      key={row.id}
+                      className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)]">
+                            {row.coverImageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={row.coverImageUrl}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center px-1 text-center text-[10px] leading-tight text-[var(--admin-faint)]">
+                                No photo
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-[var(--admin-text)]">
+                              {row.title}
+                            </p>
+                            <p className="text-xs text-[var(--admin-faint)]">
+                              {[row.brand?.name, row.model?.name]
+                                .filter(Boolean)
+                                .join(' · ') || '—'}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-[var(--admin-text)]">
-                            {row.title}
-                          </p>
-                          <p className="text-xs text-[var(--admin-faint)]">
-                            {kindLabel(row.kind)}
-                            {row.category?.name ? ` · ${row.category.name}` : ''}
-                          </p>
+                      </td>
+                      <td className="px-4 py-3 text-[var(--admin-text)]">
+                        Rs. {row.priceLkr.toLocaleString('en-LK')}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${listingStatusTone(row.status)}`}
+                        >
+                          {row.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
+                        {new Date(row.updatedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/${locale}/bikes/${row.slug}`}
+                            className="admin-btn-ghost px-2 py-1 text-sm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View
+                          </Link>
+                          <Link
+                            href={`/${locale}/admin/listings?dealerId=${id}`}
+                            className="admin-btn-ghost px-2 py-1 text-sm"
+                          >
+                            Edit in Listings
+                          </Link>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--admin-text)]">
-                      Rs. {row.priceLkr.toLocaleString('en-LK')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${partStatusTone(row.status)}`}
-                      >
-                        {row.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
-                      {new Date(row.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={partViewHref(locale, row)}
-                          className="admin-btn-ghost px-2 py-1 text-sm"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View
-                        </Link>
-                        <Link
-                          href={`/${locale}/admin/part-listings?partsDealerId=${id}&q=${encodeURIComponent(row.title)}`}
-                          className="admin-btn-ghost px-2 py-1 text-sm"
-                        >
-                          Edit in Part listings
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
                   ))
                 )}
               </tbody>

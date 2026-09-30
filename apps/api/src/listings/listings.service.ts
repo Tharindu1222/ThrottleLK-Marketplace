@@ -954,6 +954,7 @@ export class ListingsService {
   async listAllAdmin(filters?: {
     status?: string;
     q?: string;
+    dealerId?: string;
     page?: string | number;
     limit?: string | number;
   }) {
@@ -974,6 +975,9 @@ export class ListingsService {
 
     if (filters?.status) {
       qb.andWhere('l.status = :status', { status: filters.status });
+    }
+    if (filters?.dealerId) {
+      qb.andWhere('l.dealer_id = :dealerId', { dealerId: filters.dealerId });
     }
     if (filters?.q?.trim()) {
       const q = `%${filters.q.trim().toLowerCase()}%`;

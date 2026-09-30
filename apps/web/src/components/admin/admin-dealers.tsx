@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -79,6 +81,8 @@ function statusTone(status: string) {
 }
 
 export function AdminDealers({ search = '' }: { search?: string }) {
+  const params = useParams();
+  const locale = typeof params.locale === 'string' ? params.locale : 'en';
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<DealerRow[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -291,6 +295,25 @@ export function AdminDealers({ search = '' }: { search?: string }) {
     }
   }
 
+  async function onToggleVerified(row: DealerRow) {
+    if (!token || row.status !== 'active') return;
+    const next = !row.verifiedAt;
+    setBusy(true);
+    setError(null);
+    try {
+      await apiSend(`/api/v1/admin/dealers/${row.id}`, {
+        method: 'PATCH',
+        token,
+        body: { verified: next },
+      });
+      await loadList(token, statusFilter, search, page);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification update failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!token) return null;
 
   return (
@@ -333,6 +356,7 @@ export function AdminDealers({ search = '' }: { search?: string }) {
                 <th className="px-4 py-3 font-medium">Owner</th>
                 <th className="px-4 py-3 font-medium">Location</th>
                 <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Verified</th>
                 <th className="px-4 py-3 font-medium">Updated</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
@@ -341,7 +365,7 @@ export function AdminDealers({ search = '' }: { search?: string }) {
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-10 text-center text-[var(--admin-muted)]"
                   >
                     No dealer shops found.
@@ -355,9 +379,12 @@ export function AdminDealers({ search = '' }: { search?: string }) {
                 >
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-[var(--admin-text)]">
+                      <Link
+                        href={`/${locale}/admin/dealers/${row.id}`}
+                        className="font-medium text-[var(--admin-text)] hover:underline"
+                      >
                         {row.name}
-                      </p>
+                      </Link>
                       {row.status === 'active' && row.verifiedAt ? (
                         <span
                           className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--admin-success)] text-white"
@@ -416,11 +443,47 @@ export function AdminDealers({ search = '' }: { search?: string }) {
                       ))}
                     </select>
                   </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(row.verifiedAt)}
+                      aria-label={
+                        row.verifiedAt
+                          ? `Turn off verification for ${row.name}`
+                          : `Verify ${row.name}`
+                      }
+                      title={
+                        row.status === 'active'
+                          ? undefined
+                          : 'Set the shop to active before verifying'
+                      }
+                      disabled={busy || row.status !== 'active'}
+                      onClick={() => void onToggleVerified(row)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                        row.verifiedAt
+                          ? 'bg-[var(--admin-success)]'
+                          : 'bg-[var(--admin-surface-2)] ring-1 ring-[var(--admin-border-strong)]'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${
+                          row.verifiedAt ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
                     {new Date(row.updatedAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/${locale}/admin/dealers/${row.id}`}
+                        className="admin-btn-ghost px-2 py-1 text-sm"
+                      >
+                        Open
+                      </Link>
                       <button
                         type="button"
                         className="admin-btn-ghost px-3 py-1.5 text-xs"

@@ -18,19 +18,18 @@ import type {
   CreatePromoBankAccountInput,
   CreatePromoCheckoutInput,
   CreatePromoPackageInput,
-  CreatePromoRequestMetaInput,
   UpdatePromoBankAccountInput,
   UpdatePromoPackageInput,
   UpdatePromoSettingsInput,
 } from '@throttlelk/validation';
 import { CacheService } from '../common/cache.service';
+import { preferredCoverUrl } from '../common/image-variants';
 import { assertEmailVerified } from '../common/email-verified';
 import { Listing } from '../listings/listing.entity';
 import { ListingsService } from '../listings/listings.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PartListing } from '../part-listings/part-listing.entity';
 import { PartListingsService } from '../part-listings/part-listings.service';
-import { StorageService } from '../storage/storage.service';
 import { User } from '../users/user.entity';
 import { HomepagePlacement } from './homepage-placement.entity';
 import { PayHereService } from './payhere.service';
@@ -41,14 +40,17 @@ import {
   type PromoSurface,
   type PromoTier,
 } from './promo-package.entity';
+import {
+  summarizePromoLedger,
+  type MonetizeRange,
+  type PromoLedgerInput,
+} from './promo-ledger';
 import { PromoRequest } from './promo-request.entity';
 import { PromoSettings } from './promo-settings.entity';
 import {
   addUtcDays,
-  assertSlipFile,
   buildPreviewIds,
   interleaveIds,
-  slipExtension,
 } from './promotions.util';
 
 const PREVIEW_LIMIT = 8;
@@ -93,7 +95,6 @@ export class PromotionsService {
     private readonly partListings: Repository<PartListing>,
     private readonly listingsService: ListingsService,
     private readonly partListingsService: PartListingsService,
-    private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
     private readonly cache: CacheService,
     private readonly payhere: PayHereService,
@@ -275,6 +276,7 @@ export class PromotionsService {
         existingPending.slipOriginalName = null;
         existingPending.payherePaymentId = null;
         existingPending.paidAt = null;
+        existingPending.chargedPriceLkr = pkg.priceLkr;
         saved = await this.requests.save(existingPending);
       } else {
         saved = await this.requests.save(
@@ -292,6 +294,7 @@ export class PromotionsService {
             payhereOrderId: orderId,
             paymentStatus: 'unpaid',
             status: 'pending',
+            chargedPriceLkr: pkg.priceLkr,
           }),
         );
       }
@@ -339,137 +342,8 @@ export class PromotionsService {
     };
   }
 
-  async createRequest(
-    seller: User,
-    meta: CreatePromoRequestMetaInput,
-    file?: Express.Multer.File,
-  ) {
-    assertEmailVerified(seller, 'requesting a homepage ad');
-    this.wrapSlip(file);
-    const subjectType: PromoSubjectType = meta.listingId ? 'bike' : 'part';
-    const listingId = meta.listingId ?? null;
-    const partListingId = meta.partListingId ?? null;
-    await this.assertOwnedActive(seller.id, subjectType, listingId, partListingId);
-
-    const pkg = await this.packages.findOne({ where: { id: meta.packageId } });
-    if (!pkg || !pkg.isActive || pkg.kind !== subjectType) {
-      throw new BadRequestException({
-        success: false,
-        error: { code: 'INVALID_PACKAGE', message: 'Package is not available' },
-      });
-    }
-    const bank = await this.accounts.findOne({
-      where: { isDefault: true, isActive: true },
-    });
-    if (!bank) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'NO_BANK_ACCOUNT',
-          message: 'Homepage ads are not available yet',
-        },
-      });
-    }
-    if (await this.findPending(listingId, partListingId)) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'REQUEST_PENDING',
-          message: 'A homepage request is already pending',
-        },
-      });
-    }
-    if (await this.findLive(listingId, partListingId)) {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'ALREADY_LIVE',
-          message: 'This listing is already on the homepage',
-        },
-      });
-    }
-
-    const key = `promo-slips/${randomUUID()}/${randomUUID()}.${slipExtension(file!.mimetype)}`;
-    await this.storage.putObject(key, file!.buffer, file!.mimetype, {
-      access: 'private',
-    });
-    try {
-      const saved = await this.requests.save(
-        this.requests.create({
-          sellerId: seller.id,
-          subjectType,
-          listingId,
-          partListingId,
-          packageId: pkg.id,
-          bankAccountId: bank.id,
-          slipStorageKey: key,
-          slipContentType: file!.mimetype,
-          slipOriginalName: file!.originalname || 'slip',
-          paymentProvider: 'bank',
-          paymentStatus: 'unpaid',
-          status: 'pending',
-        }),
-      );
-      this.cache.invalidateDashboard();
-      return saved;
-    } catch (err) {
-      await this.storage.deleteObject(key).catch(() => undefined);
-      if (isUniqueViolation(err)) {
-        throw new BadRequestException({
-          success: false,
-          error: {
-            code: 'REQUEST_PENDING',
-            message: 'A homepage request is already pending',
-          },
-        });
-      }
-      throw err;
-    }
-  }
-
-  async replaceSlip(seller: User, requestId: string, file?: Express.Multer.File) {
-    this.wrapSlip(file);
-    const request = await this.requests.findOne({ where: { id: requestId } });
-    if (!request) this.notFound('Request');
-    if (request.sellerId !== seller.id) {
-      throw new ForbiddenException({
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Not your request' },
-      });
-    }
-    if (request.status !== 'pending') {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'NOT_PENDING',
-          message: 'Only pending requests can replace a slip',
-        },
-      });
-    }
-    if (request.paymentProvider === 'payhere') {
-      throw new BadRequestException({
-        success: false,
-        error: {
-          code: 'PAYHERE_NO_SLIP',
-          message: 'PayHere requests do not use payment slips',
-        },
-      });
-    }
-    const key = `promo-slips/${request.id}/${randomUUID()}.${slipExtension(file!.mimetype)}`;
-    await this.storage.putObject(key, file!.buffer, file!.mimetype, {
-      access: 'private',
-    });
-    if (request.slipStorageKey) {
-      await this.storage.deleteObject(request.slipStorageKey).catch(() => undefined);
-    }
-    request.slipStorageKey = key;
-    request.slipContentType = file!.mimetype;
-    request.slipOriginalName = file!.originalname || 'slip';
-    return this.requests.save(request);
-  }
-
   /**
-   * Shared activation used by PayHere notify and admin bank-slip approve.
+   * Shared activation used by PayHere notify and admin approve.
    */
   async activatePaidRequest(
     requestId: string,
@@ -558,6 +432,9 @@ export class PromotionsService {
         request.status = 'approved';
         request.paymentStatus = 'paid';
         request.paidAt = new Date();
+        if (request.chargedPriceLkr == null) {
+          request.chargedPriceLkr = request.package.priceLkr;
+        }
         if (opts?.paymentId) {
           request.payherePaymentId = opts.paymentId;
         }
@@ -662,15 +539,14 @@ export class PromotionsService {
         await this.requests.save(request);
         return 'OK';
       }
-      try {
-        await this.activatePaidRequest(request.id, { paymentId });
-      } catch (err) {
-        this.logger.error(
-          `PayHere activate failed for ${request.id}: ${
-            err instanceof Error ? err.message : String(err)
-          }`,
-        );
+      request.paymentStatus = 'paid';
+      request.paidAt = new Date();
+      if (request.chargedPriceLkr == null && request.package) {
+        request.chargedPriceLkr = request.package.priceLkr;
       }
+      if (paymentId) request.payherePaymentId = paymentId;
+      await this.requests.save(request);
+      this.cache.invalidateDashboard();
       return 'OK';
     }
 
@@ -729,14 +605,33 @@ export class PromotionsService {
       .leftJoinAndSelect('r.bankAccount', 'bank')
       .leftJoinAndSelect('r.seller', 'seller')
       .leftJoinAndSelect('r.listing', 'listing')
+      .leftJoinAndSelect('listing.images', 'listingImage')
+      .leftJoinAndSelect('listing.brand', 'brand')
+      .leftJoinAndSelect('listing.model', 'model')
+      .leftJoinAndSelect('listing.city', 'listingCity')
+      .leftJoinAndSelect('listing.district', 'listingDistrict')
       .leftJoinAndSelect('r.partListing', 'partListing')
+      .leftJoinAndSelect('partListing.images', 'partImage')
+      .leftJoinAndSelect('partListing.category', 'partCategory')
+      .leftJoinAndSelect('partListing.city', 'partCity')
+      .leftJoinAndSelect('partListing.district', 'partDistrict')
       .orderBy('r.createdAt', 'DESC');
     if (status) qb.andWhere('r.status = :status', { status });
     const rows = await qb.getMany();
     return rows.map((row) => {
-      const { slipStorageKey: _slipStorageKey, seller, ...rest } = row;
+      const {
+        slipStorageKey: _slipStorageKey,
+        slipContentType: _slipContentType,
+        slipOriginalName: _slipOriginalName,
+        seller,
+        listing,
+        partListing,
+        ...rest
+      } = row;
       return {
         ...rest,
+        listing: this.promoListingCard(listing),
+        partListing: this.promoPartCard(partListing),
         seller: seller
           ? {
               id: seller.id,
@@ -755,31 +650,68 @@ export class PromotionsService {
     });
   }
 
+  async monetize(range: MonetizeRange) {
+    const rows = await this.requests
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.package', 'package')
+      .leftJoinAndSelect('r.seller', 'seller')
+      .leftJoinAndSelect('r.listing', 'listing')
+      .leftJoinAndSelect('r.partListing', 'partListing')
+      .orderBy('r.createdAt', 'DESC')
+      .getMany();
+
+    const ids = rows.map((row) => row.id);
+    const placements = ids.length
+      ? await this.placements
+          .createQueryBuilder('p')
+          .where('p.requestId IN (:...ids)', { ids })
+          .getMany()
+      : [];
+    const endsByRequest = new Map(
+      placements
+        .filter((placement) => placement.requestId)
+        .map((placement) => [placement.requestId as string, placement.endsAt]),
+    );
+
+    const ledger: PromoLedgerInput[] = rows.map((row) => {
+      const sellerName = [row.seller?.firstName, row.seller?.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      return {
+        id: row.id,
+        createdAt: row.createdAt,
+        paidAt: row.paidAt,
+        status: row.status,
+        paymentStatus: row.paymentStatus,
+        paymentProvider: row.paymentProvider,
+        subjectType: row.subjectType,
+        partKind:
+          row.partListing?.kind === 'modified' ||
+          row.partListing?.kind === 'spare'
+            ? row.partListing.kind
+            : null,
+        amountLkr: row.chargedPriceLkr ?? row.package?.priceLkr ?? 0,
+        packageName: row.package?.name ?? 'Package',
+        durationDays: row.package?.durationDays ?? 0,
+        sellerId: row.sellerId,
+        sellerName: sellerName || 'Seller',
+        sellerEmail: row.seller?.email ?? '',
+        listingTitle:
+          row.listing?.title ?? row.partListing?.title ?? 'Listing',
+        placementEndsAt: endsByRequest.get(row.id) ?? null,
+      };
+    });
+
+    return summarizePromoLedger(ledger, new Date(), range);
+  }
+
   async listLivePlacements() {
     return this.placements.find({
       where: { endsAt: MoreThan(new Date()) },
       relations: ['listing', 'partListing', 'request'],
       order: { startsAt: 'DESC' },
     });
-  }
-
-  async getSlip(requestId: string) {
-    const request = await this.requests.findOne({ where: { id: requestId } });
-    if (!request) this.notFound('Request');
-    if (!request.slipStorageKey) {
-      throw new NotFoundException({
-        success: false,
-        error: { code: 'NO_SLIP', message: 'No payment slip for this request' },
-      });
-    }
-    const { buffer, contentType } = await this.storage.getObject(
-      request.slipStorageKey,
-    );
-    return {
-      buffer,
-      contentType: contentType || request.slipContentType || 'application/octet-stream',
-      filename: request.slipOriginalName || 'slip',
-    };
   }
 
   async adminPlace(admin: User, input: AdminPlaceHomepageInput) {
@@ -1070,7 +1002,55 @@ export class PromotionsService {
   }
 
   async countPending() {
-    return this.requests.count({ where: { status: 'pending' } });
+    return this.requests.count({
+      where: { status: 'pending', paymentStatus: 'paid' },
+    });
+  }
+
+  private promoListingCard(listing: Listing | null | undefined) {
+    if (!listing) return null;
+    return {
+      id: listing.id,
+      title: listing.title,
+      slug: listing.slug,
+      priceLkr: listing.priceLkr,
+      status: listing.status,
+      manufactureYear: listing.manufactureYear,
+      condition: listing.condition,
+      brand: listing.brand ? { name: listing.brand.name } : null,
+      model: listing.model ? { name: listing.model.name } : null,
+      city: listing.city ? { name: listing.city.name } : null,
+      district: listing.district ? { name: listing.district.name } : null,
+      coverImageUrl: this.coverFromImages(listing.images),
+    };
+  }
+
+  private promoPartCard(listing: PartListing | null | undefined) {
+    if (!listing) return null;
+    return {
+      id: listing.id,
+      title: listing.title,
+      slug: listing.slug,
+      kind: listing.kind,
+      priceLkr: listing.priceLkr,
+      status: listing.status,
+      condition: listing.condition,
+      category: listing.category ? { name: listing.category.name } : null,
+      city: listing.city ? { name: listing.city.name } : null,
+      district: listing.district ? { name: listing.district.name } : null,
+      coverImageUrl: this.coverFromImages(listing.images),
+    };
+  }
+
+  private coverFromImages(
+    images?: { imageUrl: string; thumbnailUrl?: string | null; isCover?: boolean; sortOrder?: number }[],
+  ) {
+    if (!images?.length) return null;
+    const sorted = [...images].sort((a, b) => {
+      if (Boolean(a.isCover) !== Boolean(b.isCover)) return a.isCover ? -1 : 1;
+      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    });
+    return preferredCoverUrl(sorted[0]);
   }
 
   private async getSettings() {
@@ -1227,24 +1207,6 @@ export class PromotionsService {
           code: 'LISTING_NOT_ACTIVE',
           message: 'Listing is not active',
         },
-      });
-    }
-  }
-
-  private wrapSlip(file?: Express.Multer.File) {
-    try {
-      assertSlipFile(file);
-    } catch (err) {
-      const code = err instanceof Error ? err.message : 'INVALID_FILE';
-      const message =
-        code === 'FILE_REQUIRED'
-          ? 'Payment slip is required'
-          : code === 'FILE_TOO_LARGE'
-            ? 'Max slip size is 5MB'
-            : 'Slip must be JPEG, PNG, WebP, or PDF';
-      throw new BadRequestException({
-        success: false,
-        error: { code, message },
       });
     }
   }

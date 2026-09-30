@@ -58,6 +58,10 @@ export class PromoRequest {
   @Column({ name: 'package_id' })
   packageId!: string;
 
+  /** Price locked when the seller started checkout. Package edits do not rewrite it. */
+  @Column({ name: 'charged_price_lkr', type: 'int', nullable: true })
+  chargedPriceLkr!: number | null;
+
   @ManyToOne(() => PromoPackage)
   @JoinColumn({ name: 'package_id' })
   package!: PromoPackage;
