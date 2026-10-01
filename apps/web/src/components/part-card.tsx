@@ -5,7 +5,11 @@ import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { BRAND_LOGO_SRC } from '@/components/brand-logo';
 import { MarketplaceImage } from '@/components/marketplace-image';
 import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
-import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
+import { apiSend, ApiRequestError } from '@/lib/api';
+import {
+  loadPartFavouriteIds,
+  patchPartFavouriteIdsCache,
+} from '@/lib/part-favourite-ids';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { partListingHref } from '@/lib/part-kind';
@@ -142,7 +146,7 @@ function FavouriteHeart({
   useEffect(() => {
     const access = getAccessToken();
     if (!access) return;
-    void apiGet<string[]>('/api/v1/part-favourites/ids', { token: access })
+    void loadPartFavouriteIds(access)
       .then((ids) => setFavourited(ids.includes(partListingId)))
       .catch(() => undefined);
   }, [partListingId]);
@@ -202,6 +206,7 @@ function FavouriteHeart({
           }
         }
       }
+      patchPartFavouriteIdsCache(token, partListingId, next);
       onChange?.(partListingId, next);
     } catch (err) {
       setFavourited(!next);

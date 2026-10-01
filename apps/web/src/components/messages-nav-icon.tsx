@@ -31,7 +31,7 @@ type ConversationItem = {
 };
 
 const DROPDOWN_LIMIT = 8;
-const POLL_MS = 30_000;
+const POLL_MS = 120_000;
 
 function formatWhen(iso: string | null) {
   if (!iso) return '';
@@ -90,6 +90,7 @@ export function MessagesNavIcon({ locale }: { locale: Locale }) {
     if (!access) return;
     void refresh(access).catch(() => undefined);
     const id = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
       void refresh(access).catch(() => undefined);
     }, POLL_MS);
     return () => window.clearInterval(id);

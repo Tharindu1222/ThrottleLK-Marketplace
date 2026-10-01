@@ -13,7 +13,12 @@ import type {
   UpdateListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus } from '@throttlelk/types';
-import { In, IsNull, LessThanOrEqual, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import {
+  browseCacheKey,
+  readBrowseCache,
+  writeBrowseCache,
+} from '../common/browse-cache';
 import { CacheService } from '../common/cache.service';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
@@ -28,6 +33,7 @@ import { UsersService } from '../users/users.service';
 import { ListingEngagementEvent } from './listing-engagement-event.entity';
 import { ListingImage } from './listing-image.entity';
 import { ListingInquiry } from './listing-inquiry.entity';
+import { expireActiveRows } from './expire-stale';
 import { computeExpiresAt, isPubliclyListed } from './listing-expiry';
 import { Listing } from './listing.entity';
 import { SavedSearchesService } from '../saved-searches/saved-searches.service';
@@ -366,6 +372,12 @@ export class ListingsService {
       defaultLimit: 50,
       maxLimit: 50,
     });
+    const cacheKey = browseCacheKey('listings', filters, page, limit);
+    const cached = await readBrowseCache<{
+      items: ReturnType<ListingsService['toBrowseCard']>[];
+      meta: ReturnType<typeof paginationMeta>;
+    }>(this.cache, cacheKey);
+    if (cached) return cached;
     const qb = this.listings
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.brand', 'brand')
@@ -536,7 +548,7 @@ export class ListingsService {
     const verifiedIds = await this.dealersService.activeVerifiedIds(
       rows.map((row) => row.dealerId).filter((id): id is string => Boolean(id)),
     );
-    return {
+    const result = {
       items: rows.map((row) =>
         this.toBrowseCard(row, covers.get(row.id) ?? null, {
           dealerVerified: row.dealerId
@@ -546,6 +558,8 @@ export class ListingsService {
       ),
       meta: paginationMeta(total, page, limit),
     };
+    await writeBrowseCache(this.cache, cacheKey, result, 20);
+    return result;
   }
 
   async getPublicOrOwned(idOrSlug: string, viewer?: User | null) {
@@ -1188,37 +1202,20 @@ export class ListingsService {
   }
 
   async expireStale(now = new Date()) {
-    const undated = await this.listings.find({
-      where: { status: 'active', expiresAt: IsNull() },
+    const { expired, backfilled } = await expireActiveRows({
+      query: (sql, params) => this.listings.query(sql, params),
+      table: 'listings',
+      lockKey: 710_001,
+      now,
     });
-    for (const listing of undated) {
-      listing.expiresAt = computeExpiresAt(
-        listing.publishedAt ?? listing.createdAt ?? now,
-      );
-      await this.listings.save(listing);
-    }
-    const due = await this.listings.find({
-      where: { status: 'active', expiresAt: LessThanOrEqual(now) },
-    });
-    let expired = 0;
-    for (const listing of due) {
-      const result = await this.listings
-        .createQueryBuilder()
-        .update(Listing)
-        .set({ status: 'expired' })
-        .where('id = :id', { id: listing.id })
-        .andWhere('status = :status', { status: 'active' })
-        .execute();
-      if (!result.affected) continue;
-      listing.status = 'expired';
-      expired += 1;
+    for (const listing of expired) {
       void this.notifications.listingExpired(listing.sellerId, {
         id: listing.id,
         title: listing.title,
       });
     }
-    if (expired) this.bumpDashboard();
-    return { expired, backfilled: undated.length };
+    if (expired.length) this.bumpDashboard();
+    return { expired: expired.length, backfilled };
   }
 
   async reject(id: string, reason: string): Promise<Listing> {

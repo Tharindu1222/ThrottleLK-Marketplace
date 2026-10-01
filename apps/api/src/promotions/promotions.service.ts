@@ -472,6 +472,7 @@ export class PromotionsService {
         partListingId: saved.partListingId,
       });
       this.cache.invalidateDashboard();
+      this.bustPublicPromo();
     }
     return saved;
   }
@@ -727,9 +728,11 @@ export class PromotionsService {
       existing.tier = tier;
       existing.surfaces = surfaces;
       existing.priority = priority;
-      return this.placements.save(existing);
+      const saved = await this.placements.save(existing);
+      this.bustPublicPromo();
+      return saved;
     }
-    return this.placements.save(
+    const created = await this.placements.save(
       this.placements.create({
         requestId: null,
         source: 'admin_override',
@@ -743,34 +746,68 @@ export class PromotionsService {
         endsAt,
       }),
     );
+    this.bustPublicPromo();
+    return created;
   }
 
   async updatePlacementEnds(id: string, endsAtIso: string) {
     const row = await this.placements.findOne({ where: { id } });
     if (!row) this.notFound('Placement');
     row.endsAt = new Date(endsAtIso);
-    return this.placements.save(row);
+    const saved = await this.placements.save(row);
+    this.bustPublicPromo();
+    return saved;
   }
 
   async endPlacement(id: string) {
     const row = await this.placements.findOne({ where: { id } });
     if (!row) this.notFound('Placement');
     row.endsAt = new Date();
-    return this.placements.save(row);
+    const saved = await this.placements.save(row);
+    this.bustPublicPromo();
+    return saved;
   }
 
   async marketplacePreview() {
+    const cacheKey = 'home:marketplace-preview';
+    const cached =
+      typeof this.cache.get === 'function'
+        ? await this.cache.get<
+            Awaited<ReturnType<PromotionsService['loadMarketplacePreview']>>
+          >(cacheKey)
+        : null;
+    if (cached) return cached;
+    const fresh = await this.loadMarketplacePreview();
+    if (typeof this.cache.set === 'function') {
+      await this.cache.set(cacheKey, fresh, 20);
+    }
+    return fresh;
+  }
+
+  private async loadMarketplacePreview() {
     const now = new Date();
     const live = await this.placements
       .createQueryBuilder('p')
-      .leftJoinAndSelect('p.listing', 'listing')
-      .leftJoinAndSelect('p.partListing', 'partListing')
+      .leftJoin('p.listing', 'listing')
+      .leftJoin('p.partListing', 'partListing')
+      .select([
+        'p.id',
+        'p.subjectType',
+        'p.listingId',
+        'p.partListingId',
+        'p.tier',
+        'listing.id',
+        'listing.status',
+        'partListing.id',
+        'partListing.status',
+      ])
       .where('p.endsAt > :now', { now })
       .andWhere(`p.surfaces @> :homeSurface::jsonb`, {
         homeSurface: JSON.stringify(['home']),
       })
       .orderBy('p.priority', 'DESC')
       .addOrderBy('p.startsAt', 'DESC')
+      .take(200)
       .getMany();
     const bikeFeatured = live
       .filter((row) => row.subjectType === 'bike' && row.listing?.status === 'active')
@@ -848,11 +885,42 @@ export class PromotionsService {
     limit: number,
   ) {
     const capped = Math.min(Math.max(limit, 1), 24);
+    const cacheKey = `promo:live:${surface}:${kind}:${capped}`;
+    const cached =
+      typeof this.cache.get === 'function'
+        ? await this.cache.get<
+            Awaited<ReturnType<PromotionsService['loadLiveForSurface']>>
+          >(cacheKey)
+        : null;
+    if (cached) return cached;
+    const fresh = await this.loadLiveForSurface(surface, kind, capped);
+    if (typeof this.cache.set === 'function') {
+      await this.cache.set(cacheKey, fresh, 20);
+    }
+    return fresh;
+  }
+
+  private async loadLiveForSurface(
+    surface: PromoSurface,
+    kind: PromoSubjectType,
+    capped: number,
+  ) {
     const now = new Date();
     const live = await this.placements
       .createQueryBuilder('p')
-      .leftJoinAndSelect('p.listing', 'listing')
-      .leftJoinAndSelect('p.partListing', 'partListing')
+      .leftJoin('p.listing', 'listing')
+      .leftJoin('p.partListing', 'partListing')
+      .select([
+        'p.id',
+        'p.subjectType',
+        'p.listingId',
+        'p.partListingId',
+        'p.tier',
+        'listing.id',
+        'listing.status',
+        'partListing.id',
+        'partListing.status',
+      ])
       .where('p.endsAt > :now', { now })
       .andWhere('p.subjectType = :kind', { kind })
       .andWhere(`p.surfaces @> :surface::jsonb`, {
@@ -860,6 +928,7 @@ export class PromotionsService {
       })
       .orderBy('p.priority', 'DESC')
       .addOrderBy('p.startsAt', 'DESC')
+      .take(200)
       .getMany();
 
     if (kind === 'bike') {
@@ -1037,6 +1106,11 @@ export class PromotionsService {
       return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
     });
     return preferredCoverUrl(sorted[0]);
+  }
+
+  private bustPublicPromo() {
+    if (typeof this.cache.del !== 'function') return;
+    void this.cache.del('home:marketplace-preview');
   }
 
   private async getSettings() {

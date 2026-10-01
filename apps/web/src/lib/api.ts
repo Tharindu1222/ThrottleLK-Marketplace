@@ -95,13 +95,6 @@ function bearerHeader(token?: string): Record<string, string> {
   return {};
 }
 
-async function serverAccessCookie(): Promise<string | undefined> {
-  if (typeof window !== 'undefined') return undefined;
-  const { cookies } = await import('next/headers');
-  const jar = await cookies();
-  return jar.get('__Host-tlk_access')?.value ?? jar.get('tlk_access')?.value;
-}
-
 function throwApiError(
   path: string,
   status: number,
@@ -127,11 +120,19 @@ async function authorizedHeaders(
   if (fromArg.Authorization) {
     return apiHeaders({ ...extra, ...fromArg });
   }
-  const cookieToken = await serverAccessCookie();
-  return apiHeaders({
-    ...extra,
-    ...bearerHeader(cookieToken),
-  });
+  // Do not read the request cookies here. Browser calls already send the
+  // HttpOnly cookie, and a server cookies() read would disable caching
+  // for every public catalog page.
+  return apiHeaders(extra);
+}
+
+const PUBLIC_REVALIDATE_SECONDS = 30;
+
+function readInit(token?: string): RequestInit {
+  if (typeof window !== 'undefined' || token) {
+    return { cache: 'no-store', credentials: 'include' };
+  }
+  return { next: { revalidate: PUBLIC_REVALIDATE_SECONDS } };
 }
 
 function requestUrl(
@@ -159,8 +160,7 @@ export async function apiGet<T>(
 ): Promise<T> {
   const res = await fetch(requestUrl(path, init?.searchParams), {
     headers: await authorizedHeaders(init?.token),
-    cache: 'no-store',
-    credentials: 'include',
+    ...readInit(init?.token),
   });
   const json = await parseJson<T>(path, res);
   return json.data;
@@ -172,8 +172,7 @@ export async function apiGetWithMeta<T>(
 ): Promise<{ data: T; meta?: PaginationMeta }> {
   const res = await fetch(requestUrl(path, init?.searchParams), {
     headers: await authorizedHeaders(init?.token),
-    cache: 'no-store',
-    credentials: 'include',
+    ...readInit(init?.token),
   });
   const json = await parseJson<T>(path, res);
   return { data: json.data, meta: json.meta as PaginationMeta | undefined };

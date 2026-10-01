@@ -15,9 +15,13 @@ export function parsePageLimit(input: {
 }): { page: number; limit: number; skip: number } {
   const defaultLimit = input.defaultLimit ?? 20;
   const maxLimit = input.maxLimit ?? 100;
+  const maxPage = 200;
   const rawPage = Number(input.page ?? 1);
   const rawLimit = Number(input.limit ?? defaultLimit);
-  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+  const page =
+    Number.isFinite(rawPage) && rawPage > 0
+      ? Math.min(maxPage, Math.floor(rawPage))
+      : 1;
   const limit = Number.isFinite(rawLimit)
     ? Math.min(maxLimit, Math.max(1, Math.floor(rawLimit)))
     : defaultLimit;

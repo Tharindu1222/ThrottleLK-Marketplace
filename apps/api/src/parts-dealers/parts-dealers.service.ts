@@ -246,10 +246,37 @@ export class PartsDealersService {
   }
 
   async listForMap() {
+    const cacheKey = 'parts-dealers:map';
+    if (typeof this.cache.get === 'function') {
+      const cached = await this.cache.get<
+        Awaited<ReturnType<PartsDealersService['loadMapPins']>>
+      >(cacheKey);
+      if (cached) return cached;
+    }
+    const pins = await this.loadMapPins();
+    if (typeof this.cache.set === 'function') {
+      await this.cache.set(cacheKey, pins, 60);
+    }
+    return pins;
+  }
+
+  private async loadMapPins() {
     const rows = await this.partsDealers
       .createQueryBuilder('d')
       .leftJoinAndSelect('d.district', 'district')
       .leftJoinAndSelect('d.city', 'city')
+      .select([
+        'd.id',
+        'd.name',
+        'd.slug',
+        'd.latitude',
+        'd.longitude',
+        'd.verifiedAt',
+        'district.id',
+        'district.name',
+        'city.id',
+        'city.name',
+      ])
       .where('d.status = :status', { status: 'active' })
       .orderBy('d.name', 'ASC')
       .getMany();

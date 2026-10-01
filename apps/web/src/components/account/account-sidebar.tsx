@@ -18,7 +18,7 @@ import {
   type AccountNavItemDef,
 } from '@/lib/account-nav';
 
-const POLL_MS = 30_000;
+const POLL_MS = 120_000;
 
 type ConversationRow = { unread?: boolean };
 
@@ -228,7 +228,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
     const [conversations, notif] = await Promise.all([
       apiGet<ConversationRow[]>('/api/v1/conversations', {
         token,
-        searchParams: { limit: '50' },
+        searchParams: { limit: '20' },
       }),
       apiGet<{ count: number }>('/api/v1/notifications/unread-count', {
         token,
@@ -252,10 +252,11 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
 
     void refreshCounts(token).catch(() => undefined);
     const id = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
       void refreshCounts(token).catch(() => undefined);
     }, POLL_MS);
     return () => window.clearInterval(id);
-  }, [refreshCounts, pathname]);
+  }, [refreshCounts]);
 
   const isDealer = Boolean(user?.roles?.includes('dealer'));
   const isPartsDealer = Boolean(user?.roles?.includes('parts_dealer'));

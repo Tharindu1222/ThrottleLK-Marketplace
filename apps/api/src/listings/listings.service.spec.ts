@@ -1036,38 +1036,24 @@ describe('ListingsService launch hardening', () => {
   });
 
   it('expires due active listings and notifies the seller', async () => {
-    const due = {
-      id: 'listing-1',
-      sellerId: seller.id,
-      title: 'Honda Dio',
-      status: 'active',
-      expiresAt: new Date('2026-01-01T00:00:00.000Z'),
-    };
     const { service, notifications } = makeService({
       id: 'listing-1',
       sellerId: seller.id,
       status: 'active',
     });
     const listingsRepo = {
-      find: jest
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([due]),
-      save: jest.fn(async (value: typeof due) => value),
-      createQueryBuilder: jest.fn(() => ({
-        update: jest.fn().mockReturnThis(),
-        set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        execute: jest.fn(async () => ({ affected: 1 })),
-      })),
+      query: jest.fn(async (sql: string) => {
+        if (sql.includes('pg_try_advisory_lock')) return [{ locked: true }];
+        if (sql.includes('pg_advisory_unlock')) return [];
+        if (sql.includes('expires_at IS NULL')) return [[{ id: 'backfill-1' }], 1];
+        return [[{ id: 'listing-1', sellerId: seller.id, title: 'Honda Dio' }], 1];
+      }),
     };
     Object.assign(service as never, { listings: listingsRepo });
 
     const result = await service.expireStale(new Date('2026-03-01T00:00:00.000Z'));
 
-    expect(result.expired).toBe(1);
-    expect(due.status).toBe('expired');
+    expect(result).toEqual({ expired: 1, backfilled: 1 });
     expect(notifications.listingExpired).toHaveBeenCalledWith('seller-1', {
       id: 'listing-1',
       title: 'Honda Dio',

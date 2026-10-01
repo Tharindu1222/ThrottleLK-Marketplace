@@ -90,7 +90,7 @@ export function formatNotificationWhen(iso: string) {
 }
 
 const DROPDOWN_LIMIT = 8;
-const POLL_MS = 30_000;
+const POLL_MS = 120_000;
 
 export function NotificationsBell({ locale }: { locale: Locale }) {
   const router = useRouter();
@@ -113,16 +113,25 @@ export function NotificationsBell({ locale }: { locale: Locale }) {
     setUnread(count.count);
   }, []);
 
+  const refreshUnread = useCallback(async (access: string) => {
+    const count = await apiGet<{ count: number }>(
+      '/api/v1/notifications/unread-count',
+      { token: access },
+    );
+    setUnread(count.count);
+  }, []);
+
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void refresh(access).catch(() => undefined);
+    void refreshUnread(access).catch(() => undefined);
     const id = window.setInterval(() => {
-      void refresh(access).catch(() => undefined);
+      if (document.visibilityState !== 'visible') return;
+      void refreshUnread(access).catch(() => undefined);
     }, POLL_MS);
     return () => window.clearInterval(id);
-  }, [refresh]);
+  }, [refreshUnread]);
 
   useEffect(() => {
     if (!open) return;

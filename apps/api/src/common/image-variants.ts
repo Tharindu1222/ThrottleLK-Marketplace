@@ -88,7 +88,7 @@ export async function encodeMarketplaceImages(
         width: displayMaxWidth(preset),
         withoutEnlargement: true,
       })
-      .webp({ quality: 80, effort: 4 })
+      .webp({ quality: 80, effort: 2 })
       .toBuffer();
 
     if (preset !== 'photo') {
@@ -105,7 +105,7 @@ export async function encodeMarketplaceImages(
         width: CARD_MAX_WIDTH,
         withoutEnlargement: true,
       })
-      .webp({ quality: 75, effort: 4 })
+      .webp({ quality: 75, effort: 2 })
       .toBuffer();
 
     return {

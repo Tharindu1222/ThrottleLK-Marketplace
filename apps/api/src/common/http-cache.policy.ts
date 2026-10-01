@@ -24,7 +24,6 @@ function isPrivatePath(path: string): boolean {
     '/api/v1/favourites',
     '/api/v1/part-favourites',
     '/api/v1/saved-searches',
-    '/api/v1/promotions',
     '/api/v1/listings/mine',
     '/api/v1/part-listings/mine',
     '/api/v1/dealers/mine',
@@ -49,6 +48,12 @@ function isTaxonomyPath(path: string): boolean {
     path === '/api/v1/part-listings/categories' ||
     path.startsWith('/api/v1/locations/districts') ||
     path.startsWith('/api/v1/models/')
+  );
+}
+
+function isPublicPromoPath(path: string): boolean {
+  return (
+    path === '/api/v1/promotions/live' || path === '/api/v1/promotions/packages'
   );
 }
 
@@ -80,20 +85,24 @@ export function cacheControlForRequest(input: {
 }): string {
   const method = input.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') return PRIVATE_NO_STORE;
-  if (input.hasAuthCookie || input.hasAuthorization) return PRIVATE_NO_STORE;
 
   const path = normalizePath(input.path);
-  if (isPrivatePath(path)) return PRIVATE_NO_STORE;
-
   const search = input.search.startsWith('?')
     ? input.search
     : input.search
       ? `?${input.search}`
       : '';
-  if (/[?&]search=/i.test(search)) return PRIVATE_NO_STORE;
+  if (/[?&](?:search|q)=/i.test(search)) return PRIVATE_NO_STORE;
 
+  // Catalog bodies do not change per user, so a logged-in cookie can still
+  // be served from the shared cache.
   if (isTaxonomyPath(path)) return PUBLIC_TAXONOMY_CACHE;
-  if (isPublicListPath(path)) return PUBLIC_LIST_CACHE;
+  if (isPublicListPath(path) || isPublicPromoPath(path)) return PUBLIC_LIST_CACHE;
+
+  if (input.hasAuthCookie || input.hasAuthorization) return PRIVATE_NO_STORE;
+  if (isPrivatePath(path) || path.startsWith('/api/v1/promotions')) {
+    return PRIVATE_NO_STORE;
+  }
   return PRIVATE_NO_STORE;
 }
 

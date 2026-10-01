@@ -44,7 +44,7 @@ describe('cacheControlForRequest', () => {
     ).toBe(PUBLIC_LIST);
   });
 
-  it('never caches authenticated, mutating, or private routes', () => {
+  it('caches public catalog reads even when a session cookie is present', () => {
     expect(
       cacheControlForRequest({
         method: 'GET',
@@ -53,7 +53,28 @@ describe('cacheControlForRequest', () => {
         hasAuthCookie: true,
         hasAuthorization: false,
       }),
-    ).toBe(PRIVATE);
+    ).toBe(PUBLIC_TAXONOMY);
+    expect(
+      cacheControlForRequest({
+        method: 'GET',
+        path: '/api/v1/listings',
+        search: '?page=1',
+        hasAuthCookie: true,
+        hasAuthorization: false,
+      }),
+    ).toBe(PUBLIC_LIST);
+    expect(
+      cacheControlForRequest({
+        method: 'GET',
+        path: '/api/v1/promotions/live',
+        search: '?surface=browse&kind=bike',
+        hasAuthCookie: false,
+        hasAuthorization: false,
+      }),
+    ).toBe(PUBLIC_LIST);
+  });
+
+  it('never caches mutating or private routes', () => {
     expect(
       cacheControlForRequest({
         method: 'GET',

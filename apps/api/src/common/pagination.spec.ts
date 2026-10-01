@@ -12,6 +12,7 @@ describe('parsePageLimit', () => {
     [{ page: '0', limit: '0' }, { page: 1, limit: 1, skip: 0 }],
     [{ page: '-3', limit: '500' }, { page: 1, limit: 100, skip: 0 }],
     [{ page: 'abc', limit: 'nope' }, { page: 1, limit: 20, skip: 0 }],
+    [{ page: '9000', limit: '10' }, { page: 200, limit: 10, skip: 1990 }],
   ])('parses %j', (input, expected) => {
     expect(parsePageLimit(input)).toEqual(expected);
   });

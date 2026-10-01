@@ -76,6 +76,8 @@ const skipDb = process.env.SKIP_DB === 'true';
                   max: Number.isFinite(poolMax) ? poolMax : 10,
                   idleTimeoutMillis: 30_000,
                   connectionTimeoutMillis: 10_000,
+                  query_timeout: 15_000,
+                  options: '-c statement_timeout=15000',
                 },
               };
             },

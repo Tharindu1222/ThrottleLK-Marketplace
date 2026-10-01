@@ -13,18 +13,18 @@ import type {
   UpdatePartListingInput,
 } from '@throttlelk/validation';
 import type { ListingStatus, PartListingKind } from '@throttlelk/types';
+import { In, Repository, type SelectQueryBuilder } from 'typeorm';
 import {
-  In,
-  IsNull,
-  LessThanOrEqual,
-  Repository,
-  type SelectQueryBuilder,
-} from 'typeorm';
+  browseCacheKey,
+  readBrowseCache,
+  writeBrowseCache,
+} from '../common/browse-cache';
 import { CacheService } from '../common/cache.service';
 import { assertEmailVerified } from '../common/email-verified';
 import { preferredCoverUrl } from '../common/image-variants';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
+import { expireActiveRows } from '../listings/expire-stale';
 import {
   computeExpiresAt,
   isPubliclyListed,
@@ -336,6 +336,12 @@ export class PartListingsService {
       defaultLimit: 50,
       maxLimit: 50,
     });
+    const cacheKey = browseCacheKey('parts', filters, page, limit);
+    const cached = await readBrowseCache<{
+      items: ReturnType<PartListingsService['toBrowseCard']>[];
+      meta: ReturnType<typeof paginationMeta>;
+    }>(this.cache, cacheKey);
+    if (cached) return cached;
     const idQb = this.partListings
       .createQueryBuilder('l')
       .select('l.id', 'id');
@@ -345,7 +351,9 @@ export class PartListingsService {
     const idRows = await idQb.skip(skip).take(limit).getRawMany<{ id: string }>();
     const ids = idRows.map((row) => row.id).filter(Boolean);
     if (ids.length === 0) {
-      return { items: [], meta: paginationMeta(total, page, limit) };
+      const empty = { items: [], meta: paginationMeta(total, page, limit) };
+      await writeBrowseCache(this.cache, cacheKey, empty, 20);
+      return empty;
     }
 
     const rows = await this.partListings
@@ -399,7 +407,7 @@ export class PartListingsService {
     const verifiedIds = await this.partsDealersService.activeVerifiedIds(
       ordered.map((row) => row.partsDealerId),
     );
-    return {
+    const result = {
       items: ordered.map((row) =>
         this.toBrowseCard(
           row,
@@ -409,6 +417,8 @@ export class PartListingsService {
       ),
       meta: paginationMeta(total, page, limit),
     };
+    await writeBrowseCache(this.cache, cacheKey, result, 20);
+    return result;
   }
 
   async getPublicBySlug(
@@ -999,32 +1009,14 @@ export class PartListingsService {
   }
 
   async expireStale(now = new Date()) {
-    const undated = await this.partListings.find({
-      where: { status: 'active', expiresAt: IsNull() },
+    const { expired, backfilled } = await expireActiveRows({
+      query: (sql, params) => this.partListings.query(sql, params),
+      table: 'part_listings',
+      lockKey: 710_002,
+      now,
     });
-    for (const listing of undated) {
-      listing.expiresAt = computeExpiresAt(
-        listing.publishedAt ?? listing.createdAt ?? now,
-      );
-      await this.partListings.save(listing);
-    }
-    const due = await this.partListings.find({
-      where: { status: 'active', expiresAt: LessThanOrEqual(now) },
-    });
-    let expired = 0;
-    for (const listing of due) {
-      const result = await this.partListings
-        .createQueryBuilder()
-        .update(PartListing)
-        .set({ status: 'expired' })
-        .where('id = :id', { id: listing.id })
-        .andWhere('status = :status', { status: 'active' })
-        .execute();
-      if (!result.affected) continue;
-      expired += 1;
-    }
-    if (expired) this.bumpDashboard();
-    return { expired, backfilled: undated.length };
+    if (expired.length) this.bumpDashboard();
+    return { expired: expired.length, backfilled };
   }
 
   async browseCardsByIds(ids: string[]) {
