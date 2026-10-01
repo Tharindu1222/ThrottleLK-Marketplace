@@ -1,9 +1,9 @@
+import type { BrowseListingCard } from '@/components/listing-card';
+import type { BrowsePartCard } from '@/components/part-card';
 import {
-  ListingCard,
-  type BrowseListingCard,
-} from '@/components/listing-card';
-import { PartCard, type BrowsePartCard } from '@/components/part-card';
-import { PromotedAutoplayStrip } from '@/components/promoted-autoplay-strip';
+  PromotedAutoplayStrip,
+  PromotedCompactCards,
+} from '@/components/promoted-autoplay-strip';
 import { apiGet } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 
@@ -27,7 +27,7 @@ export async function PromotedListingsRail({
   limit?: number;
   /** Current listing/part id — API does not exclude it. */
   excludeId?: string;
-  /** browse = compact autoplay strip; detail = card grid */
+  /** browse = scrolling strip; detail = small static cards */
   variant?: 'browse' | 'detail';
 }) {
   const cards =
@@ -68,17 +68,16 @@ export async function PromotedListingsRail({
     );
   }
 
-  const gridClass =
-    'mt-4 grid w-full min-w-0 grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4';
-  const sectionClass = 'mt-14 border-t border-black/10 pt-10';
-
   return (
     <section
       aria-labelledby="promoted-listings-heading"
-      className={sectionClass}
+      className="mt-14 border-t border-black/10 pt-10"
     >
       <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
-        {t(locale, 'homeLatestBikesEyebrow')}
+        {t(
+          locale,
+          kind === 'part' ? 'homeLatestPartsEyebrow' : 'homeLatestBikesEyebrow',
+        )}
       </p>
       <h2
         id="promoted-listings-heading"
@@ -86,28 +85,11 @@ export async function PromotedListingsRail({
       >
         {t(locale, 'promotedSection')}
       </h2>
-      <ul className={gridClass}>
-        {kind === 'bike'
-          ? (items as PromotedBikeCard[]).map((listing) => (
-              <li key={listing.id} className="min-w-0">
-                <ListingCard
-                  locale={locale}
-                  listing={listing}
-                  headingLevel="h3"
-                  showFavourite={false}
-                />
-              </li>
-            ))
-          : (items as PromotedPartCard[]).map((part) => (
-              <li key={part.id} className="min-w-0">
-                <PartCard
-                  locale={locale}
-                  part={part}
-                  showFavourite={false}
-                />
-              </li>
-            ))}
-      </ul>
+      <PromotedCompactCards
+        locale={locale}
+        bikes={kind === 'bike' ? (items as PromotedBikeCard[]) : undefined}
+        parts={kind === 'part' ? (items as PromotedPartCard[]) : undefined}
+      />
     </section>
   );
 }

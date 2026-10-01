@@ -16,7 +16,7 @@ type CategoryOption = Option & {
 };
 
 type FormState = {
-  kind: 'spare' | 'modified';
+  kind: 'spare' | 'modified' | 'accessory';
   title: string;
   description: string;
   priceLkr: string;
@@ -59,7 +59,7 @@ const emptyForm: FormState = {
 
 type LoadedPart = {
   id: string;
-  kind: 'spare' | 'modified';
+  kind: 'spare' | 'modified' | 'accessory';
   title: string;
   description: string;
   priceLkr: number;
@@ -419,6 +419,9 @@ export function NewPartListingForm({
             >
               <option value="spare">{t(locale, 'sparePartBadge')}</option>
               <option value="modified">{t(locale, 'modifiedPartBadge')}</option>
+              <option value="accessory">
+                {t(locale, 'riderAccessoriesBadge')}
+              </option>
             </select>
           </div>
           <div>

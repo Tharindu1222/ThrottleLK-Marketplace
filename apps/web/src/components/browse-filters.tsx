@@ -49,7 +49,7 @@ export type BrowseFilterState = {
 };
 
 const fieldClass =
-  'w-full min-w-0 max-w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50';
+  'w-full min-w-0 max-w-full bg-background px-3 py-2 text-sm outline-none ring-1 ring-black/10 focus:ring-accent disabled:opacity-50 lg:h-8 lg:px-2 lg:py-0';
 
 function FilterField({
   id,
@@ -128,13 +128,14 @@ export function BrowseFilters({
         action={`/${locale}/bikes`}
         className={
           open
-            ? 'mt-3 flex w-full min-w-0 flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0'
-            : 'mt-3 hidden w-full min-w-0 flex-col gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 lg:flex'
+            ? 'mt-3 grid w-full min-w-0 grid-cols-1 gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 lg:grid-cols-2 lg:gap-x-2 lg:gap-y-1.5 lg:p-3'
+            : 'mt-3 hidden w-full min-w-0 grid-cols-1 gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 lg:grid lg:grid-cols-2 lg:gap-x-2 lg:gap-y-1.5 lg:p-3'
         }
       >
-        <p className="hidden font-[family-name:var(--font-display)] text-lg tracking-wide lg:block">
+        <p className="hidden font-[family-name:var(--font-display)] text-base tracking-wide lg:col-span-2 lg:block">
           {t(locale, 'filters')}
         </p>
+        <div className="lg:col-span-2">
         <FilterField id={`${uid}-q`} label={t(locale, 'searchLabel')}>
           <input
             id={`${uid}-q`}
@@ -144,6 +145,7 @@ export function BrowseFilters({
             className={fieldClass}
           />
         </FilterField>
+        </div>
         <FilterField id={`${uid}-brand`} label={t(locale, 'brandFilter')}>
           <select
             id={`${uid}-brand`}
@@ -191,6 +193,21 @@ export function BrowseFilters({
             ))}
           </select>
         </FilterField>
+        <FilterField id={`${uid}-condition`} label={t(locale, 'condition')}>
+          <select
+            id={`${uid}-condition`}
+            name="condition"
+            defaultValue={initial.condition}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'condition')}</option>
+            <option value="new">{t(locale, 'conditionNew')}</option>
+            <option value="used">{t(locale, 'conditionUsed')}</option>
+            <option value="reconditioned">
+              {t(locale, 'conditionReconditioned')}
+            </option>
+          </select>
+        </FilterField>
         <FilterField id={`${uid}-district`} label={t(locale, 'districtFilter')}>
           <select
             id={`${uid}-district`}
@@ -223,21 +240,6 @@ export function BrowseFilters({
             ))}
           </select>
         </FilterField>
-        <FilterField id={`${uid}-condition`} label={t(locale, 'condition')}>
-          <select
-            id={`${uid}-condition`}
-            name="condition"
-            defaultValue={initial.condition}
-            className={fieldClass}
-          >
-            <option value="">{t(locale, 'condition')}</option>
-            <option value="new">{t(locale, 'conditionNew')}</option>
-            <option value="used">{t(locale, 'conditionUsed')}</option>
-            <option value="reconditioned">
-              {t(locale, 'conditionReconditioned')}
-            </option>
-          </select>
-        </FilterField>
         <FilterField id={`${uid}-fuel`} label={t(locale, 'fuelFilter')}>
           <select
             id={`${uid}-fuel`}
@@ -252,7 +254,21 @@ export function BrowseFilters({
             <option value="hybrid">{t(locale, 'fuelHybrid')}</option>
           </select>
         </FilterField>
-        <div className="grid min-w-0 grid-cols-2 gap-3">
+        <FilterField id={`${uid}-sort`} label={t(locale, 'sortLabel')}>
+          <select
+            id={`${uid}-sort`}
+            name="sort"
+            defaultValue={initial.sort ?? 'newest'}
+            className={fieldClass}
+          >
+            {SORTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {t(locale, s.labelKey)}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <div className="grid min-w-0 grid-cols-2 gap-3 lg:contents">
           <FilterField id={`${uid}-minPrice`} label={t(locale, 'minPrice')}>
             <input
               id={`${uid}-minPrice`}
@@ -272,7 +288,7 @@ export function BrowseFilters({
             />
           </FilterField>
         </div>
-        <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm">
+        <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm lg:min-h-8 lg:text-[13px]">
           <input
             type="checkbox"
             name="featured"
@@ -281,7 +297,7 @@ export function BrowseFilters({
           />
           {t(locale, 'featuredOnly')}
         </label>
-        <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm">
+        <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm lg:min-h-8 lg:text-[13px]">
           <input
             type="checkbox"
             name="negotiable"
@@ -290,23 +306,9 @@ export function BrowseFilters({
           />
           {t(locale, 'negotiableOnly')}
         </label>
-        <FilterField id={`${uid}-sort`} label={t(locale, 'sortLabel')}>
-          <select
-            id={`${uid}-sort`}
-            name="sort"
-            defaultValue={initial.sort ?? 'newest'}
-            className={fieldClass}
-          >
-            {SORTS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {t(locale, s.labelKey)}
-              </option>
-            ))}
-          </select>
-        </FilterField>
         <button
           type="submit"
-          className="min-h-11 bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110"
+          className="min-h-11 bg-accent px-4 py-2.5 font-[family-name:var(--font-display)] tracking-wide text-white transition hover:brightness-110 lg:col-span-2 lg:min-h-9 lg:py-1.5"
         >
           {t(locale, 'applyFilters')}
         </button>

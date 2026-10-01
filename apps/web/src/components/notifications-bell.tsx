@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { partListingBase } from '@/lib/part-kind';
 import {
   HeaderDropdown,
   HeaderNavBadge,
@@ -47,8 +48,7 @@ export function notificationHref(
     (n.type === 'part_listing_approved' || n.type === 'part_listing_rejected') &&
     data?.slug
   ) {
-    const kind = data.kind === 'modified' ? 'modified-parts' : 'spare-parts';
-    return `/${locale}/${kind}/${data.slug}`;
+    return `/${locale}/${partListingBase(data.kind ?? '')}/${data.slug}`;
   }
   if (!data) return null;
   if (data.conversationId) {
@@ -67,8 +67,7 @@ export function notificationHref(
     return `/${locale}/dealers/apply`;
   }
   if (data.slug && (n.type.includes('part') || data.kind)) {
-    const kind = data.kind === 'modified' ? 'modified-parts' : 'spare-parts';
-    return `/${locale}/${kind}/${data.slug}`;
+    return `/${locale}/${partListingBase(data.kind ?? '')}/${data.slug}`;
   }
   if (data.slug) {
     return `/${locale}/bikes/${data.slug}`;

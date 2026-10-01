@@ -27,6 +27,12 @@ export type PromoPaymentStatus =
 @Index('IDX_promo_requests_status_created', ['status', 'createdAt'])
 @Index('IDX_promo_requests_listing_status', ['listingId', 'status'])
 @Index('IDX_promo_requests_part_status', ['partListingId', 'status'])
+@Index('IDX_promo_requests_payment_status_status_paid_at', [
+  'paymentStatus',
+  'status',
+  'paidAt',
+])
+@Index('IDX_promo_requests_seller_id', ['sellerId'])
 export class PromoRequest {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

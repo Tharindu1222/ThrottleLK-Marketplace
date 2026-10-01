@@ -23,6 +23,7 @@ export type PlacementSource = 'request' | 'admin_override';
 @Index('IDX_homepage_placements_ends_at', ['endsAt'])
 @Index('IDX_homepage_placements_listing', ['listingId'])
 @Index('IDX_homepage_placements_part', ['partListingId'])
+@Index('IDX_homepage_placements_request_id', ['requestId'])
 export class HomepagePlacement {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

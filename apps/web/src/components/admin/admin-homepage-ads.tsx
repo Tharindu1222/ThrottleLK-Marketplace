@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
+import { partListingHref } from '@/lib/part-kind';
 
 type Tab = 'requests' | 'live' | 'settings';
 
@@ -47,15 +48,206 @@ const SURFACE_LABELS: Record<PromoSurface, string> = {
 
 const ALL_SURFACES: PromoSurface[] = ['home', 'browse', 'detail'];
 
-type BankRow = {
-  id: string;
-  bankName: string;
-  accountName: string;
-  accountNumber: string;
-  branch: string | null;
-  isDefault: boolean;
-  isActive: boolean;
-};
+const TIER_ORDER: PromoTier[] = ['boost', 'featured', 'premium'];
+
+const fieldLabel = 'block text-sm text-[var(--admin-muted)]';
+
+function packageForSlot(
+  rows: PackageRow[],
+  kind: 'bike' | 'part',
+  tier: PromoTier,
+) {
+  const matches = rows.filter(
+    (row) => row.kind === kind && (row.tier ?? 'featured') === tier,
+  );
+  return matches.find((row) => row.isActive) ?? matches[0] ?? null;
+}
+
+function TierBadge({ tier }: { tier: PromoTier }) {
+  return (
+    <span className="inline-flex rounded-md bg-[var(--admin-accent-soft)] px-1.5 py-0.5 text-xs font-medium text-[var(--admin-accent-2)]">
+      {TIER_LABELS[tier]}
+    </span>
+  );
+}
+
+function PackageSlot({
+  kind,
+  tier,
+  existing,
+  onSaved,
+  onError,
+}: {
+  kind: 'bike' | 'part';
+  tier: PromoTier;
+  existing: PackageRow | null;
+  onSaved: () => Promise<void> | void;
+  onError: (message: string) => void;
+}) {
+  const defaults = TIER_DEFAULTS[tier];
+  const [name, setName] = useState(existing?.name ?? TIER_LABELS[tier]);
+  const [days, setDays] = useState(
+    String(existing?.durationDays ?? (tier === 'premium' ? 14 : 7)),
+  );
+  const [price, setPrice] = useState(existing ? String(existing.priceLkr) : '');
+  const [surfaces, setSurfaces] = useState<PromoSurface[]>(
+    existing?.surfaces?.length ? [...existing.surfaces] : [...defaults.surfaces],
+  );
+  const [active, setActive] = useState(existing?.isActive ?? true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(existing?.name ?? TIER_LABELS[tier]);
+    setDays(String(existing?.durationDays ?? (tier === 'premium' ? 14 : 7)));
+    setPrice(existing ? String(existing.priceLkr) : '');
+    setSurfaces(
+      existing?.surfaces?.length ? [...existing.surfaces] : [...defaults.surfaces],
+    );
+    setActive(existing?.isActive ?? true);
+  }, [existing, tier, defaults.surfaces]);
+
+  function toggleSurface(surface: PromoSurface) {
+    setSurfaces((prev) =>
+      prev.includes(surface)
+        ? prev.filter((item) => item !== surface)
+        : [...prev, surface],
+    );
+  }
+
+  async function save() {
+    const durationDays = Number(days);
+    const priceLkr = Number(price);
+    if (
+      !name.trim() ||
+      !Number.isInteger(durationDays) ||
+      durationDays < 1 ||
+      !Number.isInteger(priceLkr) ||
+      priceLkr < 0
+    ) {
+      onError('Enter a name, a whole number of days, and a price.');
+      return;
+    }
+    if (surfaces.length === 0) {
+      onError('Select at least one surface');
+      return;
+    }
+    const access = getAccessToken();
+    if (!access) return;
+    setSaving(true);
+    try {
+      const body = {
+        name: name.trim(),
+        durationDays,
+        priceLkr,
+        surfaces,
+        priority: defaults.priority,
+        isActive: active,
+      };
+      if (existing) {
+        await apiSend(`/api/v1/admin/promotions/packages/${existing.id}`, {
+          method: 'PATCH',
+          token: access,
+          body,
+        });
+      } else {
+        await apiSend('/api/v1/admin/promotions/packages', {
+          token: access,
+          body: { ...body, kind, tier },
+        });
+      }
+      await onSaved();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Could not save package');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <li className="grid gap-3 border-b border-[var(--admin-border)] py-4 last:border-b-0 lg:grid-cols-[6.5rem_minmax(8rem,1.1fr)_5.5rem_7.5rem_minmax(12rem,1.3fr)_auto] lg:items-end">
+      <div className="lg:pb-2">
+        <TierBadge tier={tier} />
+      </div>
+      <div className="min-w-0">
+        <label htmlFor={`${kind}-${tier}-name`} className={fieldLabel}>
+          Name
+        </label>
+        <input
+          id={`${kind}-${tier}-name`}
+          className="admin-field mt-1"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </div>
+      <div className="min-w-0">
+        <label htmlFor={`${kind}-${tier}-days`} className={fieldLabel}>
+          Days
+        </label>
+        <input
+          id={`${kind}-${tier}-days`}
+          className="admin-field mt-1"
+          inputMode="numeric"
+          value={days}
+          onChange={(event) => setDays(event.target.value)}
+        />
+      </div>
+      <div className="min-w-0">
+        <label htmlFor={`${kind}-${tier}-price`} className={fieldLabel}>
+          Price (LKR)
+        </label>
+        <input
+          id={`${kind}-${tier}-price`}
+          className="admin-field mt-1"
+          inputMode="numeric"
+          value={price}
+          onChange={(event) => setPrice(event.target.value)}
+        />
+      </div>
+      <fieldset className="min-w-0">
+        <legend className={fieldLabel}>Surfaces</legend>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {ALL_SURFACES.map((surface) => (
+            <label
+              key={surface}
+              htmlFor={`${kind}-${tier}-${surface}`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--admin-border)] px-3 text-sm text-[var(--admin-text)]"
+            >
+              <input
+                id={`${kind}-${tier}-${surface}`}
+                type="checkbox"
+                checked={surfaces.includes(surface)}
+                onChange={() => toggleSurface(surface)}
+              />
+              {SURFACE_LABELS[surface]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+        <label
+          htmlFor={`${kind}-${tier}-active`}
+          className="inline-flex min-h-11 items-center gap-2 text-sm text-[var(--admin-text)]"
+        >
+          <input
+            id={`${kind}-${tier}-active`}
+            type="checkbox"
+            checked={active}
+            onChange={(event) => setActive(event.target.checked)}
+          />
+          Active
+        </label>
+        <button
+          type="button"
+          className="admin-btn-primary inline-flex min-h-11 items-center px-3 py-2 text-sm disabled:opacity-50"
+          disabled={saving}
+          onClick={() => void save()}
+        >
+          {saving ? 'Saving' : 'Save'}
+        </button>
+      </div>
+    </li>
+  );
+}
 
 type RequestListing = {
   id: string;
@@ -104,29 +296,81 @@ type RequestRow = {
 function listingViewHref(locale: string, row: RequestRow) {
   if (row.listing?.slug) return `/${locale}/bikes/${row.listing.slug}`;
   if (row.partListing?.slug) {
-    return row.partListing.kind === 'modified'
-      ? `/${locale}/modified-parts/${row.partListing.slug}`
-      : `/${locale}/spare-parts/${row.partListing.slug}`;
+    return partListingHref(
+      locale,
+      row.partListing.kind ?? 'spare',
+      row.partListing.slug,
+    );
   }
   return null;
 }
 
 type PlacementRow = {
   id: string;
-  subjectType: string;
+  subjectType: 'bike' | 'part';
   source: string;
+  tier: PromoTier;
   startsAt: string;
   endsAt: string;
-  tier?: PromoTier;
-  surfaces?: PromoSurface[];
-  priority?: number;
-  listing?: { id: string; title: string } | null;
-  partListing?: { id: string; title: string } | null;
+  title: string;
+  coverImageUrl: string | null;
 };
+
+function formatPromoDay(iso: string) {
+  return new Date(iso).toLocaleDateString('en-LK', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function LivePlacementCard({
+  row,
+  onEnd,
+}: {
+  row: PlacementRow;
+  onEnd: (id: string) => void;
+}) {
+  return (
+    <article className="admin-card flex items-center justify-between gap-3 p-4">
+      <div className="flex min-w-0 gap-4">
+        <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)]">
+          {row.coverImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={row.coverImageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-[var(--admin-faint)]">
+              No photo
+            </div>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-[var(--admin-text)]">
+            {row.title}
+          </p>
+          <p className="mt-1 text-xs text-[var(--admin-text)]">
+            {TIER_LABELS[row.tier]}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--admin-muted)]">
+            <span>Started {formatPromoDay(row.startsAt)}</span>
+            <span>Ends {formatPromoDay(row.endsAt)}</span>
+          </div>
+          <p className="mt-1 text-xs text-[var(--admin-muted)]">{row.source}</p>
+        </div>
+      </div>
+      <button type="button" className={btnDanger} onClick={() => void onEnd(row.id)}>
+        Remove now
+      </button>
+    </article>
+  );
+}
 
 const inline =
   'admin-field-inline w-full! min-w-0! max-w-none! sm:w-auto! sm:min-w-[9rem]! sm:max-w-[16rem]!';
-const full = 'admin-field';
 const btn = 'admin-btn-primary inline-flex min-h-11 shrink-0 items-center px-3 py-2 text-sm disabled:opacity-50';
 const btnGhost = 'admin-btn-ghost inline-flex min-h-11 shrink-0 items-center px-3 py-2 text-sm disabled:opacity-50';
 const btnDanger =
@@ -139,27 +383,8 @@ export function AdminHomepageAds() {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [placements, setPlacements] = useState<PlacementRow[]>([]);
   const [packages, setPackages] = useState<PackageRow[]>([]);
-  const [banks, setBanks] = useState<BankRow[]>([]);
-  const [whatsapp, setWhatsapp] = useState('');
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-
-  const [pkgKind, setPkgKind] = useState<'bike' | 'part'>('bike');
-  const [pkgName, setPkgName] = useState('');
-  const [pkgDays, setPkgDays] = useState('7');
-  const [pkgPrice, setPkgPrice] = useState('');
-  const [pkgTier, setPkgTier] = useState<PromoTier>('featured');
-  const [pkgSurfaces, setPkgSurfaces] = useState<PromoSurface[]>(
-    TIER_DEFAULTS.featured.surfaces,
-  );
-  const [pkgPriority, setPkgPriority] = useState(
-    String(TIER_DEFAULTS.featured.priority),
-  );
-
-  const [bankName, setBankName] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [branch, setBranch] = useState('');
 
   const [placeKind, setPlaceKind] = useState<'bike' | 'part'>('bike');
   const [placeQ, setPlaceQ] = useState('');
@@ -174,7 +399,7 @@ export function AdminHomepageAds() {
     if (!access) return;
     setError(null);
     try {
-      const [reqs, live, pkgs, accs, settings] = await Promise.all([
+      const [reqs, live, pkgs] = await Promise.all([
         apiGet<RequestRow[]>('/api/v1/admin/promotions/requests', { token: access }),
         apiGet<PlacementRow[]>('/api/v1/admin/promotions/placements', {
           token: access,
@@ -182,18 +407,10 @@ export function AdminHomepageAds() {
         apiGet<PackageRow[]>('/api/v1/admin/promotions/packages', {
           token: access,
         }),
-        apiGet<BankRow[]>('/api/v1/admin/promotions/bank-accounts', {
-          token: access,
-        }),
-        apiGet<{ whatsapp: string | null }>('/api/v1/admin/promotions/settings', {
-          token: access,
-        }),
       ]);
       setRequests(reqs);
       setPlacements(live);
       setPackages(pkgs);
-      setBanks(accs);
-      setWhatsapp(settings.whatsapp ?? '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     }
@@ -221,99 +438,6 @@ export function AdminHomepageAds() {
     });
     setRejectId(null);
     setRejectReason('');
-    await load();
-  }
-
-  function applyTierDefaults(tier: PromoTier) {
-    const defaults = TIER_DEFAULTS[tier];
-    setPkgTier(tier);
-    setPkgSurfaces(defaults.surfaces);
-    setPkgPriority(String(defaults.priority));
-  }
-
-  function toggleSurface(surface: PromoSurface) {
-    setPkgSurfaces((prev) =>
-      prev.includes(surface)
-        ? prev.filter((s) => s !== surface)
-        : [...prev, surface],
-    );
-  }
-
-  async function addPackage() {
-    const access = token();
-    if (!access) return;
-    if (pkgSurfaces.length === 0) {
-      setError('Select at least one surface');
-      return;
-    }
-    await apiSend('/api/v1/admin/promotions/packages', {
-      token: access,
-      body: {
-        kind: pkgKind,
-        name: pkgName,
-        durationDays: Number(pkgDays),
-        priceLkr: Number(pkgPrice),
-        tier: pkgTier,
-        surfaces: pkgSurfaces,
-        priority: Number(pkgPriority),
-      },
-    });
-    setPkgName('');
-    setPkgPrice('');
-    applyTierDefaults('featured');
-    await load();
-  }
-
-  async function togglePackage(row: PackageRow) {
-    const access = token();
-    if (!access) return;
-    await apiSend(`/api/v1/admin/promotions/packages/${row.id}`, {
-      method: 'PATCH',
-      token: access,
-      body: { isActive: !row.isActive },
-    });
-    await load();
-  }
-
-  async function addBank() {
-    const access = token();
-    if (!access) return;
-    await apiSend('/api/v1/admin/promotions/bank-accounts', {
-      token: access,
-      body: {
-        bankName,
-        accountName,
-        accountNumber,
-        branch: branch || null,
-        isDefault: banks.length === 0,
-      },
-    });
-    setBankName('');
-    setAccountName('');
-    setAccountNumber('');
-    setBranch('');
-    await load();
-  }
-
-  async function makeDefault(id: string) {
-    const access = token();
-    if (!access) return;
-    await apiSend(`/api/v1/admin/promotions/bank-accounts/${id}`, {
-      method: 'PATCH',
-      token: access,
-      body: { isDefault: true },
-    });
-    await load();
-  }
-
-  async function saveWhatsapp() {
-    const access = token();
-    if (!access) return;
-    await apiSend('/api/v1/admin/promotions/settings', {
-      method: 'PATCH',
-      token: access,
-      body: { whatsapp: whatsapp || null },
-    });
     await load();
   }
 
@@ -360,6 +484,8 @@ export function AdminHomepageAds() {
   const pending = requests.filter(
     (row) => row.status === 'pending' && row.paymentStatus === 'paid',
   );
+  const liveListings = placements.filter((row) => row.subjectType === 'bike');
+  const liveParts = placements.filter((row) => row.subjectType === 'part');
 
   const tabs: { id: Tab; label: string }[] = [
     {
@@ -439,7 +565,13 @@ export function AdminHomepageAds() {
                 : null,
             ].filter(Boolean);
             const partBits = [
-              row.partListing?.kind === 'modified' ? 'Modified' : row.partListing ? 'Spare' : null,
+              row.partListing?.kind === 'modified'
+                ? 'Modified'
+                : row.partListing?.kind === 'accessory'
+                  ? 'Rider Accessories'
+                  : row.partListing
+                    ? 'Spare'
+                    : null,
               row.partListing?.category?.name,
               row.partListing?.condition,
             ].filter(Boolean);
@@ -558,52 +690,83 @@ export function AdminHomepageAds() {
             <p className="text-sm font-medium text-[var(--admin-text)]">
               Add manually
             </p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <select
-                className={inline}
-                value={placeKind}
-                onChange={(e) => {
-                  setPlaceKind(e.target.value as 'bike' | 'part');
-                  setPlacePackageId('');
-                }}
-              >
-                <option value="bike">Bike</option>
-                <option value="part">Part</option>
-              </select>
-              <select
-                className={inline}
-                value={placePackageId}
-                onChange={(e) => {
-                  setPlacePackageId(e.target.value);
-                  const pkg = packages.find((row) => row.id === e.target.value);
-                  if (pkg) setPlaceDays(String(pkg.durationDays));
-                }}
-                aria-label="Package"
-              >
-                <option value="">Package (optional)</option>
+            <div className="mt-3 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="min-w-0">
+                <label htmlFor="place-kind" className={fieldLabel}>
+                  Kind
+                </label>
+                <select
+                  id="place-kind"
+                  className="admin-field mt-1"
+                  value={placeKind}
+                  onChange={(e) => {
+                    setPlaceKind(e.target.value as 'bike' | 'part');
+                    setPlacePackageId('');
+                  }}
+                >
+                  <option value="bike">Bike</option>
+                  <option value="part">Part</option>
+                </select>
+              </div>
+              <div className="min-w-0">
+                <label htmlFor="place-package" className={fieldLabel}>
+                  Package
+                </label>
+                <select
+                  id="place-package"
+                  className="admin-field mt-1"
+                  value={placePackageId}
+                  onChange={(e) => {
+                    setPlacePackageId(e.target.value);
+                    const pkg = packages.find((row) => row.id === e.target.value);
+                    if (pkg) setPlaceDays(String(pkg.durationDays));
+                  }}
+                >
+                  <option value="">Optional</option>
                 {packages
-                  .filter((row) => row.kind === placeKind && row.isActive)
+                  .filter((row) => {
+                    if (row.kind !== placeKind || !row.isActive) return false;
+                    const slot = packageForSlot(
+                      packages,
+                      placeKind,
+                      row.tier ?? 'featured',
+                    );
+                    return slot?.id === row.id;
+                  })
                   .map((row) => (
-                    <option key={row.id} value={row.id}>
-                      {row.tier} · {row.name} · {row.durationDays}d
-                    </option>
-                  ))}
-              </select>
-              <input
-                className={`${inline} min-w-[12rem]`}
-                placeholder="Search title"
-                value={placeQ}
-                onChange={(e) => setPlaceQ(e.target.value)}
-              />
-              <input
-                className={`${inline} min-w-[4.5rem] w-20`}
-                value={placeDays}
-                onChange={(e) => setPlaceDays(e.target.value)}
-                aria-label="Days"
-              />
+                      <option key={row.id} value={row.id}>
+                        {row.tier} · {row.name} · {row.durationDays}d
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="min-w-0">
+                <label htmlFor="place-title" className={fieldLabel}>
+                  Search title
+                </label>
+                <input
+                  id="place-title"
+                  className="admin-field mt-1"
+                  value={placeQ}
+                  onChange={(e) => setPlaceQ(e.target.value)}
+                />
+              </div>
+              <div className="min-w-0">
+                <label htmlFor="place-days" className={fieldLabel}>
+                  Days
+                </label>
+                <input
+                  id="place-days"
+                  className="admin-field mt-1"
+                  value={placeDays}
+                  onChange={(e) => setPlaceDays(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="mt-3">
               <button
                 type="button"
-                className={`${btn} ml-auto`}
+                className={btn}
                 onClick={() => void searchPlace()}
               >
                 Search
@@ -627,7 +790,7 @@ export function AdminHomepageAds() {
               ))}
             </ul>
           </div>
-          {placements.length === 0 ? (
+          {liveListings.length === 0 && liveParts.length === 0 ? (
             <div className="admin-card px-5 py-8 text-center">
               <p className="text-sm font-medium text-[var(--admin-text)]">
                 No live placements
@@ -636,243 +799,67 @@ export function AdminHomepageAds() {
                 Approved promos and manual placements show up here while active.
               </p>
             </div>
-          ) : null}
-          {placements.map((row) => (
-            <article
-              key={row.id}
-              className="admin-card flex items-center justify-between gap-3 p-4"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-[var(--admin-text)]">
-                  {row.listing?.title ?? row.partListing?.title}
-                </p>
-                <p className="text-xs text-[var(--admin-muted)]">
-                  {TIER_LABELS[row.tier ?? 'featured']} · Until{' '}
-                  {new Date(row.endsAt).toLocaleDateString('en-LK')} ·{' '}
-                  {row.source}
-                </p>
-              </div>
-              <button
-                type="button"
-                className={btnDanger}
-                onClick={() => void endNow(row.id)}
-              >
-                Remove now
-              </button>
-            </article>
-          ))}
+          ) : (
+            <>
+              <section className="space-y-3">
+                <h2 className="text-sm font-medium text-[var(--admin-text)]">
+                  Listings ({liveListings.length})
+                </h2>
+                {liveListings.length === 0 ? (
+                  <p className="text-sm text-[var(--admin-muted)]">No live listings</p>
+                ) : (
+                  liveListings.map((row) => (
+                    <LivePlacementCard key={row.id} row={row} onEnd={endNow} />
+                  ))
+                )}
+              </section>
+              <section className="space-y-3">
+                <h2 className="text-sm font-medium text-[var(--admin-text)]">
+                  Parts ({liveParts.length})
+                </h2>
+                {liveParts.length === 0 ? (
+                  <p className="text-sm text-[var(--admin-muted)]">No live parts</p>
+                ) : (
+                  liveParts.map((row) => (
+                    <LivePlacementCard key={row.id} row={row} onEnd={endNow} />
+                  ))
+                )}
+              </section>
+            </>
+          )}
         </div>
       ) : null}
 
       {tab === 'settings' ? (
-        <div className="space-y-4">
-          <section className="admin-card p-4">
-            <h2 className="text-lg font-medium text-[var(--admin-text)]">Packages</h2>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <select
-                className={inline}
-                value={pkgKind}
-                onChange={(e) => setPkgKind(e.target.value as 'bike' | 'part')}
-              >
-                <option value="bike">Bike</option>
-                <option value="part">Part</option>
-              </select>
-              <input
-                className={`${inline} min-w-[10rem]`}
-                placeholder="Name"
-                value={pkgName}
-                onChange={(e) => setPkgName(e.target.value)}
-              />
-              <input
-                className={`${inline} min-w-[4.5rem] w-20`}
-                placeholder="Days"
-                value={pkgDays}
-                onChange={(e) => setPkgDays(e.target.value)}
-              />
-              <input
-                className={`${inline} min-w-[7rem]`}
-                placeholder="Price LKR"
-                value={pkgPrice}
-                onChange={(e) => setPkgPrice(e.target.value)}
-              />
-              <select
-                className={inline}
-                value={pkgTier}
-                onChange={(e) =>
-                  applyTierDefaults(e.target.value as PromoTier)
-                }
-                aria-label="Tier"
-              >
-                <option value="boost">Boost</option>
-                <option value="featured">Featured</option>
-                <option value="premium">Premium</option>
-              </select>
-              <input
-                className={`${inline} min-w-[4.5rem] w-20`}
-                type="number"
-                min={0}
-                max={1000}
-                placeholder="Priority"
-                value={pkgPriority}
-                onChange={(e) => setPkgPriority(e.target.value)}
-                aria-label="Priority"
-              />
-              <button
-                type="button"
-                className={`${btn} ml-auto`}
-                onClick={() => void addPackage()}
-              >
-                Add
-              </button>
-            </div>
-            <fieldset className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <legend className="sr-only">Surfaces</legend>
-              <span className="text-xs text-[var(--admin-muted)]">Surfaces</span>
-              {ALL_SURFACES.map((surface) => (
-                <label
-                  key={surface}
-                  className="inline-flex items-center gap-1.5 text-sm text-[var(--admin-text)]"
-                >
-                  <input
-                    type="checkbox"
-                    checked={pkgSurfaces.includes(surface)}
-                    onChange={() => toggleSurface(surface)}
-                  />
-                  {SURFACE_LABELS[surface]}
-                </label>
-              ))}
-            </fieldset>
-            <ul className="mt-3 space-y-2">
-              {packages.map((row) => {
-                const tier = row.tier ?? 'featured';
-                const surfaces = row.surfaces?.length
-                  ? row.surfaces
-                  : TIER_DEFAULTS[tier].surfaces;
-                return (
-                  <li
-                    key={row.id}
-                    className="flex items-center justify-between gap-2 text-sm text-[var(--admin-text)]"
-                  >
-                    <div className="min-w-0 flex flex-wrap items-center gap-2">
-                      <span
-                        className="inline-flex rounded-md bg-[var(--admin-accent-soft)] px-1.5 py-0.5 text-xs font-medium text-[var(--admin-accent-2)]"
-                      >
-                        {TIER_LABELS[tier]}
-                      </span>
-                      <span className="min-w-0 truncate">
-                        {row.kind} · {row.name} · {row.durationDays}d · Rs.{' '}
-                        {row.priceLkr.toLocaleString('en-LK')}
-                        {row.isActive ? '' : ' (off)'}
-                        {' · p'}
-                        {row.priority ?? TIER_DEFAULTS[tier].priority}
-                      </span>
-                      <span className="flex flex-wrap gap-1">
-                        {surfaces.map((surface) => (
-                          <span
-                            key={surface}
-                            className="rounded border border-[var(--admin-border)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--admin-muted)]"
-                          >
-                            {SURFACE_LABELS[surface]}
-                          </span>
-                        ))}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className={btnGhost}
-                      onClick={() => void togglePackage(row)}
-                    >
-                      {row.isActive ? 'Disable' : 'Enable'}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          <section className="admin-card p-4">
-            <h2 className="text-lg font-medium text-[var(--admin-text)]">
-              Bank accounts
-            </h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <input
-                className={full}
-                placeholder="Bank"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-              />
-              <input
-                className={full}
-                placeholder="Account name"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-              />
-              <input
-                className={full}
-                placeholder="Account number"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-              />
-              <input
-                className={full}
-                placeholder="Branch"
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
-              />
-            </div>
-            <button
-              type="button"
-              className={`${btn} mt-3`}
-              onClick={() => void addBank()}
-            >
-              Add account
-            </button>
-            <ul className="mt-3 space-y-2">
-              {banks.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex items-center justify-between gap-2 text-sm text-[var(--admin-text)]"
-                >
-                  <span className="min-w-0 truncate">
-                    {row.bankName} · {row.accountName} · {row.accountNumber}
-                    {row.isDefault ? ' · default' : ''}
-                  </span>
-                  {!row.isDefault ? (
-                    <button
-                      type="button"
-                      className={btnGhost}
-                      onClick={() => void makeDefault(row.id)}
-                    >
-                      Make default
-                    </button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="admin-card p-4">
-            <h2 className="text-lg font-medium text-[var(--admin-text)]">
-              WhatsApp number
-            </h2>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <input
-                className={`${inline} min-w-[12rem] flex-1 max-w-none`}
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                placeholder="0771234567"
-              />
-              <button
-                type="button"
-                className={btn}
-                onClick={() => void saveWhatsapp()}
-              >
-                Save
-              </button>
-            </div>
-          </section>
-        </div>
+        <section className="admin-card p-4 sm:p-5">
+          <h2 className="text-lg font-medium text-[var(--admin-text)]">Packages</h2>
+          <p className="mt-1 text-sm text-[var(--admin-muted)]">
+            Bikes and parts each have three packages: Boost, Featured, and Premium. Edit those instead of adding more.
+          </p>
+          <div className="mt-6 space-y-8">
+            {(['bike', 'part'] as const).map((kind) => (
+              <div key={kind}>
+                <h3 className="text-sm font-medium text-[var(--admin-text)]">
+                  {kind === 'bike' ? 'Bikes' : 'Parts'}
+                </h3>
+                <ul className="mt-1">
+                  {TIER_ORDER.map((tier) => (
+                    <PackageSlot
+                      key={`${kind}-${tier}`}
+                      kind={kind}
+                      tier={tier}
+                      existing={packageForSlot(packages, kind, tier)}
+                      onSaved={load}
+                      onError={setError}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
       ) : null}
+
     </div>
   );
 }

@@ -24,6 +24,7 @@ import { PartListingJobsService } from './part-listing-jobs.service';
 import { PartListing } from './part-listing.entity';
 import { PartListingsController } from './part-listings.controller';
 import { PartListingsService } from './part-listings.service';
+import { RiderAccessoriesController } from './rider-accessories.controller';
 import { SparePartsController } from './spare-parts.controller';
 
 @Module({
@@ -50,6 +51,7 @@ import { SparePartsController } from './spare-parts.controller';
     PartListingsController,
     SparePartsController,
     ModifiedPartsController,
+    RiderAccessoriesController,
     PartFavouritesController,
     PartCategoriesController,
   ],

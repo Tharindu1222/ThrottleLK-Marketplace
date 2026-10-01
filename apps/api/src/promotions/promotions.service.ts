@@ -41,10 +41,10 @@ import {
   type PromoTier,
 } from './promo-package.entity';
 import {
-  summarizePromoLedger,
-  type MonetizeRange,
-  type PromoLedgerInput,
-} from './promo-ledger';
+  parseMonetizeQuery,
+  queryPromoMonetize,
+  type MonetizeRequestQuery,
+} from './promo-monetize';
 import { PromoRequest } from './promo-request.entity';
 import { PromoSettings } from './promo-settings.entity';
 import {
@@ -103,9 +103,16 @@ export class PromotionsService {
   ) {}
 
   async listPublicPackages(kind: PromoSubjectType) {
-    return this.packages.find({
+    const rows = await this.packages.find({
       where: { kind, isActive: true },
       order: { sortOrder: 'ASC', priceLkr: 'ASC' },
+    });
+    const seen = new Set<string>();
+    return rows.filter((row) => {
+      const tier = row.tier ?? 'featured';
+      if (seen.has(tier)) return false;
+      seen.add(tier);
+      return true;
     });
   }
 
@@ -650,67 +657,34 @@ export class PromotionsService {
     });
   }
 
-  async monetize(range: MonetizeRange) {
-    const rows = await this.requests
-      .createQueryBuilder('r')
-      .leftJoinAndSelect('r.package', 'package')
-      .leftJoinAndSelect('r.seller', 'seller')
-      .leftJoinAndSelect('r.listing', 'listing')
-      .leftJoinAndSelect('r.partListing', 'partListing')
-      .orderBy('r.createdAt', 'DESC')
-      .getMany();
-
-    const ids = rows.map((row) => row.id);
-    const placements = ids.length
-      ? await this.placements
-          .createQueryBuilder('p')
-          .where('p.requestId IN (:...ids)', { ids })
-          .getMany()
-      : [];
-    const endsByRequest = new Map(
-      placements
-        .filter((placement) => placement.requestId)
-        .map((placement) => [placement.requestId as string, placement.endsAt]),
-    );
-
-    const ledger: PromoLedgerInput[] = rows.map((row) => {
-      const sellerName = [row.seller?.firstName, row.seller?.lastName]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
-      return {
-        id: row.id,
-        createdAt: row.createdAt,
-        paidAt: row.paidAt,
-        status: row.status,
-        paymentStatus: row.paymentStatus,
-        paymentProvider: row.paymentProvider,
-        subjectType: row.subjectType,
-        partKind:
-          row.partListing?.kind === 'modified' ||
-          row.partListing?.kind === 'spare'
-            ? row.partListing.kind
-            : null,
-        amountLkr: row.chargedPriceLkr ?? row.package?.priceLkr ?? 0,
-        packageName: row.package?.name ?? 'Package',
-        durationDays: row.package?.durationDays ?? 0,
-        sellerId: row.sellerId,
-        sellerName: sellerName || 'Seller',
-        sellerEmail: row.seller?.email ?? '',
-        listingTitle:
-          row.listing?.title ?? row.partListing?.title ?? 'Listing',
-        placementEndsAt: endsByRequest.get(row.id) ?? null,
-      };
-    });
-
-    return summarizePromoLedger(ledger, new Date(), range);
+  async monetize(query: MonetizeRequestQuery) {
+    const parsed = parseMonetizeQuery(query);
+    return queryPromoMonetize(this.dataSource, parsed, new Date());
   }
 
   async listLivePlacements() {
-    return this.placements.find({
+    const rows = await this.placements.find({
       where: { endsAt: MoreThan(new Date()) },
-      relations: ['listing', 'partListing', 'request'],
+      relations: [
+        'listing',
+        'listing.images',
+        'partListing',
+        'partListing.images',
+      ],
       order: { startsAt: 'DESC' },
+    });
+    return rows.map((row) => {
+      const listing = row.subjectType === 'part' ? row.partListing : row.listing;
+      return {
+        id: row.id,
+        subjectType: row.subjectType,
+        source: row.source,
+        tier: row.tier,
+        startsAt: row.startsAt.toISOString(),
+        endsAt: row.endsAt.toISOString(),
+        title: listing?.title || 'Listing',
+        coverImageUrl: this.coverFromImages(listing?.images),
+      };
     });
   }
 
@@ -925,11 +899,23 @@ export class PromotionsService {
 
   async createPackage(input: CreatePromoPackageInput) {
     const fields = this.resolvePackageTierFields(input);
+    const existing = await this.packages.findOne({
+      where: { kind: input.kind, tier: fields.tier },
+    });
+    if (existing) {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'PACKAGE_EXISTS',
+          message: 'Bikes and parts each already have this package. Edit it instead of adding another.',
+        },
+      });
+    }
     return this.packages.save(
       this.packages.create({
         ...input,
         ...fields,
-        sortOrder: input.sortOrder ?? 0,
+        sortOrder: input.sortOrder ?? fields.priority,
         isActive: input.isActive ?? true,
       }),
     );

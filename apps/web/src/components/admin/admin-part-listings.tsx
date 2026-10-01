@@ -14,6 +14,7 @@ import type {
 import { AdminPartListingImageManager } from './admin-part-listing-image-manager';
 import { Pagination } from '@/components/pagination';
 import { clampedPage } from '@/lib/pagination';
+import { partListingHref } from '@/lib/part-kind';
 import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 
 type PartCategory = {
@@ -36,13 +37,13 @@ const STATUSES = [
   'expired',
 ] as const;
 
-const KINDS = ['', 'spare', 'modified'] as const;
+const KINDS = ['', 'spare', 'modified', 'accessory'] as const;
 
 const emptyFitment = (): FitmentForm => ({ brandId: '', modelId: '' });
 
 const emptyForm = {
   partsDealerId: '',
-  kind: 'spare' as 'spare' | 'modified',
+  kind: 'spare' as 'spare' | 'modified' | 'accessory',
   categoryId: '',
   districtId: '',
   cityId: '',
@@ -78,7 +79,9 @@ function statusTone(status: string) {
 }
 
 function kindLabel(kind: string) {
-  return kind === 'modified' ? 'Modified' : 'Spare';
+  if (kind === 'modified') return 'Modified';
+  if (kind === 'accessory') return 'Rider Accessories';
+  return 'Spare';
 }
 
 export function AdminPartListings({ search = '' }: { search?: string }) {
@@ -485,9 +488,7 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
   }
 
   function viewHref(row: AdminPartListing) {
-    return row.kind === 'modified'
-      ? `/${locale}/modified-parts/${row.slug}`
-      : `/${locale}/spare-parts/${row.slug}`;
+    return partListingHref(locale, row.kind, row.slug);
   }
 
   if (!token) return null;
@@ -764,12 +765,13 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                   onChange={(e) =>
                     setForm((f) => ({
                       ...f,
-                      kind: e.target.value as 'spare' | 'modified',
+                      kind: e.target.value as 'spare' | 'modified' | 'accessory',
                     }))
                   }
                 >
                   <option value="spare">Spare</option>
                   <option value="modified">Modified</option>
+                  <option value="accessory">Rider Accessories</option>
                 </select>
               </label>
               <label className="space-y-1 text-sm">

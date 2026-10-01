@@ -8,6 +8,7 @@ import { VerifiedDealerBadge } from '@/components/verified-dealer-badge';
 import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { partListingHref } from '@/lib/part-kind';
 import { loginHref } from '@/lib/login-href';
 import { listingConditionLabel } from '@/lib/listing-labels';
 import {
@@ -88,14 +89,13 @@ function formatListedAt(iso: string, locale: Locale): string {
 }
 
 function kindHref(locale: Locale, kind: string, slug: string) {
-  const base = kind === 'modified' ? 'modified-parts' : 'spare-parts';
-  return `/${locale}/${base}/${slug}`;
+  return partListingHref(locale, kind, slug);
 }
 
 function kindLabel(locale: Locale, kind: string) {
-  return kind === 'modified'
-    ? t(locale, 'modifiedPartBadge')
-    : t(locale, 'sparePartBadge');
+  if (kind === 'modified') return t(locale, 'modifiedPartBadge');
+  if (kind === 'accessory') return t(locale, 'riderAccessoriesBadge');
+  return t(locale, 'sparePartBadge');
 }
 
 function OverlayTip({

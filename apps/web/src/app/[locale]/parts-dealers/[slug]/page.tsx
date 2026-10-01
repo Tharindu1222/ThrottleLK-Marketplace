@@ -48,7 +48,9 @@ export default async function PartsDealerShowroomPage({
   const sp = await searchParams;
   const kindRaw = typeof sp.kind === 'string' ? sp.kind : undefined;
   const kind =
-    kindRaw === 'spare' || kindRaw === 'modified' ? kindRaw : undefined;
+    kindRaw === 'spare' || kindRaw === 'modified' || kindRaw === 'accessory'
+      ? kindRaw
+      : undefined;
   const pageRaw = sp.page;
   const page = parsePageParam(typeof pageRaw === 'string' ? pageRaw : undefined);
 
@@ -173,6 +175,21 @@ export default async function PartsDealerShowroomPage({
               aria-current={kind === 'modified' ? 'page' : undefined}
             >
               {t(locale, 'modifiedTab')}
+            </Link>
+            <Link
+              href={hrefWithPage(
+                `/${locale}/parts-dealers/${slug}`,
+                { kind: 'accessory' },
+                1,
+              )}
+              className={`inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-medium transition ${
+                kind === 'accessory'
+                  ? 'bg-foreground text-white'
+                  : 'border border-black/15 bg-background hover:border-accent/40'
+              }`}
+              aria-current={kind === 'accessory' ? 'page' : undefined}
+            >
+              {t(locale, 'riderAccessoriesNav')}
             </Link>
           </div>
 

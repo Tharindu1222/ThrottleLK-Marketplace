@@ -26,7 +26,21 @@ export type PromoLedgerInput = {
 };
 
 const TRANSACTION_LIMIT = 400;
-const COLOMBO_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+export const COLOMBO_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/** Start of the monetize window. `null` means all time. Month starts at 00:00 Asia/Colombo. */
+export function promoMonetizeRangeStart(
+  range: MonetizeRange,
+  now: Date,
+): Date | null {
+  if (range === 'all') return null;
+  if (range === '30d') return new Date(now.getTime() - 30 * 86_400_000);
+  const colombo = new Date(now.getTime() + COLOMBO_OFFSET_MS);
+  return new Date(
+    Date.UTC(colombo.getUTCFullYear(), colombo.getUTCMonth(), 1) -
+      COLOMBO_OFFSET_MS,
+  );
+}
 
 export function promoMoneyChannel(
   subjectType: string,
@@ -49,16 +63,6 @@ export function promoMoneyBucket(row: {
   return 'pending';
 }
 
-function rangeStart(range: MonetizeRange, now: Date): Date | null {
-  if (range === 'all') return null;
-  if (range === '30d') return new Date(now.getTime() - 30 * 86_400_000);
-  const colombo = new Date(now.getTime() + COLOMBO_OFFSET_MS);
-  return new Date(
-    Date.UTC(colombo.getUTCFullYear(), colombo.getUTCMonth(), 1) -
-      COLOMBO_OFFSET_MS,
-  );
-}
-
 function eventAt(row: PromoLedgerInput, bucket: PromoMoneyBucket): Date {
   if (bucket === 'collected' && row.paidAt) return row.paidAt;
   return row.createdAt;
@@ -73,7 +77,7 @@ export function summarizePromoLedger(
   now: Date,
   range: MonetizeRange,
 ) {
-  const start = rangeStart(range, now);
+  const start = promoMonetizeRangeStart(range, now);
   const collected = {
     totalLkr: 0,
     count: 0,

@@ -6,6 +6,7 @@ import { MarketplaceImage } from '@/components/marketplace-image';
 import type { BrowseListingCard } from '@/components/listing-card';
 import type { BrowsePartCard } from '@/components/part-card';
 import { t, type Locale } from '@/lib/i18n';
+import { partListingBase } from '@/lib/part-kind';
 import { composeListingTitle } from '@/lib/listing-title';
 import { promoCardBadgeLabel } from '@/lib/promo-tier';
 
@@ -23,7 +24,7 @@ function formatLkr(n: number) {
 }
 
 function partHref(locale: Locale, part: BrowsePartCard) {
-  const base = part.kind === 'modified' ? 'modified-parts' : 'spare-parts';
+  const base = partListingBase(part.kind);
   return `/${locale}/${base}/${part.slug}`;
 }
 
@@ -123,6 +124,27 @@ function PromoChip({
         </Link>
       </article>
     </li>
+  );
+}
+
+export function PromotedCompactCards({
+  locale,
+  bikes,
+  parts,
+}: {
+  locale: Locale;
+  bikes?: BrowseListingCard[];
+  parts?: BrowsePartCard[];
+}) {
+  const cards = toCards(locale, bikes, parts);
+  if (cards.length === 0) return null;
+
+  return (
+    <ul className="mt-4 flex flex-wrap gap-3">
+      {cards.map((card) => (
+        <PromoChip key={card.id} card={card} />
+      ))}
+    </ul>
   );
 }
 

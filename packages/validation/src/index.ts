@@ -253,7 +253,11 @@ export const startConversationSchema = z
     }
   });
 
-export const partListingKindSchema = z.enum(['spare', 'modified']);
+export const partListingKindSchema = z.enum([
+  'spare',
+  'modified',
+  'accessory',
+]);
 
 export const partListingFitmentSchema = z.object({
   brandId: z.string().uuid(),

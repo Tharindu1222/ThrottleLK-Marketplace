@@ -86,7 +86,7 @@ export type AdminPartListing = {
   id: string;
   title: string;
   slug: string;
-  kind: 'spare' | 'modified';
+  kind: 'spare' | 'modified' | 'accessory';
   priceLkr: number;
   status: string;
   condition: string;

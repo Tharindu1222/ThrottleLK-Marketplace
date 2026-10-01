@@ -138,6 +138,7 @@ export function PartBrowseFilters({
             <option value="">{t(locale, 'allPartsNav')}</option>
             <option value="spare">{t(locale, 'sparePartsNav')}</option>
             <option value="modified">{t(locale, 'modifiedPartsNav')}</option>
+            <option value="accessory">{t(locale, 'riderAccessoriesNav')}</option>
           </select>
         </FilterField>
         <FilterField

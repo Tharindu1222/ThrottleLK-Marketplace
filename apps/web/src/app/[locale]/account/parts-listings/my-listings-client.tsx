@@ -15,6 +15,7 @@ import { Pagination } from '@/components/pagination';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import { partListingHref } from '@/lib/part-kind';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
 import { useUrlPage } from '@/lib/use-url-page';
@@ -79,8 +80,7 @@ function formatLkr(n: number) {
 }
 
 function publicHref(locale: Locale, listing: PartListing) {
-  const base = listing.kind === 'modified' ? 'modified-parts' : 'spare-parts';
-  return `/${locale}/${base}/${listing.slug}`;
+  return partListingHref(locale, listing.kind, listing.slug);
 }
 
 function statusLabel(locale: Locale, status: string) {

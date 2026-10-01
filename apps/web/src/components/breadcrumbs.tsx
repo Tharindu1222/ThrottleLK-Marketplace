@@ -57,6 +57,9 @@ function humanize(segment: string) {
 function staticLabel(locale: Locale, segment: string): string | null {
   const map: Record<string, string> = {
     bikes: t(locale, 'allBikes'),
+    'spare-parts': t(locale, 'sparePartsNav'),
+    'modified-parts': t(locale, 'modifiedPartsNav'),
+    'rider-accessories': t(locale, 'riderAccessoriesNav'),
     brands: t(locale, 'brandsNav'),
     dealers: t(locale, 'dealersNav'),
     map: t(locale, 'dealersMap'),

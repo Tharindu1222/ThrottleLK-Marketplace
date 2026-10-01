@@ -87,6 +87,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       partsDealers,
       spareParts,
       modifiedParts,
+      riderAccessories,
     ] = await Promise.all([
       apiGet<Brand[]>('/api/v1/brands'),
       apiGet<District[]>('/api/v1/locations/districts'),
@@ -98,6 +99,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
       fetchAllPages<PartSlug>('/api/v1/part-listings/seo-slugs', {
         kind: 'modified',
+      }),
+      fetchAllPages<PartSlug>('/api/v1/part-listings/seo-slugs', {
+        kind: 'accessory',
       }),
     ]);
 
@@ -165,6 +169,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       for (const part of modifiedParts) {
         base.push(
           loc(locale, `/modified-parts/${part.slug}`, {
+            changeFrequency: 'daily',
+            priority: 0.55,
+            lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,
+          }),
+        );
+      }
+      for (const part of riderAccessories) {
+        base.push(
+          loc(locale, `/rider-accessories/${part.slug}`, {
             changeFrequency: 'daily',
             priority: 0.55,
             lastModified: part.updatedAt ? new Date(part.updatedAt) : undefined,

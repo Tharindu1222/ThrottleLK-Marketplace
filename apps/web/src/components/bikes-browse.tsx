@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
   BrowseFilters,
@@ -5,6 +6,7 @@ import {
 } from '@/components/browse-filters';
 import { ListingCard, type BrowseListingCard } from '@/components/listing-card';
 import { Pagination } from '@/components/pagination';
+import { PartCard, type BrowsePartCard } from '@/components/part-card';
 import { PromotedListingsRail } from '@/components/promoted-listings-rail';
 import { SaveSearchButton } from '@/components/save-search-button';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
@@ -40,7 +42,12 @@ export async function BikesBrowse({
   listPath: string;
   pagerState?: BrowseFilterState;
 }) {
-  const [listingPage, brands, districts, categories] = await Promise.all([
+  const partSearch: Record<string, string> = { limit: '4' };
+  if (filterState.brandId) partSearch.brandId = filterState.brandId;
+  if (filterState.modelId) partSearch.modelId = filterState.modelId;
+
+  const [listingPage, brands, districts, categories, spareParts, modifiedParts, accessoryParts] =
+    await Promise.all([
     apiGetWithMeta<BrowseListingCard[]>('/api/v1/listings', {
       searchParams: {
         ...filterState,
@@ -52,7 +59,43 @@ export async function BikesBrowse({
     apiGet<Category[]>('/api/v1/categories', {
       searchParams: { scope: 'public' },
     }),
+    apiGet<BrowsePartCard[]>('/api/v1/part-listings', {
+      searchParams: { ...partSearch, kind: 'spare' },
+    }).catch(() => [] as BrowsePartCard[]),
+    apiGet<BrowsePartCard[]>('/api/v1/part-listings', {
+      searchParams: { ...partSearch, kind: 'modified' },
+    }).catch(() => [] as BrowsePartCard[]),
+    apiGet<BrowsePartCard[]>('/api/v1/part-listings', {
+      searchParams: { ...partSearch, kind: 'accessory' },
+    }).catch(() => [] as BrowsePartCard[]),
   ]);
+
+  let similarSpare = spareParts;
+  let similarModified = modifiedParts;
+  let similarAccessories = accessoryParts;
+  const filteredParts = Boolean(filterState.brandId || filterState.modelId);
+  const matchedBrand =
+    filteredParts &&
+    (spareParts.length > 0 ||
+      modifiedParts.length > 0 ||
+      accessoryParts.length > 0);
+  if (filteredParts && !matchedBrand) {
+    const [fallbackSpare, fallbackModified, fallbackAccessories] =
+      await Promise.all([
+      apiGet<BrowsePartCard[]>('/api/v1/part-listings', {
+        searchParams: { kind: 'spare', limit: '4' },
+      }).catch(() => [] as BrowsePartCard[]),
+      apiGet<BrowsePartCard[]>('/api/v1/part-listings', {
+        searchParams: { kind: 'modified', limit: '4' },
+      }).catch(() => [] as BrowsePartCard[]),
+      apiGet<BrowsePartCard[]>('/api/v1/part-listings', {
+        searchParams: { kind: 'accessory', limit: '4' },
+      }).catch(() => [] as BrowsePartCard[]),
+    ]);
+    similarSpare = fallbackSpare;
+    similarModified = fallbackModified;
+    similarAccessories = fallbackAccessories;
+  }
 
   const listings = listingPage.data;
   const pager = listingPage.meta;
@@ -83,8 +126,8 @@ export async function BikesBrowse({
         ) : null}
       </header>
 
-      <div className="mt-8 grid w-full min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
-        <aside className="w-full min-w-0 space-y-3 lg:sticky lg:top-[calc(4.25rem+1rem)] lg:z-10 lg:max-h-[calc(100vh-5.25rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
+      <div className="mt-6 grid w-full min-w-0 grid-cols-1 gap-8 lg:mt-5 lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)] lg:items-start">
+        <aside className="w-full min-w-0 space-y-2 lg:sticky lg:top-[calc(4.25rem+0.75rem)] lg:z-10 lg:self-start">
           <BrowseFilters
             locale={locale}
             brands={brands}
@@ -141,6 +184,22 @@ export async function BikesBrowse({
           ) : null}
         </div>
       </div>
+      <SimilarParts
+        locale={locale}
+        title={
+          filteredParts && !matchedBrand
+            ? t(locale, 'homeLatestPartsTitle')
+            : t(locale, 'similarParts')
+        }
+        seeMoreLabel={t(locale, 'seeMore')}
+        seeMoreHref={partsSeeMoreHref(locale, filterState, matchedBrand)}
+        spareTitle={t(locale, 'compatibleSpareParts')}
+        modifiedTitle={t(locale, 'compatibleModifiedParts')}
+        accessoryTitle={t(locale, 'compatibleRiderAccessories')}
+        spare={similarSpare}
+        modified={similarModified}
+        accessories={similarAccessories}
+      />
       {faqTitle && faqItems?.length ? (
         <section className="mt-12 max-w-3xl border-t border-black/10 pt-8">
           <script
@@ -163,5 +222,81 @@ export async function BikesBrowse({
         </section>
       ) : null}
     </main>
+  );
+}
+
+function partsSeeMoreHref(
+  locale: Locale,
+  filters: BrowseFilterState,
+  matchedBrand: boolean,
+) {
+  if (!matchedBrand) return `/${locale}/bike-parts`;
+  const params = new URLSearchParams();
+  if (filters.brandId) params.set('brandId', filters.brandId);
+  if (filters.modelId) params.set('modelId', filters.modelId);
+  const query = params.toString();
+  return query ? `/${locale}/bike-parts?${query}` : `/${locale}/bike-parts`;
+}
+
+function SimilarParts({
+  locale,
+  title,
+  seeMoreLabel,
+  seeMoreHref,
+  spareTitle,
+  modifiedTitle,
+  accessoryTitle,
+  spare,
+  modified,
+  accessories,
+}: {
+  locale: Locale;
+  title: string;
+  seeMoreLabel: string;
+  seeMoreHref: string;
+  spareTitle: string;
+  modifiedTitle: string;
+  accessoryTitle: string;
+  spare: BrowsePartCard[];
+  modified: BrowsePartCard[];
+  accessories: BrowsePartCard[];
+}) {
+  if (spare.length === 0 && modified.length === 0 && accessories.length === 0) {
+    return null;
+  }
+  const groups = [
+    { key: 'spare', heading: spareTitle, items: spare },
+    { key: 'modified', heading: modifiedTitle, items: modified },
+    { key: 'accessory', heading: accessoryTitle, items: accessories },
+  ].filter((group) => group.items.length > 0);
+
+  return (
+    <section className="mt-14 border-t border-black/10 pt-10">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-foreground sm:text-3xl">
+          {title}
+        </h2>
+        <Link
+          href={seeMoreHref}
+          className="inline-flex items-center justify-center rounded-full border border-black/15 px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground transition hover:border-accent hover:text-accent"
+        >
+          {seeMoreLabel}
+        </Link>
+      </div>
+      <div className="space-y-10">
+        {groups.map((group) => (
+          <div key={group.key}>
+            <h3 className="mb-4 text-sm font-semibold tracking-[0.14em] text-muted uppercase">
+              {group.heading}
+            </h3>
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+              {group.items.map((part) => (
+                <PartCard key={part.id} locale={locale} part={part} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

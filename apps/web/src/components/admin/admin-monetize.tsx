@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 
@@ -34,8 +34,10 @@ type MonetizePayload = {
     totalLkr: number;
     lastPaidAt: string | null;
   }[];
+  page: number;
+  limit: number;
   transactionCount: number;
-  transactionsTruncated: boolean;
+  pageCount: number;
   transactions: {
     id: string;
     at: string;
@@ -53,6 +55,8 @@ type MonetizePayload = {
     live: boolean;
   }[];
 };
+
+const PAGE_SIZE = 25;
 
 const RANGES: { id: RangeId; label: string }[] = [
   { id: 'all', label: 'All time' },
@@ -152,46 +156,89 @@ export function AdminMonetize() {
   const [data, setData] = useState<MonetizePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
   const [query, setQuery] = useState('');
+  const [q, setQ] = useState('');
   const [bucket, setBucket] = useState<Bucket | 'all'>('all');
   const [channel, setChannel] = useState<Channel | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const requestId = useRef(0);
+  const hasData = useRef(false);
+  const appliedQuery = useRef('');
 
-  const load = useCallback(async (next: RangeId) => {
+  const load = useCallback(async () => {
     const token = getAccessToken();
     if (!token) return;
-    setLoading(true);
+    const id = ++requestId.current;
+    if (hasData.current) setLedgerLoading(true);
+    else setLoading(true);
     setError(null);
     try {
       const payload = await apiGet<MonetizePayload>(
         '/api/v1/admin/promotions/monetize',
-        { token, searchParams: { range: next } },
+        {
+          token,
+          searchParams: {
+            range,
+            page: String(page),
+            limit: String(PAGE_SIZE),
+            bucket,
+            channel,
+            q: q || undefined,
+          },
+        },
       );
+      if (id !== requestId.current) return;
+      hasData.current = true;
       setData(payload);
     } catch (err) {
+      if (id !== requestId.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load revenue');
     } finally {
-      setLoading(false);
+      if (id === requestId.current) {
+        setLoading(false);
+        setLedgerLoading(false);
+      }
     }
-  }, []);
+  }, [range, page, bucket, channel, q]);
 
   useEffect(() => {
-    void load(range);
-  }, [load, range]);
+    void load();
+  }, [load]);
 
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return (data?.transactions ?? []).filter((row) => {
-      if (bucket !== 'all' && row.bucket !== bucket) return false;
-      if (channel !== 'all' && row.channel !== channel) return false;
-      if (!q) return true;
-      return (
-        row.sellerName.toLowerCase().includes(q) ||
-        row.sellerEmail.toLowerCase().includes(q) ||
-        row.listingTitle.toLowerCase().includes(q) ||
-        row.packageName.toLowerCase().includes(q)
-      );
-    });
-  }, [data, query, bucket, channel]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = query.trim().slice(0, 80);
+      if (appliedQuery.current === next) return;
+      appliedQuery.current = next;
+      setQ(next);
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  function selectRange(next: RangeId) {
+    if (next === range) return;
+    setRange(next);
+    setPage(1);
+  }
+
+  function selectBucket(next: Bucket | 'all') {
+    if (next === bucket) return;
+    setBucket(next);
+    setPage(1);
+  }
+
+  function selectChannel(next: Channel | 'all') {
+    if (next === channel) return;
+    setChannel(next);
+    setPage(1);
+  }
+
+  const rows = data?.transactions ?? [];
+  const pageCount = data?.pageCount ?? 0;
+  const pageLabel = pageCount === 0 ? 1 : page;
+  const pageTotal = Math.max(pageCount, 1);
 
   return (
     <div className="space-y-4">
@@ -209,7 +256,7 @@ export function AdminMonetize() {
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                onClick={() => setRange(item.id)}
+                onClick={() => selectRange(item.id)}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   selected
                     ? 'bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]'
@@ -224,8 +271,8 @@ export function AdminMonetize() {
         <button
           type="button"
           className="admin-btn-ghost inline-flex min-h-11 items-center px-3 py-2 text-sm disabled:opacity-50"
-          disabled={loading}
-          onClick={() => void load(range)}
+          disabled={loading || ledgerLoading}
+          onClick={() => void load()}
         >
           Refresh
         </button>
@@ -430,17 +477,15 @@ export function AdminMonetize() {
                 <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
                   Promotion ledger
                 </h2>
-                <p className="text-xs text-[var(--admin-muted)]">
-                  {rows.length} shown
-                  {data.transactionsTruncated
-                    ? ` · newest ${data.transactions.length} of ${data.transactionCount}`
-                    : ''}
+                <p className="text-xs text-[var(--admin-muted)]" aria-live="polite">
+                  {data.transactionCount.toLocaleString('en-LK')} matching
+                  {ledgerLoading ? ' · updating' : ''}
                 </p>
               </div>
               <input
                 className="admin-field-inline w-full! min-w-0! max-w-none! sm:w-64!"
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => setQuery(event.target.value.slice(0, 80))}
                 placeholder="Search seller or listing"
                 aria-label="Search ledger"
               />
@@ -458,7 +503,7 @@ export function AdminMonetize() {
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setBucket(id)}
+                  onClick={() => selectBucket(id)}
                   className={chipClass(bucket === id)}
                 >
                   {label}
@@ -475,7 +520,7 @@ export function AdminMonetize() {
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setChannel(id)}
+                  onClick={() => selectChannel(id)}
                   className={chipClass(channel === id)}
                 >
                   {label}
@@ -483,7 +528,15 @@ export function AdminMonetize() {
               ))}
             </div>
 
-            <div className="admin-card overflow-hidden">
+            <div
+              className={`admin-card overflow-hidden ${ledgerLoading ? 'opacity-70' : ''}`}
+              aria-busy={ledgerLoading}
+            >
+              {ledgerLoading ? (
+                <p className="px-4 pt-3 text-xs text-[var(--admin-muted)]">
+                  Loading ledger…
+                </p>
+              ) : null}
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="border-b border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-xs tracking-wide text-[var(--admin-faint)] uppercase">
@@ -558,6 +611,29 @@ export function AdminMonetize() {
                     )}
                   </tbody>
                 </table>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--admin-border)] px-4 py-3">
+                <p className="text-xs text-[var(--admin-muted)]">
+                  Page {pageLabel} of {pageTotal}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="admin-btn-ghost inline-flex min-h-11 items-center px-3 py-2 text-sm disabled:opacity-50"
+                    disabled={page <= 1 || ledgerLoading}
+                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn-ghost inline-flex min-h-11 items-center px-3 py-2 text-sm disabled:opacity-50"
+                    disabled={pageCount === 0 || page >= pageCount || ledgerLoading}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </section>

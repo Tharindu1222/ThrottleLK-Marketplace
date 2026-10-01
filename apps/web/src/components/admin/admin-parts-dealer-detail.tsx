@@ -8,6 +8,7 @@ import { getAccessToken } from '@/lib/auth';
 import type { AdminPartListing, AdminPartsDealerRow } from '@/lib/admin-types';
 import { Pagination } from '@/components/pagination';
 import { clampedPage } from '@/lib/pagination';
+import { partListingHref } from '@/lib/part-kind';
 
 function dealerStatusTone(status: string) {
   switch (status) {
@@ -42,13 +43,13 @@ function partStatusTone(status: string) {
 }
 
 function kindLabel(kind: string) {
-  return kind === 'modified' ? 'Modified' : 'Spare';
+  if (kind === 'modified') return 'Modified';
+  if (kind === 'accessory') return 'Rider Accessories';
+  return 'Spare';
 }
 
 function partViewHref(locale: string, row: AdminPartListing) {
-  return row.kind === 'modified'
-    ? `/${locale}/modified-parts/${row.slug}`
-    : `/${locale}/spare-parts/${row.slug}`;
+  return partListingHref(locale, row.kind, row.slug);
 }
 
 export function AdminPartsDealerDetail({ id }: { id: string }) {

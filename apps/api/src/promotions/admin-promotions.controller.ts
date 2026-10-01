@@ -34,7 +34,6 @@ import { RolesGuard } from '../auth/roles.guard';
 import { RateLimit } from '../common/rate-limit';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
-import type { MonetizeRange } from './promo-ledger';
 import { PromotionsService } from './promotions.service';
 import type { PromoSubjectType } from './promo-package.entity';
 
@@ -104,10 +103,25 @@ export class AdminPromotionsController {
   }
 
   @Get('monetize')
-  async monetize(@Query('range') range?: string): Promise<ApiSuccess<unknown>> {
-    const allowed: MonetizeRange =
-      range === 'month' || range === '30d' ? range : 'all';
-    return { success: true, data: await this.promotions.monetize(allowed) };
+  async monetize(
+    @Query('range') range?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('bucket') bucket?: string,
+    @Query('channel') channel?: string,
+    @Query('q') q?: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.promotions.monetize({
+        range,
+        page,
+        limit,
+        bucket,
+        channel,
+        q,
+      }),
+    };
   }
 
   @Get('requests')

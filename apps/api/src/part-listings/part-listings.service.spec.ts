@@ -15,7 +15,9 @@ describe('PartListingsService.relatedForBikeListing', () => {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
       distinct: jest.fn().mockReturnThis(),
       getMany: jest.fn(async () => [
@@ -81,16 +83,71 @@ describe('PartListingsService.relatedForBikeListing', () => {
     });
 
     expect(bikeListings.findOne).toHaveBeenCalled();
-    expect(qb.andWhere).toHaveBeenCalledWith('f.brand_id = :brandId', {
-      brandId: 'brand-1',
-    });
-    expect(qb.andWhere).toHaveBeenCalledWith('f.model_id = :modelId', {
-      modelId: 'model-1',
-    });
+    const fitmentSql = qb.andWhere.mock.calls
+      .map((call) => String(call[0]))
+      .join('\n');
+    expect(fitmentSql).toContain('f.brand_id = :brandId');
+    expect(fitmentSql).toContain('f.model_id = :modelId OR f.model_id IS NULL');
+    expect(fitmentSql).not.toContain('NOT EXISTS');
+    expect(fitmentSql).not.toContain('IS NOT NULL');
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
       id: 'part-1',
       kind: 'spare',
+    });
+  });
+
+  it('returns every active rider accessory without a fitment filter', async () => {
+    const bikeListings = {
+      findOne: jest.fn(async () => ({
+        id: 'bike-1',
+        brandId: 'brand-1',
+        modelId: 'model-1',
+      })),
+    };
+    const qb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn(async () => []),
+    };
+    const partListings = { createQueryBuilder: jest.fn(() => qb) };
+    const service = new PartListingsService(
+      partListings as never,
+      {} as never,
+      {} as never,
+      {
+        createQueryBuilder: jest.fn(() => ({
+          select: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          addOrderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn(async () => []),
+        })),
+      } as never,
+      {} as never,
+      {} as never,
+      bikeListings as never,
+      {} as never,
+      {} as never,
+      { activeVerifiedIds: jest.fn(async () => new Set()) } as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+
+    await service.relatedForBikeListing('bike-1', {
+      kind: 'accessory',
+      limit: 4,
+    });
+
+    const fitmentSql = qb.andWhere.mock.calls
+      .map((call) => String(call[0]))
+      .join('\n');
+    expect(fitmentSql).not.toContain('part_listing_fitments');
+    expect(qb.andWhere).toHaveBeenCalledWith('l.kind = :kind', {
+      kind: 'accessory',
     });
   });
 });

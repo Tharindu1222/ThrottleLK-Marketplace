@@ -602,29 +602,68 @@ export class PartListingsService {
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
       });
     }
-    if (!bike.brandId || !bike.modelId) {
-      return [];
-    }
     const limit = Math.min(Math.max(opts?.limit ?? 12, 1), 50);
+    const kind =
+      opts?.kind === 'spare' ||
+      opts?.kind === 'modified' ||
+      opts?.kind === 'accessory'
+        ? opts.kind
+        : undefined;
     const qb = this.partListings
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.category', 'category')
       .leftJoinAndSelect('l.district', 'district')
       .leftJoinAndSelect('l.city', 'city')
       .leftJoinAndSelect('l.partsDealer', 'partsDealer')
-      .innerJoin('l.fitments', 'f')
       .where('l.status = :status', { status: 'active' })
       .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
         now: new Date(),
-      })
-      .andWhere('f.brand_id = :brandId', { brandId: bike.brandId })
-      .andWhere('f.model_id = :modelId', { modelId: bike.modelId })
-      .orderBy('l.publishedAt', 'DESC', 'NULLS LAST')
-      .take(limit)
-      .distinct(true);
+      });
 
-    if (opts?.kind) {
-      qb.andWhere('l.kind = :kind', { kind: opts.kind });
+    if (kind === 'accessory') {
+      qb.andWhere('l.kind = :kind', { kind: 'accessory' })
+        .orderBy('l.publishedAt', 'DESC', 'NULLS LAST')
+        .take(limit);
+    } else if (!bike.brandId || !bike.modelId) {
+      return [];
+    } else {
+      // Same brand, and either this model or every model of the brand.
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM part_listing_fitments f
+          WHERE f.part_listing_id = l.id
+            AND f.brand_id = :brandId
+            AND (f.model_id = :modelId OR f.model_id IS NULL)
+        )`,
+        { brandId: bike.brandId, modelId: bike.modelId },
+      )
+      .addSelect(
+        `(CASE
+          WHEN EXISTS (
+            SELECT 1 FROM part_listing_fitments fx
+            WHERE fx.part_listing_id = l.id
+              AND fx.brand_id = :brandId
+              AND fx.model_id = :modelId
+          ) THEN 0
+          WHEN EXISTS (
+            SELECT 1 FROM part_listing_fitments fb
+            WHERE fb.part_listing_id = l.id
+              AND fb.brand_id = :brandId
+              AND fb.model_id IS NULL
+          ) THEN 1
+          WHEN EXISTS (
+            SELECT 1 FROM part_listing_fitments fs
+            WHERE fs.part_listing_id = l.id
+              AND fs.brand_id = :brandId
+          ) THEN 2
+          ELSE 3
+        END)`,
+        'fit_rank',
+      )
+      .orderBy('fit_rank', 'ASC')
+      .addOrderBy('l.publishedAt', 'DESC', 'NULLS LAST')
+      .take(limit);
+      if (kind) qb.andWhere('l.kind = :kind', { kind });
     }
 
     const rows = await qb.getMany();
@@ -654,7 +693,7 @@ export class PartListingsService {
     const where: { status: ListingStatus; kind?: PartListingKind } = {
       status: 'active',
     };
-    if (kind === 'spare' || kind === 'modified') {
+    if (kind === 'spare' || kind === 'modified' || kind === 'accessory') {
       where.kind = kind;
     }
     const [rows, total] = await this.partListings.findAndCount({

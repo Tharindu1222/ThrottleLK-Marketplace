@@ -24,8 +24,10 @@ function spStr(
 
 function parseKind(
   value: string | undefined,
-): 'spare' | 'modified' | undefined {
-  return value === 'spare' || value === 'modified' ? value : undefined;
+): 'spare' | 'modified' | 'accessory' | undefined {
+  return value === 'spare' || value === 'modified' || value === 'accessory'
+    ? value
+    : undefined;
 }
 
 function filterStateFrom(
@@ -162,6 +164,17 @@ export default async function BikePartsPage({
           aria-current={filterState.kind === 'modified' ? 'page' : undefined}
         >
           {t(locale, 'modifiedPartsNav')}
+        </Link>
+        <Link
+          href={hrefWithPage(
+            `/${locale}/bike-parts`,
+            { ...filterState, kind: 'accessory' },
+            1,
+          )}
+          className={tabClass(filterState.kind === 'accessory')}
+          aria-current={filterState.kind === 'accessory' ? 'page' : undefined}
+        >
+          {t(locale, 'riderAccessoriesNav')}
         </Link>
       </div>
 

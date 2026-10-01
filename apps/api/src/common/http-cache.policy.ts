@@ -58,6 +58,7 @@ function isPublicListPath(path: string): boolean {
     path === '/api/v1/part-listings' ||
     path === '/api/v1/spare-parts' ||
     path === '/api/v1/modified-parts' ||
+    path === '/api/v1/rider-accessories' ||
     path === '/api/v1/home/marketplace-preview' ||
     path === '/api/v1/listings/seo-slugs' ||
     path === '/api/v1/part-listings/seo-slugs' ||

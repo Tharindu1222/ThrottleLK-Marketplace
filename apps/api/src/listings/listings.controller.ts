@@ -205,7 +205,9 @@ export class ListingsController {
     @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
     const parsedKind =
-      kind === 'spare' || kind === 'modified' ? kind : undefined;
+      kind === 'spare' || kind === 'modified' || kind === 'accessory'
+        ? kind
+        : undefined;
     return {
       success: true,
       data: await this.partListingsService.relatedForBikeListing(id, {

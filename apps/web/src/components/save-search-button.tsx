@@ -131,28 +131,31 @@ export function SaveSearchButton({
   }
 
   return (
-    <div className="flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm text-muted">
+    <div className="flex min-w-0 flex-col items-stretch gap-2">
+      <label className="flex min-h-8 min-w-0 items-start gap-2 text-xs leading-snug text-muted">
         <input
           type="checkbox"
+          className="mt-0.5"
           checked={notify}
           onChange={(e) => setNotify(e.target.checked)}
         />
         {t(locale, 'notifyNewMatches')}
       </label>
-      <button
-        type="button"
-        onClick={() => void onSave()}
-        className="inline-flex min-h-11 items-center justify-center border border-black/20 px-4 text-sm hover:border-accent"
-      >
-        {t(locale, 'saveSearch')}
-      </button>
-      <Link
-        href={`/${locale}/account/saved-searches`}
-        className="inline-flex min-h-11 min-w-0 items-center text-sm text-accent underline"
-      >
-        {t(locale, 'savedSearches')}
-      </Link>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <button
+          type="button"
+          onClick={() => void onSave()}
+          className="inline-flex min-h-8 items-center justify-center border border-black/20 px-3 text-xs hover:border-accent"
+        >
+          {t(locale, 'saveSearch')}
+        </button>
+        <Link
+          href={`/${locale}/account/saved-searches`}
+          className="inline-flex min-h-8 min-w-0 items-center text-xs text-accent underline"
+        >
+          {t(locale, 'savedSearches')}
+        </Link>
+      </div>
       {status ? <span className="text-sm text-accent">{status}</span> : null}
       {error ? <span className="text-sm text-red-400">{error}</span> : null}
     </div>
