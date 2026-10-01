@@ -15,7 +15,6 @@ export type AccountNavItemId =
   | 'performance'
   | 'partsListings'
   | 'partsShowroom'
-  | 'partsPerformance'
   | 'messages'
   | 'notifications'
   | 'favourites'
@@ -29,7 +28,6 @@ export type AccountNavLabelKey =
   | 'performance'
   | 'partsListings'
   | 'partsShowroom'
-  | 'partsPerformance'
   | 'messages'
   | 'notifications'
   | 'savedListings'
@@ -50,6 +48,7 @@ export type AccountNavItemDef = {
   hrefSuffix: string;
   dealerOnly?: boolean;
   partsDealerOnly?: boolean;
+  eitherShop?: boolean;
   badgeKey?: 'messages' | 'notifications';
   match: (path: string) => boolean;
 };
@@ -102,10 +101,10 @@ export const ACCOUNT_NAV_ITEMS: AccountNavItemDef[] = [
     section: 'shop',
     labelKey: 'performance',
     hrefSuffix: '/performance',
-    dealerOnly: true,
+    eitherShop: true,
     match: (path) =>
-      path.includes('/account/performance') &&
-      !path.includes('parts-performance'),
+      path.includes('/account/performance') ||
+      path.includes('/account/parts-performance'),
   },
   {
     id: 'partsListings',
@@ -122,14 +121,6 @@ export const ACCOUNT_NAV_ITEMS: AccountNavItemDef[] = [
     hrefSuffix: '/parts-showroom',
     partsDealerOnly: true,
     match: (path) => path.includes('/account/parts-showroom'),
-  },
-  {
-    id: 'partsPerformance',
-    section: 'partsShop',
-    labelKey: 'partsPerformance',
-    hrefSuffix: '/parts-performance',
-    partsDealerOnly: true,
-    match: (path) => path.includes('/account/parts-performance'),
   },
   {
     id: 'messages',
@@ -174,6 +165,7 @@ function itemVisible(
   item: AccountNavItemDef,
   roles: { isDealer: boolean; isPartsDealer: boolean },
 ) {
+  if (item.eitherShop && !roles.isDealer && !roles.isPartsDealer) return false;
   if (item.dealerOnly && !roles.isDealer) return false;
   if (item.partsDealerOnly && !roles.isPartsDealer) return false;
   return true;

@@ -74,24 +74,28 @@ export class SavedSearchesService {
       sellerId: string;
     },
   ) {
-    const rows = await this.savedSearches.find({
-      where: { notificationsEnabled: true },
-    });
-    await Promise.all(
-      rows
-        .filter(
-          (row) =>
-            row.userId !== listing.sellerId &&
-            savedSearchMatchesListing(row.query, listing),
-        )
-        .map((row) =>
-          this.notifications.savedSearchMatch(row.userId, {
-            id: listing.id,
-            title: listing.title,
-            slug: listing.slug,
-            searchName: row.name,
-          }),
-        ),
-    );
+    const pageSize = 200;
+    let skip = 0;
+    for (;;) {
+      const rows = await this.savedSearches.find({
+        where: { notificationsEnabled: true },
+        order: { id: 'ASC' },
+        take: pageSize,
+        skip,
+      });
+      if (rows.length === 0) break;
+      for (const row of rows) {
+        if (row.userId === listing.sellerId) continue;
+        if (!savedSearchMatchesListing(row.query, listing)) continue;
+        await this.notifications.savedSearchMatch(row.userId, {
+          id: listing.id,
+          title: listing.title,
+          slug: listing.slug,
+          searchName: row.name,
+        });
+      }
+      if (rows.length < pageSize) break;
+      skip += pageSize;
+    }
   }
 }

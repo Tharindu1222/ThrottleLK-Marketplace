@@ -148,6 +148,12 @@ describe('UsersService.adminUpdate email verification', () => {
     const users = {
       findOne: jest.fn(async () => user),
       save: jest.fn(async (saved: User) => saved),
+      createQueryBuilder: jest.fn(() => ({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn(async () => user),
+      })),
     };
     const service = new UsersService(
       users as never,

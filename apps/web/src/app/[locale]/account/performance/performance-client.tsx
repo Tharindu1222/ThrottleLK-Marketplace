@@ -1,69 +1,76 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import {
+  PerformancePanel,
+  PerformanceStockSwitch,
+  type PerformanceMetrics,
+  type PerformanceRange,
+  type PerformanceStock,
+} from '@/components/account/performance-panel';
 import { apiGet, ApiRequestError } from '@/lib/api';
 import { getAccessToken, getStoredUser } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 
-type PerformanceRange = 'all' | '7d' | '30d';
-
-type DealerPerformance = {
-  range: PerformanceRange;
-  activeListings: number;
-  views: number;
-  phoneClicks: number;
-  whatsappClicks: number;
-  favourites: number;
-};
-
-const RANGES: PerformanceRange[] = ['all', '7d', '30d'];
-
-const RANGE_LABEL: Record<PerformanceRange, 'rangeAll' | 'range7d' | 'range30d'> =
-  {
-    all: 'rangeAll',
-    '7d': 'range7d',
-    '30d': 'range30d',
-  };
-
-const METRICS: Array<{
-  key: keyof Omit<DealerPerformance, 'range'>;
-  labelKey:
-    | 'metricActiveListings'
-    | 'metricViews'
-    | 'metricPhoneClicks'
-    | 'metricWhatsappClicks'
-    | 'metricFavourites';
-}> = [
-  { key: 'activeListings', labelKey: 'metricActiveListings' },
-  { key: 'views', labelKey: 'metricViews' },
-  { key: 'phoneClicks', labelKey: 'metricPhoneClicks' },
-  { key: 'whatsappClicks', labelKey: 'metricWhatsappClicks' },
-  { key: 'favourites', labelKey: 'metricFavourites' },
-];
-
 const cardClass =
   'overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_1px_2px_rgba(15,15,15,0.04)]';
 
-const emptyMetrics: DealerPerformance = {
-  range: 'all',
-  activeListings: 0,
-  views: 0,
-  phoneClicks: 0,
-  whatsappClicks: 0,
-  favourites: 0,
-};
+function stockFromQuery(value: string | null): PerformanceStock | null {
+  if (value === 'parts') return 'parts';
+  if (value === 'bike' || value === 'bikes') return 'bike';
+  return null;
+}
 
 export function PerformanceClient({ locale }: { locale: Locale }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryStock = stockFromQuery(searchParams.get('stock'));
   const [token, setToken] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const [canBike, setCanBike] = useState(false);
+  const [canParts, setCanParts] = useState(false);
   const [range, setRange] = useState<PerformanceRange>('all');
-  const [data, setData] = useState<DealerPerformance | null>(null);
+  const [data, setData] = useState<PerformanceMetrics | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const requestIdRef = useRef(0);
+  const stockRef = useRef<PerformanceStock>('bike');
+
+  const bothShops = canBike && canParts;
+  const stock: PerformanceStock = bothShops
+    ? (queryStock ?? 'bike')
+    : canParts
+      ? 'parts'
+      : 'bike';
+
+  function selectStock(next: PerformanceStock) {
+    const path = `/${locale}/account/performance`;
+    router.replace(
+      next === 'parts' ? `${path}?stock=parts` : `${path}?stock=bikes`,
+      { scroll: false },
+    );
+  }
 
   useEffect(() => {
+    const user = getStoredUser();
+    setToken(getAccessToken());
+    setCanBike(Boolean(user?.roles?.includes('dealer')));
+    setCanParts(Boolean(user?.roles?.includes('parts_dealer')));
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready || !token) return;
+    if (canBike && canParts) return;
+    if (!searchParams.get('stock')) return;
+    router.replace(`/${locale}/account/performance`, { scroll: false });
+  }, [canBike, canParts, locale, ready, router, searchParams, token]);
+
+  useEffect(() => {
+    if (!ready) return;
     const access = getAccessToken();
     setToken(access);
     if (!access) {
@@ -73,21 +80,33 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
     }
 
     const user = getStoredUser();
-    if (user && !user.roles?.includes('dealer')) {
+    const missingRole =
+      user != null &&
+      (stock === 'bike'
+        ? !user.roles?.includes('dealer')
+        : !user.roles?.includes('parts_dealer'));
+    if (missingRole) {
       setForbidden(true);
       setLoading(false);
       setData(null);
+      setError(null);
       return;
     }
+
+    const stockChanged = stockRef.current !== stock;
+    stockRef.current = stock;
 
     void (async () => {
       const requestId = ++requestIdRef.current;
       setLoading(true);
       setError(null);
-      setData(null);
+      setForbidden(false);
+      if (stockChanged) setData(null);
       try {
-        const result = await apiGet<DealerPerformance>(
-          '/api/v1/dealers/mine/performance',
+        const result = await apiGet<PerformanceMetrics>(
+          stock === 'parts'
+            ? '/api/v1/parts-dealers/mine/performance'
+            : '/api/v1/dealers/mine/performance',
           { token: access, searchParams: { range } },
         );
         if (requestId !== requestIdRef.current) return;
@@ -107,7 +126,9 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
         }
       }
     })();
-  }, [range]);
+  }, [range, ready, stock]);
+
+  if (!ready) return null;
 
   if (!token) {
     return (
@@ -123,80 +144,49 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
   }
 
   if (forbidden) {
+    const applyHref =
+      stock === 'parts'
+        ? `/${locale}/parts-dealers/apply`
+        : `/${locale}/dealers/apply`;
+    const applyLabel =
+      stock === 'parts' ? t(locale, 'becomePartsDealer') : t(locale, 'dealerApply');
     return (
-      <section className={`${cardClass} max-w-xl p-5 sm:p-6`}>
-        <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground">
-          {t(locale, 'noActiveShowroom')}
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          {t(locale, 'noActiveShowroomHint')}
-        </p>
-        <Link
-          href={`/${locale}/dealers/apply`}
-          className="mt-5 inline-flex rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent/90"
-        >
-          {t(locale, 'dealerApply')}
-        </Link>
-      </section>
+      <div className="min-w-0 space-y-5">
+        {bothShops ? (
+          <PerformanceStockSwitch locale={locale} stock={stock} onStock={selectStock} />
+        ) : null}
+        <section className={`${cardClass} max-w-xl p-5 sm:p-6`}>
+          <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground">
+            {t(locale, 'noActiveShowroom')}
+          </p>
+          <p className="mt-2 text-sm text-muted">{t(locale, 'noActiveShowroomHint')}</p>
+          <Link
+            href={applyHref}
+            className="mt-5 inline-flex rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent/90"
+          >
+            {applyLabel}
+          </Link>
+        </section>
+      </div>
     );
   }
 
-  const metrics = data ?? emptyMetrics;
-
   return (
-    <div className="min-w-0 space-y-5">
-      <div
-        role="group"
-        aria-label={t(locale, 'performance')}
-        className="flex min-w-0 gap-2 overflow-x-auto overscroll-x-contain pb-1"
-      >
-        {RANGES.map((value) => {
-          const active = range === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setRange(value)}
-              className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-3.5 text-sm whitespace-nowrap transition ${
-                active
-                  ? 'border-accent bg-white font-semibold text-accent underline decoration-2 underline-offset-4 shadow-[0_1px_0_rgba(0,0,0,0.06)]'
-                  : 'border-black/15 bg-white font-medium text-muted hover:border-black/25 hover:text-foreground'
-              }`}
-            >
-              {t(locale, RANGE_LABEL[value])}
-            </button>
-          );
-        })}
-      </div>
-
-      {error ? (
-        <p
-          className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
-
-      <div
-        aria-busy={loading}
-        aria-live="polite"
-        className={`grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5 ${
-          loading ? 'opacity-60' : ''
-        }`}
-      >
-        {METRICS.map((metric) => (
-          <section key={metric.key} className={`${cardClass} min-w-0 p-4 sm:p-5`}>
-            <p className="break-words text-[10px] tracking-[0.2em] text-muted uppercase">
-              {t(locale, metric.labelKey)}
-            </p>
-            <p className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-wide text-foreground">
-              {metrics[metric.key]}
-            </p>
-          </section>
-        ))}
-      </div>
-    </div>
+    <PerformancePanel
+      locale={locale}
+      range={range}
+      onRange={setRange}
+      metrics={data}
+      loading={loading}
+      error={error}
+      listingsHref={
+        stock === 'parts'
+          ? `/${locale}/account/parts-listings`
+          : `/${locale}/account/listings`
+      }
+      stock={stock}
+      onStock={selectStock}
+      showStockSwitch={bothShops}
+    />
   );
 }

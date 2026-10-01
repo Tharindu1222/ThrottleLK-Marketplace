@@ -29,22 +29,13 @@ export function HomeHeroShowcase({ locale }: { locale: Locale }) {
         className="absolute bottom-[8%] left-[8%] h-32 w-[80%] rounded-full bg-white/14 blur-3xl"
       />
 
-      {HERO_BIKES.map((bike) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={bike.src}
-          src={bike.src}
-          alt=""
-          aria-hidden
-          className="hidden"
-        />
-      ))}
-
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={current.src}
         src={current.src}
         alt={current.alt}
+        fetchPriority={index === 0 ? 'high' : 'low'}
+        loading={index === 0 ? 'eager' : 'lazy'}
         className="absolute bottom-0 left-1/2 h-full w-auto max-w-full origin-bottom -translate-x-1/2 scale-[var(--hero-bike-scale)] object-contain object-bottom drop-shadow-[0_28px_50px_rgba(0,0,0,0.55)] lg:left-0 lg:max-w-none lg:translate-x-0"
         style={
           { '--hero-bike-scale': String(current.scale) } as CSSProperties

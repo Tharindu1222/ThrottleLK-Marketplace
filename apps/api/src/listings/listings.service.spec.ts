@@ -430,7 +430,7 @@ describe('ListingsService.create dealer conversion', () => {
 });
 
 describe('ListingsService.recordView', () => {
-  it('increments viewCount and inserts a view event for active listings', async () => {
+  it('increments viewCount without writing a view event', async () => {
     const { service, listingsRepo, engagementEvents, row } = makeService({
       id: 'listing-1',
       sellerId: seller.id,
@@ -445,14 +445,7 @@ describe('ListingsService.recordView', () => {
       'viewCount',
       1,
     );
-    expect(engagementEvents.create).toHaveBeenCalledWith({
-      listingId: 'listing-1',
-      type: 'view',
-    });
-    expect(engagementEvents.save).toHaveBeenCalledWith({
-      listingId: 'listing-1',
-      type: 'view',
-    });
+    expect(engagementEvents.save).not.toHaveBeenCalled();
   });
 
   it('skips seller own views', async () => {

@@ -560,12 +560,6 @@ export class PartListingsService {
       return { recorded: false as const };
     }
     await this.partListings.increment({ id: listing.id }, 'viewCount', 1);
-    await this.engagementEvents.save(
-      this.engagementEvents.create({
-        partListingId: listing.id,
-        type: 'view',
-      }),
-    );
     return { recorded: true as const };
   }
 
@@ -625,6 +619,31 @@ export class PartListingsService {
       .leftJoinAndSelect('l.district', 'district')
       .leftJoinAndSelect('l.city', 'city')
       .leftJoinAndSelect('l.partsDealer', 'partsDealer')
+      .select([
+        'l.id',
+        'l.slug',
+        'l.kind',
+        'l.title',
+        'l.priceLkr',
+        'l.negotiable',
+        'l.condition',
+        'l.categoryId',
+        'l.districtId',
+        'l.cityId',
+        'l.partsDealerId',
+        'l.publishedAt',
+        'l.createdAt',
+        'l.viewCount',
+        'category.id',
+        'category.name',
+        'district.id',
+        'district.name',
+        'city.id',
+        'city.name',
+        'partsDealer.id',
+        'partsDealer.name',
+        'partsDealer.slug',
+      ])
       .where('l.status = :status', { status: 'active' })
       .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
         now: new Date(),
@@ -1019,11 +1038,43 @@ export class PartListingsService {
     return { expired: expired.length, backfilled };
   }
 
+  async purgeOldViewEvents(now = new Date()) {
+    const cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const result = await this.engagementEvents
+      .createQueryBuilder()
+      .delete()
+      .where('type = :type', { type: 'view' })
+      .andWhere('created_at < :cutoff', { cutoff })
+      .execute();
+    return result.affected ?? 0;
+  }
+
   async browseCardsByIds(ids: string[]) {
     if (ids.length === 0) return [];
     const rows = await this.partListings.find({
       where: { id: In(ids), status: 'active' as ListingStatus },
       relations: ['category', 'district', 'city', 'partsDealer', 'fitments'],
+      select: {
+        id: true,
+        slug: true,
+        kind: true,
+        title: true,
+        priceLkr: true,
+        negotiable: true,
+        condition: true,
+        categoryId: true,
+        districtId: true,
+        cityId: true,
+        partsDealerId: true,
+        publishedAt: true,
+        createdAt: true,
+        viewCount: true,
+        category: { id: true, name: true },
+        district: { id: true, name: true },
+        city: { id: true, name: true },
+        partsDealer: { id: true, name: true, slug: true },
+        fitments: { id: true, brandId: true, modelId: true },
+      },
     });
     const byId = new Map(rows.map((row) => [row.id, row]));
     const covers = await this.coverUrlsByListingId(ids);

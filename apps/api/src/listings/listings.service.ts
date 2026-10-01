@@ -286,6 +286,33 @@ export class ListingsService {
     const [rows, total] = await this.listings.findAndCount({
       where: { sellerId },
       relations: ['brand', 'model', 'district', 'city'],
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        priceLkr: true,
+        manufactureYear: true,
+        engineCc: true,
+        mileage: true,
+        condition: true,
+        dealerId: true,
+        status: true,
+        publishedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        expiresAt: true,
+        viewCount: true,
+        costPriceLkr: true,
+        purchaseDate: true,
+        soldPriceLkr: true,
+        soldAt: true,
+        phoneClickCount: true,
+        whatsappClickCount: true,
+        brand: { id: true, name: true },
+        model: { id: true, name: true },
+        district: { id: true, name: true },
+        city: { id: true, name: true },
+      },
       order: { updatedAt: 'DESC' },
       skip,
       take: limit,
@@ -658,9 +685,6 @@ export class ListingsService {
       return { recorded: false as const };
     }
     await this.listings.increment({ id: listing.id }, 'viewCount', 1);
-    await this.engagementEvents.save(
-      this.engagementEvents.create({ listingId: listing.id, type: 'view' }),
-    );
     return { recorded: true as const };
   }
 
@@ -797,6 +821,25 @@ export class ListingsService {
     const rows = await this.listings.find({
       where: { id: In(ids), status: 'active' as ListingStatus },
       relations: ['brand', 'model', 'district', 'city'],
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        priceLkr: true,
+        manufactureYear: true,
+        engineCc: true,
+        mileage: true,
+        condition: true,
+        dealerId: true,
+        sellerId: true,
+        publishedAt: true,
+        createdAt: true,
+        viewCount: true,
+        brand: { id: true, name: true },
+        model: { id: true, name: true },
+        district: { id: true, name: true },
+        city: { id: true, name: true },
+      },
     });
     const byId = new Map(rows.map((row) => [row.id, row]));
     const covers = await this.coverUrlsByListingId(ids);
@@ -937,22 +980,34 @@ export class ListingsService {
         { q },
       );
     }
-    qb.skip(skip).take(limit);
+    qb.select([
+      'l.id',
+      'l.title',
+      'l.priceLkr',
+      'l.manufactureYear',
+      'l.updatedAt',
+      'l.sellerId',
+      'l.modelId',
+      'l.phone',
+      'seller.id',
+      'seller.firstName',
+      'seller.lastName',
+    ])
+      .skip(skip)
+      .take(limit);
     const [rows, total] = await qb.getManyAndCount();
     const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
-    const signals = await Promise.all(
-      rows.map((row) => this.duplicateSignals(row)),
-    );
+    const signals = await this.duplicateSignalsForPage(rows);
     return {
-      items: rows.map((row, index) => ({
+      items: rows.map((row) => ({
         id: row.id,
         title: row.title,
         priceLkr: row.priceLkr,
         manufactureYear: row.manufactureYear,
         updatedAt: row.updatedAt,
         coverImageUrl: covers.get(row.id) ?? null,
-        duplicateCount: signals[index]?.length ?? 0,
-        duplicateSignals: signals[index] ?? [],
+        duplicateCount: signals.get(row.id)?.length ?? 0,
+        duplicateSignals: signals.get(row.id) ?? [],
         seller: row.seller
           ? {
               id: row.seller.id,
@@ -1218,6 +1273,17 @@ export class ListingsService {
     return { expired: expired.length, backfilled };
   }
 
+  async purgeOldViewEvents(now = new Date()) {
+    const cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const result = await this.engagementEvents
+      .createQueryBuilder()
+      .delete()
+      .where('type = :type', { type: 'view' })
+      .andWhere('created_at < :cutoff', { cutoff })
+      .execute();
+    return result.affected ?? 0;
+  }
+
   async reject(id: string, reason: string): Promise<Listing> {
     const listing = await this.getById(id);
     if (listing.status !== 'pending_review') {
@@ -1300,10 +1366,88 @@ export class ListingsService {
     }
   }
 
+  private async duplicateSignalsForPage(listings: Listing[]) {
+    const grouped = new Map<string, Awaited<ReturnType<ListingsService['duplicateSignals']>>>();
+    for (const listing of listings) grouped.set(listing.id, []);
+    if (listings.length === 0) return grouped;
+
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const params: Record<string, unknown> = {
+      since,
+      statuses: ['draft', 'pending_review', 'active', 'paused'],
+      ids: listings.map((listing) => listing.id),
+    };
+    const clauses = listings.map((listing, index) => {
+      params[`seller${index}`] = listing.sellerId;
+      params[`model${index}`] = listing.modelId;
+      params[`phone${index}`] = listing.phone ?? '';
+      params[`title${index}`] = listing.title;
+      return `((l.seller_id = :seller${index} AND l.model_id = :model${index}) OR (l.model_id = :model${index} AND l.phone = :phone${index}) OR LOWER(l.title) = LOWER(:title${index}))`;
+    });
+    const others = await this.listings
+      .createQueryBuilder('l')
+      .select([
+        'l.id',
+        'l.title',
+        'l.status',
+        'l.sellerId',
+        'l.modelId',
+        'l.manufactureYear',
+        'l.phone',
+      ])
+      .where('l.id NOT IN (:...ids)', { ids: params.ids })
+      .andWhere('l.status IN (:...statuses)', { statuses: params.statuses })
+      .andWhere('l.created_at > :since', { since })
+      .andWhere(`(${clauses.join(' OR ')})`, params)
+      .take(200)
+      .getMany();
+
+    for (const listing of listings) {
+      const matches = others
+        .filter((other) => other.id !== listing.id)
+        .map((other) => ({
+          listingId: other.id,
+          title: other.title,
+          status: other.status,
+          reasons: duplicateReasons(
+            {
+              id: listing.id,
+              sellerId: listing.sellerId,
+              modelId: listing.modelId,
+              manufactureYear: listing.manufactureYear,
+              phone: listing.phone,
+              title: listing.title,
+            },
+            {
+              id: other.id,
+              sellerId: other.sellerId,
+              modelId: other.modelId,
+              manufactureYear: other.manufactureYear,
+              phone: other.phone,
+              title: other.title,
+            },
+          ),
+        }))
+        .filter((row) => row.reasons.length > 0)
+        .slice(0, 20);
+      grouped.set(listing.id, matches);
+    }
+    return grouped;
+  }
+
   async duplicateSignals(listing: Listing) {
     const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     const qb = this.listings
       .createQueryBuilder('l')
+      .select([
+        'l.id',
+        'l.title',
+        'l.status',
+        'l.sellerId',
+        'l.modelId',
+        'l.manufactureYear',
+        'l.phone',
+      ])
       .where('l.id != :id', { id: listing.id })
       .andWhere('l.status IN (:...statuses)', {
         statuses: ['draft', 'pending_review', 'active', 'paused'],

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { PerformanceClient } from './performance-client';
@@ -20,7 +21,9 @@ export default async function PerformancePage({
         {t(locale, 'performanceSubtitle')}
       </p>
       <div className="mt-6">
-        <PerformanceClient locale={locale} />
+        <Suspense fallback={null}>
+          <PerformanceClient locale={locale} />
+        </Suspense>
       </div>
     </div>
   );

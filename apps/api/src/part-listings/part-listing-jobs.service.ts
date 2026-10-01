@@ -24,7 +24,8 @@ export class PartListingJobsService implements OnModuleInit, OnModuleDestroy {
   private async runOnce() {
     try {
       const result = await this.parts.expireStale();
-      if (result.expired || result.backfilled) {
+      const purged = await this.parts.purgeOldViewEvents();
+      if (result.expired || result.backfilled || purged) {
         this.logger.log(
           `Part listing expiry: expired=${result.expired} backfilled=${result.backfilled}`,
         );

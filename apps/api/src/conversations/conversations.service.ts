@@ -181,8 +181,16 @@ export class ConversationsService {
     });
     const qb = this.conversations
       .createQueryBuilder('c')
-      .leftJoinAndSelect('c.listing', 'listing')
-      .leftJoinAndSelect('c.partListing', 'partListing')
+      .leftJoin('c.listing', 'listing')
+      .leftJoin('c.partListing', 'partListing')
+      .addSelect([
+        'listing.id',
+        'listing.title',
+        'listing.slug',
+        'partListing.id',
+        'partListing.title',
+        'partListing.slug',
+      ])
       .where('c.buyerUserId = :userId OR c.sellerUserId = :userId', { userId })
       .orderBy('c.lastMessageAt', 'DESC', 'NULLS LAST')
       .addOrderBy('c.createdAt', 'DESC');

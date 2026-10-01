@@ -171,7 +171,27 @@ export class UsersService {
   }
 
   async findByIdOrThrow(id: string): Promise<User> {
-    const user = await this.users.findOne({ where: { id } });
+    const user = await this.users
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'roles')
+      .select([
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.email',
+        'user.phone',
+        'user.avatarUrl',
+        'user.avatarStorageKey',
+        'user.status',
+        'user.emailVerifiedAt',
+        'user.phoneVerifiedAt',
+        'user.createdAt',
+        'user.updatedAt',
+        'roles.id',
+        'roles.name',
+      ])
+      .where('user.id = :id', { id })
+      .getOne();
     if (!user) {
       throw new NotFoundException({
         success: false,

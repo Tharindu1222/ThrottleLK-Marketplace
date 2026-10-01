@@ -13,6 +13,8 @@ type Model = { slug: string };
 
 const LOCALES = ['en', 'si'] as const;
 
+export const revalidate = 3600;
+
 async function fetchAllPages<T>(
   path: string,
   extra?: Record<string, string | undefined>,

@@ -49,12 +49,16 @@ describe('visibleAccountNavSections', () => {
       isPartsDealer: true,
     });
     assert.deepEqual(
+      parts.find((section) => section.id === 'shop')?.items.map((item) => item.id),
+      ['listings', 'performance'],
+    );
+    assert.deepEqual(
       parts.map((section) => section.id),
       ['shop', 'partsShop', 'inbox', 'saved', 'account'],
     );
     assert.deepEqual(
       parts.find((section) => section.id === 'partsShop')?.items.map((item) => item.id),
-      ['partsListings', 'partsShowroom', 'partsPerformance'],
+      ['partsListings', 'partsShowroom'],
     );
   });
 

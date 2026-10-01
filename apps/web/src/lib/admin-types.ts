@@ -2,9 +2,14 @@ export type AdminDashboard = {
   users: number;
   activeListings: number;
   pendingListings: number;
-  pendingDealers: number;
-  pendingPartsDealers: number;
+  soldListings?: number;
+  activePartListings?: number;
   pendingPartListings: number;
+  soldPartListings?: number;
+  activeDealers?: number;
+  pendingDealers: number;
+  activePartsDealers?: number;
+  pendingPartsDealers: number;
   pendingPromoRequests?: number;
   openReports: number;
 };

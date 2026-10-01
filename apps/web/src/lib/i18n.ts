@@ -206,6 +206,13 @@ const en: Dict = {
     'Apply to list spare and modified parts from your shop on ThrottleLK.',
   performance: 'Performance',
   performanceSubtitle: 'Views, contact clicks, and saves across your stock.',
+  performanceSummary: '{views} views across {n} active listings.',
+  performanceQuiet:
+    'No calls or saves in this period. Buyers can still find your listings from search.',
+  performanceOpenListings: 'View listings',
+  performanceStockBikes: 'Bikes',
+  performanceStockParts: 'Parts',
+  performancePeriod: 'Time period',
   inventory: 'Inventory',
   inventorySubtitle:
     'Track stock, costs, documents, and sold bikes — listed or private.',
@@ -1019,6 +1026,13 @@ const si: Dict = {
     'ThrottleLK හි ඔබේ shop එකෙන් spare හා modified parts ලැයිස්තුගත කිරීමට අයදුම් කරන්න.',
   performance: 'කාර්ය සාධනය',
   performanceSubtitle: 'ඔබේ තොගයේ නැරඹුම්, සම්බන්ධතා ක්ලික් සහ සුරැකුම්.',
+  performanceSummary: 'සක්‍රිය ලැයිස්තු {n}ක නැරඹුම් {views}.',
+  performanceQuiet:
+    'මේ කාලයේ ඇමතුම් හෝ සුරැකුම් නැත. ගැනුම්කරුවන්ට සෙවීමෙන් ඔබේ ලැයිස්තු හමුවෙනවා.',
+  performanceOpenListings: 'ලැයිස්තු බලන්න',
+  performanceStockBikes: 'බයික්',
+  performanceStockParts: 'පාට්ස්',
+  performancePeriod: 'කාලය',
   inventory: 'තොග කළමනාකරණය',
   inventorySubtitle:
     'තොගය, පිරිවැය, ලේඛන සහ විකුණු බයික් — ලැයිස්තුගත හෝ පුද්ගලික — ලුහුබඳින්න.',

@@ -10,6 +10,22 @@ import { PromoRequest } from '../promotions/promo-request.entity';
 import { Report } from '../reports/report.entity';
 import { UsersService } from '../users/users.service';
 
+type DashboardSummary = {
+  users: number;
+  activeListings: number;
+  pendingListings: number;
+  soldListings: number;
+  activePartListings: number;
+  pendingPartListings: number;
+  soldPartListings: number;
+  activeDealers: number;
+  pendingDealers: number;
+  activePartsDealers: number;
+  pendingPartsDealers: number;
+  pendingPromoRequests: number;
+  openReports: number;
+};
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -27,45 +43,53 @@ export class AdminService {
   ) {}
 
   async dashboard() {
-    const cached = await this.cache.get<{
-      users: number;
-      activeListings: number;
-      pendingListings: number;
-      pendingDealers: number;
-      pendingPartsDealers: number;
-      pendingPartListings: number;
-      pendingPromoRequests: number;
-      openReports: number;
-    }>(this.cache.keys.dashboard);
-    if (cached) return cached;
+    const cached = await this.cache.get<DashboardSummary>(this.cache.keys.dashboard);
+    if (cached?.soldListings != null && cached.activePartListings != null) {
+      return cached;
+    }
     const [
       users,
       activeListings,
       pendingListings,
-      pendingDealers,
-      pendingPartsDealers,
+      soldListings,
+      activePartListings,
       pendingPartListings,
+      soldPartListings,
+      activeDealers,
+      pendingDealers,
+      activePartsDealers,
+      pendingPartsDealers,
       pendingPromoRequests,
       openReports,
     ] = await Promise.all([
       this.users.countUsers(),
       this.listings.count({ where: { status: 'active' } }),
       this.listings.count({ where: { status: 'pending_review' } }),
-      this.dealers.count({ where: { status: 'pending' } }),
-      this.partsDealers.count({ where: { status: 'pending' } }),
+      this.listings.count({ where: { status: 'sold' } }),
+      this.partListings.count({ where: { status: 'active' } }),
       this.partListings.count({ where: { status: 'pending_review' } }),
+      this.partListings.count({ where: { status: 'sold' } }),
+      this.dealers.count({ where: { status: 'active' } }),
+      this.dealers.count({ where: { status: 'pending' } }),
+      this.partsDealers.count({ where: { status: 'active' } }),
+      this.partsDealers.count({ where: { status: 'pending' } }),
       this.promoRequests.count({
         where: { status: 'pending', paymentStatus: 'paid' },
       }),
       this.reports.count({ where: { status: 'open' } }),
     ]);
-    const data = {
+    const data: DashboardSummary = {
       users,
       activeListings,
       pendingListings,
-      pendingDealers,
-      pendingPartsDealers,
+      soldListings,
+      activePartListings,
       pendingPartListings,
+      soldPartListings,
+      activeDealers,
+      pendingDealers,
+      activePartsDealers,
+      pendingPartsDealers,
       pendingPromoRequests,
       openReports,
     };

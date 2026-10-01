@@ -169,7 +169,24 @@ function RejectInline({
   );
 }
 
-export function AdminModeration({ search = '' }: { search?: string }) {
+const QUEUE_IDS: QueueId[] = [
+  'listings',
+  'part-listings',
+  'dealers',
+  'parts-dealers',
+];
+
+function queueFromParam(value?: string): QueueId | null {
+  return QUEUE_IDS.find((id) => id === value) ?? null;
+}
+
+export function AdminModeration({
+  search = '',
+  initialQueue,
+}: {
+  search?: string;
+  initialQueue?: string;
+}) {
   const [token, setToken] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingListing[]>([]);
   const [partListings, setPartListings] = useState<PendingPartListing[]>([]);
@@ -199,8 +216,11 @@ export function AdminModeration({ search = '' }: { search?: string }) {
   const [partsDealerReason, setPartsDealerReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [activeQueue, setActiveQueue] = useState<QueueId>('listings');
-  const [userPickedQueue, setUserPickedQueue] = useState(false);
+  const presetQueue = queueFromParam(initialQueue);
+  const [activeQueue, setActiveQueue] = useState<QueueId>(
+    presetQueue ?? 'listings',
+  );
+  const [userPickedQueue, setUserPickedQueue] = useState(Boolean(presetQueue));
   const didAutoPick = useRef(false);
 
   async function loadListings(access: string, pageNum: number, q: string) {

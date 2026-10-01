@@ -174,7 +174,6 @@ function navIcon(id: AccountNavItemDef['id']) {
     case 'partsShowroom':
       return <IconShowroom />;
     case 'performance':
-    case 'partsPerformance':
       return <IconPerformance />;
     case 'inventory':
       return <IconInventory />;

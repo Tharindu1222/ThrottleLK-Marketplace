@@ -24,7 +24,8 @@ export class ListingJobsService implements OnModuleInit, OnModuleDestroy {
   private async runOnce() {
     try {
       const result = await this.listings.expireStale();
-      if (result.expired || result.backfilled) {
+      const purged = await this.listings.purgeOldViewEvents();
+      if (result.expired || result.backfilled || purged) {
         this.logger.log(
           `Listing expiry: expired=${result.expired} backfilled=${result.backfilled}`,
         );

@@ -65,6 +65,31 @@ export class FavouritesService {
       .leftJoinAndSelect('listing.model', 'model')
       .leftJoinAndSelect('listing.district', 'district')
       .leftJoinAndSelect('listing.city', 'city')
+      .select([
+        'f.id',
+        'f.listingId',
+        'f.createdAt',
+        'listing.id',
+        'listing.slug',
+        'listing.title',
+        'listing.priceLkr',
+        'listing.manufactureYear',
+        'listing.engineCc',
+        'listing.mileage',
+        'listing.condition',
+        'listing.dealerId',
+        'listing.publishedAt',
+        'listing.createdAt',
+        'listing.viewCount',
+        'brand.id',
+        'brand.name',
+        'model.id',
+        'model.name',
+        'district.id',
+        'district.name',
+        'city.id',
+        'city.name',
+      ])
       .where('f.userId = :userId', { userId })
       .andWhere('listing.status = :status', { status: 'active' })
       .orderBy('f.createdAt', 'DESC')

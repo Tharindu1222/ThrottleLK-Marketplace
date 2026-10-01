@@ -13,6 +13,7 @@ describe('PartListingsService.relatedForBikeListing', () => {
     const qb = {
       innerJoin: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       addSelect: jest.fn().mockReturnThis(),
@@ -107,6 +108,7 @@ describe('PartListingsService.relatedForBikeListing', () => {
     };
     const qb = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
