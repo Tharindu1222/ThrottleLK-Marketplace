@@ -19,8 +19,15 @@ function useIsLoggedIn() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    setLoggedIn(Boolean(getAccessToken() || getStoredUser()));
+    const read = () => {
+      setLoggedIn(Boolean(getAccessToken() || getStoredUser()));
+    };
+    read();
     setReady(true);
+    // Google sign-in sets the HttpOnly cookie first. The header writes the
+    // local user hint a moment later and fires this event.
+    window.addEventListener('throttlelk-session', read);
+    return () => window.removeEventListener('throttlelk-session', read);
   }, []);
 
   return { ready, loggedIn };

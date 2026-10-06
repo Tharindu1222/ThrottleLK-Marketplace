@@ -153,6 +153,7 @@ export class AuthService {
     if (!idToken) throw this.googleFailed();
 
     const profile = await this.verifyGoogleIdToken(idToken, clientId, input.nonce);
+    const picture = googlePictureUrl(profile.picture);
     const email = profile.email?.trim().toLowerCase();
     if (!email || profile.email_verified !== true) {
       throw new UnauthorizedException({
@@ -180,6 +181,7 @@ export class AuthService {
           googleSub: profile.sub,
           firstName: names.firstName,
           lastName: names.lastName,
+          avatarUrl: picture,
         });
       }
     }
@@ -190,6 +192,7 @@ export class AuthService {
         error: { code: 'ACCOUNT_DISABLED', message: 'Account is not active' },
       });
     }
+    user = await this.usersService.applyGoogleAvatar(user, picture);
     return this.issueTokens(user);
   }
 
@@ -494,6 +497,31 @@ function googleDisplayNames(profile: TokenPayload): {
     firstName: clipName(given, 'Rider'),
     lastName: clipName(family, 'User'),
   };
+}
+
+/**
+ * ASVS 1.2.2 — only https URLs on Google's image host may become an avatar src.
+ */
+function googlePictureUrl(raw: string | undefined): string | null {
+  if (!raw || raw.length > 2048) return null;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:' || url.username || url.password) return null;
+  const host = url.hostname.toLowerCase();
+  if (host !== 'googleusercontent.com' && !host.endsWith('.googleusercontent.com')) {
+    return null;
+  }
+  if (/=s\d+(-[a-z]+)?$/i.test(url.pathname)) {
+    url.pathname = url.pathname.replace(/=s\d+(-[a-z]+)?$/i, '=s256-c');
+  } else {
+    url.pathname = `${url.pathname}=s256-c`;
+  }
+  const value = url.toString();
+  return value.length > 2048 ? null : value;
 }
 
 function clipName(value: string | undefined, fallback: string): string {

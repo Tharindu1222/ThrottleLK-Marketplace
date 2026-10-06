@@ -55,6 +55,7 @@ function Avatar({
       <img
         src={counterpart.avatarUrl}
         alt=""
+        referrerPolicy="no-referrer"
         className={`${dim} shrink-0 rounded-full object-cover ring-1 ring-black/10`}
       />
     );

@@ -45,6 +45,12 @@ describe('AuthService', () => {
         if (!user.emailVerifiedAt) user.emailVerifiedAt = new Date();
         return user;
       }),
+      applyGoogleAvatar: jest.fn(async (user: User, avatarUrl: string | null) => {
+        if (avatarUrl && !user.avatarStorageKey && user.avatarUrl !== avatarUrl) {
+          user.avatarUrl = avatarUrl;
+        }
+        return user;
+      }),
       toPublic: jest.fn((user: User) => ({
         id: user.id,
         email: user.email,
@@ -92,6 +98,7 @@ describe('AuthService', () => {
       nonce: 'nonce-1',
       given_name: 'Ada',
       family_name: 'Lovelace',
+      picture: 'https://lh3.googleusercontent.com/a/photo=s96-c',
       ...overrides,
     };
   }
@@ -151,6 +158,7 @@ describe('AuthService', () => {
       googleSub: 'google-sub-1',
       firstName: 'Ada',
       lastName: 'Lovelace',
+      avatarUrl: 'https://lh3.googleusercontent.com/a/photo=s256-c',
     });
     expect(result.accessToken).toContain('signed.');
     expect(result.refreshToken).toContain('signed.');
@@ -203,8 +211,51 @@ describe('AuthService', () => {
     expect(existing.passwordHash).toBe(passwordHash);
     expect(existing.googleSub).toBe('google-sub-1');
     expect(existing.emailVerifiedAt).toBeInstanceOf(Date);
+    expect(existing.avatarUrl).toBe(
+      'https://lh3.googleusercontent.com/a/photo=s256-c',
+    );
     expect(result.accessToken).toBeTruthy();
     expect(sessions.save).toHaveBeenCalled();
+  });
+
+  it('ignores a profile image that is not a Google https URL', async () => {
+    const { service, usersService } = createHarness();
+    mockGoogle(googleProfile({ picture: 'javascript:alert(1)' }));
+    usersService.createGoogleUser.mockImplementation(async (input: User) => ({
+      ...input,
+      id: 'user-new',
+      status: 'active',
+      roles: [{ name: 'buyer' }],
+    }));
+
+    await service.googleCallback(callbackInput);
+
+    expect(usersService.createGoogleUser).toHaveBeenCalledWith(
+      expect.objectContaining({ avatarUrl: null }),
+    );
+  });
+
+  it('does not replace a photo the user uploaded', async () => {
+    const { service, usersService } = createHarness();
+    mockGoogle(googleProfile());
+    const existing = {
+      id: 'user-1',
+      email: 'ada@example.com',
+      status: 'active',
+      googleSub: 'google-sub-1',
+      avatarStorageKey: 'avatars/user-1/own.jpg',
+      avatarUrl: 'https://cdn.example/own.jpg',
+      roles: [{ name: 'buyer' }],
+    } as unknown as User;
+    usersService.findByGoogleSub.mockResolvedValue(existing);
+
+    await service.googleCallback(callbackInput);
+
+    expect(existing.avatarUrl).toBe('https://cdn.example/own.jpg');
+    expect(usersService.applyGoogleAvatar).toHaveBeenCalledWith(
+      existing,
+      'https://lh3.googleusercontent.com/a/photo=s256-c',
+    );
   });
 
   it('rejects an unverified Google email', async () => {

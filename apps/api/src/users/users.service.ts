@@ -180,6 +180,7 @@ export class UsersService {
     googleSub: string;
     firstName: string;
     lastName: string;
+    avatarUrl?: string | null;
   }): Promise<User> {
     const email = input.email.toLowerCase();
     const existing = await this.users.findOne({ where: { email } });
@@ -199,6 +200,7 @@ export class UsersService {
       phone: null,
       passwordHash: null,
       googleSub: input.googleSub,
+      avatarUrl: input.avatarUrl ?? null,
       emailVerifiedAt: new Date(),
       status: 'active',
       roles,
@@ -214,6 +216,18 @@ export class UsersService {
     if (!user.emailVerifiedAt) {
       user.emailVerifiedAt = new Date();
     }
+    return this.users.save(user);
+  }
+
+  /**
+   * Stores the Google profile photo. A photo the user uploaded themselves
+   * (avatarStorageKey) is left in place.
+   */
+  async applyGoogleAvatar(user: User, avatarUrl: string | null): Promise<User> {
+    if (!avatarUrl || user.avatarStorageKey || user.avatarUrl === avatarUrl) {
+      return user;
+    }
+    user.avatarUrl = avatarUrl;
     return this.users.save(user);
   }
 

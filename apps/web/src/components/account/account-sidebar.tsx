@@ -202,6 +202,7 @@ function SidebarAvatar({ user }: { user: AuthUser | null }) {
       <img
         src={user.avatarUrl}
         alt=""
+        referrerPolicy="no-referrer"
         className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm"
       />
     );

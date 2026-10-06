@@ -232,4 +232,31 @@ describe('UsersService Google accounts', () => {
     expect(saved.googleSub).toBe('sub-1');
     expect(saved.emailVerifiedAt).toBeInstanceOf(Date);
   });
+
+  it('stores a Google photo unless the user already uploaded one', async () => {
+    const users = {
+      save: jest.fn(async (saved: User) => saved),
+    };
+    const service = new UsersService(
+      users as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+    const picture = 'https://lh3.googleusercontent.com/a/photo=s256-c';
+    const open = { avatarUrl: null, avatarStorageKey: null } as unknown as User;
+    const uploaded = {
+      avatarUrl: 'https://cdn.example/own.jpg',
+      avatarStorageKey: 'avatars/own.jpg',
+    } as unknown as User;
+
+    expect((await service.applyGoogleAvatar(open, picture)).avatarUrl).toBe(picture);
+    expect((await service.applyGoogleAvatar(uploaded, picture)).avatarUrl).toBe(
+      'https://cdn.example/own.jpg',
+    );
+    expect(users.save).toHaveBeenCalledTimes(1);
+  });
 });

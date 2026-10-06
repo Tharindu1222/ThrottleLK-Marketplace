@@ -70,6 +70,7 @@ function Avatar({ counterpart }: { counterpart: Counterpart | null }) {
       <img
         src={counterpart.avatarUrl}
         alt=""
+        referrerPolicy="no-referrer"
         className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-black/10 sm:h-12 sm:w-12"
       />
     );

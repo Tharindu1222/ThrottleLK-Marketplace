@@ -39,6 +39,7 @@ function AccountAvatar({
       <img
         src={user.avatarUrl}
         alt=""
+        referrerPolicy="no-referrer"
         className={`${dim} shrink-0 rounded-full object-cover ring-2 ring-black/10`}
       />
     );

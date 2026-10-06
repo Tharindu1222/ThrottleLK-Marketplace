@@ -58,6 +58,7 @@ function SellerAvatar({
       <img
         src={src}
         alt=""
+        referrerPolicy="no-referrer"
         className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white"
       />
     );

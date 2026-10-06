@@ -204,6 +204,7 @@ export function DealerShowroomProfile({
                           <img
                             src={dealer.ownerAvatarUrl}
                             alt=""
+                            referrerPolicy="no-referrer"
                             className="h-full w-full object-cover"
                           />
                         ) : (

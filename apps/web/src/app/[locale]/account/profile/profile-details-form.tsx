@@ -73,6 +73,7 @@ function AvatarBubble({
       <img
         src={profile.avatarUrl}
         alt=""
+        referrerPolicy="no-referrer"
         className={`${dim} shrink-0 rounded-full object-cover ring-4 ring-white shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]`}
       />
     );
