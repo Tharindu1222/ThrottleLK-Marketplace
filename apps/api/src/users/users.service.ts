@@ -170,6 +170,53 @@ export class UsersService {
     return this.users.findOne({ where: { email: email.toLowerCase() } });
   }
 
+  /** ASVS 6.8.1 — look up the Google user by (provider, sub), not by email. */
+  findByGoogleSub(googleSub: string): Promise<User | null> {
+    return this.users.findOne({ where: { googleSub } });
+  }
+
+  async createGoogleUser(input: {
+    email: string;
+    googleSub: string;
+    firstName: string;
+    lastName: string;
+  }): Promise<User> {
+    const email = input.email.toLowerCase();
+    const existing = await this.users.findOne({ where: { email } });
+    if (existing) {
+      throw new ConflictException({
+        success: false,
+        error: { code: 'EMAIL_EXISTS', message: 'Email already registered' },
+      });
+    }
+
+    const roleNames = ['buyer', 'seller'];
+    const roles = await this.roles.find({ where: { name: In(roleNames) } });
+    const user = this.users.create({
+      firstName: input.firstName,
+      lastName: input.lastName,
+      email,
+      phone: null,
+      passwordHash: null,
+      googleSub: input.googleSub,
+      emailVerifiedAt: new Date(),
+      status: 'active',
+      roles,
+    });
+    const saved = await this.users.save(user);
+    void this.cache.invalidateDashboard();
+    return saved;
+  }
+
+  /** Links Google onto an existing account. Does not change passwordHash. */
+  async linkGoogleAccount(user: User, googleSub: string): Promise<User> {
+    user.googleSub = googleSub;
+    if (!user.emailVerifiedAt) {
+      user.emailVerifiedAt = new Date();
+    }
+    return this.users.save(user);
+  }
+
   async findByIdOrThrow(id: string): Promise<User> {
     const user = await this.users
       .createQueryBuilder('user')

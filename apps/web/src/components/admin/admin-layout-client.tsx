@@ -91,8 +91,8 @@ const titles: Record<
   },
   audit: {
     title: 'Audit log',
-    subtitle: 'Admin action history',
-    placeholder: 'Search audit…',
+    subtitle: 'Changes to listings, parts, taxonomy, promotions, monetize, and users',
+    placeholder: 'Search by admin, action, or entity…',
   },
 };
 
@@ -107,6 +107,7 @@ const SEARCHABLE = new Set([
   'part-categories',
   'taxonomy',
   'reports',
+  'audit',
 ]);
 
 export function AdminLayoutClient({

@@ -1,12 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import {
   authFieldClass,
   authPrimaryBtnClass,
   authSecondaryBtnClass,
 } from '@/components/auth/auth-shell';
+import {
+  GoogleSignInButton,
+  googleAuthErrorMessage,
+} from '@/components/auth/google-sign-in';
 import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
@@ -14,10 +18,24 @@ import { t, type Locale } from '@/lib/i18n';
 import { apiCodeMessage } from '@/lib/listing-errors';
 import { safeNextPath } from '@/lib/safe-next';
 
-export function RegisterForm({ locale }: { locale: Locale }) {
+export function RegisterForm({
+  locale,
+  next,
+}: {
+  locale: Locale;
+  next?: string;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
+
+  useEffect(() => {
+    const googleError = googleAuthErrorMessage(
+      locale,
+      new URLSearchParams(window.location.search).get('error'),
+    );
+    if (googleError) setError(googleError);
+  }, [locale]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -50,6 +68,8 @@ export function RegisterForm({ locale }: { locale: Locale }) {
   }
 
   return (
+    <div className="grid gap-3.5">
+    <GoogleSignInButton locale={locale} next={next} />
     <form onSubmit={onSubmit} className="grid gap-3.5">
       <div className="grid gap-3.5 sm:grid-cols-2">
         <label className="grid gap-1.5">
@@ -129,5 +149,6 @@ export function RegisterForm({ locale }: { locale: Locale }) {
         </Link>
       </p>
     </form>
+    </div>
   );
 }

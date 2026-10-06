@@ -13,8 +13,15 @@ export class AdminAuditLog {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'actor_user_id' })
+  @Column({ name: 'actor_user_id', type: 'uuid' })
   actorUserId!: string;
+
+  /** Name at the time of the action, so a later rename does not rewrite history. */
+  @Column({ name: 'actor_name', type: 'varchar', length: 160, nullable: true })
+  actorName!: string | null;
+
+  @Column({ name: 'actor_email', type: 'varchar', length: 255, nullable: true })
+  actorEmail!: string | null;
 
   @Column({ length: 80 })
   action!: string;

@@ -36,7 +36,12 @@ export function middleware(request: NextRequest) {
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   );
 
-  if (!hasLocale) {
+  // Google's registered redirect URI has no locale prefix. A locale redirect
+  // would drop `/auth/google/callback` (and its code/state query) off that URI.
+  const skipLocaleRedirect =
+    pathname === '/auth/google' || pathname === '/auth/google/callback';
+
+  if (!hasLocale && !skipLocaleRedirect) {
     const url = request.nextUrl.clone();
     url.pathname = `/${defaultLocale}${pathname === '/' ? '' : pathname}`;
     return NextResponse.redirect(url);

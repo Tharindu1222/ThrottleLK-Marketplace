@@ -34,8 +34,18 @@ export class User {
   @Column({ name: 'avatar_storage_key', type: 'varchar', length: 512, nullable: true })
   avatarStorageKey!: string | null;
 
-  @Column({ name: 'password_hash' })
-  passwordHash!: string;
+  @Column({ name: 'password_hash', type: 'varchar', nullable: true })
+  passwordHash!: string | null;
+
+  /** Google `sub` claim. Identity is (provider=google, sub), not email. ASVS 6.8.1. */
+  @Column({
+    name: 'google_sub',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    unique: true,
+  })
+  googleSub!: string | null;
 
   @Column({ default: 'active' })
   status!: string;

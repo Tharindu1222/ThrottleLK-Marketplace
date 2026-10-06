@@ -3,14 +3,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
+import { auditActionLabel, auditActorLabel, auditAreaLabel } from '@/lib/audit';
 import { getAccessToken } from '@/lib/auth';
 import type { AdminDashboard } from '@/lib/admin-types';
 import type { Locale } from '@/lib/i18n';
 
 type AuditRow = {
   id: string;
+  actorName: string | null;
   action: string;
   entityType: string;
+  area?: string;
   note: string | null;
   createdAt: string;
 };
@@ -32,12 +35,6 @@ function formatWhen(iso: string) {
     hour: 'numeric',
     minute: '2-digit',
   });
-}
-
-function actionLabel(action: string) {
-  const words = action.replaceAll(/[._]/g, ' ').trim();
-  if (!words) return 'Action';
-  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 export function AdminOverview({ locale }: { locale: Locale }) {
@@ -298,11 +295,11 @@ export function AdminOverview({ locale }: { locale: Locale }) {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-[var(--admin-text)]">
-                      {actionLabel(row.action)}
+                      {auditActorLabel(row.actorName)} · {auditActionLabel(row.action)}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-[var(--admin-muted)]">
-                      <span className="rounded-full bg-[var(--admin-surface-2)] px-2 py-0.5 capitalize">
-                        {row.entityType.replaceAll('_', ' ')}
+                      <span className="rounded-full bg-[var(--admin-surface-2)] px-2 py-0.5">
+                        {auditAreaLabel(row.area, row.entityType)}
                       </span>
                       {row.note ? <span className="ml-2">{row.note}</span> : null}
                     </p>

@@ -78,6 +78,7 @@ import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { UsersService } from '../users/users.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { User } from '../users/user.entity';
+import { AdminAuditInterceptor } from './admin-audit.interceptor';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminService } from './admin.service';
 
@@ -85,6 +86,7 @@ import { AdminService } from './admin.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
 @RateLimit('admin')
+@UseInterceptors(AdminAuditInterceptor)
 export class AdminController {
   constructor(
     private readonly listingsService: ListingsService,
@@ -109,8 +111,10 @@ export class AdminController {
   async auditLogs(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('q') q?: string,
+    @Query('area') area?: string,
   ): Promise<ApiSuccess<unknown>> {
-    const { items, meta } = await this.audit.list({ page, limit });
+    const { items, meta } = await this.audit.list({ page, limit, q, area });
     return { success: true, data: items, meta };
   }
 
@@ -360,20 +364,14 @@ export class AdminController {
 
   @Post('reports/:id/resolve')
   async resolveReport(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(adminResolveReportSchema))
     body: AdminResolveReportInput,
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.reportsService.resolve(id, body.action, body.note);
-    await this.audit.record(
-      actor,
-      'report.resolve',
-      'report',
-      id,
-      body.action,
-    );
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.reportsService.resolve(id, body.action, body.note),
+    };
   }
 
   @Get('users')
@@ -427,14 +425,14 @@ export class AdminController {
 
   @Patch('users/:id/status')
   async userStatus(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(adminUpdateUserStatusSchema))
     body: AdminUpdateUserStatusInput,
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.users.setStatus(id, body.status);
-    await this.audit.record(actor, 'user.status', 'user', id, body.status);
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.users.setStatus(id, body.status),
+    };
   }
 
   @Get('brands')
@@ -550,51 +548,41 @@ export class AdminController {
   }
 
   @Post('listings/:id/approve')
-  async approveListing(
-    @CurrentUser() actor: User,
-    @Param('id') id: string,
-  ): Promise<ApiSuccess<unknown>> {
-    const data = await this.listingsService.approve(id);
-    await this.audit.record(actor, 'listing.approve', 'listing', id);
-    return { success: true, data };
+  async approveListing(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.listingsService.approve(id),
+    };
   }
 
   @Post('listings/:id/reject')
   async rejectListing(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(rejectListingSchema)) body: { reason: string },
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.listingsService.reject(id, body.reason);
-    await this.audit.record(
-      actor,
-      'listing.reject',
-      'listing',
-      id,
-      body.reason,
-    );
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.listingsService.reject(id, body.reason),
+    };
   }
 
   @Post('dealers/:id/approve')
-  async approveDealer(
-    @CurrentUser() actor: User,
-    @Param('id') id: string,
-  ): Promise<ApiSuccess<unknown>> {
-    const data = await this.dealersService.approve(id);
-    await this.audit.record(actor, 'dealer.approve', 'dealer', id);
-    return { success: true, data };
+  async approveDealer(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.dealersService.approve(id),
+    };
   }
 
   @Post('dealers/:id/reject')
   async rejectDealer(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(rejectDealerSchema)) body: RejectDealerInput,
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.dealersService.reject(id, body.reason);
-    await this.audit.record(actor, 'dealer.reject', 'dealer', id, body.reason);
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.dealersService.reject(id, body.reason),
+    };
   }
 
   @Get('parts-dealers')
@@ -709,30 +697,24 @@ export class AdminController {
 
   @Post('parts-dealers/:id/approve')
   async approvePartsDealer(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.partsDealersService.approve(id);
-    await this.audit.record(actor, 'parts_dealer.approve', 'parts_dealer', id);
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.partsDealersService.approve(id),
+    };
   }
 
   @Post('parts-dealers/:id/reject')
   async rejectPartsDealer(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(rejectPartsDealerSchema))
     body: RejectPartsDealerInput,
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.partsDealersService.reject(id, body.reason);
-    await this.audit.record(
-      actor,
-      'parts_dealer.reject',
-      'parts_dealer',
-      id,
-      body.reason,
-    );
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.partsDealersService.reject(id, body.reason),
+    };
   }
 
   @Get('part-listings')
@@ -812,29 +794,23 @@ export class AdminController {
 
   @Post('part-listings/:id/approve')
   async approvePartListing(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.partListingsService.approve(id);
-    await this.audit.record(actor, 'part_listing.approve', 'part_listing', id);
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.partListingsService.approve(id),
+    };
   }
 
   @Post('part-listings/:id/reject')
   async rejectPartListing(
-    @CurrentUser() actor: User,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(rejectListingSchema)) body: { reason: string },
   ): Promise<ApiSuccess<unknown>> {
-    const data = await this.partListingsService.reject(id, body.reason);
-    await this.audit.record(
-      actor,
-      'part_listing.reject',
-      'part_listing',
-      id,
-      body.reason,
-    );
-    return { success: true, data };
+    return {
+      success: true,
+      data: await this.partListingsService.reject(id, body.reason),
+    };
   }
 
   @Get('part-listings/:id/images')

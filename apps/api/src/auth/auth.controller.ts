@@ -14,6 +14,18 @@ import {
   type VerifyEmailInput,
 } from '@throttlelk/validation';
 import { z } from 'zod';
+
+const googleCallbackSchema = z.object({
+  code: z.string().trim().min(1).max(2048),
+  state: z.string().trim().min(1).max(512),
+  nonce: z.string().trim().min(1).max(512),
+  codeVerifier: z
+    .string()
+    .trim()
+    .min(43)
+    .max(128)
+    .regex(/^[A-Za-z0-9\-._~]+$/),
+});
 import {
   authCookieNames,
   authCookieOptions,
@@ -54,6 +66,18 @@ export class AuthController {
   ): Promise<ApiSuccess<{ user: unknown }>> {
     await assertRequestCaptcha(req, body.captchaToken);
     const data = await this.authService.login(body);
+    this.setAuthCookies(res, data.accessToken, data.refreshToken);
+    return { success: true, data: { user: data.user } };
+  }
+
+  @RateLimit('login')
+  @Post('google/callback')
+  async googleCallback(
+    @Body(new ZodValidationPipe(googleCallbackSchema))
+    body: z.infer<typeof googleCallbackSchema>,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiSuccess<{ user: unknown }>> {
+    const data = await this.authService.googleCallback(body);
     this.setAuthCookies(res, data.accessToken, data.refreshToken);
     return { success: true, data: { user: data.user } };
   }

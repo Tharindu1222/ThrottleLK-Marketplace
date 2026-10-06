@@ -1,4 +1,41 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { loadEnvConfig } from '@next/env';
 import type { NextConfig } from 'next';
+
+/**
+ * Next loads `apps/web/.env*` before this file, then caches that result.
+ * Also load the monorepo root `.env` without replacing variables already set.
+ */
+function loadMonorepoRootEnv() {
+  const candidates = [
+    resolve(process.cwd(), '..', '..'),
+    resolve(process.cwd(), '..'),
+    process.cwd(),
+  ];
+  const root =
+    candidates.find((dir) =>
+      existsSync(resolve(dir, 'apps', 'web', 'package.json')),
+    ) ?? resolve(process.cwd(), '..', '..');
+  const alreadySet = { ...process.env };
+  const loaded = loadEnvConfig(
+    root,
+    process.env.NODE_ENV !== 'production',
+    undefined,
+    true,
+  );
+  for (const [key, value] of Object.entries(alreadySet)) {
+    if (typeof value === 'string') process.env[key] = value;
+  }
+  const parsed = loaded.parsedEnv ?? {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (process.env[key] === undefined && typeof value === 'string') {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadMonorepoRootEnv();
 
 function imageRemotePatterns() {
   const patterns: NonNullable<NextConfig['images']>['remotePatterns'] = [

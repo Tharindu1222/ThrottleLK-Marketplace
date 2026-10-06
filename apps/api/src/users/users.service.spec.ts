@@ -171,3 +171,65 @@ describe('UsersService.adminUpdate email verification', () => {
     expect(cleared.emailVerifiedAt).toBeNull();
   });
 });
+
+describe('UsersService Google accounts', () => {
+  it('creates a Google user with buyer and seller roles and no password', async () => {
+    const users = {
+      findOne: jest.fn(async () => null),
+      create: jest.fn((row: User) => row),
+      save: jest.fn(async (row: User) => ({ ...row, id: 'user-1' })),
+    };
+    const roles = {
+      find: jest.fn(async () => [{ name: 'buyer' }, { name: 'seller' }]),
+    };
+    const service = new UsersService(
+      users as never,
+      roles as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+
+    const user = await service.createGoogleUser({
+      email: 'Ada@Example.com',
+      googleSub: 'sub-1',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+    });
+
+    expect(user.email).toBe('ada@example.com');
+    expect(user.passwordHash).toBeNull();
+    expect(user.googleSub).toBe('sub-1');
+    expect(user.emailVerifiedAt).toBeInstanceOf(Date);
+    expect(user.status).toBe('active');
+    expect(user.roles.map((role) => role.name)).toEqual(['buyer', 'seller']);
+  });
+
+  it('links Google without changing the password hash', async () => {
+    const user = {
+      id: 'user-1',
+      passwordHash: 'keep-me',
+      googleSub: null,
+      emailVerifiedAt: null,
+    } as unknown as User;
+    const users = {
+      save: jest.fn(async (saved: User) => saved),
+    };
+    const service = new UsersService(
+      users as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { invalidateDashboard: jest.fn() } as never,
+    );
+
+    const saved = await service.linkGoogleAccount(user, 'sub-1');
+    expect(saved.passwordHash).toBe('keep-me');
+    expect(saved.googleSub).toBe('sub-1');
+    expect(saved.emailVerifiedAt).toBeInstanceOf(Date);
+  });
+});

@@ -3,6 +3,10 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { authIconFieldClass, authPrimaryBtnClass } from '@/components/auth/auth-shell';
+import {
+  GoogleSignInButton,
+  googleAuthErrorMessage,
+} from '@/components/auth/google-sign-in';
 import { TurnstileField } from '@/components/turnstile-field';
 import { apiSend } from '@/lib/api';
 import { saveSession, type AuthUser } from '@/lib/auth';
@@ -10,19 +14,28 @@ import { t, type Locale } from '@/lib/i18n';
 import { apiCodeMessage } from '@/lib/listing-errors';
 import { safeNextPath } from '@/lib/safe-next';
 
-export function LoginForm({ locale }: { locale: Locale }) {
+export function LoginForm({
+  locale,
+  next,
+}: {
+  locale: Locale;
+  next?: string;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [registerHref, setRegisterHref] = useState(`/${locale}/register`);
   const [captchaToken, setCaptchaToken] = useState('');
 
   useEffect(() => {
-    const next = new URLSearchParams(window.location.search).get('next');
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
     setRegisterHref(
       next
         ? `/${locale}/register?next=${encodeURIComponent(next)}`
         : `/${locale}/register`,
     );
+    const googleError = googleAuthErrorMessage(locale, params.get('error'));
+    if (googleError) setError(googleError);
   }, [locale]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -53,6 +66,8 @@ export function LoginForm({ locale }: { locale: Locale }) {
   }
 
   return (
+    <div className="grid gap-3">
+    <GoogleSignInButton locale={locale} next={next} />
     <form onSubmit={onSubmit} className="grid gap-3">
       <label className="grid gap-1.5">
         <span className="text-sm font-medium">{t(locale, 'email')}</span>
@@ -131,5 +146,6 @@ export function LoginForm({ locale }: { locale: Locale }) {
         </Link>
       </p>
     </form>
+    </div>
   );
 }

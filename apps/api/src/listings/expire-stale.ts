@@ -50,15 +50,21 @@ export async function expireActiveRows(input: {
         [listingActiveDays(), now],
       ),
     );
-    const expired = updateRows<{ id: string; sellerId: string; title: string }>(
+    const sellerSelect =
+      input.table === 'listings' ? `, seller_id AS "sellerId"` : '';
+    const expired = updateRows<{ id: string; sellerId?: string; title: string }>(
       await input.query(
         `UPDATE ${table}
          SET status = 'expired'
          WHERE status = 'active' AND expires_at <= $1
-         RETURNING id, seller_id AS "sellerId", title`,
+         RETURNING id${sellerSelect}, title`,
         [now],
       ),
-    );
+    ).map((row) => ({
+      id: row.id,
+      title: row.title,
+      sellerId: row.sellerId ?? '',
+    }));
     return {
       expired,
       backfilled: backfilled.length,

@@ -2,13 +2,15 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { OAuth2Client, type TokenPayload } from 'google-auth-library';
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { Repository } from 'typeorm';
 import type {
   ForgotPasswordInput,
@@ -75,6 +77,16 @@ export class AuthService {
         error: { code: 'ACCOUNT_DISABLED', message: 'Account is not active' },
       });
     }
+    // Google-only accounts have no password. Same error as a wrong password.
+    if (!user.passwordHash) {
+      throw new UnauthorizedException({
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password',
+        },
+      });
+    }
     const match = await bcrypt.compare(input.password, user.passwordHash);
     if (!match) {
       throw new UnauthorizedException({
@@ -86,6 +98,151 @@ export class AuthService {
       });
     }
     return this.issueTokens(user);
+  }
+
+  async googleCallback(input: {
+    code: string;
+    nonce: string;
+    codeVerifier: string;
+  }) {
+    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID')?.trim();
+    const clientSecret = this.config.get<string>('GOOGLE_CLIENT_SECRET')?.trim();
+    if (!clientId || !clientSecret) {
+      throw new ServiceUnavailableException({
+        success: false,
+        error: {
+          code: 'GOOGLE_UNAVAILABLE',
+          message: 'Google sign-in is unavailable',
+        },
+      });
+    }
+
+    const redirectUri = `${this.webBase()}/auth/google/callback`;
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: input.code,
+        code_verifier: input.codeVerifier,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!tokenResponse.ok) {
+      await tokenResponse.text().catch(() => undefined);
+      throw this.googleFailed();
+    }
+
+    let idToken: string | undefined;
+    try {
+      const body: unknown = await tokenResponse.json();
+      if (
+        body &&
+        typeof body === 'object' &&
+        'id_token' in body &&
+        typeof body.id_token === 'string'
+      ) {
+        idToken = body.id_token;
+      }
+    } catch {
+      throw this.googleFailed();
+    }
+    if (!idToken) throw this.googleFailed();
+
+    const profile = await this.verifyGoogleIdToken(idToken, clientId, input.nonce);
+    const email = profile.email?.trim().toLowerCase();
+    if (!email || profile.email_verified !== true) {
+      throw new UnauthorizedException({
+        success: false,
+        error: {
+          code: 'GOOGLE_EMAIL_UNVERIFIED',
+          message: 'Google sign-in failed',
+        },
+      });
+    }
+
+    // ASVS 6.8.1 — identity is (provider=google, sub), not email alone.
+    let user = await this.usersService.findByGoogleSub(profile.sub);
+    if (!user) {
+      const byEmail = await this.usersService.findByEmail(email);
+      if (byEmail) {
+        if (byEmail.googleSub && byEmail.googleSub !== profile.sub) {
+          throw this.googleFailed();
+        }
+        user = await this.usersService.linkGoogleAccount(byEmail, profile.sub);
+      } else {
+        const names = googleDisplayNames(profile);
+        user = await this.usersService.createGoogleUser({
+          email,
+          googleSub: profile.sub,
+          firstName: names.firstName,
+          lastName: names.lastName,
+        });
+      }
+    }
+
+    if (user.status !== 'active') {
+      throw new UnauthorizedException({
+        success: false,
+        error: { code: 'ACCOUNT_DISABLED', message: 'Account is not active' },
+      });
+    }
+    return this.issueTokens(user);
+  }
+
+  private googleFailed() {
+    return new UnauthorizedException({
+      success: false,
+      error: { code: 'GOOGLE_FAILED', message: 'Google sign-in failed' },
+    });
+  }
+
+  /**
+   * ASVS 6.8.2 — reject unsigned or invalid ID tokens.
+   * Signature, iss, aud, and exp come from verifyIdToken; nonce is checked here.
+   */
+  private async verifyGoogleIdToken(
+    idToken: string,
+    clientId: string,
+    nonce: string,
+  ): Promise<TokenPayload & { sub: string }> {
+    let payload: TokenPayload | undefined;
+    try {
+      const client = new OAuth2Client(clientId);
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: clientId,
+      });
+      payload = ticket.getPayload();
+    } catch {
+      throw this.googleFailed();
+    }
+
+    if (!payload?.sub || !payload.exp || payload.exp * 1000 <= Date.now()) {
+      throw this.googleFailed();
+    }
+    if (
+      payload.iss !== 'https://accounts.google.com' &&
+      payload.iss !== 'accounts.google.com'
+    ) {
+      throw this.googleFailed();
+    }
+    const audiences = Array.isArray(payload.aud)
+      ? payload.aud
+      : payload.aud
+        ? [payload.aud]
+        : [];
+    if (!audiences.includes(clientId)) {
+      throw this.googleFailed();
+    }
+    const tokenNonce = payload.nonce ?? '';
+    if (!tokenNonce || !safeEqual(tokenNonce, nonce)) {
+      throw this.googleFailed();
+    }
+    return { ...payload, sub: payload.sub };
   }
 
   private jwtSecrets() {
@@ -320,4 +477,33 @@ export class AuthService {
       user: this.usersService.toPublic(user),
     };
   }
+}
+
+function googleDisplayNames(profile: TokenPayload): {
+  firstName: string;
+  lastName: string;
+} {
+  let given = profile.given_name;
+  let family = profile.family_name;
+  if (!given?.trim() && !family?.trim() && profile.name?.trim()) {
+    const parts = profile.name.trim().split(/\s+/);
+    given = parts.shift();
+    family = parts.join(' ');
+  }
+  return {
+    firstName: clipName(given, 'Rider'),
+    lastName: clipName(family, 'User'),
+  };
+}
+
+function clipName(value: string | undefined, fallback: string): string {
+  const trimmed = value?.trim() ?? '';
+  return trimmed.length > 0 ? trimmed.slice(0, 80) : fallback;
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
 }

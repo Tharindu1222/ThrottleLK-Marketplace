@@ -23,10 +23,14 @@ export async function generateMetadata({
 
 export default async function LoginPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ next?: string | string[] }>;
 }) {
   const { locale: raw } = await params;
+  const { next: nextParam } = await searchParams;
+  const next = Array.isArray(nextParam) ? nextParam[0] : nextParam;
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
 
@@ -36,7 +40,7 @@ export default async function LoginPage({
       title={t(locale, 'welcome')}
       subtitle={t(locale, 'signInToAccount')}
     >
-      <LoginForm locale={locale} />
+      <LoginForm locale={locale} next={next} />
     </AuthShell>
   );
 }

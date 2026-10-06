@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import type { ApiSuccess } from '@throttlelk/types';
 import {
@@ -27,6 +28,7 @@ import {
   type UpdatePromoPackageInput,
   type UpdatePromoSettingsInput,
 } from '@throttlelk/validation';
+import { AdminAuditInterceptor } from '../admin/admin-audit.interceptor';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -41,6 +43,7 @@ import type { PromoSubjectType } from './promo-package.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
 @RateLimit('admin')
+@UseInterceptors(AdminAuditInterceptor)
 export class AdminPromotionsController {
   constructor(private readonly promotions: PromotionsService) {}
 

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AdminAuditModule } from '../admin/admin-audit.module';
 import { Listing } from '../listings/listing.entity';
 import { ListingsModule } from '../listings/listings.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -30,6 +31,7 @@ import { PromotionsService } from './promotions.service';
     ListingsModule,
     PartListingsModule,
     NotificationsModule,
+    AdminAuditModule,
   ],
   controllers: [
     PromotionsController,
