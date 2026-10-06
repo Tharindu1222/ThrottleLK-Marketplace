@@ -45,6 +45,10 @@ type FormState = {
   cityId: string;
   description: string;
   phone: string;
+  whatsapp: string;
+  colour: string;
+  registrationYear: string;
+  negotiable: boolean;
   dealerId: string;
 };
 
@@ -290,6 +294,10 @@ const emptyForm: FormState = {
   cityId: '',
   description: '',
   phone: '',
+  whatsapp: '',
+  colour: '',
+  registrationYear: '',
+  negotiable: true,
   dealerId: '',
 };
 
@@ -500,7 +508,7 @@ export function SellForm({ locale }: { locale: Locale }) {
       title: autoTitle.length >= 5 ? autoTitle : `${autoTitle} bike`,
       description: form.description.trim(),
       priceLkr: Number(form.priceLkr),
-      negotiable: true,
+      negotiable: form.negotiable,
       manufactureYear: Number(form.manufactureYear),
       engineCc:
         form.engineCc && Number(form.engineCc) > 0
@@ -511,6 +519,11 @@ export function SellForm({ locale }: { locale: Locale }) {
       transmission: form.transmission,
       condition: form.condition,
       phone: form.phone.trim(),
+      whatsapp: form.whatsapp.trim() || undefined,
+      colour: form.colour.trim() || undefined,
+      registrationYear: form.registrationYear
+        ? Number(form.registrationYear)
+        : undefined,
       dealerId: form.dealerId || undefined,
       ...(form.dealerId
         ? {
@@ -1076,6 +1089,52 @@ export function SellForm({ locale }: { locale: Locale }) {
                     placeholder="07XXXXXXXX"
                   />
                 </div>
+                <div>
+                  <label className={labelClass} htmlFor="whatsapp">
+                    {t(locale, 'whatsapp')}
+                  </label>
+                  <input
+                    id="whatsapp"
+                    type="tel"
+                    className={fieldClass}
+                    value={form.whatsapp}
+                    onChange={(e) => setField('whatsapp', e.target.value)}
+                    placeholder="07XXXXXXXX"
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass} htmlFor="colour">
+                      {t(locale, 'colour')}
+                    </label>
+                    <input
+                      id="colour"
+                      className={fieldClass}
+                      value={form.colour}
+                      onChange={(e) => setField('colour', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="registrationYear">
+                      {t(locale, 'registrationYear')}
+                    </label>
+                    <input
+                      id="registrationYear"
+                      inputMode="numeric"
+                      className={fieldClass}
+                      value={form.registrationYear}
+                      onChange={(e) => setField('registrationYear', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.negotiable}
+                    onChange={(e) => setField('negotiable', e.target.checked)}
+                  />
+                  {t(locale, 'negotiable')}
+                </label>
                 {dealers.length > 0 ? (
                   <div>
                     <p className={labelClass}>{t(locale, 'listUnderDealer')}</p>

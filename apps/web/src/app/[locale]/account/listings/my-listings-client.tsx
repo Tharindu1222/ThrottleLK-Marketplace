@@ -33,6 +33,7 @@ import type { PaginationMeta } from '@throttlelk/types';
 
 type Listing = BrowseListingCard & {
   status: string;
+  rejectionReason?: string | null;
   expiresAt?: string | null;
   phoneClickCount?: number | null;
   whatsappClickCount?: number | null;
@@ -471,6 +472,16 @@ function ListingActions({
           {viewBtn}
           {editBtn}
           {soldBtn}
+          <button
+            type="button"
+            className={btnGhost}
+            disabled={busy}
+            onClick={() =>
+              runAction(listing.id, `/api/v1/listings/${listing.id}/pause`)
+            }
+          >
+            <span className="truncate">{t(locale, 'pauseListing')}</span>
+          </button>
           <Link
             href={`/${locale}/account/listings/${listing.id}/promote`}
             className={`${
@@ -575,6 +586,7 @@ export function MyListingsClient({
   const [dealerFreeListings, setDealerFreeListings] = useState(10);
   const [bikePackages, setBikePackages] = useState<ListingQuotaPackage[]>([]);
   const [paidNote, setPaidNote] = useState(false);
+  const [cancelledNote, setCancelledNote] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [soldDialog, setSoldDialog] = useState<SoldDialogState | null>(null);
@@ -586,6 +598,7 @@ export function MyListingsClient({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('quota') === 'paid') setPaidNote(true);
+    if (params.get('quota') === 'cancelled') setCancelledNote(true);
   }, []);
 
   async function load(access: string, pageNum = page) {
@@ -729,6 +742,11 @@ export function MyListingsClient({
           {t(locale, 'listingQuotaPaid')}
         </p>
       ) : null}
+      {cancelledNote ? (
+        <p className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm text-foreground ring-1 ring-black/[0.06]">
+          {t(locale, 'quotaCancelled')}
+        </p>
+      ) : null}
       {quotaBlock ? (
         <ListingQuotaDialog
           locale={locale}
@@ -842,6 +860,9 @@ export function MyListingsClient({
                           {t(locale, 'promoteWaitApproval')}
                         </p>
                       ) : null}
+                      {listing.status === 'rejected' && listing.rejectionReason ? (
+                        <p className="text-xs text-red-700">{listing.rejectionReason}</p>
+                      ) : null}
                       <ListingActions
                         locale={locale}
                         listing={listing}
@@ -909,6 +930,9 @@ export function MyListingsClient({
                     <p className="mt-1 text-sm text-accent">
                       {formatLkr(listing.priceLkr)}
                     </p>
+                    {listing.status === 'rejected' && listing.rejectionReason ? (
+                      <p className="mt-1 text-xs text-red-700">{listing.rejectionReason}</p>
+                    ) : null}
                     {listing.expiresAt &&
                     (listing.status === 'active' ||
                       listing.status === 'expired') ? (

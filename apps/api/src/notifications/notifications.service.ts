@@ -20,7 +20,11 @@ export class NotificationsService {
 
   async listForUser(
     userId: string,
-    paging?: { page?: string | number; limit?: string | number },
+    paging?: {
+      page?: string | number;
+      limit?: string | number;
+      unread?: string;
+    },
   ) {
     const { page, limit, skip } = parsePageLimit({
       page: paging?.page,
@@ -29,7 +33,10 @@ export class NotificationsService {
       maxLimit: 100,
     });
     const [rows, total] = await this.notifications.findAndCount({
-      where: { userId },
+      where: {
+        userId,
+        ...(paging?.unread === '1' ? { readAt: IsNull() } : {}),
+      },
       order: { createdAt: 'DESC' },
       skip,
       take: limit,
@@ -133,7 +140,7 @@ export class NotificationsService {
 
   async listingRejected(
     sellerId: string,
-    listing: { id: string; title: string },
+    listing: { id: string; title: string; slug?: string },
     reason: string,
   ) {
     return this.notifyUser({
@@ -141,7 +148,7 @@ export class NotificationsService {
       type: 'listing_rejected',
       title: 'Listing needs changes',
       message: `"${listing.title}" was rejected: ${reason}`,
-      data: { listingId: listing.id, reason },
+      data: { listingId: listing.id, slug: listing.slug, reason },
       emailSubject: 'ThrottleLK listing rejected',
       emailHtml: `<p>Your listing <strong>${escapeHtml(listing.title)}</strong> was rejected.</p><p>Reason: ${escapeHtml(reason)}</p>`,
     });
@@ -319,6 +326,25 @@ export class NotificationsService {
     });
   }
 
+  async partListingExpired(
+    ownerUserId: string,
+    listing: { id: string; title: string; slug: string; kind: string },
+  ) {
+    return this.notifyUser({
+      userId: ownerUserId,
+      type: 'part_listing_expired',
+      title: 'Part listing expired',
+      message: `"${listing.title}" is no longer in public search. Renew it to publish again.`,
+      data: {
+        partListingId: listing.id,
+        slug: listing.slug,
+        kind: listing.kind,
+      },
+      emailSubject: 'Your ThrottleLK part listing expired',
+      emailHtml: `<p>Your part listing <strong>${escapeHtml(listing.title)}</strong> expired and was removed from public search. Renew it from your account to publish again.</p>`,
+    });
+  }
+
   async partListingRejected(
     ownerUserId: string,
     listing: { id: string; title: string; slug: string; kind: string },
@@ -440,14 +466,14 @@ export class NotificationsService {
 
   async listingExpired(
     sellerId: string,
-    listing: { id: string; title: string },
+    listing: { id: string; title: string; slug?: string },
   ) {
     return this.notifyUser({
       userId: sellerId,
       type: 'listing_expired',
       title: 'Listing expired',
       message: `"${listing.title}" is no longer in public search. Renew it to publish again.`,
-      data: { listingId: listing.id },
+      data: { listingId: listing.id, slug: listing.slug },
       emailSubject: 'Your ThrottleLK listing expired',
       emailHtml: `<p>Your listing <strong>${escapeHtml(listing.title)}</strong> expired and was removed from public search. Renew it from your account to publish again.</p>`,
     });

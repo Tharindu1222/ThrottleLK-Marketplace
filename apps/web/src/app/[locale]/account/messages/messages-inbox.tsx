@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   InboxEmpty,
   InboxSkeleton,
@@ -93,6 +93,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<InboxFilter>('all');
+  const [unreadTotal, setUnreadTotal] = useState(0);
 
   useEffect(() => {
     const access = getAccessToken();
@@ -102,11 +103,22 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
       return;
     }
     setLoading(true);
-    void apiGetWithMeta<ConversationRow[]>('/api/v1/conversations', {
-      token: access,
-      searchParams: { page: String(page), limit: '20' },
-    })
-      .then(({ data, meta: nextMeta }) => {
+    void Promise.all([
+      apiGetWithMeta<ConversationRow[]>('/api/v1/conversations', {
+        token: access,
+        searchParams: {
+          page: String(page),
+          limit: '20',
+          ...(filter === 'unread' ? { unread: '1' } : {}),
+        },
+      }),
+      apiGetWithMeta<ConversationRow[]>('/api/v1/conversations', {
+        token: access,
+        searchParams: { page: '1', limit: '1', unread: '1' },
+      }),
+    ])
+      .then(([pageResult, unreadResult]) => {
+        const { data, meta: nextMeta } = pageResult;
         const clamp = clampedPage(nextMeta, data.length);
         if (clamp != null && clamp !== page) {
           goTo(clamp);
@@ -114,22 +126,18 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
         }
         setItems(data);
         if (nextMeta) setMeta(nextMeta);
+        setUnreadTotal(unreadResult.meta?.total ?? 0);
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Failed'),
       )
       .finally(() => setLoading(false));
-  }, [page, goTo]);
+  }, [page, goTo, filter]);
 
-  const unreadCount = useMemo(
-    () => items.filter((row) => row.unread).length,
-    [items],
-  );
-
-  const visible = useMemo(() => {
-    if (filter === 'unread') return items.filter((row) => row.unread);
-    return items;
-  }, [filter, items]);
+  function onFilterChange(next: InboxFilter) {
+    setFilter(next);
+    if (page !== 1) goTo(1);
+  }
 
   if (!token) {
     return (
@@ -151,15 +159,15 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
       <InboxToolbar
         locale={locale}
         filter={filter}
-        onFilterChange={setFilter}
-        unreadCount={unreadCount}
+        onFilterChange={onFilterChange}
+        unreadCount={unreadTotal}
       />
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       {loading ? (
         <InboxSkeleton />
-      ) : visible.length === 0 ? (
+      ) : items.length === 0 ? (
         <InboxEmpty
           title={
             filter === 'unread'
@@ -179,7 +187,7 @@ export function MessagesInbox({ locale }: { locale: Locale }) {
         />
       ) : (
         <div className={inboxCardClass}>
-          {visible.map((row) => {
+          {items.map((row) => {
             const name =
               row.counterpart?.fullName ||
               row.counterpart?.displayName ||

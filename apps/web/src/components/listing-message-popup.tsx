@@ -25,7 +25,8 @@ type ChatMessage = {
 
 type ConversationRow = {
   id: string;
-  listingId: string;
+  listingId: string | null;
+  partListingId?: string | null;
 };
 
 type ThreadPayload = {
@@ -77,6 +78,7 @@ export function ListingMessagePopup({
   locale,
   dialogId: dialogIdProp,
   listingId,
+  partListingId,
   listingTitle,
   sellerName,
   sellerAvatarUrl,
@@ -84,7 +86,8 @@ export function ListingMessagePopup({
 }: {
   locale: Locale;
   dialogId?: string;
-  listingId: string;
+  listingId?: string;
+  partListingId?: string;
   listingTitle: string;
   sellerName: string;
   sellerAvatarUrl?: string | null;
@@ -136,9 +139,15 @@ export function ListingMessagePopup({
       try {
         const rows = await apiGet<ConversationRow[]>('/api/v1/conversations', {
           token: access,
-          searchParams: { listingId, limit: '1' },
+          searchParams: partListingId
+            ? { partListingId, limit: '1' }
+            : { listingId, limit: '1' },
         });
-        const existing = rows.find((row) => row.listingId === listingId);
+        const existing = rows.find((row) =>
+          partListingId
+            ? row.partListingId === partListingId
+            : row.listingId === listingId,
+        );
         if (!existing || cancelled) return;
         await loadThread(access, existing.id);
       } catch {
@@ -149,7 +158,7 @@ export function ListingMessagePopup({
     return () => {
       cancelled = true;
     };
-  }, [listingId, loadThread]);
+  }, [listingId, partListingId, loadThread]);
 
   useEffect(() => {
     if (!token || !conversationId) return;
@@ -192,7 +201,9 @@ export function ListingMessagePopup({
       } else {
         const result = await apiSend<StartResult>('/api/v1/conversations', {
           token: access,
-          body: { listingId, message: body },
+          body: partListingId
+            ? { partListingId, message: body }
+            : { listingId, message: body },
         });
         setConversationId(result.conversationId);
         setMessages((prev) => [

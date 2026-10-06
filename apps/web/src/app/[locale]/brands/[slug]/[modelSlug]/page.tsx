@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { BikesBrowse } from '@/components/bikes-browse';
 import { apiGet } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
+import { browseFilterState } from '@/lib/browse-filter-state';
 import { parsePageParam } from '@/lib/pagination';
 import { isFacetedSearch } from '@/lib/search-index';
 import { pageMetadata } from '@/lib/seo';
@@ -88,10 +89,13 @@ export default async function ModelPage({
           answer: t(locale, 'modelLandingFaq2'),
         },
       ]}
-      filterState={{ brandId: model.brandId, modelId: model.id }}
+      filterState={{
+        ...browseFilterState(sp),
+        brandId: model.brandId,
+        modelId: model.id,
+      }}
       page={pageFrom(sp)}
       listPath={`/${locale}/brands/${slug}/${model.slug}`}
-      pagerState={{}}
     />
   );
 }

@@ -5,9 +5,14 @@ import { getAccessToken } from '@/lib/auth';
 export function recordContactClick(
   listingId: string,
   type: 'phone' | 'whatsapp',
+  subject: 'bike' | 'part' = 'bike',
 ) {
   const token = getAccessToken() ?? undefined;
-  void apiSend(`/api/v1/listings/${listingId}/contact-clicks`, {
+  const path =
+    subject === 'part'
+      ? `/api/v1/part-listings/${listingId}/contact-clicks`
+      : `/api/v1/listings/${listingId}/contact-clicks`;
+  void apiSend(path, {
     method: 'POST',
     body: { type },
     token,

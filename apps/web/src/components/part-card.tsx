@@ -126,7 +126,7 @@ function OverlayTip({
   );
 }
 
-function FavouriteHeart({
+export function FavouriteHeart({
   locale,
   partListingId,
   partSlug,

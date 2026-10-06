@@ -171,6 +171,7 @@ export class ConversationsService {
       limit?: string | number;
       listingId?: string;
       partListingId?: string;
+      unread?: string;
     },
   ) {
     const { page, limit, skip } = parsePageLimit({
@@ -190,6 +191,7 @@ export class ConversationsService {
         'partListing.id',
         'partListing.title',
         'partListing.slug',
+        'partListing.kind',
       ])
       .where('c.buyerUserId = :userId OR c.sellerUserId = :userId', { userId })
       .orderBy('c.lastMessageAt', 'DESC', 'NULLS LAST')
@@ -201,6 +203,22 @@ export class ConversationsService {
       qb.andWhere('c.partListingId = :partListingId', {
         partListingId: paging.partListingId,
       });
+    }
+    if (paging?.unread === '1') {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM conversation_messages m
+          WHERE m.conversation_id = c.id
+            AND m.sender_user_id <> :userId
+            AND m.created_at > COALESCE(
+              CASE
+                WHEN c.buyer_user_id = :userId THEN c.buyer_last_read_at
+                ELSE c.seller_last_read_at
+              END,
+              TIMESTAMP '1970-01-01'
+            )
+        )`,
+      );
     }
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
@@ -300,6 +318,7 @@ export class ConversationsService {
         listingTitle: c.partListing?.title ?? 'Part listing',
         listingSlug: c.partListing?.slug ?? null,
         subjectKind: 'part' as const,
+        partKind: c.partListing?.kind ?? null,
       };
     }
     return {
@@ -308,6 +327,7 @@ export class ConversationsService {
       listingTitle: c.listing?.title ?? 'Listing',
       listingSlug: c.listing?.slug ?? null,
       subjectKind: 'bike' as const,
+      partKind: null,
     };
   }
 

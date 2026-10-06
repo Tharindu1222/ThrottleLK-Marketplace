@@ -129,7 +129,10 @@ export function LoginRequiredDialog({
           <Link
             href={loginHref}
             autoFocus
-            onClick={() => onClose?.()}
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.assign(loginHref);
+            }}
             className="inline-flex min-h-11 items-center justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2"
           >
             {t(locale, 'login')}

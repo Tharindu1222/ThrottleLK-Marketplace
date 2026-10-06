@@ -16,10 +16,12 @@ export class NotificationsController {
     @CurrentUser() user: User,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('unread') unread?: string,
   ): Promise<ApiSuccess<unknown>> {
     const { items, meta } = await this.notifications.listForUser(user.id, {
       page,
       limit,
+      unread,
     });
     return { success: true, data: items, meta };
   }

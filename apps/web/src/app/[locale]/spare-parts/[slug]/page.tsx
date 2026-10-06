@@ -13,7 +13,8 @@ import { apiGet } from '@/lib/api';
 import { readAccessCookie } from '@/lib/session-cookie';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/seo';
-import { whatsappHref } from '@/lib/whatsapp';
+import { PartContactBar } from '@/components/part-contact-bar';
+import { PartAccessoriesRail } from '@/components/part-accessories-rail';
 import { ReportListing } from '@/components/report-listing';
 
 type PartDetail = {
@@ -40,6 +41,8 @@ type PartDetail = {
     verifiedAt?: string | null;
   } | null;
   fitments?: Array<{
+    brandId?: string | null;
+    modelId?: string | null;
     brandName?: string | null;
     modelName?: string | null;
   }>;
@@ -102,8 +105,6 @@ export default async function SparePartDetailPage({
     .filter(Boolean)
     .slice(0, 6)
     .join(' · ');
-  const waHref = part.whatsapp ? whatsappHref(part.whatsapp) : null;
-
   return (
     <main className="mx-auto w-full min-w-0 max-w-7xl px-4 pt-8 pb-[calc(2rem+var(--compare-tray-offset,0px))] sm:px-8 lg:px-10 lg:pb-8">
       <BreadcrumbLabels labels={{ [slug]: part.title }} />
@@ -166,31 +167,16 @@ export default async function SparePartDetailPage({
         />
 
         <div className="min-w-0 space-y-6">
-          <section className="space-y-3 rounded-xl border border-black/10 bg-white p-4 sm:p-5">
-            <h2 className="break-words font-[family-name:var(--font-display)] text-xl tracking-wide">
-              {t(locale, 'contactSeller')}
-            </h2>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              {part.phone ? (
-                <a
-                  href={`tel:${part.phone}`}
-                  className="inline-flex min-h-11 w-full min-w-0 items-center justify-center break-all rounded-full bg-accent px-5 text-center text-sm font-semibold text-white sm:w-auto"
-                >
-                  {t(locale, 'call')} · {part.phone}
-                </a>
-              ) : null}
-              {waHref ? (
-                <a
-                  href={waHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white sm:w-auto"
-                >
-                  {t(locale, 'whatsapp')}
-                </a>
-              ) : null}
-            </div>
-          </section>
+          <PartContactBar
+            locale={locale}
+            partId={part.id}
+            partSlug={part.slug}
+            partKind={part.kind}
+            title={part.title}
+            phone={part.phone}
+            whatsapp={part.whatsapp}
+            sellerName={part.partsDealer?.name ?? 'Seller'}
+          />
 
           {fitmentLabel ? (
             <section className="space-y-2 rounded-xl border border-black/10 bg-white p-4 sm:p-5">
@@ -218,6 +204,12 @@ export default async function SparePartDetailPage({
         limit={4}
         excludeId={part.id}
         variant="detail"
+      />
+      <PartAccessoriesRail
+        locale={locale}
+        excludeId={part.id}
+        brandId={part.fitments?.[0]?.brandId}
+        modelId={part.fitments?.[0]?.modelId}
       />
     </main>
   );

@@ -83,6 +83,30 @@ export class DealersService {
         },
       });
     }
+    const rejected = await this.dealers.findOne({
+      where: { ownerUserId: owner.id, status: 'rejected' },
+    });
+    if (rejected) {
+      rejected.name = input.name;
+      rejected.description = input.description ?? null;
+      rejected.phone = input.phone;
+      rejected.whatsapp = input.whatsapp ?? null;
+      rejected.email = input.email ?? null;
+      rejected.website = input.website ?? null;
+      rejected.address = input.address ?? null;
+      rejected.districtId = input.districtId;
+      rejected.cityId = input.cityId;
+      rejected.status = 'pending';
+      rejected.rejectionReason = null;
+      const saved = await this.dealers.save(rejected);
+      void this.cache.invalidateDashboard();
+      void this.notifications.dealerPendingReview({
+        id: saved.id,
+        name: saved.name,
+        slug: saved.slug,
+      });
+      return saved;
+    }
     const slug = await this.allocateUniqueSlug(input.name);
     const dealer = this.dealers.create({
       ownerUserId: owner.id,
@@ -596,6 +620,7 @@ export class DealersService {
       });
     }
     dealer.status = 'rejected';
+    dealer.rejectionReason = reason;
     dealer.verifiedAt = null;
     await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();

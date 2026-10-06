@@ -87,6 +87,9 @@ export class Dealer {
   @Column({ length: 40, default: 'pending' })
   status!: 'pending' | 'active' | 'rejected' | 'suspended';
 
+  @Column({ name: 'rejection_reason', type: 'text', nullable: true })
+  rejectionReason!: string | null;
+
   @Column({ name: 'verified_at', type: 'timestamptz', nullable: true })
   verifiedAt!: Date | null;
 

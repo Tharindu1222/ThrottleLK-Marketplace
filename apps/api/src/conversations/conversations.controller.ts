@@ -25,12 +25,14 @@ export class ConversationsController {
     @Query('limit') limit?: string,
     @Query('listingId') listingId?: string,
     @Query('partListingId') partListingId?: string,
+    @Query('unread') unread?: string,
   ): Promise<ApiSuccess<unknown>> {
     const { items, meta } = await this.conversations.listForUser(user.id, {
       page,
       limit,
       listingId,
       partListingId,
+      unread,
     });
     return { success: true, data: items, meta };
   }

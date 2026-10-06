@@ -389,7 +389,7 @@ export default async function ListingDetailPage({
               {t(locale, 'riderAccessoriesNav')}
             </h2>
             <Link
-              href={`/${locale}/bike-parts?kind=accessory`}
+              href={`/${locale}/bike-parts?kind=accessory&brandId=${encodeURIComponent(listing.brandId ?? '')}&modelId=${encodeURIComponent(listing.modelId ?? '')}`}
               className="inline-flex items-center justify-center rounded-full border border-black/15 px-5 py-2.5 font-[family-name:var(--font-display)] text-sm tracking-wide text-foreground transition hover:border-accent hover:text-accent"
             >
               {t(locale, 'seeMore')}

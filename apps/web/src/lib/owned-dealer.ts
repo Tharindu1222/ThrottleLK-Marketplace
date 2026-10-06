@@ -3,6 +3,7 @@ export type OwnedDealer = {
   name: string;
   slug: string;
   status: string;
+  rejectionReason?: string | null;
 };
 
 export type OwnedDealerKind = 'bike' | 'parts';

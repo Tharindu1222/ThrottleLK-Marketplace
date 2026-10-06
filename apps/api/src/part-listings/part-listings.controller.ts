@@ -282,6 +282,19 @@ export class PartListingsController {
 
   @UseGuards(JwtAuthGuard)
   @RateLimit('write')
+  @Post(':id/renew')
+  async renew(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.partListingsService.renew(user, id),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RateLimit('write')
   @Post(':id/resume')
   async resume(
     @CurrentUser() user: User,

@@ -134,7 +134,7 @@ export class PartListingsService {
     const { fitments, ...fields } = input;
     if (fitments) await this.validateFitments(fitments);
 
-    if (!['draft', 'rejected', 'paused', 'pending_review'].includes(listing.status)) {
+    if (!['draft', 'rejected', 'paused', 'pending_review', 'expired'].includes(listing.status)) {
       if (listing.status === 'active') {
         const keys = (Object.keys(fields) as (keyof typeof fields)[]).filter(
           (k) => fields[k] !== undefined,
@@ -249,6 +249,25 @@ export class PartListingsService {
     return this.getOwnedDetail(owner.id, listing.id);
   }
 
+  async renew(owner: User, id: string): Promise<any> {
+    const listing = await this.getOwned(owner.id, id);
+    if (listing.status !== 'expired') {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Only expired listings can be renewed',
+        },
+      });
+    }
+    listing.status = 'active';
+    if (!listing.publishedAt) listing.publishedAt = new Date();
+    listing.expiresAt = computeExpiresAt(new Date());
+    await this.partListings.save(listing);
+    this.bumpDashboard();
+    return this.getOwnedDetail(owner.id, listing.id);
+  }
+
   async remove(
     owner: User,
     id: string,
@@ -315,6 +334,7 @@ export class PartListingsService {
       items: rows.map((row) => ({
         ...this.toBrowseCard(row, covers.get(row.id) ?? null, verified),
         status: row.status,
+        rejectionReason: row.rejectionReason,
         phoneClickCount: row.phoneClickCount ?? 0,
         whatsappClickCount: row.whatsappClickCount ?? 0,
         favouriteCount: favCounts.get(row.id) ?? 0,
@@ -1086,6 +1106,20 @@ export class PartListingsService {
       lockKey: 710_002,
       now,
     });
+    for (const row of expired) {
+      const listing = await this.partListings.findOne({
+        where: { id: row.id },
+        relations: ['partsDealer'],
+      });
+      const ownerUserId = listing?.partsDealer?.ownerUserId;
+      if (!listing || !ownerUserId) continue;
+      void this.notifications.partListingExpired(ownerUserId, {
+        id: listing.id,
+        title: listing.title,
+        slug: listing.slug,
+        kind: listing.kind,
+      });
+    }
     if (expired.length) this.bumpDashboard();
     return { expired: expired.length, backfilled };
   }

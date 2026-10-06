@@ -46,6 +46,7 @@ type PromoMine = {
 
 type PartListing = BrowsePartCard & {
   status: string;
+  rejectionReason?: string | null;
   phoneClickCount?: number | null;
   whatsappClickCount?: number | null;
   favouriteCount?: number | null;
@@ -372,6 +373,16 @@ function ListingActions({
           {editBtn}
           {deleteBtn}
           {soldBtn}
+          <button
+            type="button"
+            className={btnGhost}
+            disabled={busy}
+            onClick={() =>
+              runAction(listing.id, `/api/v1/part-listings/${listing.id}/pause`)
+            }
+          >
+            <span className="truncate">{t(locale, 'pauseListing')}</span>
+          </button>
           <Link
             href={`/${locale}/account/parts-listings/${listing.id}/promote`}
             className={`${
@@ -443,6 +454,22 @@ function ListingActions({
           {deleteBtn}
         </>
       ) : null}
+      {listing.status === 'expired' ? (
+        <>
+          {editBtn}
+          <button
+            type="button"
+            disabled={busy}
+            className={btnAccent}
+            onClick={() =>
+              runAction(listing.id, `/api/v1/part-listings/${listing.id}/renew`)
+            }
+          >
+            <span className="truncate">{t(locale, 'renewListing')}</span>
+          </button>
+          {deleteBtn}
+        </>
+      ) : null}
     </div>
   );
 }
@@ -465,6 +492,7 @@ export function MyPartsListingsClient({
   const [listingsLeft, setListingsLeft] = useState<number | null>(null);
   const [partPackages, setPartPackages] = useState<ListingQuotaPackage[]>([]);
   const [paidNote, setPaidNote] = useState(false);
+  const [cancelledNote, setCancelledNote] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [soldDialog, setSoldDialog] = useState<SoldDialogState | null>(null);
@@ -476,6 +504,7 @@ export function MyPartsListingsClient({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('quota') === 'paid') setPaidNote(true);
+    if (params.get('quota') === 'cancelled') setCancelledNote(true);
   }, []);
 
   async function load(access: string, pageNum = page) {
@@ -627,6 +656,11 @@ export function MyPartsListingsClient({
           {t(locale, 'listingQuotaPaid')}
         </p>
       ) : null}
+      {cancelledNote ? (
+        <p className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm text-foreground ring-1 ring-black/[0.06]">
+          {t(locale, 'quotaCancelled')}
+        </p>
+      ) : null}
       {quotaBlock ? (
         <ListingQuotaDialog
           locale={locale}
@@ -742,6 +776,9 @@ export function MyPartsListingsClient({
                             {t(locale, 'promoteWaitApproval')}
                           </p>
                         ) : null}
+                        {listing.status === 'rejected' && listing.rejectionReason ? (
+                          <p className="text-xs text-red-700">{listing.rejectionReason}</p>
+                        ) : null}
                         <ListingActions
                           locale={locale}
                           listing={listing}
@@ -810,6 +847,9 @@ export function MyPartsListingsClient({
                       <p className="mt-1 text-sm text-accent">
                         {formatLkr(listing.priceLkr)}
                       </p>
+                      {listing.status === 'rejected' && listing.rejectionReason ? (
+                        <p className="mt-1 text-xs text-red-700">{listing.rejectionReason}</p>
+                      ) : null}
                     </div>
                   </div>
                   <ListingActions

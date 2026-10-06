@@ -4,6 +4,7 @@ import { BikesBrowse } from '@/components/bikes-browse';
 import { getBikeCategory, type BikeCategory } from '@/lib/bike-categories';
 import { apiGet } from '@/lib/api';
 import { isLocale } from '@/lib/i18n';
+import { browseFilterState } from '@/lib/browse-filter-state';
 import { parsePageParam } from '@/lib/pagination';
 import { pageMetadata } from '@/lib/seo';
 
@@ -35,10 +36,15 @@ export async function BikeCategoryBrowsePage({
     typeof searchParams?.page === 'string' ? searchParams.page : undefined,
   );
 
+  const fromUrl = browseFilterState(searchParams ?? {});
+
   return (
     <BikesBrowse
       locale={raw}
-      filterState={{ categoryId: matched.id }}
+      filterState={{
+        ...fromUrl,
+        categoryId: fromUrl.categoryId || matched.id,
+      }}
       page={page}
       heading={`${marketing.name} for sale`}
       intro={marketing.description}

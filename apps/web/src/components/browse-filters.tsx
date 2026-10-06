@@ -76,12 +76,14 @@ export function BrowseFilters({
   districts,
   categories,
   initial,
+  actionPath,
 }: {
   locale: Locale;
   brands: Brand[];
   districts: District[];
   categories: Category[];
   initial: BrowseFilterState;
+  actionPath?: string;
 }) {
   const uid = useId();
   const [brandId, setBrandId] = useState(initial.brandId ?? '');
@@ -125,7 +127,7 @@ export function BrowseFilters({
 
       <form
         method="get"
-        action={`/${locale}/bikes`}
+        action={actionPath ?? `/${locale}/bikes`}
         className={
           open
             ? 'mt-3 grid w-full min-w-0 grid-cols-1 gap-3 border border-black/10 bg-surface/60 p-4 lg:mt-0 lg:grid-cols-2 lg:gap-x-2 lg:gap-y-1.5 lg:p-3'
@@ -254,6 +256,91 @@ export function BrowseFilters({
             <option value="hybrid">{t(locale, 'fuelHybrid')}</option>
           </select>
         </FilterField>
+        <FilterField id={`${uid}-transmission`} label={t(locale, 'transmissionFilter')}>
+          <select
+            id={`${uid}-transmission`}
+            name="transmission"
+            defaultValue={initial.transmission}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'transmissionFilter')}</option>
+            <option value="manual">{t(locale, 'transmissionManual')}</option>
+            <option value="automatic">{t(locale, 'transmissionAutomatic')}</option>
+            <option value="semi_automatic">{t(locale, 'transmissionSemi')}</option>
+          </select>
+        </FilterField>
+        <FilterField id={`${uid}-seller`} label={t(locale, 'sellerTypeFilter')}>
+          <select
+            id={`${uid}-seller`}
+            name="sellerType"
+            defaultValue={initial.sellerType}
+            className={fieldClass}
+          >
+            <option value="">{t(locale, 'sellerTypeAny')}</option>
+            <option value="private">{t(locale, 'sellerTypePrivate')}</option>
+            <option value="dealer">{t(locale, 'sellerTypeDealer')}</option>
+          </select>
+        </FilterField>
+        <div className="grid min-w-0 grid-cols-2 gap-3 lg:contents">
+          <FilterField id={`${uid}-minYear`} label={t(locale, 'minYear')}>
+            <input
+              id={`${uid}-minYear`}
+              name="minYear"
+              inputMode="numeric"
+              defaultValue={initial.minYear}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxYear`} label={t(locale, 'maxYear')}>
+            <input
+              id={`${uid}-maxYear`}
+              name="maxYear"
+              inputMode="numeric"
+              defaultValue={initial.maxYear}
+              className={fieldClass}
+            />
+          </FilterField>
+        </div>
+        <div className="grid min-w-0 grid-cols-2 gap-3 lg:contents">
+          <FilterField id={`${uid}-minMileage`} label={t(locale, 'minMileage')}>
+            <input
+              id={`${uid}-minMileage`}
+              name="minMileage"
+              inputMode="numeric"
+              defaultValue={initial.minMileage}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxMileage`} label={t(locale, 'maxMileage')}>
+            <input
+              id={`${uid}-maxMileage`}
+              name="maxMileage"
+              inputMode="numeric"
+              defaultValue={initial.maxMileage}
+              className={fieldClass}
+            />
+          </FilterField>
+        </div>
+        <div className="grid min-w-0 grid-cols-2 gap-3 lg:contents">
+          <FilterField id={`${uid}-minCc`} label={t(locale, 'minEngineCc')}>
+            <input
+              id={`${uid}-minCc`}
+              name="minEngineCc"
+              inputMode="numeric"
+              defaultValue={initial.minEngineCc}
+              className={fieldClass}
+            />
+          </FilterField>
+          <FilterField id={`${uid}-maxCc`} label={t(locale, 'maxEngineCc')}>
+            <input
+              id={`${uid}-maxCc`}
+              name="maxEngineCc"
+              inputMode="numeric"
+              defaultValue={initial.maxEngineCc}
+              className={fieldClass}
+            />
+          </FilterField>
+        </div>
         <FilterField id={`${uid}-sort`} label={t(locale, 'sortLabel')}>
           <select
             id={`${uid}-sort`}

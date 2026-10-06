@@ -38,6 +38,10 @@ type ListingDetail = {
   transmission: string;
   condition: string;
   phone: string | null;
+  whatsapp?: string | null;
+  colour?: string | null;
+  registrationYear?: number | null;
+  negotiable?: boolean;
   dealerId: string | null;
   costPriceLkr?: number | null;
   purchaseDate?: string | null;
@@ -322,6 +326,11 @@ export function EditListingForm({
             transmission: String(form.get('transmission')),
             condition: String(form.get('condition')),
             phone: String(form.get('phone') || '') || undefined,
+            whatsapp: String(form.get('whatsapp') || '').trim() || undefined,
+            colour: String(form.get('colour') || '').trim() || undefined,
+            registrationYear:
+              Number(form.get('registrationYear') || 0) || undefined,
+            negotiable: form.get('negotiable') === 'true',
             ...(listing.dealerId
               ? {
                   costPriceLkr:
@@ -719,6 +728,56 @@ export function EditListingForm({
                 className={fieldClass}
               />
             </Field>
+            <Field
+              label={t(locale, 'whatsapp')}
+              htmlFor={`${uid}-whatsapp`}
+              optional
+              optionalLabel={optionalLabel}
+            >
+              <input
+                id={`${uid}-whatsapp`}
+                name="whatsapp"
+                type="tel"
+                defaultValue={listing.whatsapp ?? ''}
+                className={fieldClass}
+              />
+            </Field>
+            <Field
+              label={t(locale, 'colour')}
+              htmlFor={`${uid}-colour`}
+              optional
+              optionalLabel={optionalLabel}
+            >
+              <input
+                id={`${uid}-colour`}
+                name="colour"
+                defaultValue={listing.colour ?? ''}
+                className={fieldClass}
+              />
+            </Field>
+            <Field
+              label={t(locale, 'registrationYear')}
+              htmlFor={`${uid}-regYear`}
+              optional
+              optionalLabel={optionalLabel}
+            >
+              <input
+                id={`${uid}-regYear`}
+                name="registrationYear"
+                inputMode="numeric"
+                defaultValue={listing.registrationYear ?? ''}
+                className={fieldClass}
+              />
+            </Field>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="negotiable"
+                value="true"
+                defaultChecked={listing.negotiable !== false}
+              />
+              {t(locale, 'negotiable')}
+            </label>
           </div>
         </Section>
 

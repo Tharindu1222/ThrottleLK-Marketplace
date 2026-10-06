@@ -16,6 +16,7 @@ type Dealer = {
   name: string;
   slug: string;
   status: string;
+  rejectionReason?: string | null;
 };
 
 const fieldClass =
@@ -251,7 +252,7 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
   }
 
   const owned = pickOwnedDealer(mine);
-  if (owned) {
+  if (owned && owned.status !== 'rejected') {
     return (
       <ApplyShell locale={locale}>
         <div className={formCardClass}>
@@ -321,6 +322,14 @@ export function DealerApplyForm({ locale }: { locale: Locale }) {
         <p className="mt-0.5 text-sm text-muted">
           {t(locale, 'dealerApplyFormHint')}
         </p>
+        {owned?.status === 'rejected' ? (
+          <div className="mt-3 rounded-lg border border-red-600/20 bg-red-50 px-3 py-2 text-sm text-red-900">
+            <p>{t(locale, 'dealerRejectedHint')}</p>
+            {owned.rejectionReason ? (
+              <p className="mt-1">{owned.rejectionReason}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-3.5 flex flex-col gap-2.5">
           <div>

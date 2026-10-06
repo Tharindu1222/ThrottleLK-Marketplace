@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BikesBrowse } from '@/components/bikes-browse';
-import type { BrowseFilterState } from '@/components/browse-filters';
+import { browseFilterState } from '@/lib/browse-filter-state';
 import { browseCanonicalPath, isFacetedSearch } from '@/lib/search-index';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { hrefWithPage, parsePageParam } from '@/lib/pagination';
@@ -17,36 +17,6 @@ function spStr(
   return typeof v === 'string' ? v : undefined;
 }
 
-function filterStateFrom(
-  sp: Record<string, string | string[] | undefined>,
-): BrowseFilterState {
-  return {
-    q: spStr(sp, 'q'),
-    brandId: spStr(sp, 'brandId'),
-    modelId: spStr(sp, 'modelId'),
-    categoryId: spStr(sp, 'categoryId'),
-    districtId: spStr(sp, 'districtId'),
-    cityId: spStr(sp, 'cityId'),
-    minPrice: spStr(sp, 'minPrice'),
-    maxPrice: spStr(sp, 'maxPrice'),
-    minYear: spStr(sp, 'minYear'),
-    maxYear: spStr(sp, 'maxYear'),
-    minRegistrationYear: spStr(sp, 'minRegistrationYear'),
-    maxRegistrationYear: spStr(sp, 'maxRegistrationYear'),
-    minMileage: spStr(sp, 'minMileage'),
-    maxMileage: spStr(sp, 'maxMileage'),
-    minEngineCc: spStr(sp, 'minEngineCc'),
-    maxEngineCc: spStr(sp, 'maxEngineCc'),
-    condition: spStr(sp, 'condition'),
-    fuelType: spStr(sp, 'fuelType'),
-    transmission: spStr(sp, 'transmission'),
-    sellerType: spStr(sp, 'sellerType'),
-    featured: spStr(sp, 'featured'),
-    negotiable: spStr(sp, 'negotiable'),
-    sort: spStr(sp, 'sort'),
-  };
-}
-
 export async function generateMetadata({
   params,
   searchParams,
@@ -60,7 +30,7 @@ export async function generateMetadata({
   const faceted = isFacetedSearch(sp);
   const path = faceted
     ? browseCanonicalPath(locale, page)
-    : hrefWithPage(`/${locale}/bikes`, filterStateFrom(sp), page);
+    : hrefWithPage(`/${locale}/bikes`, browseFilterState(sp), page);
   const title =
     page > 1
       ? `Motorcycles for sale in Sri Lanka — page ${page}`
@@ -86,7 +56,7 @@ export default async function BikesPage({
   if (!isLocale(raw)) notFound();
   const locale = raw as Locale;
   const sp = await searchParams;
-  const filterState = filterStateFrom(sp);
+  const filterState = browseFilterState(sp);
   const page = parsePageParam(spStr(sp, 'page'));
 
   return (

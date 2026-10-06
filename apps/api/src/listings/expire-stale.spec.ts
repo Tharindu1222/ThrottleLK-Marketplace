@@ -10,7 +10,10 @@ describe('expireActiveRows', () => {
         sql.push(statement);
         if (statement.includes('pg_try_advisory_lock')) return [{ locked: true }];
         if (statement.includes('RETURNING')) {
-          return [[{ id: 'listing-1', sellerId: 'seller-1', title: 'Honda' }], 1];
+          return [
+            [{ id: 'listing-1', sellerId: 'seller-1', title: 'Honda', slug: 'honda' }],
+            1,
+          ];
         }
         return [[], 0];
       },
@@ -20,7 +23,7 @@ describe('expireActiveRows', () => {
       true,
     );
     expect(expired.expired).toEqual([
-      { id: 'listing-1', sellerId: 'seller-1', title: 'Honda' },
+      { id: 'listing-1', sellerId: 'seller-1', title: 'Honda', slug: 'honda' },
     ]);
   });
 
@@ -39,8 +42,13 @@ describe('expireActiveRows', () => {
       },
     });
 
-    const returning = sql.find((statement) => statement.includes('RETURNING'));
+    const returning = sql.find(
+      (statement) =>
+        statement.includes('SET status = \'expired\'') &&
+        statement.includes('RETURNING'),
+    );
     expect(returning).toBeDefined();
     expect(returning).not.toContain('seller_id');
+    expect(returning).toContain('slug');
   });
 });

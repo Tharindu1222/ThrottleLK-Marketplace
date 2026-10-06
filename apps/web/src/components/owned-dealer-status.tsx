@@ -25,7 +25,9 @@ export function OwnedDealerStatus({
   dealer: OwnedDealer;
   ok?: string | null;
 }) {
-  const pending = dealer.status !== 'active';
+  const pending = dealer.status === 'pending';
+  const rejected = dealer.status === 'rejected';
+  const suspended = dealer.status === 'suspended';
   return (
     <div className={`${cardClass} p-5 sm:p-8`}>
       <p className="text-[11px] tracking-[0.14em] text-muted uppercase">
@@ -39,7 +41,9 @@ export function OwnedDealerStatus({
           className={`inline-flex border px-2.5 py-1 text-[11px] tracking-wide uppercase ${
             pending
               ? 'border-amber-600/20 bg-amber-50 text-amber-900'
-              : 'border-emerald-600/20 bg-emerald-50 text-emerald-800'
+              : rejected || suspended
+                ? 'border-red-600/20 bg-red-50 text-red-800'
+                : 'border-emerald-600/20 bg-emerald-50 text-emerald-800'
           }`}
         >
           {statusLabel(dealer.status)}
@@ -49,6 +53,15 @@ export function OwnedDealerStatus({
         <p className="mt-4 text-sm text-muted">
           {t(locale, 'dealerPendingHint')}
         </p>
+      ) : rejected ? (
+        <div className="mt-4 space-y-3">
+          <p className="text-sm text-muted">{t(locale, 'dealerRejectedHint')}</p>
+          {dealer.rejectionReason ? (
+            <p className="text-sm text-foreground">{dealer.rejectionReason}</p>
+          ) : null}
+        </div>
+      ) : suspended ? (
+        <p className="mt-4 text-sm text-muted">{t(locale, 'dealerSuspendedHint')}</p>
       ) : (
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Link

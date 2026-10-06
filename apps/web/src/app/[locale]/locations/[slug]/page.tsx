@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { BikesBrowse } from '@/components/bikes-browse';
 import { apiGet, apiGetWithMeta } from '@/lib/api';
 import { isLocale, t, type Locale } from '@/lib/i18n';
+import { browseFilterState } from '@/lib/browse-filter-state';
 import { parsePageParam } from '@/lib/pagination';
 import { isFacetedSearch } from '@/lib/search-index';
 import { pageMetadata } from '@/lib/seo';
@@ -74,10 +75,12 @@ export default async function LocationPage({
       locale={locale}
       heading={district.name}
       emptyHint={t(locale, 'locationEmptyHint')}
-      filterState={{ districtId: district.id }}
+      filterState={{
+        ...browseFilterState(sp),
+        districtId: district.id,
+      }}
       page={pageFrom(sp)}
       listPath={`/${locale}/locations/${district.slug}`}
-      pagerState={{}}
     />
   );
 }

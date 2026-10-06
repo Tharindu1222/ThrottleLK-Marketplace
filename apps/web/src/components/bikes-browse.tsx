@@ -134,6 +134,7 @@ export async function BikesBrowse({
             districts={districts}
             categories={categories}
             initial={filterState}
+            actionPath={listPath}
           />
           <SaveSearchButton locale={locale} filters={filterState} />
         </aside>

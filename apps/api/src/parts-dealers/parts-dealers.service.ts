@@ -85,6 +85,30 @@ export class PartsDealersService {
         },
       });
     }
+    const rejected = await this.partsDealers.findOne({
+      where: { ownerUserId: owner.id, status: 'rejected' },
+    });
+    if (rejected) {
+      rejected.name = input.name;
+      rejected.description = input.description ?? null;
+      rejected.phone = input.phone;
+      rejected.whatsapp = input.whatsapp ?? null;
+      rejected.email = input.email ?? null;
+      rejected.website = input.website ?? null;
+      rejected.address = input.address ?? null;
+      rejected.districtId = input.districtId;
+      rejected.cityId = input.cityId;
+      rejected.status = 'pending';
+      rejected.rejectionReason = null;
+      const saved = await this.partsDealers.save(rejected);
+      void this.cache.invalidateDashboard();
+      void this.notifications.partsDealerPendingReview({
+        id: saved.id,
+        name: saved.name,
+        slug: saved.slug,
+      });
+      return saved;
+    }
     const slug = await this.allocateUniqueSlug(input.name);
     const dealer = this.partsDealers.create({
       ownerUserId: owner.id,
@@ -620,6 +644,7 @@ export class PartsDealersService {
       });
     }
     dealer.status = 'rejected';
+    dealer.rejectionReason = reason;
     dealer.verifiedAt = null;
     await this.partsDealers.save(dealer);
     void this.cache.invalidateDashboard();

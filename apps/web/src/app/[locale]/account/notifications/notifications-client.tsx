@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   InboxEmpty,
   InboxSkeleton,
@@ -34,17 +34,30 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<InboxFilter>('all');
+  const [unreadTotal, setUnreadTotal] = useState(0);
 
-  async function load(access: string, pageNum = page) {
+  async function load(access: string, pageNum = page, nextFilter = filter) {
     setLoading(true);
     try {
       const { data, meta: nextMeta } = await apiGetWithMeta<AppNotification[]>(
         '/api/v1/notifications',
         {
           token: access,
-          searchParams: { page: String(pageNum), limit: '20' },
+          searchParams: {
+            page: String(pageNum),
+            limit: '20',
+            ...(nextFilter === 'unread' ? { unread: '1' } : {}),
+          },
         },
       );
+      const unreadPage = await apiGetWithMeta<AppNotification[]>(
+        '/api/v1/notifications',
+        {
+          token: access,
+          searchParams: { page: '1', limit: '1', unread: '1' },
+        },
+      );
+      setUnreadTotal(unreadPage.meta?.total ?? 0);
       const clamp = clampedPage(nextMeta, data.length);
       if (clamp != null && clamp !== pageNum) {
         goTo(clamp);
@@ -64,21 +77,16 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
       setLoading(false);
       return;
     }
-    void load(access, page).catch((err) =>
+    void load(access, page, filter).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed'),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, filter]);
 
-  const unreadCount = useMemo(
-    () => items.filter((n) => !n.readAt).length,
-    [items],
-  );
-
-  const visible = useMemo(() => {
-    if (filter === 'unread') return items.filter((n) => !n.readAt);
-    return items;
-  }, [filter, items]);
+  function onFilterChange(next: InboxFilter) {
+    setFilter(next);
+    if (page !== 1) goTo(1);
+  }
 
   if (!token) {
     return (
@@ -116,13 +124,13 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
       <InboxToolbar
         locale={locale}
         filter={filter}
-        onFilterChange={setFilter}
-        unreadCount={unreadCount}
+        onFilterChange={onFilterChange}
+        unreadCount={unreadTotal}
         action={
           <button
             type="button"
-            disabled={busy || unreadCount === 0}
-            aria-disabled={busy || unreadCount === 0}
+            disabled={busy || unreadTotal === 0}
+            aria-disabled={busy || unreadTotal === 0}
             className="text-sm font-medium text-muted transition hover:text-accent disabled:opacity-40"
             onClick={() => {
               setBusy(true);
@@ -146,7 +154,7 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
 
       {loading ? (
         <InboxSkeleton />
-      ) : visible.length === 0 ? (
+      ) : items.length === 0 ? (
         <InboxEmpty
           title={
             filter === 'unread'
@@ -156,7 +164,7 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
         />
       ) : (
         <div className={inboxCardClass}>
-          {visible.map((n) => {
+          {items.map((n) => {
             const unread = !n.readAt;
             const href = notificationHref(locale, n);
             return (

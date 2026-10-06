@@ -50,11 +50,35 @@ export function notificationHref(
   if (n.type === 'parts_dealer_pending_review') {
     return `/${locale}/admin/moderation?queue=parts-dealers`;
   }
-  if (
-    (n.type === 'part_listing_approved' || n.type === 'part_listing_rejected') &&
-    data?.slug
-  ) {
+  if (n.type === 'part_listing_approved' && data?.slug) {
     return `/${locale}/${partListingBase(data.kind ?? '')}/${data.slug}`;
+  }
+  if (n.type === 'part_listing_rejected' && data?.partListingId) {
+    return `/${locale}/account/parts-listings/${data.partListingId}/edit`;
+  }
+  if (n.type === 'part_listing_expired' && data?.partListingId) {
+    return `/${locale}/account/parts-listings/${data.partListingId}/edit`;
+  }
+  if (n.type === 'listing_rejected' && data?.listingId) {
+    return `/${locale}/account/listings/${data.listingId}/edit`;
+  }
+  if (n.type === 'listing_expired' && data?.listingId) {
+    return `/${locale}/account/listings/${data.listingId}/edit`;
+  }
+  if (
+    (n.type === 'promo_approved' || n.type === 'promo_rejected') &&
+    data?.partListingId
+  ) {
+    return `/${locale}/account/parts-listings/${data.partListingId}/promote`;
+  }
+  if (
+    (n.type === 'promo_approved' || n.type === 'promo_rejected') &&
+    data?.listingId
+  ) {
+    return `/${locale}/account/listings/${data.listingId}/promote`;
+  }
+  if (n.type === 'listing_inquiry') {
+    return `/${locale}/account/messages`;
   }
   if (!data) return null;
   if (data.conversationId) {

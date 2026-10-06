@@ -7,6 +7,7 @@ import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { loginHref } from '@/lib/login-href';
+import { partListingHref } from '@/lib/part-kind';
 
 type Counterpart = {
   id: string;
@@ -28,6 +29,8 @@ type Thread = {
   id: string;
   listingTitle: string;
   listingSlug: string | null;
+  subjectKind?: 'bike' | 'part';
+  partKind?: string | null;
   role: 'buyer' | 'seller';
   counterpart: Counterpart | null;
   messages: Message[];
@@ -181,7 +184,15 @@ export function MessageThread({
         </Link>
         {thread.listingSlug ? (
           <Link
-            href={`/${locale}/bikes/${thread.listingSlug}`}
+            href={
+              thread.subjectKind === 'part'
+                ? partListingHref(
+                    locale,
+                    thread.partKind ?? 'spare',
+                    thread.listingSlug,
+                  )
+                : `/${locale}/bikes/${thread.listingSlug}`
+            }
             className="inline-flex min-h-11 min-w-0 items-center truncate text-xs font-medium text-muted transition hover:text-accent"
           >
             {t(locale, 'viewListing')}

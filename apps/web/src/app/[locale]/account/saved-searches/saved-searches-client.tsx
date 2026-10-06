@@ -14,20 +14,57 @@ type SavedSearch = {
   query: {
     q?: string;
     brandId?: string;
+    modelId?: string;
+    categoryId?: string;
     districtId?: string;
+    cityId?: string;
     minPrice?: number;
     maxPrice?: number;
+    minYear?: number;
+    maxYear?: number;
+    minMileage?: number;
+    maxMileage?: number;
+    minEngineCc?: number;
+    maxEngineCc?: number;
+    condition?: string;
+    fuelType?: string;
+    transmission?: string;
+    sellerType?: string;
+    featured?: boolean;
+    negotiable?: boolean;
+    sort?: string;
   };
   notificationsEnabled: boolean;
 };
 
 function toBrowseHref(locale: Locale, query: SavedSearch['query']) {
   const params = new URLSearchParams();
-  if (query.q) params.set('q', query.q);
-  if (query.brandId) params.set('brandId', query.brandId);
-  if (query.districtId) params.set('districtId', query.districtId);
-  if (query.minPrice != null) params.set('minPrice', String(query.minPrice));
-  if (query.maxPrice != null) params.set('maxPrice', String(query.maxPrice));
+  const entries: Array<[string, string | number | boolean | undefined]> = [
+    ['q', query.q],
+    ['brandId', query.brandId],
+    ['modelId', query.modelId],
+    ['categoryId', query.categoryId],
+    ['districtId', query.districtId],
+    ['cityId', query.cityId],
+    ['minPrice', query.minPrice],
+    ['maxPrice', query.maxPrice],
+    ['minYear', query.minYear],
+    ['maxYear', query.maxYear],
+    ['minMileage', query.minMileage],
+    ['maxMileage', query.maxMileage],
+    ['minEngineCc', query.minEngineCc],
+    ['maxEngineCc', query.maxEngineCc],
+    ['condition', query.condition],
+    ['fuelType', query.fuelType],
+    ['transmission', query.transmission],
+    ['sellerType', query.sellerType],
+    ['featured', query.featured ? '1' : undefined],
+    ['negotiable', query.negotiable ? '1' : undefined],
+    ['sort', query.sort],
+  ];
+  for (const [key, value] of entries) {
+    if (value != null && value !== '') params.set(key, String(value));
+  }
   const qs = params.toString();
   return `/${locale}/bikes${qs ? `?${qs}` : ''}`;
 }
@@ -36,10 +73,49 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<SavedSearch[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   async function load(access: string) {
-    setRows(await apiGet<SavedSearch[]>('/api/v1/saved-searches', { token: access }));
+    const saved = await apiGet<SavedSearch[]>('/api/v1/saved-searches', {
+      token: access,
+    });
+    setRows(saved);
+    const [brands, districts, categories] = await Promise.all([
+      apiGet<Array<{ id: string; name: string }>>('/api/v1/brands'),
+      apiGet<Array<{ id: string; name: string }>>('/api/v1/locations/districts'),
+      apiGet<Array<{ id: string; name: string }>>('/api/v1/categories'),
+    ]);
+    const map: Record<string, string> = {};
+    for (const row of [...brands, ...districts, ...categories]) {
+      map[row.id] = row.name;
+    }
+    const brandIds = [
+      ...new Set(saved.map((row) => row.query.brandId).filter(Boolean)),
+    ] as string[];
+    const districtIds = [
+      ...new Set(saved.map((row) => row.query.districtId).filter(Boolean)),
+    ] as string[];
+    const [modelGroups, cityGroups] = await Promise.all([
+      Promise.all(
+        brandIds.map((id) =>
+          apiGet<Array<{ id: string; name: string }>>(
+            `/api/v1/brands/${id}/models`,
+          ).catch(() => []),
+        ),
+      ),
+      Promise.all(
+        districtIds.map((id) =>
+          apiGet<Array<{ id: string; name: string }>>(
+            `/api/v1/locations/districts/${id}/cities`,
+          ).catch(() => []),
+        ),
+      ),
+    ]);
+    for (const group of [...modelGroups, ...cityGroups]) {
+      for (const row of group) map[row.id] = row.name;
+    }
+    setNames(map);
   }
 
   useEffect(() => {
@@ -84,12 +160,14 @@ export function SavedSearchesClient({ locale }: { locale: Locale }) {
               <p className="break-words text-sm text-muted">
                 {[
                   row.query.q,
-                  row.query.brandId ? `brand:${row.query.brandId.slice(0, 8)}` : null,
-                  row.query.districtId
-                    ? `district:${row.query.districtId.slice(0, 8)}`
-                    : null,
+                  row.query.brandId ? names[row.query.brandId] : null,
+                  row.query.modelId ? names[row.query.modelId] : null,
+                  row.query.categoryId ? names[row.query.categoryId] : null,
+                  row.query.districtId ? names[row.query.districtId] : null,
+                  row.query.cityId ? names[row.query.cityId] : null,
                   row.query.minPrice != null ? `min ${row.query.minPrice}` : null,
                   row.query.maxPrice != null ? `max ${row.query.maxPrice}` : null,
+                  row.query.minYear != null ? `${row.query.minYear}` : null,
                 ]
                   .filter(Boolean)
                   .join(' · ') || 'All bikes'}

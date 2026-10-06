@@ -301,6 +301,7 @@ export class ListingsService {
         condition: true,
         dealerId: true,
         status: true,
+        rejectionReason: true,
         publishedAt: true,
         createdAt: true,
         updatedAt: true,
@@ -336,6 +337,7 @@ export class ListingsService {
             : false,
         }),
         status: row.status,
+        rejectionReason: row.rejectionReason,
         ...this.ownerInventoryFields(row, favCounts.get(row.id) ?? 0),
       })),
       meta: paginationMeta(total, page, limit),
@@ -1275,7 +1277,7 @@ export class ListingsService {
           listing.rejectionReason = reason;
           void this.notifications.listingRejected(
             listing.sellerId,
-            { id: listing.id, title: listing.title },
+            { id: listing.id, title: listing.title, slug: listing.slug },
             reason,
           );
         }
@@ -1345,6 +1347,7 @@ export class ListingsService {
       void this.notifications.listingExpired(listing.sellerId, {
         id: listing.id,
         title: listing.title,
+        slug: listing.slug,
       });
     }
     if (expired.length) this.bumpDashboard();
@@ -1376,7 +1379,7 @@ export class ListingsService {
     this.bumpDashboard();
     void this.notifications.listingRejected(
       saved.sellerId,
-      { id: saved.id, title: saved.title },
+      { id: saved.id, title: saved.title, slug: saved.slug },
       reason,
     );
     return saved;
@@ -1400,7 +1403,7 @@ export class ListingsService {
     this.bumpDashboard();
     void this.notifications.listingRejected(
       saved.sellerId,
-      { id: saved.id, title: saved.title },
+      { id: saved.id, title: saved.title, slug: saved.slug },
       reason,
     );
     return saved;
