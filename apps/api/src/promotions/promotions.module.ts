@@ -9,7 +9,8 @@ import { PartListingsModule } from '../part-listings/part-listings.module';
 import { AdminPromotionsController } from './admin-promotions.controller';
 import { HomeController } from './home.controller';
 import { HomepagePlacement } from './homepage-placement.entity';
-import { PayHereService } from './payhere.service';
+import { PayHereModule } from './payhere.module';
+import { ListingPackagesModule } from '../listing-packages/listing-packages.module';
 import { PromoBankAccount } from './promo-bank-account.entity';
 import { PromoPackage } from './promo-package.entity';
 import { PromoRequest } from './promo-request.entity';
@@ -32,13 +33,15 @@ import { PromotionsService } from './promotions.service';
     PartListingsModule,
     NotificationsModule,
     AdminAuditModule,
+    PayHereModule,
+    ListingPackagesModule,
   ],
   controllers: [
     PromotionsController,
     AdminPromotionsController,
     HomeController,
   ],
-  providers: [PromotionsService, PayHereService],
+  providers: [PromotionsService],
   exports: [PromotionsService],
 })
 export class PromotionsModule {}

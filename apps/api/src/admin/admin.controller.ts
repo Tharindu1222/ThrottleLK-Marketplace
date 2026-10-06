@@ -17,6 +17,7 @@ import type { ApiSuccess } from '@throttlelk/types';
 import {
   adminCreateBrandSchema,
   adminCreateCitySchema,
+  adminRenameSchema,
   adminCreateDistrictSchema,
   adminCreateDealerSchema,
   adminCreateListingSchema,
@@ -38,6 +39,7 @@ import {
   updatePartCategorySchema,
   type AdminCreateBrandInput,
   type AdminCreateCityInput,
+  type AdminRenameInput,
   type AdminCreateDistrictInput,
   type AdminCreateDealerInput,
   type AdminCreateListingInput,
@@ -128,6 +130,7 @@ export class AdminController {
     @Query('status') status?: string,
     @Query('q') q?: string,
     @Query('dealerId') dealerId?: string,
+    @Query('sellerId') sellerId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
@@ -135,6 +138,7 @@ export class AdminController {
       status,
       q,
       dealerId,
+      sellerId,
       page,
       limit,
     });
@@ -242,12 +246,14 @@ export class AdminController {
   async allDealers(
     @Query('status') status?: string,
     @Query('q') q?: string,
+    @Query('ownerUserId') ownerUserId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
     const { items, meta } = await this.dealersService.listAllAdmin({
       status,
       q,
+      ownerUserId,
       page,
       limit,
     });
@@ -379,8 +385,10 @@ export class AdminController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('q') q?: string,
+    @Query('role') role?: string,
+    @Query('status') status?: string,
   ): Promise<ApiSuccess<unknown>> {
-    const { items, meta } = await this.users.listUsers({ page, limit, q });
+    const { items, meta } = await this.users.listUsers({ page, limit, q, role, status });
     return { success: true, data: items, meta };
   }
 
@@ -547,6 +555,61 @@ export class AdminController {
     };
   }
 
+  @Patch('brands/:id')
+  async renameBrand(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminRenameSchema)) body: AdminRenameInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.adminRenameBrand(id, body.name) };
+  }
+
+  @Delete('brands/:id')
+  async deleteBrand(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.adminDeleteBrand(id) };
+  }
+
+  @Patch('models/:id')
+  async renameModel(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminRenameSchema)) body: AdminRenameInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.adminRenameModel(id, body.name) };
+  }
+
+  @Delete('models/:id')
+  async deleteModel(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.adminDeleteModel(id) };
+  }
+
+  @Patch('districts/:id')
+  async renameDistrict(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminRenameSchema)) body: AdminRenameInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.taxonomy.adminRenameDistrict(id, body.name),
+    };
+  }
+
+  @Delete('districts/:id')
+  async deleteDistrict(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.adminDeleteDistrict(id) };
+  }
+
+  @Patch('cities/:id')
+  async renameCity(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(adminRenameSchema)) body: AdminRenameInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.adminRenameCity(id, body.name) };
+  }
+
+  @Delete('cities/:id')
+  async deleteCity(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
+    return { success: true, data: await this.taxonomy.adminDeleteCity(id) };
+  }
+
   @Post('listings/:id/approve')
   async approveListing(@Param('id') id: string): Promise<ApiSuccess<unknown>> {
     return {
@@ -589,12 +652,14 @@ export class AdminController {
   async allPartsDealers(
     @Query('status') status?: string,
     @Query('q') q?: string,
+    @Query('ownerUserId') ownerUserId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ): Promise<ApiSuccess<unknown>> {
     const { items, meta } = await this.partsDealersService.listAllAdmin({
       status,
       q,
+      ownerUserId,
       page,
       limit,
     });

@@ -61,6 +61,7 @@ const nav = [
         badgeKey: 'promos' as const,
       },
       { href: '/monetize', label: 'Monetize', icon: MoneyIcon },
+      { href: '/listing-packages', label: 'Listing packages', icon: MoneyIcon },
     ],
   },
   {

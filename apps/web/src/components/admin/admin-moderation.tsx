@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -21,6 +23,65 @@ const QUEUES: { id: QueueId; label: string }[] = [
   { id: 'dealers', label: 'Dealers' },
   { id: 'parts-dealers', label: 'Parts dealers' },
 ];
+
+function locationLabel(
+  city?: { name: string } | null,
+  district?: { name: string } | null,
+) {
+  const bits = [city?.name, district?.name].filter(Boolean);
+  return bits.join(', ');
+}
+
+function ReviewDetails({
+  description,
+  location,
+  phone,
+  email,
+  address,
+  imageUrls,
+}: {
+  description?: string | null;
+  location?: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  imageUrls?: string[];
+}) {
+  const extras = (imageUrls ?? []).filter(Boolean);
+  if (!description && !location && !phone && !email && !address && extras.length < 2) {
+    return null;
+  }
+  return (
+    <div className="mt-3 space-y-2 border-t border-[var(--admin-border)] pt-3 text-sm">
+      {location ? (
+        <p className="text-[var(--admin-text)]">Location: {location}</p>
+      ) : null}
+      {phone ? <p className="text-[var(--admin-text)]">Phone: {phone}</p> : null}
+      {email ? <p className="text-[var(--admin-text)]">Email: {email}</p> : null}
+      {address ? (
+        <p className="text-[var(--admin-text)]">Address: {address}</p>
+      ) : null}
+      {description ? (
+        <p className="whitespace-pre-wrap text-[var(--admin-muted)]">
+          {description}
+        </p>
+      ) : null}
+      {extras.length > 1 ? (
+        <div className="flex gap-2 overflow-x-auto">
+          {extras.map((url) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={url}
+              src={url}
+              alt=""
+              className="h-16 w-24 shrink-0 rounded-md object-cover ring-1 ring-[var(--admin-border)]"
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function sellerName(listing: PendingListing) {
   const first = listing.seller?.firstName?.trim() ?? '';
@@ -187,6 +248,8 @@ export function AdminModeration({
   search?: string;
   initialQueue?: string;
 }) {
+  const params = useParams();
+  const locale = typeof params.locale === 'string' ? params.locale : 'en';
   const [token, setToken] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingListing[]>([]);
   const [partListings, setPartListings] = useState<PendingPartListing[]>([]);
@@ -556,6 +619,21 @@ export function AdminModeration({
                         </p>
                       ) : null}
                       <DuplicateSignals listing={listing} />
+                      <ReviewDetails
+                        description={listing.description}
+                        location={locationLabel(listing.city, listing.district)}
+                        phone={listing.phone}
+                        email={listing.seller?.email}
+                        imageUrls={listing.imageUrls}
+                      />
+                      {listing.seller?.id ? (
+                        <Link
+                          href={`/${locale}/admin/listings?sellerId=${listing.seller.id}`}
+                          className="mt-2 inline-flex text-sm text-[var(--admin-accent)] hover:underline"
+                        >
+                          Open in listings
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
                   <div
@@ -684,6 +762,22 @@ export function AdminModeration({
                             Submitted {formatSubmittedAt(listing.updatedAt)}
                           </time>
                         </p>
+                      ) : null}
+                      <ReviewDetails
+                        description={listing.description}
+                        location={locationLabel(listing.city, listing.district)}
+                        phone={listing.phone ?? listing.partsDealer?.phone}
+                        email={listing.partsDealer?.email}
+                        address={listing.partsDealer?.address}
+                        imageUrls={listing.imageUrls}
+                      />
+                      {listing.partsDealer?.id ? (
+                        <Link
+                          href={`/${locale}/admin/parts-dealers/${listing.partsDealer.id}`}
+                          className="mt-2 inline-flex text-sm text-[var(--admin-accent)] hover:underline"
+                        >
+                          Open shop
+                        </Link>
                       ) : null}
                     </div>
                   </div>
@@ -817,6 +911,17 @@ export function AdminModeration({
                     <p className="text-sm text-[var(--admin-muted)]">
                       {dealer.phone}
                     </p>
+                    <ReviewDetails
+                      description={dealer.description}
+                      email={dealer.email}
+                      address={dealer.address}
+                    />
+                    <Link
+                      href={`/${locale}/admin/${kind === 'dealers' ? 'dealers' : 'parts-dealers'}/${dealer.id}`}
+                      className="mt-2 inline-flex text-sm text-[var(--admin-accent)] hover:underline"
+                    >
+                      Open shop
+                    </Link>
                   </div>
                   <div
                     className="flex flex-wrap gap-2"

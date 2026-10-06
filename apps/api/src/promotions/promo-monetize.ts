@@ -11,6 +11,7 @@ const LEDGER_BUCKETS = [
   'pending',
   'rejected',
   'chargeback',
+  'failed',
 ] as const;
 const LEDGER_CHANNELS = ['bike', 'spare', 'modification'] as const;
 
@@ -24,6 +25,7 @@ export type MonetizeRequestQuery = {
   bucket?: string;
   channel?: string;
   q?: string;
+  listingQ?: string;
 };
 
 export type ParsedMonetizeQuery = {
@@ -33,6 +35,7 @@ export type ParsedMonetizeQuery = {
   bucket: MonetizeBucketFilter;
   channel: MonetizeChannelFilter;
   q: string;
+  listingQ: string;
 };
 
 type SummaryJson = {
@@ -50,6 +53,7 @@ type SummaryJson = {
   pending?: { totalLkr?: unknown; count?: unknown };
   rejected?: { totalLkr?: unknown; count?: unknown };
   chargebacks?: { totalLkr?: unknown; count?: unknown };
+  failed?: { totalLkr?: unknown; count?: unknown };
 };
 
 type PackageJson = { name?: unknown; count?: unknown; totalLkr?: unknown };
@@ -138,6 +142,7 @@ export function parseMonetizeQuery(
     bucket,
     channel,
     q: (query.q ?? '').trim().slice(0, 80),
+    listingQ: (query.listingQ ?? '').trim().slice(0, 80),
   };
 }
 
@@ -171,6 +176,7 @@ WITH classified AS (
     )::int AS amount_lkr,
     CASE
       WHEN r.payment_status = 'chargedback' THEN 'chargeback'
+      WHEN r.payment_status = 'failed' THEN 'failed'
       WHEN r.status = 'approved' AND r.payment_status = 'paid' THEN 'collected'
       WHEN r.status = 'rejected' THEN 'rejected'
       ELSE 'pending'
@@ -181,9 +187,9 @@ WITH classified AS (
       ELSE 'spare'
     END AS channel,
     CASE
-      WHEN r.status = 'approved'
-        AND r.payment_status = 'paid'
-        AND r.paid_at IS NOT NULL
+      WHEN r.payment_status = 'chargedback'
+      THEN COALESCE(r.updated_at, r.paid_at, r.created_at)
+      WHEN r.payment_status = 'paid' AND r.paid_at IS NOT NULL
       THEN r.paid_at
       ELSE r.created_at
     END AS event_at,
@@ -207,12 +213,15 @@ WITH classified AS (
   WHERE (
     $2::timestamptz IS NULL
     OR (
+      r.payment_status = 'chargedback'
+      AND COALESCE(r.updated_at, r.paid_at, r.created_at) >= $2
+    )
+    OR (
       r.payment_status = 'paid'
-      AND r.status = 'approved'
       AND COALESCE(r.paid_at, r.created_at) >= $2
     )
     OR (
-      NOT (r.payment_status = 'paid' AND r.status = 'approved')
+      r.payment_status NOT IN ('paid', 'chargedback')
       AND r.created_at >= $2
     )
   )
@@ -251,6 +260,10 @@ SELECT
       'rejected', json_build_object(
         'totalLkr', COALESCE(SUM(amount_lkr) FILTER (WHERE bucket = 'rejected'), 0),
         'count', COUNT(*) FILTER (WHERE bucket = 'rejected')
+      ),
+      'failed', json_build_object(
+        'totalLkr', COALESCE(SUM(amount_lkr) FILTER (WHERE bucket = 'failed'), 0),
+        'count', COUNT(*) FILTER (WHERE bucket = 'failed')
       ),
       'chargebacks', json_build_object(
         'totalLkr', COALESCE(SUM(amount_lkr) FILTER (WHERE bucket = 'chargeback'), 0),
@@ -444,6 +457,7 @@ export async function queryPromoMonetize(
     pending: moneyPair(summary.pending),
     rejected: moneyPair(summary.rejected),
     chargebacks: moneyPair(summary.chargebacks),
+    failed: moneyPair(summary.failed),
     packages,
     users,
     page: query.page,

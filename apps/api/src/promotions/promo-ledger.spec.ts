@@ -1,6 +1,7 @@
 import {
   promoMoneyBucket,
   promoMoneyChannel,
+  promoMonetizeEventAt,
   summarizePromoLedger,
   type PromoLedgerInput,
 } from './promo-ledger';
@@ -23,6 +24,7 @@ function row(partial: Partial<PromoLedgerInput>): PromoLedgerInput {
     sellerEmail: 'nimal@example.com',
     listingTitle: 'Honda Dio',
     placementEndsAt: null,
+    updatedAt: null,
     ...partial,
   };
 }
@@ -48,6 +50,9 @@ describe('promo money classification', () => {
     expect(
       promoMoneyBucket({ status: 'pending', paymentStatus: 'chargedback' }),
     ).toBe('chargeback');
+    expect(
+      promoMoneyBucket({ status: 'pending', paymentStatus: 'failed' }),
+    ).toBe('failed');
   });
 });
 
@@ -130,5 +135,76 @@ describe('summarizePromoLedger', () => {
     );
     expect(summary.collected.totalLkr).toBe(700);
     expect(summary.collected.count).toBe(1);
+  });
+
+  it('keeps failed PayHere payments out of pending', () => {
+    const summary = summarizePromoLedger(
+      [
+        row({
+          id: 'dead',
+          status: 'pending',
+          paymentStatus: 'failed',
+          paidAt: null,
+          amountLkr: 800,
+        }),
+        row({
+          id: 'wait',
+          status: 'pending',
+          paymentStatus: 'unpaid',
+          paidAt: null,
+          amountLkr: 100,
+        }),
+      ],
+      now,
+      'all',
+    );
+    expect(summary.failed).toEqual({ totalLkr: 800, count: 1 });
+    expect(summary.pending).toEqual({ totalLkr: 100, count: 1 });
+    expect(summary.chargebacks.count).toBe(0);
+  });
+
+  it('places a paid promotion in the month it was paid, before approval', () => {
+    const summary = summarizePromoLedger(
+      [
+        row({
+          id: 'late',
+          status: 'pending',
+          paymentStatus: 'paid',
+          createdAt: new Date('2026-08-01T00:00:00.000Z'),
+          paidAt: new Date('2026-09-02T10:00:00.000Z'),
+          amountLkr: 1500,
+        }),
+      ],
+      now,
+      'month',
+    );
+    expect(promoMonetizeEventAt({
+      paymentStatus: 'paid',
+      createdAt: new Date('2026-08-01T00:00:00.000Z'),
+      paidAt: new Date('2026-09-02T10:00:00.000Z'),
+      updatedAt: null,
+    }).toISOString()).toBe('2026-09-02T10:00:00.000Z');
+    expect(summary.collected.totalLkr).toBe(0);
+    expect(summary.pending).toEqual({ totalLkr: 1500, count: 1 });
+  });
+
+  it('shows a chargeback in the month it was reversed', () => {
+    const summary = summarizePromoLedger(
+      [
+        row({
+          id: 'cb',
+          status: 'approved',
+          paymentStatus: 'chargedback',
+          createdAt: new Date('2026-08-01T00:00:00.000Z'),
+          paidAt: new Date('2026-08-02T00:00:00.000Z'),
+          updatedAt: new Date('2026-09-10T00:00:00.000Z'),
+          amountLkr: 2200,
+        }),
+      ],
+      now,
+      'month',
+    );
+    expect(summary.collected.totalLkr).toBe(0);
+    expect(summary.chargebacks).toEqual({ totalLkr: 2200, count: 1 });
   });
 });

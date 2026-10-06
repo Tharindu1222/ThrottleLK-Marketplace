@@ -439,6 +439,8 @@ export class UsersService {
     page?: string | number;
     limit?: string | number;
     q?: string;
+    role?: string;
+    status?: string;
   }) {
     const { page, limit, skip } = parsePageLimit({
       page: paging?.page,
@@ -456,6 +458,12 @@ export class UsersService {
         '(LOWER(user.email) LIKE :q OR LOWER(user.firstName) LIKE :q OR LOWER(user.lastName) LIKE :q OR LOWER(COALESCE(user.phone, \'\')) LIKE :q)',
         { q },
       );
+    }
+    if (paging?.role?.trim()) {
+      qb.andWhere('roles.name = :role', { role: paging.role.trim() });
+    }
+    if (paging?.status?.trim()) {
+      qb.andWhere('user.status = :status', { status: paging.status.trim() });
     }
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();

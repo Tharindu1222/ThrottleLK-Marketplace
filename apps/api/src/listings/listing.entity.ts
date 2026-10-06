@@ -158,6 +158,9 @@ export class Listing {
   @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
   expiresAt!: Date | null;
 
+  @Column({ name: 'quota_charged', default: false })
+  quotaCharged!: boolean;
+
   @Column({ name: 'sold_at', type: 'timestamptz', nullable: true })
   soldAt!: Date | null;
 

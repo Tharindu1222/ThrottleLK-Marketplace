@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
+import { partListingHref } from '@/lib/part-kind';
 import type { AdminReport } from '@/lib/admin-types';
 import type { Locale } from '@/lib/i18n';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
@@ -131,8 +132,21 @@ export function AdminReports({ search = '' }: { search?: string }) {
                 reports.map((report) => {
                 const listing = report.listing;
                 const listingHref = listing?.slug
-                  ? `/${locale}/bikes/${listing.slug}`
+                  ? report.subjectType === 'part'
+                    ? partListingHref(locale, listing.kind ?? 'spare', listing.slug)
+                    : `/${locale}/bikes/${listing.slug}`
                   : null;
+                const reporterName = report.reporter
+                  ? `${report.reporter.firstName} ${report.reporter.lastName}`.trim()
+                  : '';
+                const kindLabel =
+                  report.subjectType === 'part'
+                    ? listing?.kind === 'modified'
+                      ? 'Modification'
+                      : listing?.kind === 'accessory'
+                        ? 'Accessory'
+                        : 'Spare part'
+                    : 'Bike';
                 const busy = busyId === report.id;
                 return (
                   <tr
@@ -162,6 +176,15 @@ export function AdminReports({ search = '' }: { search?: string }) {
                           <p className="truncate font-medium text-[var(--admin-text)]">
                             {listing?.title ?? 'Listing unavailable'}
                           </p>
+                          <p className="text-xs text-[var(--admin-muted)]">{kindLabel}</p>
+                          {reporterName || report.reporter?.email ? (
+                            <p className="truncate text-xs text-[var(--admin-faint)]">
+                              Reported by {reporterName || report.reporter?.email}
+                              {reporterName && report.reporter?.email
+                                ? ` · ${report.reporter.email}`
+                                : ''}
+                            </p>
+                          ) : null}
                           {listingHref ? (
                             <Link
                               href={listingHref}

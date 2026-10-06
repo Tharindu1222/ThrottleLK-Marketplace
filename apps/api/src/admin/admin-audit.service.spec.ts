@@ -97,6 +97,8 @@ describe('AdminAuditService', () => {
     expect(auditAreaFor('promo_request')).toBe('promotions');
     expect(auditAreaFor('promo_package')).toBe('monetize');
     expect(auditAreaFor('promo_settings')).toBe('monetize');
+    expect(auditAreaFor('listing_package')).toBe('monetize');
+    expect(auditAreaFor('report')).toBe('reports');
     expect(auditAreaFor('user')).toBe('users');
   });
 

@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useId, useState } from 'react';
 import { PartListingImageManager } from '@/components/part-listing-image-manager';
+import { ListingQuotaDialog } from '@/components/listing-quota-dialog';
 import { VerifyEmailCallout } from '@/components/verify-email-callout';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
-import { listingRequestMessage } from '@/lib/listing-errors';
+import { listingRequestMessage, listingQuotaBlock, type ListingQuotaBlock } from '@/lib/listing-errors';
 
 type Option = { id: string; name: string };
 type CategoryOption = Option & {
@@ -100,6 +101,8 @@ export function NewPartListingForm({
   const [listingId, setListingId] = useState<string | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [listingsLeft, setListingsLeft] = useState<number | null>(null);
+  const [quotaBlock, setQuotaBlock] = useState<ListingQuotaBlock | null>(null);
 
   const parentCategories = (() => {
     const map = new Map<string, string>();
@@ -132,16 +135,20 @@ export function NewPartListingForm({
       apiGet<{ phone?: string | null }>('/api/v1/users/me', {
         token: access,
       }).catch(() => null),
+      apiGet<{ parts: { remaining: number } | null }>('/api/v1/listing-packages/me', {
+        token: access,
+      }).catch(() => null),
       existingId
         ? apiGet<LoadedPart>(`/api/v1/part-listings/${existingId}`, {
             token: access,
           })
         : Promise.resolve(null),
     ])
-      .then(([cats, brandList, districtList, me, existing]) => {
+      .then(([cats, brandList, districtList, me, quota, existing]) => {
         setCategories(cats);
         setBrands(brandList);
         setDistricts(districtList);
+        if (quota?.parts) setListingsLeft(quota.parts.remaining);
         if (existing) {
           const fit = existing.fitments?.[0];
           setListingId(existing.id);
@@ -309,6 +316,11 @@ export function NewPartListingForm({
       });
       setSubmitted(true);
     } catch (err) {
+      const block = listingQuotaBlock(err);
+      if (block) {
+        setQuotaBlock(block);
+        return;
+      }
       setError(listingRequestMessage(err, locale, 'submitFailed'));
     } finally {
       setBusy(false);
@@ -512,6 +524,11 @@ export function NewPartListingForm({
               value={form.priceLkr}
               onChange={(e) => setField('priceLkr', e.target.value)}
             />
+            {listingsLeft != null ? (
+              <p className="mt-1 text-xs text-muted">
+                {t(locale, 'listingQuotaLeft').replace('{n}', String(listingsLeft))}
+              </p>
+            ) : null}
           </div>
           <div className="lg:col-span-3">
             <label className={labelClass} htmlFor={`${uid}-description`}>
@@ -698,6 +715,13 @@ export function NewPartListingForm({
         </div>
       ) : null}
 
+      {quotaBlock ? (
+        <ListingQuotaDialog
+          locale={locale}
+          block={quotaBlock}
+          onClose={() => setQuotaBlock(null)}
+        />
+      ) : null}
       {error ? (
         <p className="mt-4 text-sm text-red-600">{error}</p>
       ) : null}

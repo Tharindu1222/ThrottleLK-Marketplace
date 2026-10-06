@@ -1,6 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
 import { slugify } from '../common/slugify';
 import { BikeModel } from './bike-model.entity';
@@ -384,5 +390,139 @@ export class TaxonomyService implements OnModuleInit {
       });
     }
     return brand;
+  }
+
+  async adminRenameBrand(id: string, name: string) {
+    const brand = await this.getBrandOrThrow(id);
+    return this.renameUnique(this.brands, brand, name, {});
+  }
+
+  async adminDeleteBrand(id: string) {
+    await this.getBrandOrThrow(id);
+    return this.deleteOrInUse(this.brands, id, 'Brand');
+  }
+
+  async adminRenameModel(id: string, name: string) {
+    const model = await this.models.findOne({ where: { id } });
+    if (!model) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'MODEL_NOT_FOUND', message: 'Model not found' },
+      });
+    }
+    return this.renameUnique(this.models, model, name, { brandId: model.brandId });
+  }
+
+  async adminDeleteModel(id: string) {
+    const model = await this.models.findOne({ where: { id } });
+    if (!model) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'MODEL_NOT_FOUND', message: 'Model not found' },
+      });
+    }
+    return this.deleteOrInUse(this.models, id, 'Model');
+  }
+
+  async adminRenameDistrict(id: string, name: string) {
+    const district = await this.districts.findOne({ where: { id } });
+    if (!district) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'DISTRICT_NOT_FOUND', message: 'District not found' },
+      });
+    }
+    return this.renameUnique(this.districts, district, name, {});
+  }
+
+  async adminDeleteDistrict(id: string) {
+    const district = await this.districts.findOne({ where: { id } });
+    if (!district) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'DISTRICT_NOT_FOUND', message: 'District not found' },
+      });
+    }
+    return this.deleteOrInUse(this.districts, id, 'District');
+  }
+
+  async adminRenameCity(id: string, name: string) {
+    const city = await this.cities.findOne({ where: { id } });
+    if (!city) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'CITY_NOT_FOUND', message: 'City not found' },
+      });
+    }
+    return this.renameUnique(this.cities, city, name, { districtId: city.districtId });
+  }
+
+  async adminDeleteCity(id: string) {
+    const city = await this.cities.findOne({ where: { id } });
+    if (!city) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'CITY_NOT_FOUND', message: 'City not found' },
+      });
+    }
+    return this.deleteOrInUse(this.cities, id, 'City');
+  }
+
+  private async renameUnique<T extends { id: string; name: string; slug: string }>(
+    repo: Repository<T>,
+    row: T,
+    name: string,
+    scope: object,
+  ) {
+    const slug = slugify(name);
+    const clash = await repo.findOne({
+      where: { ...scope, slug } as never,
+    });
+    if (clash && clash.id !== row.id) {
+      throw new ConflictException({
+        success: false,
+        error: {
+          code: 'TAXONOMY_EXISTS',
+          message: 'That name is already used',
+        },
+      });
+    }
+    row.name = name.trim();
+    row.slug = slug;
+    const saved = await repo.save(row);
+    void this.cache.invalidateTaxonomy();
+    return saved;
+  }
+
+  private async deleteOrInUse<T extends { id: string }>(
+    repo: Repository<T>,
+    id: string,
+    label: string,
+  ) {
+    try {
+      const result = await repo.delete(id as never);
+      if (!result.affected) {
+        throw new NotFoundException({
+          success: false,
+          error: { code: 'NOT_FOUND', message: `${label} not found` },
+        });
+      }
+    } catch (err) {
+      if (
+        err instanceof QueryFailedError &&
+        (err.driverError as { code?: string } | undefined)?.code === '23503'
+      ) {
+        throw new ConflictException({
+          success: false,
+          error: {
+            code: 'TAXONOMY_IN_USE',
+            message: `${label} is still used by listings or related records`,
+          },
+        });
+      }
+      throw err;
+    }
+    void this.cache.invalidateTaxonomy();
+    return { id };
   }
 }

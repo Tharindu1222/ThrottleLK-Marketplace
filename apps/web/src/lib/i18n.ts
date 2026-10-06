@@ -677,6 +677,25 @@ const en: Dict = {
   promotePayAmount: 'Amount to pay',
   promotePayCta: 'Pay with PayHere',
   promotePayRedirecting: 'Redirecting to PayHere…',
+  listingQuotaEyebrow: 'Listings',
+  listingQuotaLeft: '{n} listings left',
+  listingQuotaYouHave: 'You have {n} listings',
+  listingQuotaRemaining: 'listings left',
+  listingQuotaUpgrade: 'Upgrade',
+  listingQuotaPackageBuyBody:
+    'Buy a package and those listings are added to your quota.',
+  listingQuotaApplyTitle: 'Apply as a dealer',
+  listingQuotaApplyBody:
+    'Your free listings are used up. Apply as a dealer to get {n} more free listings.',
+  listingQuotaApplyCta: 'Apply as a dealer',
+  listingQuotaPackageTitle: 'Choose a listing package',
+  listingQuotaPackageBody:
+    'Your free listings are used up. Buy a package and those listings are added to your quota.',
+  listingQuotaCount: '{n} listings',
+  listingQuotaPay: 'Pay Rs {n}',
+  listingQuotaNone: 'No packages are available yet.',
+  listingQuotaClose: 'Close',
+  listingQuotaPaid: 'Payment received. Your listing quota has been updated.',
   promotePayWaiting:
     'Payment received. We are activating your promotion. This usually takes a few seconds.',
   promoteWaitingTitle: 'Activating your promotion',
@@ -1525,6 +1544,25 @@ const si: Dict = {
   promotePayAmount: 'ගෙවිය යුතු මුදල',
   promotePayCta: 'PayHere හරහා ගෙවන්න',
   promotePayRedirecting: 'PayHere වෙත යොමු කරමින්…',
+  listingQuotaEyebrow: 'ලැයිස්තු',
+  listingQuotaLeft: 'ලැයිස්තු {n}ක් ඉතිරිව ඇත',
+  listingQuotaYouHave: 'ඔබට ලැයිස්තු {n}ක් ඇත',
+  listingQuotaRemaining: 'ඉතිරි ලැයිස්තු',
+  listingQuotaUpgrade: 'Upgrade',
+  listingQuotaPackageBuyBody:
+    'Package එකක් ගත්තාම ඒ listing ගණන ඔබේ quota එකට එකතු වේ.',
+  listingQuotaApplyTitle: 'Dealer ලෙස අයදුම් කරන්න',
+  listingQuotaApplyBody:
+    'ඔබේ නොමිලේ ලැයිස්තු ඉවරයි. Dealer ලෙස අයදුම් කළොත් තවත් නොමිලේ ලැයිස්තු {n}ක් ලැබේ.',
+  listingQuotaApplyCta: 'Dealer ලෙස අයදුම් කරන්න',
+  listingQuotaPackageTitle: 'Listing package එකක් තෝරන්න',
+  listingQuotaPackageBody:
+    'නොමිලේ ලැයිස්තු ඉවරයි. Package එකක් ගත්තාම ඒ listing ගණන ඔබේ quota එකට එකතු වේ.',
+  listingQuotaCount: 'ලැයිස්තු {n}ක්',
+  listingQuotaPay: 'රු {n} ගෙවන්න',
+  listingQuotaNone: 'Packages තවම නැත.',
+  listingQuotaClose: 'වසන්න',
+  listingQuotaPaid: 'ගෙවීම ලැබුණා. Listing quota එක යාවත්කාලීන විය.',
   promotePayWaiting:
     'ගෙවීම ලැබුණා. ඔබේ promotion එක සක්‍රිය කරමින්. තත්පර කිහිපයක් ගත විය හැක.',
   promoteWaitingTitle: 'Promotion එක සක්‍රිය කරමින්',

@@ -113,6 +113,7 @@ export class AdminPromotionsController {
     @Query('bucket') bucket?: string,
     @Query('channel') channel?: string,
     @Query('q') q?: string,
+    @Query('listingQ') listingQ?: string,
   ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
@@ -123,6 +124,7 @@ export class AdminPromotionsController {
         bucket,
         channel,
         q,
+        listingQ,
       }),
     };
   }

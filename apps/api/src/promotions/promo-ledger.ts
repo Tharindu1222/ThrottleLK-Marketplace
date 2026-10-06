@@ -4,12 +4,14 @@ export type PromoMoneyBucket =
   | 'collected'
   | 'pending'
   | 'rejected'
-  | 'chargeback';
+  | 'chargeback'
+  | 'failed';
 
 export type PromoLedgerInput = {
   id: string;
   createdAt: Date;
   paidAt: Date | null;
+  updatedAt: Date | null;
   status: 'pending' | 'approved' | 'rejected';
   paymentStatus: 'unpaid' | 'paid' | 'failed' | 'chargedback';
   paymentProvider: 'payhere' | 'bank' | null;
@@ -56,6 +58,7 @@ export function promoMoneyBucket(row: {
   paymentStatus: PromoLedgerInput['paymentStatus'];
 }): PromoMoneyBucket {
   if (row.paymentStatus === 'chargedback') return 'chargeback';
+  if (row.paymentStatus === 'failed') return 'failed';
   if (row.status === 'approved' && row.paymentStatus === 'paid') {
     return 'collected';
   }
@@ -63,9 +66,22 @@ export function promoMoneyBucket(row: {
   return 'pending';
 }
 
-function eventAt(row: PromoLedgerInput, bucket: PromoMoneyBucket): Date {
-  if (bucket === 'collected' && row.paidAt) return row.paidAt;
+/** When a row belongs in a monetize window. Paid money uses paid_at even before approval. Chargebacks use the reversal time. */
+export function promoMonetizeEventAt(row: {
+  paymentStatus: PromoLedgerInput['paymentStatus'];
+  createdAt: Date;
+  paidAt: Date | null;
+  updatedAt: Date | null;
+}): Date {
+  if (row.paymentStatus === 'chargedback') {
+    return row.updatedAt ?? row.paidAt ?? row.createdAt;
+  }
+  if (row.paymentStatus === 'paid' && row.paidAt) return row.paidAt;
   return row.createdAt;
+}
+
+function eventAt(row: PromoLedgerInput): Date {
+  return promoMonetizeEventAt(row);
 }
 
 function inRange(at: Date, start: Date | null): boolean {
@@ -92,6 +108,7 @@ export function summarizePromoLedger(
   const pending = { totalLkr: 0, count: 0 };
   const rejected = { totalLkr: 0, count: 0 };
   const chargebacks = { totalLkr: 0, count: 0 };
+  const failed = { totalLkr: 0, count: 0 };
   const packageMap = new Map<string, { count: number; totalLkr: number }>();
   const userMap = new Map<
     string,
@@ -123,7 +140,7 @@ export function summarizePromoLedger(
 
   for (const row of rows) {
     const bucket = promoMoneyBucket(row);
-    const at = eventAt(row, bucket);
+    const at = eventAt(row);
     if (!inRange(at, start)) continue;
     const amount = Math.max(0, Math.round(row.amountLkr || 0));
     const channel = promoMoneyChannel(row.subjectType, row.partKind);
@@ -167,6 +184,9 @@ export function summarizePromoLedger(
     } else if (bucket === 'rejected') {
       rejected.totalLkr += amount;
       rejected.count += 1;
+    } else if (bucket === 'failed') {
+      failed.totalLkr += amount;
+      failed.count += 1;
     } else {
       chargebacks.totalLkr += amount;
       chargebacks.count += 1;
@@ -200,6 +220,7 @@ export function summarizePromoLedger(
     pending,
     rejected,
     chargebacks,
+    failed,
     packages: [...packageMap.entries()]
       .map(([name, value]) => ({ name, ...value }))
       .sort((a, b) => b.totalLkr - a.totalLkr),

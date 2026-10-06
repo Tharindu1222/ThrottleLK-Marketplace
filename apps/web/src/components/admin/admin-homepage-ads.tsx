@@ -313,6 +313,8 @@ type PlacementRow = {
   startsAt: string;
   endsAt: string;
   title: string;
+  slug?: string | null;
+  kind?: string | null;
   coverImageUrl: string | null;
 };
 
@@ -326,13 +328,28 @@ function formatPromoDay(iso: string) {
 
 function LivePlacementCard({
   row,
+  locale,
   onEnd,
+  onUpdateEnds,
 }: {
   row: PlacementRow;
+  locale: string;
   onEnd: (id: string) => void;
+  onUpdateEnds: (id: string, endsAt: string) => void;
 }) {
+  const [ends, setEnds] = useState(() => {
+    const date = new Date(row.endsAt);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  });
+  const href = row.slug
+    ? row.subjectType === 'part'
+      ? partListingHref(locale, row.kind ?? 'spare', row.slug)
+      : `/${locale}/bikes/${row.slug}`
+    : null;
   return (
-    <article className="admin-card flex items-center justify-between gap-3 p-4">
+    <article className="admin-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 gap-4">
         <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)]">
           {row.coverImageUrl ? (
@@ -360,11 +377,44 @@ function LivePlacementCard({
             <span>Ends {formatPromoDay(row.endsAt)}</span>
           </div>
           <p className="mt-1 text-xs text-[var(--admin-muted)]">{row.source}</p>
+          {href ? (
+            <Link
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex text-xs text-[var(--admin-accent)] hover:underline"
+            >
+              View listing
+            </Link>
+          ) : null}
         </div>
       </div>
-      <button type="button" className={btnDanger} onClick={() => void onEnd(row.id)}>
-        Remove now
-      </button>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="grid gap-1 text-xs text-[var(--admin-muted)]">
+          End date
+          <input
+            type="date"
+            className="admin-field-inline"
+            value={ends}
+            onChange={(e) => setEnds(e.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          className={btnGhost}
+          disabled={!ends}
+          onClick={() => {
+            const next = new Date(`${ends}T23:59:59`);
+            if (Number.isNaN(next.getTime())) return;
+            void onUpdateEnds(row.id, next.toISOString());
+          }}
+        >
+          Save end date
+        </button>
+        <button type="button" className={btnDanger} onClick={() => void onEnd(row.id)}>
+          Remove now
+        </button>
+      </div>
     </article>
   );
 }
@@ -481,6 +531,17 @@ export function AdminHomepageAds() {
     await load();
   }
 
+  async function updateEnds(id: string, endsAt: string) {
+    const access = token();
+    if (!access) return;
+    await apiSend(`/api/v1/admin/promotions/placements/${id}`, {
+      method: 'PATCH',
+      token: access,
+      body: { endsAt },
+    });
+    await load();
+  }
+
   const pending = requests.filter(
     (row) => row.status === 'pending' && row.paymentStatus === 'paid',
   );
@@ -554,6 +615,8 @@ export function AdminHomepageAds() {
             const title = subject?.title ?? 'Listing';
             const cover = subject?.coverImageUrl;
             const viewHref = listingViewHref(params.locale, row);
+            const subjectStatus =
+              row.listing?.status ?? row.partListing?.status ?? null;
             const place = [subject?.city?.name, subject?.district?.name]
               .filter(Boolean)
               .join(', ');
@@ -604,6 +667,20 @@ export function AdminHomepageAds() {
                     <p className="text-sm font-medium text-[var(--admin-text)]">
                       {title}
                     </p>
+                    {subjectStatus ? (
+                      <p
+                        className={`mt-1 text-xs ${
+                          subjectStatus === 'active'
+                            ? 'text-[var(--admin-success)]'
+                            : 'text-[var(--admin-warning)]'
+                        }`}
+                      >
+                        Listing status: {subjectStatus}
+                        {subjectStatus !== 'active'
+                          ? '. Approve needs an active listing.'
+                          : ''}
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-xs text-[var(--admin-muted)]">
                       {detailBits.join(' · ') || row.subjectType}
                     </p>
@@ -636,6 +713,7 @@ export function AdminHomepageAds() {
                   <button
                     type="button"
                     className={btn}
+                    disabled={Boolean(subjectStatus && subjectStatus !== 'active')}
                     onClick={() => void approve(row.id)}
                   >
                     Approve
@@ -809,7 +887,13 @@ export function AdminHomepageAds() {
                   <p className="text-sm text-[var(--admin-muted)]">No live listings</p>
                 ) : (
                   liveListings.map((row) => (
-                    <LivePlacementCard key={row.id} row={row} onEnd={endNow} />
+                    <LivePlacementCard
+                      key={row.id}
+                      row={row}
+                      locale={params.locale}
+                      onEnd={endNow}
+                      onUpdateEnds={updateEnds}
+                    />
                   ))
                 )}
               </section>
@@ -821,7 +905,13 @@ export function AdminHomepageAds() {
                   <p className="text-sm text-[var(--admin-muted)]">No live parts</p>
                 ) : (
                   liveParts.map((row) => (
-                    <LivePlacementCard key={row.id} row={row} onEnd={endNow} />
+                    <LivePlacementCard
+                      key={row.id}
+                      row={row}
+                      locale={params.locale}
+                      onEnd={endNow}
+                      onUpdateEnds={updateEnds}
+                    />
                   ))
                 )}
               </section>

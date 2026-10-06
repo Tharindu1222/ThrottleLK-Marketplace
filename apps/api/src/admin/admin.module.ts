@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DealersModule } from '../dealers/dealers.module';
 import { Dealer } from '../dealers/dealer.entity';
 import { Listing } from '../listings/listing.entity';
+import { ListingPostOrder } from '../listing-packages/listing-post-order.entity';
 import { ListingsModule } from '../listings/listings.module';
 import { PartListing } from '../part-listings/part-listing.entity';
 import { PartListingsModule } from '../part-listings/part-listings.module';
@@ -34,6 +35,7 @@ import { AdminService } from './admin.service';
       PartListing,
       Report,
       PromoRequest,
+      ListingPostOrder,
     ]),
   ],
   controllers: [AdminController],

@@ -327,6 +327,7 @@ export class DealersService {
   async listAllAdmin(filters?: {
     status?: string;
     q?: string;
+    ownerUserId?: string;
     page?: string | number;
     limit?: string | number;
   }) {
@@ -345,6 +346,11 @@ export class DealersService {
 
     if (filters?.status) {
       qb.andWhere('d.status = :status', { status: filters.status });
+    }
+    if (filters?.ownerUserId) {
+      qb.andWhere('d.owner_user_id = :ownerUserId', {
+        ownerUserId: filters.ownerUserId,
+      });
     }
     if (filters?.q?.trim()) {
       const q = `%${filters.q.trim().toLowerCase()}%`;

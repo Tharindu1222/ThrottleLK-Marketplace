@@ -122,6 +122,7 @@ function makeService(overrides?: {
     verifyNotifyHash: jest.fn(() => true),
   };
   const dataSource = {
+    query: jest.fn(async (_sql: string, _params?: unknown[]) => [] as unknown[]),
     transaction: jest.fn(async (cb: (manager: unknown) => Promise<unknown>) => {
       const manager = {
         getRepository: (entity: { name?: string } | Function) => {
@@ -195,6 +196,7 @@ function makeService(overrides?: {
     payhere,
     listing,
     pkg,
+    dataSource,
   };
 }
 
@@ -360,6 +362,34 @@ describe('PromotionsService.handlePayHereNotify', () => {
     expect(requests.save).toHaveBeenCalled();
     const saved = requests.save.mock.calls[0][0] as { paymentStatus: string };
     expect(saved.paymentStatus).toBe('failed');
+  });
+
+  it('records a chargeback after PayHere already marked the promotion paid', async () => {
+    const endsAt = new Date(Date.now() + 86_400_000);
+    const { service, requests, placements, payhere } = makeService({
+      live: { id: 'place-1', requestId: 'req-1', endsAt },
+    });
+    requests.findOne.mockResolvedValue({
+      id: 'req-1',
+      status: 'approved',
+      paymentStatus: 'paid',
+      payhereOrderId: 'promo_abc',
+    } as never);
+    payhere.verifyNotifyHash.mockReturnValue(true);
+    const result = await service.handlePayHereNotify({
+      merchant_id: '123456',
+      order_id: 'promo_abc',
+      payhere_amount: '2500.00',
+      payhere_currency: 'LKR',
+      status_code: '-3',
+      md5sig: 'x',
+    });
+    expect(result).toBe('OK');
+    const saved = requests.save.mock.calls[0][0] as { paymentStatus: string };
+    expect(saved.paymentStatus).toBe('chargedback');
+    expect(placements.save).toHaveBeenCalled();
+    const ended = placements.save.mock.calls[0][0] as { endsAt: Date };
+    expect(ended.endsAt.getTime()).toBeLessThanOrEqual(Date.now());
   });
 });
 
@@ -609,5 +639,82 @@ describe('PromotionsService.statusFor', () => {
       paidAt: null,
       approvedAt: null,
     });
+  });
+});
+
+describe('PromotionsService.monetize', () => {
+  it('returns promotion and listing-package totals for the same range', async () => {
+    const { service, dataSource } = makeService();
+    dataSource.query
+      .mockResolvedValueOnce([
+        {
+          summary: {
+            collected: { totalLkr: 1000, count: 1 },
+            failed: { totalLkr: 50, count: 1 },
+          },
+          packages: [],
+          users: [],
+          transactionCount: 0,
+          transactions: [],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          summary: {
+            collected: {
+              totalLkr: 500,
+              count: 1,
+              bikeLkr: 500,
+              bikeCount: 1,
+              bikeSlots: 15,
+            },
+          },
+          packages: [],
+          users: [],
+          exceptions: [
+            {
+              id: 'order-1',
+              at: '2026-10-01T00:00:00.000Z',
+              bucket: 'pending',
+              audience: 'parts',
+              amountLkr: 1000,
+              packageName: '15 listings',
+              payhereOrderId: 'post_1',
+              sellerName: 'Nimal',
+              sellerEmail: 'nimal@example.com',
+            },
+          ],
+        },
+      ]);
+
+    const result = await service.monetize({
+      range: 'month',
+      listingQ: 'nimal',
+    });
+
+    expect(result.collected.totalLkr).toBe(1000);
+    expect(result.failed).toEqual({ totalLkr: 50, count: 1 });
+    expect(result.listingPackages.collected.bikeLkr).toBe(500);
+    expect(result.listingPackages.exceptions[0]).toMatchObject({
+      payhereOrderId: 'post_1',
+      audience: 'parts',
+      bucket: 'pending',
+    });
+
+    const promoSql = String(dataSource.query.mock.calls[0][0]);
+    expect(promoSql).toContain("WHEN r.payment_status = 'failed' THEN 'failed'");
+    expect(promoSql).toContain(
+      "r.payment_status = 'paid'\n      AND COALESCE(r.paid_at, r.created_at) >= $2",
+    );
+    expect(promoSql).toContain('r.updated_at');
+
+    const listingSql = String(dataSource.query.mock.calls[1][0]);
+    expect(listingSql).toContain("o.status = 'chargedback'");
+    expect(listingSql).toContain('o.updated_at');
+    expect(listingSql).toContain('payhere_order_id');
+    expect(dataSource.query.mock.calls[1][1]).toEqual([
+      expect.any(Date),
+      '%nimal%',
+    ]);
   });
 });

@@ -18,6 +18,7 @@ type ListingRow = {
   priceLkr: number;
   manufactureYear: number;
   status: string;
+  rejectionReason?: string | null;
   brandId: string;
   modelId: string;
   categoryId: string;
@@ -107,6 +108,7 @@ export function AdminListings({ search = '' }: { search?: string }) {
   const urlSearchParams = useSearchParams();
   const locale = typeof params.locale === 'string' ? params.locale : 'en';
   const dealerId = urlSearchParams.get('dealerId') ?? '';
+  const sellerId = urlSearchParams.get('sellerId') ?? '';
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<ListingRow[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -147,6 +149,7 @@ export function AdminListings({ search = '' }: { search?: string }) {
           status: status || undefined,
           q: q || undefined,
           dealerId: dealerId || undefined,
+          sellerId: sellerId || undefined,
           page: String(pageNum),
           limit: '20',
         },
@@ -199,14 +202,14 @@ export function AdminListings({ search = '' }: { search?: string }) {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, dealerId]);
+  }, [search, statusFilter, dealerId, sellerId]);
 
   useEffect(() => {
     if (!token) return;
     void loadList(token, statusFilter, search, page).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to filter'),
     );
-  }, [token, statusFilter, search, page, dealerId]);
+  }, [token, statusFilter, search, page, dealerId, sellerId]);
 
   useEffect(() => {
     if (!form.brandId) {
@@ -342,12 +345,23 @@ export function AdminListings({ search = '' }: { search?: string }) {
 
   async function onQuickStatus(id: string, status: string) {
     if (!token) return;
+    const body: { status: string; rejectionReason?: string } = { status };
+    if (status === 'rejected') {
+      const reason = window.prompt(
+        'Why is this listing rejected? At least 5 characters.',
+      )?.trim() ?? '';
+      if (reason.length < 5) {
+        setError('Rejection reason must be at least 5 characters.');
+        return;
+      }
+      body.rejectionReason = reason;
+    }
     setBusy(true);
     try {
       await apiSend(`/api/v1/admin/listings/${id}`, {
         method: 'PATCH',
         token,
-        body: { status },
+        body,
       });
       await loadList(token, statusFilter, search, page);
     } catch (err) {
@@ -441,6 +455,11 @@ export function AdminListings({ search = '' }: { search?: string }) {
                           {row.brand?.name ?? '—'} {row.model?.name ?? ''} ·{' '}
                           {row.manufactureYear}
                         </p>
+                        {row.status === 'rejected' && row.rejectionReason ? (
+                          <p className="mt-1 text-xs text-[var(--admin-danger)]">
+                            {row.rejectionReason}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </td>

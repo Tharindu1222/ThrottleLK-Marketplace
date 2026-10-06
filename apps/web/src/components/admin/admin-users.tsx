@@ -1,6 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useId, useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Pagination } from '@/components/pagination';
 import { apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -32,10 +34,14 @@ const emptyForm: FormState = {
 };
 
 export function AdminUsers({ search = '' }: { search?: string }) {
+  const params = useParams();
+  const locale = typeof params.locale === 'string' ? params.locale : 'en';
   const [token, setToken] = useState<string | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
   const [page, setPage] = useState(1);
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,7 +51,13 @@ export function AdminUsers({ search = '' }: { search?: string }) {
   useDialogFocusTrap(editorOpen, dialogId);
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  async function load(access: string, pageNum = page, q = search) {
+  async function load(
+    access: string,
+    pageNum = page,
+    q = search,
+    role = roleFilter,
+    status = statusFilter,
+  ) {
     setLoading(true);
     try {
       const { data, meta: nextMeta } = await apiGetWithMeta<AdminUser[]>(
@@ -56,6 +68,8 @@ export function AdminUsers({ search = '' }: { search?: string }) {
             page: String(pageNum),
             limit: '20',
             q: q.trim() || undefined,
+            role: role || undefined,
+            status: status || undefined,
           },
         },
       );
@@ -73,17 +87,17 @@ export function AdminUsers({ search = '' }: { search?: string }) {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, roleFilter, statusFilter]);
 
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
     if (!access) return;
-    void load(access, page, search).catch((err) =>
+    void load(access, page, search, roleFilter, statusFilter).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to load users'),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search]);
+  }, [page, search, roleFilter, statusFilter]);
 
   function openCreate() {
     setEditingId(null);
@@ -235,6 +249,29 @@ export function AdminUsers({ search = '' }: { search?: string }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="admin-field-inline min-h-11"
+          aria-label="Filter by role"
+        >
+          <option value="">All roles</option>
+          {ROLE_OPTIONS.map((role) => (
+            <option key={role} value={role}>
+              {role}
+            </option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="admin-field-inline min-h-11"
+          aria-label="Filter by status"
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+        </select>
         <button
           type="button"
           className="admin-btn-primary inline-flex min-h-11 w-full shrink-0 items-center justify-center px-4 py-2 text-sm sm:ml-auto sm:w-auto"
@@ -282,6 +319,26 @@ export function AdminUsers({ search = '' }: { search?: string }) {
                 >
                   <td className="px-4 py-3 font-medium text-[var(--admin-text)]">
                     {user.firstName} {user.lastName}
+                    <p className="mt-1 flex flex-wrap gap-x-3 text-xs font-normal">
+                      <Link
+                        href={`/${locale}/admin/listings?sellerId=${user.id}`}
+                        className="text-[var(--admin-accent)] hover:underline"
+                      >
+                        Listings
+                      </Link>
+                      <Link
+                        href={`/${locale}/admin/dealers?ownerUserId=${user.id}`}
+                        className="text-[var(--admin-accent)] hover:underline"
+                      >
+                        Bike shops
+                      </Link>
+                      <Link
+                        href={`/${locale}/admin/parts-dealers?ownerUserId=${user.id}`}
+                        className="text-[var(--admin-accent)] hover:underline"
+                      >
+                        Parts shops
+                      </Link>
+                    </p>
                   </td>
                   <td className="px-4 py-3 text-[var(--admin-muted)]">{user.email}</td>
                   <td className="px-4 py-3 text-[var(--admin-muted)]">

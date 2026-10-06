@@ -308,6 +308,21 @@ export function AdminDealerDetail({ id }: { id: string }) {
                   <dt className="text-[var(--admin-faint)]">Email</dt>
                   <dd className="text-[var(--admin-text)]">{shop.email ?? '—'}</dd>
                 </div>
+                {shop.website ? (
+                  <div className="sm:col-span-2">
+                    <dt className="text-[var(--admin-faint)]">Website</dt>
+                    <dd>
+                      <a
+                        href={shop.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--admin-accent)] hover:underline"
+                      >
+                        {shop.website}
+                      </a>
+                    </dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt className="text-[var(--admin-faint)]">Location</dt>
                   <dd className="text-[var(--admin-text)]">

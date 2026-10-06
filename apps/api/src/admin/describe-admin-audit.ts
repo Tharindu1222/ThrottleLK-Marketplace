@@ -14,6 +14,7 @@ const RESOURCES: Record<string, string> = {
   cities: 'city',
   categories: 'category',
   packages: 'promo_package',
+  'listing-packages': 'listing_package',
   'bank-accounts': 'promo_bank_account',
   settings: 'promo_settings',
   requests: 'promo_request',

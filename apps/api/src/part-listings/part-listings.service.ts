@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type {
@@ -45,6 +46,7 @@ import { PartListingFitment } from './part-listing-fitment.entity';
 import { PartListingImage } from './part-listing-image.entity';
 import { PartListingInquiry } from './part-listing-inquiry.entity';
 import { PartListing } from './part-listing.entity';
+import { ListingPackagesService } from '../listing-packages/listing-packages.service';
 
 @Injectable()
 export class PartListingsService {
@@ -68,7 +70,14 @@ export class PartListingsService {
     private readonly partsDealersService: PartsDealersService,
     private readonly notifications: NotificationsService,
     private readonly cache: CacheService,
+    @Optional() private readonly listingPackages?: ListingPackagesService,
   ) {}
+
+  private async chargePartQuota(ownerId: string, listing: PartListing) {
+    if (!this.listingPackages || listing.quotaCharged) return;
+    await this.listingPackages.consumeParts(ownerId);
+    listing.quotaCharged = true;
+  }
 
   async create(owner: User, input: CreatePartListingInput): Promise<any> {
     assertEmailVerified(owner, 'creating listings');
@@ -92,6 +101,7 @@ export class PartListingsService {
       });
     }
 
+    await this.listingPackages?.assertCanCreateParts(owner.id);
     await this.validateFitments(input.fitments);
     const slug = await this.allocateSlug(input.title);
     const listing = this.partListings.create({
@@ -187,6 +197,7 @@ export class PartListingsService {
         },
       });
     }
+    await this.chargePartQuota(owner.id, listing);
     listing.status = 'pending_review';
     listing.rejectionReason = null;
     const saved = await this.partListings.save(listing);
@@ -862,7 +873,7 @@ export class PartListingsService {
 
   async adminUpdate(id: string, input: AdminUpdatePartListingInput) {
     const listing = await this.getById(id);
-    const { fitments, status, partsDealerId, ...fields } = input;
+    const { fitments, status, partsDealerId, rejectionReason, ...fields } = input;
     if (fitments) {
       await this.validateFitments(fitments);
       await this.replaceFitments(listing.id, fitments);
@@ -873,6 +884,7 @@ export class PartListingsService {
     }
     Object.assign(listing, fields);
     if (status) {
+      const previous = listing.status;
       listing.status = status;
       if (status === 'active' && !listing.publishedAt) {
         listing.publishedAt = new Date();
@@ -880,7 +892,34 @@ export class PartListingsService {
       if (status === 'sold' && !listing.soldAt) {
         listing.soldAt = new Date();
       }
-      if (status !== 'rejected') {
+      if (status === 'rejected') {
+        const reason = rejectionReason?.trim() ?? '';
+        if (previous !== 'rejected' && reason.length < 5) {
+          throw new BadRequestException({
+            success: false,
+            error: {
+              code: 'REASON_REQUIRED',
+              message: 'Rejection reason is required',
+            },
+          });
+        }
+        if (reason.length >= 5) {
+          listing.rejectionReason = reason;
+          const dealer = await this.partsDealersService.adminGet(
+            listing.partsDealerId,
+          );
+          void this.notifications.partListingRejected(
+            dealer.ownerUserId,
+            {
+              id: listing.id,
+              title: listing.title,
+              slug: listing.slug,
+              kind: listing.kind,
+            },
+            reason,
+          );
+        }
+      } else {
         listing.rejectionReason = null;
       }
     }
@@ -910,6 +949,8 @@ export class PartListingsService {
     const qb = this.partListings
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.partsDealer', 'partsDealer')
+      .leftJoinAndSelect('l.district', 'district')
+      .leftJoinAndSelect('l.city', 'city')
       .where('l.status = :status', { status: 'pending_review' })
       .orderBy('l.updatedAt', 'ASC');
     if (paging?.q?.trim()) {
@@ -921,20 +962,31 @@ export class PartListingsService {
     }
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
-    const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    const ids = rows.map((row) => row.id);
+    const covers = await this.coverUrlsByListingId(ids);
+    const galleries = await this.imageUrlsByListingId(ids);
     return {
       items: rows.map((row) => ({
         id: row.id,
         title: row.title,
+        slug: row.slug,
         kind: row.kind,
+        description: row.description,
+        phone: row.phone,
         priceLkr: row.priceLkr,
         updatedAt: row.updatedAt,
         coverImageUrl: covers.get(row.id) ?? null,
+        imageUrls: galleries.get(row.id) ?? [],
+        district: row.district ? { name: row.district.name } : null,
+        city: row.city ? { name: row.city.name } : null,
         partsDealer: row.partsDealer
           ? {
               id: row.partsDealer.id,
               name: row.partsDealer.name,
               slug: row.partsDealer.slug,
+              phone: row.partsDealer.phone,
+              email: row.partsDealer.email,
+              address: row.partsDealer.address,
             }
           : null,
       })),
@@ -1247,6 +1299,31 @@ export class PartListingsService {
       if (!map.has(img.partListingId)) {
         map.set(img.partListingId, preferredCoverUrl(img));
       }
+    }
+    return map;
+  }
+
+  private async imageUrlsByListingId(ids: string[], limitPer = 6) {
+    const map = new Map<string, string[]>();
+    if (ids.length === 0) return map;
+    const images = await this.listingImages
+      .createQueryBuilder('img')
+      .select([
+        'img.partListingId',
+        'img.imageUrl',
+        'img.thumbnailUrl',
+        'img.sortOrder',
+        'img.isCover',
+      ])
+      .where('img.partListingId IN (:...ids)', { ids })
+      .orderBy('img.isCover', 'DESC')
+      .addOrderBy('img.sortOrder', 'ASC')
+      .getMany();
+    for (const img of images) {
+      const list = map.get(img.partListingId) ?? [];
+      if (list.length >= limitPer) continue;
+      list.push(preferredCoverUrl(img));
+      map.set(img.partListingId, list);
     }
     return map;
   }

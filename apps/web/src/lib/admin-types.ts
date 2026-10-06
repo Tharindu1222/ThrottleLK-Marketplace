@@ -12,15 +12,24 @@ export type AdminDashboard = {
   pendingPartsDealers: number;
   pendingPromoRequests?: number;
   openReports: number;
+  listingPackagePending?: number;
+  listingPackageFailed?: number;
+  listingPackageChargebacks?: number;
 };
 
 export type PendingListing = {
   id: string;
   title: string;
+  slug?: string;
+  description?: string | null;
+  phone?: string | null;
   priceLkr: number;
   manufactureYear: number;
   coverImageUrl?: string | null;
+  imageUrls?: string[];
   updatedAt: string;
+  district?: { name: string } | null;
+  city?: { name: string } | null;
   duplicateCount?: number;
   duplicateSignals?: Array<{
     listingId: string;
@@ -44,18 +53,35 @@ export type PendingListing = {
 export type PendingPartListing = {
   id: string;
   title: string;
+  slug?: string;
   kind: string;
+  description?: string | null;
+  phone?: string | null;
   priceLkr: number;
   coverImageUrl?: string | null;
+  imageUrls?: string[];
   updatedAt: string;
+  district?: { name: string } | null;
+  city?: { name: string } | null;
   partsDealer?: {
     id: string;
     name: string;
     slug: string;
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
   } | null;
 };
 
-export type PendingDealer = { id: string; name: string; phone: string };
+export type PendingDealer = {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  address?: string | null;
+  website?: string | null;
+  description?: string | null;
+};
 
 export type AdminUser = {
   id: string;
@@ -75,13 +101,22 @@ export type District = { id: string; name: string };
 export type AdminReport = {
   id: string;
   listingId: string;
+  partListingId?: string | null;
+  subjectType?: 'bike' | 'part' | null;
   reason: string;
   description: string;
   createdAt: string;
+  reporter?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
   listing?: {
     id: string;
     title: string;
     slug: string;
+    kind?: string | null;
     coverImageUrl: string | null;
     status: string;
   } | null;
@@ -94,6 +129,7 @@ export type AdminPartListing = {
   kind: 'spare' | 'modified' | 'accessory';
   priceLkr: number;
   status: string;
+  rejectionReason?: string | null;
   condition: string;
   negotiable: boolean;
   categoryId: string;

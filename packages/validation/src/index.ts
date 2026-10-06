@@ -291,6 +291,7 @@ export const adminUpdatePartListingSchema = createPartListingSchema
   .extend({
     partsDealerId: z.string().uuid().optional(),
     status: listingStatusSchema.optional(),
+    rejectionReason: z.string().trim().min(5).max(500).optional(),
   });
 
 export const partListingSortSchema = z.enum([
@@ -431,6 +432,10 @@ export const adminCreateCitySchema = z.object({
   name: z.string().min(1).max(80),
 });
 
+export const adminRenameSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+});
+
 export const promoSubjectTypeSchema = z.enum(['bike', 'part']);
 
 export const promoTierSchema = z.enum(['boost', 'featured', 'premium']);
@@ -495,6 +500,31 @@ export const updatePromoBankAccountSchema = createPromoBankAccountSchema.partial
 
 export const updatePromoSettingsSchema = z.object({
   whatsapp: z.string().trim().max(20).optional().nullable(),
+});
+
+export const listingPackageAudienceSchema = z.enum(['bike', 'parts']);
+
+export const updateListingPostSettingsSchema = z.object({
+  privateFreeListings: z.number().int().min(0).max(1_000_000),
+  dealerFreeListings: z.number().int().min(0).max(1_000_000),
+  partsFreeListings: z.number().int().min(0).max(1_000_000),
+});
+
+export const createListingPackageSchema = z.object({
+  audience: listingPackageAudienceSchema,
+  name: z.string().trim().min(1).max(80),
+  description: z.string().trim().max(500).optional().nullable(),
+  priceLkr: z.number().int().min(0).max(1_000_000_000),
+  listingCount: z.number().int().min(1).max(1_000_000),
+  sortOrder: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updateListingPackageSchema = createListingPackageSchema.partial();
+
+export const createListingPackageCheckoutSchema = z.object({
+  packageId: z.string().uuid(),
+  locale: z.enum(['en', 'si']).optional(),
 });
 
 export const createPromoCheckoutSchema = z
@@ -595,6 +625,7 @@ export const adminUpdateListingSchema = createListingSchema
   .extend({
     sellerId: z.string().uuid().optional(),
     status: listingStatusSchema.optional(),
+    rejectionReason: z.string().trim().min(5).max(500).optional(),
   });
 
 export const updateProfileSchema = z
@@ -647,6 +678,7 @@ export type AdminCreateBrandInput = z.infer<typeof adminCreateBrandSchema>;
 export type AdminCreateModelInput = z.infer<typeof adminCreateModelSchema>;
 export type AdminCreateDistrictInput = z.infer<typeof adminCreateDistrictSchema>;
 export type AdminCreateCityInput = z.infer<typeof adminCreateCitySchema>;
+export type AdminRenameInput = z.infer<typeof adminRenameSchema>;
 export type AdminUpdateUserStatusInput = z.infer<
   typeof adminUpdateUserStatusSchema
 >;
@@ -688,6 +720,15 @@ export type UpdatePromoBankAccountInput = z.infer<
   typeof updatePromoBankAccountSchema
 >;
 export type UpdatePromoSettingsInput = z.infer<typeof updatePromoSettingsSchema>;
+export type ListingPackageAudience = z.infer<typeof listingPackageAudienceSchema>;
+export type UpdateListingPostSettingsInput = z.infer<
+  typeof updateListingPostSettingsSchema
+>;
+export type CreateListingPackageInput = z.infer<typeof createListingPackageSchema>;
+export type UpdateListingPackageInput = z.infer<typeof updateListingPackageSchema>;
+export type CreateListingPackageCheckoutInput = z.infer<
+  typeof createListingPackageCheckoutSchema
+>;
 export type CreatePromoCheckoutInput = z.infer<typeof createPromoCheckoutSchema>;
 export type RejectPromoRequestInput = z.infer<typeof rejectPromoRequestSchema>;
 export type AdminPlaceHomepageInput = z.infer<typeof adminPlaceHomepageSchema>;

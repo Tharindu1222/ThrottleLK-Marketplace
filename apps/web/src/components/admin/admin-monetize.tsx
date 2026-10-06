@@ -5,7 +5,8 @@ import { apiGet } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 
 type RangeId = 'all' | 'month' | '30d';
-type Bucket = 'collected' | 'pending' | 'rejected' | 'chargeback';
+type RevenueView = 'promotions' | 'listings';
+type Bucket = 'collected' | 'pending' | 'rejected' | 'chargeback' | 'failed';
 type Channel = 'bike' | 'spare' | 'modification';
 
 type MonetizePayload = {
@@ -25,6 +26,7 @@ type MonetizePayload = {
   pending: { totalLkr: number; count: number };
   rejected: { totalLkr: number; count: number };
   chargebacks: { totalLkr: number; count: number };
+  failed: { totalLkr: number; count: number };
   packages: { name: string; count: number; totalLkr: number }[];
   users: {
     sellerId: string;
@@ -54,6 +56,57 @@ type MonetizePayload = {
     listingTitle: string;
     live: boolean;
   }[];
+  listingPackages: {
+    collected: {
+      totalLkr: number;
+      count: number;
+      bikeLkr: number;
+      bikeCount: number;
+      bikeSlots: number;
+      partsLkr: number;
+      partsCount: number;
+      partsSlots: number;
+    };
+    pending: {
+      totalLkr: number;
+      count: number;
+      bikeLkr: number;
+      bikeCount: number;
+      partsLkr: number;
+      partsCount: number;
+    };
+    failed: { totalLkr: number; count: number };
+    chargebacks: { totalLkr: number; count: number };
+    packages: {
+      id: string;
+      name: string;
+      audience: 'bike' | 'parts';
+      count: number;
+      slots: number;
+      totalLkr: number;
+      pendingCount: number;
+      pendingLkr: number;
+    }[];
+    users: {
+      sellerId: string;
+      name: string;
+      email: string;
+      count: number;
+      totalLkr: number;
+      lastPaidAt: string | null;
+    }[];
+    exceptions: {
+      id: string;
+      at: string;
+      bucket: 'pending' | 'failed' | 'chargeback';
+      audience: 'bike' | 'parts';
+      amountLkr: number;
+      packageName: string;
+      payhereOrderId: string;
+      sellerName: string;
+      sellerEmail: string;
+    }[];
+  };
 };
 
 const PAGE_SIZE = 25;
@@ -62,6 +115,11 @@ const RANGES: { id: RangeId; label: string }[] = [
   { id: 'all', label: 'All time' },
   { id: 'month', label: 'This month' },
   { id: '30d', label: 'Last 30 days' },
+];
+
+const REVENUE_VIEWS: { id: RevenueView; label: string }[] = [
+  { id: 'promotions', label: 'Promotions' },
+  { id: 'listings', label: 'Listing packages' },
 ];
 
 function formatLkr(n: number) {
@@ -76,6 +134,11 @@ function formatWhen(iso: string | null) {
   });
 }
 
+const PACKAGE_AUDIENCE_LABEL = {
+  bike: 'Bike listings',
+  parts: 'Parts',
+} as const;
+
 const CHANNEL_LABEL: Record<Channel, string> = {
   bike: 'Bike',
   spare: 'Spare part',
@@ -85,6 +148,7 @@ const CHANNEL_LABEL: Record<Channel, string> = {
 const BUCKET_LABEL: Record<Bucket, string> = {
   collected: 'Collected',
   pending: 'Pending',
+  failed: 'Failed',
   rejected: 'Rejected',
   chargeback: 'Chargeback',
 };
@@ -109,6 +173,9 @@ function bucketTone(bucket: Bucket) {
   }
   if (bucket === 'pending') {
     return 'bg-[var(--admin-info)]/15 text-[var(--admin-info)]';
+  }
+  if (bucket === 'failed') {
+    return 'bg-[var(--admin-warning)]/15 text-[var(--admin-warning)]';
   }
   return 'bg-[var(--admin-danger)]/15 text-[var(--admin-danger)]';
 }
@@ -153,18 +220,22 @@ function MetricCard({
 
 export function AdminMonetize() {
   const [range, setRange] = useState<RangeId>('all');
+  const [view, setView] = useState<RevenueView>('promotions');
   const [data, setData] = useState<MonetizePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [ledgerLoading, setLedgerLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [q, setQ] = useState('');
+  const [listingQuery, setListingQuery] = useState('');
+  const [listingQ, setListingQ] = useState('');
   const [bucket, setBucket] = useState<Bucket | 'all'>('all');
   const [channel, setChannel] = useState<Channel | 'all'>('all');
   const [page, setPage] = useState(1);
   const requestId = useRef(0);
   const hasData = useRef(false);
   const appliedQuery = useRef('');
+  const appliedListingQuery = useRef('');
 
   const load = useCallback(async () => {
     const token = getAccessToken();
@@ -185,6 +256,7 @@ export function AdminMonetize() {
             bucket,
             channel,
             q: q || undefined,
+            listingQ: listingQ || undefined,
           },
         },
       );
@@ -200,7 +272,7 @@ export function AdminMonetize() {
         setLedgerLoading(false);
       }
     }
-  }, [range, page, bucket, channel, q]);
+  }, [range, page, bucket, channel, q, listingQ]);
 
   useEffect(() => {
     void load();
@@ -216,6 +288,16 @@ export function AdminMonetize() {
     }, 300);
     return () => window.clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = listingQuery.trim().slice(0, 80);
+      if (appliedListingQuery.current === next) return;
+      appliedListingQuery.current = next;
+      setListingQ(next);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [listingQuery]);
 
   function selectRange(next: RangeId) {
     if (next === range) return;
@@ -297,10 +379,19 @@ export function AdminMonetize() {
                   Collected
                 </span>
                 <p className="mt-4 font-[family-name:var(--font-display)] text-4xl text-[var(--admin-text)] sm:text-5xl">
-                  {formatLkr(data.collected.totalLkr)}
+                  {formatLkr(
+                    data.collected.totalLkr +
+                      data.listingPackages.collected.totalLkr,
+                  )}
                 </p>
                 <p className="mt-2 text-sm text-[var(--admin-muted)]">
-                  {data.collected.count} paid promotions
+                  {data.collected.count}{' '}
+                  {data.collected.count === 1 ? 'promotion' : 'promotions'}
+                  {' · '}
+                  {data.listingPackages.collected.count}{' '}
+                  {data.listingPackages.collected.count === 1
+                    ? 'listing package'
+                    : 'listing packages'}
                 </p>
               </div>
               <div className="grid min-w-[16rem] flex-1 gap-3 sm:max-w-sm sm:grid-cols-2">
@@ -309,7 +400,10 @@ export function AdminMonetize() {
                     PayHere
                   </p>
                   <p className="mt-1 font-[family-name:var(--font-display)] text-xl text-[var(--admin-text)]">
-                    {formatLkr(data.collected.payhereLkr)}
+                    {formatLkr(
+                      data.collected.payhereLkr +
+                        data.listingPackages.collected.totalLkr,
+                    )}
                   </p>
                 </div>
                 <div className="rounded-xl bg-[var(--admin-surface-2)] px-3 py-3">
@@ -323,12 +417,40 @@ export function AdminMonetize() {
               </div>
             </div>
             <p className="mt-4 max-w-3xl text-sm text-[var(--admin-muted)]">
-              Collected is approved and marked paid. Pending checkouts stay out
-              of this balance. Amounts are locked at checkout, and free admin
-              placements are excluded.
+              Collected adds paid promotions and paid listing packages.
+              Pending checkouts stay out of this balance. Amounts are locked
+              at checkout, and free admin placements are excluded.
             </p>
           </article>
 
+          <div
+            role="tablist"
+            aria-label="Revenue source"
+            className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-0.5"
+          >
+            {REVENUE_VIEWS.map((item) => {
+              const selected = view === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setView(item.id)}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    selected
+                      ? 'bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]'
+                      : 'text-[var(--admin-muted)] hover:bg-[var(--admin-surface-2)] hover:text-[var(--admin-text)]'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {view === 'promotions' ? (
+          <>
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricCard
               label="Bikes"
@@ -353,7 +475,7 @@ export function AdminMonetize() {
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               label="Pending"
               value={formatLkr(data.pending.totalLkr)}
@@ -376,6 +498,14 @@ export function AdminMonetize() {
               hint={`${data.chargebacks.count} chargebacks · ${formatLkr(data.chargebacks.totalLkr)}`}
               tint="bg-[var(--admin-danger)]/10 text-[var(--admin-danger)]"
               iconBg="bg-[var(--admin-danger)]/15 text-[var(--admin-danger)]"
+              valueClass="text-2xl"
+            />
+            <MetricCard
+              label="Failed"
+              value={formatLkr(data.failed.totalLkr)}
+              hint={`${data.failed.count} PayHere payments failed`}
+              tint="bg-[var(--admin-warning)]/10 text-[var(--admin-warning)]"
+              iconBg="bg-[var(--admin-warning)]/15 text-[var(--admin-warning)]"
               valueClass="text-2xl"
             />
           </div>
@@ -470,7 +600,222 @@ export function AdminMonetize() {
               )}
             </section>
           </div>
+          </>
+          ) : (
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <p className="max-w-3xl text-xs text-[var(--admin-muted)]">
+                Paid bike-listing and parts-listing slots. Pending checkouts stay
+                out of collected.
+                {data.listingPackages.pending.count > 0
+                  ? ` ${data.listingPackages.pending.count} pending · ${formatLkr(data.listingPackages.pending.totalLkr)}.`
+                  : ''}
+                {data.listingPackages.failed.count > 0
+                  ? ` ${data.listingPackages.failed.count} failed · ${formatLkr(data.listingPackages.failed.totalLkr)}.`
+                  : ''}
+                {data.listingPackages.chargebacks.count > 0
+                  ? ` ${data.listingPackages.chargebacks.count} chargebacks · ${formatLkr(data.listingPackages.chargebacks.totalLkr)}.`
+                  : ''}
+              </p>
+              <input
+                className="admin-field-inline w-full! min-w-0! max-w-none! sm:w-64!"
+                value={listingQuery}
+                onChange={(event) =>
+                  setListingQuery(event.target.value.slice(0, 80))
+                }
+                placeholder="Search seller, package, or order"
+                aria-label="Search listing packages"
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <MetricCard
+                label="Bike listings"
+                value={formatLkr(data.listingPackages.collected.bikeLkr)}
+                hint={`${data.listingPackages.collected.bikeCount} paid · ${data.listingPackages.collected.bikeSlots} slots · ${data.listingPackages.pending.bikeCount} pending`}
+                tint="bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]"
+                iconBg="bg-[var(--admin-accent)]/15 text-[var(--admin-accent)]"
+                valueClass="text-2xl"
+              />
+              <MetricCard
+                label="Parts"
+                value={formatLkr(data.listingPackages.collected.partsLkr)}
+                hint={`${data.listingPackages.collected.partsCount} paid · ${data.listingPackages.collected.partsSlots} slots · ${data.listingPackages.pending.partsCount} pending`}
+                tint="bg-[var(--admin-info)]/10 text-[var(--admin-info)]"
+                iconBg="bg-[var(--admin-info)]/15 text-[var(--admin-info)]"
+                valueClass="text-2xl"
+              />
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <section className="admin-card overflow-hidden">
+                <h3 className="border-b border-[var(--admin-border)] px-4 py-3 text-sm font-medium text-[var(--admin-text)]">
+                  By package
+                </h3>
+                {data.listingPackages.packages.length === 0 ? (
+                  <p className="px-4 py-10 text-center text-sm text-[var(--admin-muted)]">
+                    No listing-package sales in this period.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left text-sm">
+                      <thead className="border-b border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-xs tracking-wide text-[var(--admin-faint)] uppercase">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Package</th>
+                          <th className="px-4 py-3 font-medium">For</th>
+                          <th className="px-4 py-3 font-medium">Paid</th>
+                          <th className="px-4 py-3 font-medium">Slots</th>
+                          <th className="px-4 py-3 font-medium">Collected</th>
+                          <th className="px-4 py-3 font-medium">Pending</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.listingPackages.packages.map((pkg) => (
+                          <tr
+                            key={`${pkg.audience}-${pkg.id}`}
+                            className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
+                          >
+                            <td className="px-4 py-3 text-[var(--admin-text)]">
+                              {pkg.name}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-muted)]">
+                              {PACKAGE_AUDIENCE_LABEL[pkg.audience]}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-muted)]">
+                              {pkg.count}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-muted)]">
+                              {pkg.slots}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-text)]">
+                              {formatLkr(pkg.totalLkr)}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-muted)]">
+                              {pkg.pendingCount > 0
+                                ? formatLkr(pkg.pendingLkr)
+                                : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+              <section className="admin-card overflow-hidden">
+                <h3 className="border-b border-[var(--admin-border)] px-4 py-3 text-sm font-medium text-[var(--admin-text)]">
+                  Who paid
+                </h3>
+                {data.listingPackages.users.length === 0 ? (
+                  <p className="px-4 py-10 text-center text-sm text-[var(--admin-muted)]">
+                    No sellers have a collected listing package in this period.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left text-sm">
+                      <thead className="border-b border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-xs tracking-wide text-[var(--admin-faint)] uppercase">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Seller</th>
+                          <th className="px-4 py-3 font-medium">Packages</th>
+                          <th className="px-4 py-3 font-medium">Last paid</th>
+                          <th className="px-4 py-3 font-medium">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.listingPackages.users.map((user) => (
+                          <tr
+                            key={user.sellerId}
+                            className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
+                          >
+                            <td className="px-4 py-3">
+                              <p className="text-[var(--admin-text)]">{user.name}</p>
+                              <p className="text-xs text-[var(--admin-muted)]">
+                                {user.email}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-muted)]">
+                              {user.count}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-muted)]">
+                              {formatWhen(user.lastPaidAt)}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--admin-text)]">
+                              {formatLkr(user.totalLkr)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
+            <section className="admin-card overflow-hidden">
+              <h3 className="border-b border-[var(--admin-border)] px-4 py-3 text-sm font-medium text-[var(--admin-text)]">
+                Needs attention
+              </h3>
+              {data.listingPackages.exceptions.length === 0 ? (
+                <p className="px-4 py-10 text-center text-sm text-[var(--admin-muted)]">
+                  No pending, failed, or chargeback orders in this period.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="border-b border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-xs tracking-wide text-[var(--admin-faint)] uppercase">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">When</th>
+                        <th className="px-4 py-3 font-medium">Seller</th>
+                        <th className="px-4 py-3 font-medium">Package</th>
+                        <th className="px-4 py-3 font-medium">Order</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
+                        <th className="px-4 py-3 font-medium">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.listingPackages.exceptions.map((order) => (
+                        <tr
+                          key={order.id}
+                          className="border-b border-[var(--admin-border)] last:border-0 hover:bg-[var(--admin-surface-2)]/50"
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-muted)]">
+                            {formatWhen(order.at)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-[var(--admin-text)]">
+                              {order.sellerName}
+                            </p>
+                            <p className="text-xs text-[var(--admin-muted)]">
+                              {order.sellerEmail}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 text-[var(--admin-text)]">
+                            {order.packageName}
+                            <p className="text-xs text-[var(--admin-muted)]">
+                              {PACKAGE_AUDIENCE_LABEL[order.audience]}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 text-[var(--admin-muted)]">
+                            {order.payhereOrderId}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-medium ${bucketTone(order.bucket)}`}
+                            >
+                              {BUCKET_LABEL[order.bucket]}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-[var(--admin-text)]">
+                            {formatLkr(order.amountLkr)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          </section>
+          )}
 
+          {view === 'promotions' ? (
           <section className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -496,6 +841,7 @@ export function AdminMonetize() {
                   ['all', 'All statuses'],
                   ['collected', 'Collected'],
                   ['pending', 'Pending'],
+                  ['failed', 'Failed'],
                   ['rejected', 'Rejected'],
                   ['chargeback', 'Chargebacks'],
                 ] as const
@@ -637,6 +983,7 @@ export function AdminMonetize() {
               </div>
             </div>
           </section>
+          ) : null}
         </>
       ) : null}
     </div>

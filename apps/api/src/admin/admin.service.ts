@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CacheService } from '../common/cache.service';
 import { Dealer } from '../dealers/dealer.entity';
+import { ListingPostOrder } from '../listing-packages/listing-post-order.entity';
 import { Listing } from '../listings/listing.entity';
 import { PartListing } from '../part-listings/part-listing.entity';
 import { PartsDealer } from '../parts-dealers/parts-dealer.entity';
@@ -24,6 +25,9 @@ type DashboardSummary = {
   pendingPartsDealers: number;
   pendingPromoRequests: number;
   openReports: number;
+  listingPackagePending: number;
+  listingPackageFailed: number;
+  listingPackageChargebacks: number;
 };
 
 @Injectable()
@@ -38,13 +42,19 @@ export class AdminService {
     @InjectRepository(Report) private readonly reports: Repository<Report>,
     @InjectRepository(PromoRequest)
     private readonly promoRequests: Repository<PromoRequest>,
+    @InjectRepository(ListingPostOrder)
+    private readonly listingOrders: Repository<ListingPostOrder>,
     private readonly users: UsersService,
     private readonly cache: CacheService,
   ) {}
 
   async dashboard() {
     const cached = await this.cache.get<DashboardSummary>(this.cache.keys.dashboard);
-    if (cached?.soldListings != null && cached.activePartListings != null) {
+    if (
+      cached?.soldListings != null &&
+      cached.activePartListings != null &&
+      cached.listingPackagePending != null
+    ) {
       return cached;
     }
     const [
@@ -61,6 +71,9 @@ export class AdminService {
       pendingPartsDealers,
       pendingPromoRequests,
       openReports,
+      listingPackagePending,
+      listingPackageFailed,
+      listingPackageChargebacks,
     ] = await Promise.all([
       this.users.countUsers(),
       this.listings.count({ where: { status: 'active' } }),
@@ -77,6 +90,9 @@ export class AdminService {
         where: { status: 'pending', paymentStatus: 'paid' },
       }),
       this.reports.count({ where: { status: 'open' } }),
+      this.listingOrders.count({ where: { status: 'pending' } }),
+      this.listingOrders.count({ where: { status: 'failed' } }),
+      this.listingOrders.count({ where: { status: 'chargedback' } }),
     ]);
     const data: DashboardSummary = {
       users,
@@ -92,6 +108,9 @@ export class AdminService {
       pendingPartsDealers,
       pendingPromoRequests,
       openReports,
+      listingPackagePending,
+      listingPackageFailed,
+      listingPackageChargebacks,
     };
     await this.cache.set(this.cache.keys.dashboard, data, 60);
     return data;

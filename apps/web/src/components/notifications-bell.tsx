@@ -37,12 +37,18 @@ export function notificationHref(
 ): string | null {
   const data = n.dataJson;
   if (
-    n.type === 'listing_pending_review' ||
-    n.type === 'part_listing_pending_review' ||
-    n.type === 'dealer_pending_review' ||
-    n.type === 'parts_dealer_pending_review'
+    n.type === 'listing_pending_review'
   ) {
-    return `/${locale}/admin/moderation`;
+    return `/${locale}/admin/moderation?queue=listings`;
+  }
+  if (n.type === 'part_listing_pending_review') {
+    return `/${locale}/admin/moderation?queue=part-listings`;
+  }
+  if (n.type === 'dealer_pending_review') {
+    return `/${locale}/admin/moderation?queue=dealers`;
+  }
+  if (n.type === 'parts_dealer_pending_review') {
+    return `/${locale}/admin/moderation?queue=parts-dealers`;
   }
   if (
     (n.type === 'part_listing_approved' || n.type === 'part_listing_rejected') &&

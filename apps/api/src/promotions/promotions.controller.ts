@@ -16,12 +16,16 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { User } from '../users/user.entity';
+import { ListingPackagesService } from '../listing-packages/listing-packages.service';
 import { PromotionsService } from './promotions.service';
 import type { PromoSubjectType } from './promo-package.entity';
 
 @Controller('promotions')
 export class PromotionsController {
-  constructor(private readonly promotions: PromotionsService) {}
+  constructor(
+    private readonly promotions: PromotionsService,
+    private readonly listingPackages: ListingPackagesService,
+  ) {}
 
   @Get('packages')
   async packages(
@@ -102,6 +106,10 @@ export class PromotionsController {
   async payhereNotify(
     @Body() body: Record<string, string>,
   ): Promise<string> {
+    const orderId = body?.order_id ?? '';
+    if (orderId.startsWith('post_')) {
+      return this.listingPackages.handlePayHereNotify(body ?? {});
+    }
     return this.promotions.handlePayHereNotify(body ?? {});
   }
 }

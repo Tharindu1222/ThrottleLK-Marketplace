@@ -24,6 +24,7 @@ function isPrivatePath(path: string): boolean {
     '/api/v1/favourites',
     '/api/v1/part-favourites',
     '/api/v1/saved-searches',
+    '/api/v1/listing-packages',
     '/api/v1/listings/mine',
     '/api/v1/part-listings/mine',
     '/api/v1/dealers/mine',

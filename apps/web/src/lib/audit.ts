@@ -16,6 +16,7 @@ export const AUDIT_AREA_FILTERS = [
   { id: 'taxonomy', label: 'Taxonomy' },
   { id: 'promotions', label: 'Promotions' },
   { id: 'monetize', label: 'Monetize' },
+  { id: 'reports', label: 'Reports' },
   { id: 'users', label: 'Users' },
 ] as const;
 
@@ -34,7 +35,7 @@ const AREA_TYPES: Record<string, readonly string[]> = {
   parts: ['part_listing', 'parts_dealer', 'part_category'],
   taxonomy: ['brand', 'model', 'district', 'city', 'category'],
   promotions: ['promo_request', 'promo_placement'],
-  monetize: ['promo_package', 'promo_bank_account', 'promo_settings'],
+  monetize: ['promo_package', 'promo_bank_account', 'promo_settings', 'listing_package'],
   users: ['user'],
   reports: ['report'],
 };

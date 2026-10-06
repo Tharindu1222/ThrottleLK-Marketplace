@@ -124,6 +124,17 @@ export function AdminOverview({ locale }: { locale: Locale }) {
       tint: 'text-[var(--admin-accent)] bg-[var(--admin-accent-soft)]',
       icon: AdsIcon,
     },
+    {
+      label: 'Listing packages',
+      hint: 'Pending, failed, or chargeback',
+      value:
+        count(dash.listingPackagePending) +
+        count(dash.listingPackageFailed) +
+        count(dash.listingPackageChargebacks),
+      href: `/${locale}/admin/monetize`,
+      tint: 'text-[var(--admin-warning)] bg-[var(--admin-warning)]/10',
+      icon: AdsIcon,
+    },
   ];
   const waiting = attention.filter((item) => item.value > 0);
   const waitingTotal = waiting.reduce((sum, item) => sum + item.value, 0);

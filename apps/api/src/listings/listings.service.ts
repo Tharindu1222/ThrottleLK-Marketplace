@@ -36,6 +36,7 @@ import { ListingInquiry } from './listing-inquiry.entity';
 import { expireActiveRows } from './expire-stale';
 import { computeExpiresAt, isPubliclyListed } from './listing-expiry';
 import { Listing } from './listing.entity';
+import { ListingPackagesService } from '../listing-packages/listing-packages.service';
 import { SavedSearchesService } from '../saved-searches/saved-searches.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { duplicateReasons } from './duplicate-signals';
@@ -59,11 +60,13 @@ export class ListingsService {
     private readonly inventoryService: InventoryService,
     @Optional() private readonly savedSearches?: SavedSearchesService,
     @Optional() private readonly taxonomy?: TaxonomyService,
+    @Optional() private readonly listingPackages?: ListingPackagesService,
   ) {}
 
   async create(seller: User, input: CreateListingInput): Promise<Listing> {
     assertEmailVerified(seller, 'creating listings');
     this.assertCanSell(seller);
+    await this.listingPackages?.assertCanCreateBike(seller.id);
     await this.taxonomy?.assertListingTaxonomy(input);
     const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
     const baseSlug = slugify(input.title) || 'listing';
@@ -201,6 +204,7 @@ export class ListingsService {
         },
       });
     }
+    await this.chargeListingQuota(seller.id, listing);
     listing.status = 'pending_review';
     listing.rejectionReason = null;
     const saved = await this.listings.save(listing);
@@ -738,6 +742,12 @@ export class ListingsService {
     };
   }
 
+  private async chargeListingQuota(sellerId: string, listing: Listing) {
+    if (!this.listingPackages || listing.quotaCharged) return;
+    await this.listingPackages.consumeBike(sellerId);
+    listing.quotaCharged = true;
+  }
+
   private markActive(listing: Listing) {
     listing.status = 'active';
     if (!listing.publishedAt) listing.publishedAt = new Date();
@@ -920,6 +930,31 @@ export class ListingsService {
     return map;
   }
 
+  private async imageUrlsByListingId(ids: string[], limitPer = 6) {
+    const map = new Map<string, string[]>();
+    if (ids.length === 0) return map;
+    const images = await this.listingImages
+      .createQueryBuilder('img')
+      .select([
+        'img.listingId',
+        'img.imageUrl',
+        'img.thumbnailUrl',
+        'img.sortOrder',
+        'img.isCover',
+      ])
+      .where('img.listingId IN (:...ids)', { ids })
+      .orderBy('img.isCover', 'DESC')
+      .addOrderBy('img.sortOrder', 'ASC')
+      .getMany();
+    for (const img of images) {
+      const list = map.get(img.listingId) ?? [];
+      if (list.length >= limitPer) continue;
+      list.push(preferredCoverUrl(img));
+      map.set(img.listingId, list);
+    }
+    return map;
+  }
+
   private async syncInventory(listing: Listing, ownerId: string) {
     if (listing.dealerId) {
       await this.inventoryService.upsertFromListing(listing, ownerId);
@@ -971,6 +1006,8 @@ export class ListingsService {
     const qb = this.listings
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.seller', 'seller')
+      .leftJoin('l.district', 'district')
+      .leftJoin('l.city', 'city')
       .where('l.status = :status', { status: 'pending_review' })
       .orderBy('l.updatedAt', 'ASC');
     if (paging?.q?.trim()) {
@@ -983,6 +1020,8 @@ export class ListingsService {
     qb.select([
       'l.id',
       'l.title',
+      'l.slug',
+      'l.description',
       'l.priceLkr',
       'l.manufactureYear',
       'l.updatedAt',
@@ -992,20 +1031,33 @@ export class ListingsService {
       'seller.id',
       'seller.firstName',
       'seller.lastName',
+      'seller.email',
+      'district.id',
+      'district.name',
+      'city.id',
+      'city.name',
     ])
       .skip(skip)
       .take(limit);
     const [rows, total] = await qb.getManyAndCount();
-    const covers = await this.coverUrlsByListingId(rows.map((row) => row.id));
+    const ids = rows.map((row) => row.id);
+    const covers = await this.coverUrlsByListingId(ids);
+    const galleries = await this.imageUrlsByListingId(ids);
     const signals = await this.duplicateSignalsForPage(rows);
     return {
       items: rows.map((row) => ({
         id: row.id,
         title: row.title,
+        slug: row.slug,
+        description: row.description,
+        phone: row.phone,
         priceLkr: row.priceLkr,
         manufactureYear: row.manufactureYear,
         updatedAt: row.updatedAt,
         coverImageUrl: covers.get(row.id) ?? null,
+        imageUrls: galleries.get(row.id) ?? [],
+        district: row.district ? { name: row.district.name } : null,
+        city: row.city ? { name: row.city.name } : null,
         duplicateCount: signals.get(row.id)?.length ?? 0,
         duplicateSignals: signals.get(row.id) ?? [],
         seller: row.seller
@@ -1013,6 +1065,7 @@ export class ListingsService {
               id: row.seller.id,
               firstName: row.seller.firstName,
               lastName: row.seller.lastName,
+              email: row.seller.email,
             }
           : null,
       })),
@@ -1024,6 +1077,7 @@ export class ListingsService {
     status?: string;
     q?: string;
     dealerId?: string;
+    sellerId?: string;
     page?: string | number;
     limit?: string | number;
   }) {
@@ -1047,6 +1101,9 @@ export class ListingsService {
     }
     if (filters?.dealerId) {
       qb.andWhere('l.dealer_id = :dealerId', { dealerId: filters.dealerId });
+    }
+    if (filters?.sellerId) {
+      qb.andWhere('l.seller_id = :sellerId', { sellerId: filters.sellerId });
     }
     if (filters?.q?.trim()) {
       const q = `%${filters.q.trim().toLowerCase()}%`;
@@ -1141,6 +1198,7 @@ export class ListingsService {
     input: UpdateListingInput & {
       sellerId?: string;
       status?: ListingStatus;
+      rejectionReason?: string;
     },
   ): Promise<Listing> {
     const listing = await this.getById(id);
@@ -1194,6 +1252,7 @@ export class ListingsService {
     if (whatsapp !== undefined) listing.whatsapp = whatsapp ?? null;
 
     if (status) {
+      const previous = listing.status;
       listing.status = status;
       if (status === 'active') {
         this.markActive(listing);
@@ -1201,7 +1260,26 @@ export class ListingsService {
       if (status === 'sold' && !listing.soldAt) {
         listing.soldAt = new Date();
       }
-      if (status !== 'rejected') {
+      if (status === 'rejected') {
+        const reason = input.rejectionReason?.trim() ?? '';
+        if (previous !== 'rejected' && reason.length < 5) {
+          throw new BadRequestException({
+            success: false,
+            error: {
+              code: 'REASON_REQUIRED',
+              message: 'Rejection reason is required',
+            },
+          });
+        }
+        if (reason.length >= 5) {
+          listing.rejectionReason = reason;
+          void this.notifications.listingRejected(
+            listing.sellerId,
+            { id: listing.id, title: listing.title },
+            reason,
+          );
+        }
+      } else {
         listing.rejectionReason = null;
       }
     }

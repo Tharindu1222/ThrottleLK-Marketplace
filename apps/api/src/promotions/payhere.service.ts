@@ -60,6 +60,13 @@ export class PayHereService {
     );
   }
 
+  apiUrl(): string {
+    return (
+      this.config.get<string>('API_URL')?.trim().replace(/\/$/, '') ||
+      'http://localhost:3001'
+    );
+  }
+
   formatAmount(amountLkr: number): string {
     return Number(amountLkr).toFixed(2);
   }

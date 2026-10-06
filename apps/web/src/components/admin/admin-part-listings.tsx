@@ -431,12 +431,23 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
 
   async function onQuickStatus(id: string, status: string) {
     if (!token) return;
+    const body: { status: string; rejectionReason?: string } = { status };
+    if (status === 'rejected') {
+      const reason = window.prompt(
+        'Why is this listing rejected? At least 5 characters.',
+      )?.trim() ?? '';
+      if (reason.length < 5) {
+        setError('Rejection reason must be at least 5 characters.');
+        return;
+      }
+      body.rejectionReason = reason;
+    }
     setBusy(true);
     try {
       await apiSend(`/api/v1/admin/part-listings/${id}`, {
         method: 'PATCH',
         token,
-        body: { status },
+        body,
       });
       await loadList(token, {
         status: statusFilter,
@@ -605,6 +616,11 @@ export function AdminPartListings({ search = '' }: { search?: string }) {
                           {kindLabel(row.kind)}
                           {row.category?.name ? ` · ${row.category.name}` : ''}
                         </p>
+                        {row.status === 'rejected' && row.rejectionReason ? (
+                          <p className="mt-1 text-xs text-[var(--admin-danger)]">
+                            {row.rejectionReason}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </td>

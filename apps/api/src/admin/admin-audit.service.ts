@@ -24,8 +24,9 @@ export const AUDIT_AREAS: Record<string, readonly string[]> = {
   parts: ['part_listing', 'parts_dealer', 'part_category'],
   taxonomy: ['brand', 'model', 'district', 'city', 'category'],
   promotions: ['promo_request', 'promo_placement'],
-  monetize: ['promo_package', 'promo_bank_account', 'promo_settings'],
+  monetize: ['promo_package', 'promo_bank_account', 'promo_settings', 'listing_package'],
   users: ['user'],
+  reports: ['report'],
 };
 
 export function auditAreaFor(entityType: string) {

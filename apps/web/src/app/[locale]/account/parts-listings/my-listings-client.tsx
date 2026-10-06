@@ -10,11 +10,17 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { ListingQuotaDialog } from '@/components/listing-quota-dialog';
 import { PartCard, type BrowsePartCard } from '@/components/part-card';
 import { Pagination } from '@/components/pagination';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
+import {
+  listingQuotaBlock,
+  type ListingQuotaBlock,
+  type ListingQuotaPackage,
+} from '@/lib/listing-errors';
 import { partListingHref } from '@/lib/part-kind';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
 import { useDialogFocusTrap } from '@/lib/use-dialog-focus-trap';
@@ -455,6 +461,10 @@ export function MyPartsListingsClient({
   const [listings, setListings] = useState<PartListing[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(emptyMeta);
   const [error, setError] = useState<string | null>(null);
+  const [quotaBlock, setQuotaBlock] = useState<ListingQuotaBlock | null>(null);
+  const [listingsLeft, setListingsLeft] = useState<number | null>(null);
+  const [partPackages, setPartPackages] = useState<ListingQuotaPackage[]>([]);
+  const [paidNote, setPaidNote] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [soldDialog, setSoldDialog] = useState<SoldDialogState | null>(null);
@@ -463,10 +473,15 @@ export function MyPartsListingsClient({
     {},
   );
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('quota') === 'paid') setPaidNote(true);
+  }, []);
+
   async function load(access: string, pageNum = page) {
     setLoading(true);
     try {
-      const [{ data, meta: nextMeta }, promo] = await Promise.all([
+      const [{ data, meta: nextMeta }, promo, quota, packages] = await Promise.all([
         apiGetWithMeta<PartListing[]>('/api/v1/part-listings/mine', {
           token: access,
           searchParams: { page: String(pageNum), limit: '20' },
@@ -474,7 +489,16 @@ export function MyPartsListingsClient({
         apiGet<PromoMine>('/api/v1/promotions/mine', { token: access }).catch(
           () => null,
         ),
+        apiGet<{ parts: { remaining: number } | null }>(
+          '/api/v1/listing-packages/me',
+          { token: access },
+        ).catch(() => null),
+        apiGet<ListingQuotaPackage[]>('/api/v1/listing-packages', {
+          searchParams: { audience: 'parts' },
+        }).catch(() => [] as ListingQuotaPackage[]),
       ]);
+      setListingsLeft(quota?.parts ? quota.parts.remaining : null);
+      setPartPackages(packages);
       const until: Record<string, string> = {};
       for (const row of promo?.live ?? []) {
         if (row.partListingId) until[row.partListingId] = row.endsAt;
@@ -505,9 +529,14 @@ export function MyPartsListingsClient({
     setError(null);
     void apiSend(path, { token })
       .then(() => load(token, page))
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : 'Action failed'),
-      )
+      .catch((err) => {
+        const block = listingQuotaBlock(err);
+        if (block && path.endsWith('/submit')) {
+          setQuotaBlock(block);
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Action failed');
+      })
       .finally(() => setBusyId(null));
   }
 
@@ -558,6 +587,15 @@ export function MyPartsListingsClient({
       .finally(() => setBusyId(null));
   }
 
+  function openPackages(exhausted: boolean) {
+    setQuotaBlock({
+      kind: 'packages',
+      audience: 'parts',
+      packages: partPackages,
+      exhausted,
+    });
+  }
+
   useEffect(() => {
     const access = getAccessToken();
     setToken(access);
@@ -584,6 +622,43 @@ export function MyPartsListingsClient({
 
   return (
     <div>
+      {paidNote ? (
+        <p className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm text-foreground ring-1 ring-black/[0.06]">
+          {t(locale, 'listingQuotaPaid')}
+        </p>
+      ) : null}
+      {quotaBlock ? (
+        <ListingQuotaDialog
+          locale={locale}
+          block={quotaBlock}
+          onClose={() => setQuotaBlock(null)}
+        />
+      ) : null}
+      {listingsLeft != null ? (
+        <div
+          className={`mb-5 flex flex-wrap items-center justify-between gap-4 border px-5 py-4 ${
+            listingsLeft < 1
+              ? 'border-accent/25 bg-accent/[0.06]'
+              : 'border-black/10 bg-surface'
+          }`}
+        >
+          <p className="flex items-baseline gap-3">
+            <span className="text-3xl font-bold tracking-tight text-accent tabular-nums">
+              {listingsLeft}
+            </span>
+            <span className="text-sm font-medium text-foreground">
+              {t(locale, 'listingQuotaRemaining')}
+            </span>
+          </p>
+          <button
+            type="button"
+            onClick={() => openPackages(listingsLeft < 1)}
+            className="inline-flex min-h-10 items-center justify-center rounded-md bg-[#0a0a0a] px-4 text-sm font-medium text-white transition hover:bg-accent"
+          >
+            {t(locale, 'listingQuotaUpgrade')}
+          </button>
+        </div>
+      ) : null}
       <div className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-3">
         <p className="text-sm leading-relaxed text-muted">
           {(meta.total || listings.length) === 1
@@ -593,12 +668,22 @@ export function MyPartsListingsClient({
                 String(meta.total || listings.length),
               )}
         </p>
-        <Link
-          href={`/${locale}/account/parts-listings/new`}
-          className="rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent"
-        >
-          {t(locale, 'createPartListing')}
-        </Link>
+        {listingsLeft === 0 ? (
+          <button
+            type="button"
+            onClick={() => openPackages(true)}
+            className="rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent"
+          >
+            {t(locale, 'createPartListing')}
+          </button>
+        ) : (
+          <Link
+            href={`/${locale}/account/parts-listings/new`}
+            className="rounded-md bg-[#0a0a0a] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent"
+          >
+            {t(locale, 'createPartListing')}
+          </Link>
+        )}
       </div>
 
       {error && !soldDialog ? (

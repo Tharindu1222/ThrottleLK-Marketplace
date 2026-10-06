@@ -17,6 +17,74 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'locations', label: 'Locations', hint: 'Districts and cities' },
 ];
 
+function NameActions({
+  token,
+  path,
+  current,
+  busy,
+  onBusy,
+  onDone,
+  onError,
+}: {
+  token: string;
+  path: string;
+  current: string;
+  busy: boolean;
+  onBusy: (value: boolean) => void;
+  onDone: () => void | Promise<void>;
+  onError: (message: string | null) => void;
+}) {
+  async function rename() {
+    const name = window.prompt('New name', current)?.trim() ?? '';
+    if (!name || name === current) return;
+    onBusy(true);
+    onError(null);
+    try {
+      await apiSend(path, { method: 'PATCH', token, body: { name } });
+      await onDone();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Could not rename');
+    } finally {
+      onBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm(`Delete “${current}”?`)) return;
+    onBusy(true);
+    onError(null);
+    try {
+      await apiSend(path, { method: 'DELETE', token });
+      await onDone();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Could not delete');
+    } finally {
+      onBusy(false);
+    }
+  }
+
+  return (
+    <span className="inline-flex gap-2">
+      <button
+        type="button"
+        className="text-xs text-[var(--admin-accent)] disabled:opacity-50"
+        disabled={busy}
+        onClick={() => void rename()}
+      >
+        Rename
+      </button>
+      <button
+        type="button"
+        className="text-xs text-[var(--admin-danger)] disabled:opacity-50"
+        disabled={busy}
+        onClick={() => void remove()}
+      >
+        Delete
+      </button>
+    </span>
+  );
+}
+
 export function AdminTaxonomy({ search = '' }: { search?: string }) {
   const [token, setToken] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('categories');
@@ -283,6 +351,17 @@ function BrandsPanel({
               <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
                 {selected.name}
               </h2>
+              <div className="mt-2">
+                <NameActions
+                  token={token}
+                  path={`/api/v1/admin/brands/${selected.id}`}
+                  current={selected.name}
+                  busy={busy}
+                  onBusy={setBusy}
+                  onDone={onReload}
+                  onError={onError}
+                />
+              </div>
               <p className="mt-1 text-sm text-[var(--admin-muted)]">
                 Logo used on the homepage brand strip.
               </p>
@@ -334,9 +413,23 @@ function BrandsPanel({
                   {models.map((model) => (
                     <li
                       key={model.id}
-                      className="rounded-lg bg-[var(--admin-surface-2)] px-3 py-2 text-sm text-[var(--admin-text)]"
+                      className="flex items-center justify-between gap-2 rounded-lg bg-[var(--admin-surface-2)] px-3 py-2 text-sm text-[var(--admin-text)]"
                     >
-                      {model.name}
+                      <span className="min-w-0 truncate">{model.name}</span>
+                      <NameActions
+                        token={token}
+                        path={`/api/v1/admin/models/${model.id}`}
+                        current={model.name}
+                        busy={busy}
+                        onBusy={setBusy}
+                        onDone={async () => {
+                          const rows = await apiGet<Model[]>(
+                            `/api/v1/brands/${selected.id}/models`,
+                          );
+                          setModels(rows);
+                        }}
+                        onError={onError}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -505,6 +598,17 @@ function LocationsPanel({
             <h2 className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--admin-text)]">
               {selected.name}
             </h2>
+            <div className="mt-2">
+              <NameActions
+                token={token}
+                path={`/api/v1/admin/districts/${selected.id}`}
+                current={selected.name}
+                busy={busy}
+                onBusy={setBusy}
+                onDone={onReload}
+                onError={onError}
+              />
+            </div>
             <p className="mt-1 text-sm text-[var(--admin-muted)]">
               Cities that appear when a seller chooses this district.
             </p>
@@ -541,9 +645,23 @@ function LocationsPanel({
                 {cities.map((city) => (
                   <li
                     key={city.id}
-                    className="rounded-xl bg-[var(--admin-surface-2)] px-3 py-2.5 text-sm text-[var(--admin-text)]"
+                    className="flex items-center justify-between gap-2 rounded-xl bg-[var(--admin-surface-2)] px-3 py-2.5 text-sm text-[var(--admin-text)]"
                   >
-                    {city.name}
+                    <span className="min-w-0 truncate">{city.name}</span>
+                    <NameActions
+                      token={token}
+                      path={`/api/v1/admin/cities/${city.id}`}
+                      current={city.name}
+                      busy={busy}
+                      onBusy={setBusy}
+                      onDone={async () => {
+                        const rows = await apiGet<City[]>(
+                          `/api/v1/districts/${selected.id}/cities`,
+                        );
+                        setCities(rows);
+                      }}
+                      onError={onError}
+                    />
                   </li>
                 ))}
               </ul>

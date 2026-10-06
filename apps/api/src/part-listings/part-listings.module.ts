@@ -8,6 +8,7 @@ import { StorageModule } from '../storage/storage.module';
 import { BikeModel } from '../taxonomy/bike-model.entity';
 import { Brand } from '../taxonomy/brand.entity';
 import { UsersModule } from '../users/users.module';
+import { ListingPackagesModule } from '../listing-packages/listing-packages.module';
 import { ModifiedPartsController } from './modified-parts.controller';
 import { PartCategoriesController } from './part-categories.controller';
 import { PartCategoriesService } from './part-categories.service';
@@ -46,6 +47,7 @@ import { SparePartsController } from './spare-parts.controller';
     NotificationsModule,
     StorageModule,
     UsersModule,
+    ListingPackagesModule,
   ],
   controllers: [
     PartListingsController,

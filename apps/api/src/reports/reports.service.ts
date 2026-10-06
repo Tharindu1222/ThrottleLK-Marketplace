@@ -84,6 +84,7 @@ export class ReportsService {
       .createQueryBuilder('r')
       .leftJoinAndSelect('r.listing', 'listing')
       .leftJoinAndSelect('r.partListing', 'partListing')
+      .leftJoinAndSelect('r.reportedBy', 'reportedBy')
       .where('r.status = :status', { status: 'open' })
       .orderBy('r.createdAt', 'ASC');
     if (paging?.q?.trim()) {
@@ -243,19 +244,30 @@ export class ReportsService {
     const listing = report.listing;
     const part = report.partListing;
     const subject = listing ?? part;
+    const reporter = report.reportedBy;
     return {
       id: report.id,
       listingId: report.listingId,
       partListingId: report.partListingId,
+      subjectType: part ? 'part' : listing ? 'bike' : null,
       reason: report.reason,
       description: report.description,
       status: report.status,
       createdAt: report.createdAt,
+      reporter: reporter
+        ? {
+            id: reporter.id,
+            firstName: reporter.firstName,
+            lastName: reporter.lastName,
+            email: reporter.email,
+          }
+        : null,
       listing: subject
         ? {
             id: subject.id,
             title: subject.title,
             slug: subject.slug,
+            kind: part?.kind ?? null,
             coverImageUrl,
             status: subject.status,
           }

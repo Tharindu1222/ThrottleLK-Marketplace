@@ -25,6 +25,7 @@ import type {
 import { CacheService } from '../common/cache.service';
 import { preferredCoverUrl } from '../common/image-variants';
 import { assertEmailVerified } from '../common/email-verified';
+import { queryListingPackageMonetize } from '../listing-packages/listing-package-monetize';
 import { Listing } from '../listings/listing.entity';
 import { ListingsService } from '../listings/listings.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -40,6 +41,7 @@ import {
   type PromoSurface,
   type PromoTier,
 } from './promo-package.entity';
+import { promoMonetizeRangeStart } from './promo-ledger';
 import {
   parseMonetizeQuery,
   queryPromoMonetize,
@@ -527,6 +529,22 @@ export class PromotionsService {
       return 'OK';
     }
 
+    if (statusCode === '-3') {
+      if (request.paymentStatus !== 'chargedback') {
+        request.paymentStatus = 'chargedback';
+        await this.requests.save(request);
+        const placement = await this.placements.findOne({
+          where: { requestId: request.id },
+        });
+        if (placement && placement.endsAt.getTime() > Date.now()) {
+          placement.endsAt = new Date();
+          await this.placements.save(placement);
+          this.bustPublicPromo();
+        }
+      }
+      return 'OK';
+    }
+
     if (request.status === 'approved' || request.paymentStatus === 'paid') {
       return 'OK';
     }
@@ -555,12 +573,6 @@ export class PromotionsService {
       if (paymentId) request.payherePaymentId = paymentId;
       await this.requests.save(request);
       this.cache.invalidateDashboard();
-      return 'OK';
-    }
-
-    if (statusCode === '-3') {
-      request.paymentStatus = 'chargedback';
-      await this.requests.save(request);
       return 'OK';
     }
 
@@ -660,7 +672,16 @@ export class PromotionsService {
 
   async monetize(query: MonetizeRequestQuery) {
     const parsed = parseMonetizeQuery(query);
-    return queryPromoMonetize(this.dataSource, parsed, new Date());
+    const now = new Date();
+    const [promo, listingPackages] = await Promise.all([
+      queryPromoMonetize(this.dataSource, parsed, now),
+      queryListingPackageMonetize(
+        this.dataSource,
+        promoMonetizeRangeStart(parsed.range, now),
+        parsed.listingQ,
+      ),
+    ]);
+    return { ...promo, listingPackages };
   }
 
   async listLivePlacements() {
@@ -684,6 +705,8 @@ export class PromotionsService {
         startsAt: row.startsAt.toISOString(),
         endsAt: row.endsAt.toISOString(),
         title: listing?.title || 'Listing',
+        slug: listing?.slug ?? null,
+        kind: row.subjectType === 'part' ? (row.partListing?.kind ?? null) : null,
         coverImageUrl: this.coverFromImages(listing?.images),
       };
     });

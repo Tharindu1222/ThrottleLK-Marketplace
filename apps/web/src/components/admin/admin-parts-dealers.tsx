@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
 import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
@@ -62,6 +62,7 @@ function statusTone(status: string) {
 export function AdminPartsDealers({ search = '' }: { search?: string }) {
   const params = useParams();
   const locale = typeof params.locale === 'string' ? params.locale : 'en';
+  const ownerUserId = useSearchParams().get('ownerUserId') ?? '';
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<AdminPartsDealerRow[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -98,6 +99,7 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
         searchParams: {
           status: status || undefined,
           q: q || undefined,
+          ownerUserId: ownerUserId || undefined,
           page: String(pageNum),
           limit: '20',
         },
@@ -146,14 +148,14 @@ export function AdminPartsDealers({ search = '' }: { search?: string }) {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, ownerUserId]);
 
   useEffect(() => {
     if (!token) return;
     void loadList(token, statusFilter, search, page).catch((err) =>
       setError(err instanceof Error ? err.message : 'Failed to filter'),
     );
-  }, [token, statusFilter, search, page]);
+  }, [token, statusFilter, search, page, ownerUserId]);
 
   useEffect(() => {
     if (!form.districtId) {

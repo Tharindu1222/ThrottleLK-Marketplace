@@ -86,8 +86,13 @@ const titles: Record<
   },
   monetize: {
     title: 'Monetize',
-    subtitle: 'Promotion revenue, balances, and who paid',
+    subtitle: 'Promotion and listing-package revenue, balances, and who paid',
     placeholder: 'Search revenue…',
+  },
+  'listing-packages': {
+    title: 'Listing packages',
+    subtitle: 'Free listing quotas and paid listing packages',
+    placeholder: 'Search packages…',
   },
   audit: {
     title: 'Audit log',

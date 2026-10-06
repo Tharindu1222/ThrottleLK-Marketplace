@@ -7,11 +7,12 @@ import {
   SearchableCombobox,
   type ComboboxOption,
 } from '@/components/searchable-combobox';
+import { ListingQuotaDialog } from '@/components/listing-quota-dialog';
 import { VerifyEmailCallout } from '@/components/verify-email-callout';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
-import { listingRequestMessage } from '@/lib/listing-errors';
+import { listingRequestMessage, listingQuotaBlock, type ListingQuotaBlock } from '@/lib/listing-errors';
 
 type Option = { id: string; name: string; slug?: string };
 type CatalogModel = {
@@ -326,6 +327,8 @@ export function SellForm({ locale }: { locale: Locale }) {
   const [listingId, setListingId] = useState<string | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [listingsLeft, setListingsLeft] = useState<number | null>(null);
+  const [quotaBlock, setQuotaBlock] = useState<ListingQuotaBlock | null>(null);
 
   const debouncedBrandQuery = useDebounced(brandQuery, 250);
   const debouncedModelQuery = useDebounced(modelQuery, 250);
@@ -342,12 +345,16 @@ export function SellForm({ locale }: { locale: Locale }) {
       apiGet<{ id: string; name: string; status: string }[]>(
         '/api/v1/dealers/mine',
         { token: access },
-      ).catch(() => []),
-    ]).then(([c, d, mine]) => {
+      ).catch(() => [] as { id: string; name: string; status: string }[]),
+      apiGet<{ bike: { remaining: number } }>('/api/v1/listing-packages/me', {
+        token: access,
+      }).catch(() => null),
+    ]).then(([c, d, mine, quota]) => {
       setCategories(c);
       setDistricts(d);
       const active = mine.filter((x) => x.status === 'active');
       setDealers(active);
+      if (quota) setListingsLeft(quota.bike.remaining);
       if (active[0]) {
         setForm((prev) =>
           prev.dealerId ? prev : { ...prev, dealerId: active[0].id },
@@ -574,6 +581,11 @@ export function SellForm({ locale }: { locale: Locale }) {
       await apiSend(`/api/v1/listings/${listingId}/submit`, { token: token! });
       setSubmitted(true);
     } catch (err) {
+      const block = listingQuotaBlock(err);
+      if (block) {
+        setQuotaBlock(block);
+        return;
+      }
       setError(listingRequestMessage(err, locale, 'submitFailed'));
     } finally {
       setBusy(false);
@@ -928,6 +940,11 @@ export function SellForm({ locale }: { locale: Locale }) {
                     value={form.priceLkr}
                     onChange={(e) => setField('priceLkr', e.target.value)}
                   />
+                  {listingsLeft != null ? (
+                    <p className="mt-1 text-xs text-muted">
+                      {t(locale, 'listingQuotaLeft').replace('{n}', String(listingsLeft))}
+                    </p>
+                  ) : null}
                 </div>
                 {dealers.length > 0 ? (
                   <>
@@ -1128,6 +1145,13 @@ export function SellForm({ locale }: { locale: Locale }) {
             ) : null}
           </div>
 
+          {quotaBlock ? (
+            <ListingQuotaDialog
+              locale={locale}
+              block={quotaBlock}
+              onClose={() => setQuotaBlock(null)}
+            />
+          ) : null}
           {error ? (
             <p className="mt-4 text-sm text-red-600">{error}</p>
           ) : null}
