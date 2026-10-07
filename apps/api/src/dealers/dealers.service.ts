@@ -100,6 +100,7 @@ export class DealersService {
       rejected.rejectionReason = null;
       const saved = await this.dealers.save(rejected);
       void this.cache.invalidateDashboard();
+      await this.cache.invalidatePublicListings?.();
       void this.notifications.dealerPendingReview({
         id: saved.id,
         name: saved.name,
@@ -124,6 +125,7 @@ export class DealersService {
     });
     const saved = await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     void this.notifications.dealerPendingReview({
       id: saved.id,
       name: saved.name,
@@ -181,10 +183,7 @@ export class DealersService {
     dealer: Dealer,
     input: UpdateDealerProfileInput &
       Partial<
-        Pick<
-          Dealer,
-          'latitude' | 'longitude' | 'facebookUrl' | 'tiktokUrl'
-        >
+        Pick<Dealer, 'latitude' | 'longitude' | 'facebookUrl' | 'tiktokUrl'>
       >,
   ) {
     if (input.name) dealer.name = input.name;
@@ -251,6 +250,9 @@ export class DealersService {
       .leftJoinAndSelect('d.district', 'district')
       .leftJoinAndSelect('d.city', 'city')
       .where('d.status = :status', { status: 'active' })
+      .andWhere(
+        "EXISTS (SELECT 1 FROM users u WHERE u.id = d.owner_user_id AND u.status = 'active')",
+      )
       .orderBy('d.name', 'ASC');
     if (paging?.q?.trim()) {
       const q = `%${paging.q.trim().toLowerCase()}%`;
@@ -271,9 +273,10 @@ export class DealersService {
   async listForMap() {
     const cacheKey = 'dealers:map';
     if (typeof this.cache.get === 'function') {
-      const cached = await this.cache.get<Awaited<ReturnType<DealersService['loadMapPins']>>>(
-        cacheKey,
-      );
+      const cached =
+        await this.cache.get<
+          Awaited<ReturnType<DealersService['loadMapPins']>>
+        >(cacheKey);
       if (cached) return cached;
     }
     const pins = await this.loadMapPins();
@@ -301,6 +304,9 @@ export class DealersService {
         'city.name',
       ])
       .where('d.status = :status', { status: 'active' })
+      .andWhere(
+        "EXISTS (SELECT 1 FROM users u WHERE u.id = d.owner_user_id AND u.status = 'active')",
+      )
       .orderBy('d.name', 'ASC')
       .getMany();
 
@@ -334,14 +340,19 @@ export class DealersService {
       limit: paging?.limit,
       defaultLimit: 50,
       maxLimit: 100,
+      maxPage: Number.MAX_SAFE_INTEGER,
     });
-    const [rows, total] = await this.dealers.findAndCount({
-      where: { status: 'active' },
-      select: ['id', 'slug'],
-      order: { name: 'ASC' },
-      skip,
-      take: limit,
-    });
+    const qb = this.dealers
+      .createQueryBuilder('d')
+      .select(['d.id', 'd.slug'])
+      .where(
+        "EXISTS (SELECT 1 FROM users u WHERE u.id = d.owner_user_id AND u.status = 'active') AND d.status = 'active'",
+      )
+      .orderBy('d.name', 'ASC')
+      .addOrderBy('d.id', 'ASC')
+      .skip(skip)
+      .take(limit);
+    const [rows, total] = await qb.getManyAndCount();
     return {
       items: rows.map((row) => ({ slug: row.slug })),
       meta: paginationMeta(total, page, limit),
@@ -472,6 +483,7 @@ export class DealersService {
     this.applyVerification(dealer, status, input.verified);
     const saved = await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     if (status === 'active') {
       await this.promoteOwnerToDealer(owner, saved);
     }
@@ -501,6 +513,7 @@ export class DealersService {
     const saved = await this.dealers.save(dealer);
     if (input.status && input.status !== prevStatus) {
       void this.cache.invalidateDashboard();
+      await this.cache.invalidatePublicListings?.();
     }
 
     if (input.status === 'active' && prevStatus !== 'active') {
@@ -534,7 +547,7 @@ export class DealersService {
       where: { slug, status: 'active' },
       relations: ['images', 'district', 'city', 'owner'],
     });
-    if (!dealer) {
+    if (!dealer || dealer.owner?.status !== 'active') {
       throw new NotFoundException({
         success: false,
         error: { code: 'DEALER_NOT_FOUND', message: 'Dealer not found' },
@@ -601,6 +614,7 @@ export class DealersService {
     // Verified badge is admin-only; approval does not auto-verify.
     await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     const owner = await this.usersService.findByIdOrThrow(dealer.ownerUserId);
     await this.promoteOwnerToDealer(owner, dealer);
     void this.notifications.dealerApproved(dealer.ownerUserId, {
@@ -624,6 +638,7 @@ export class DealersService {
     dealer.verifiedAt = null;
     await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     void this.notifications.dealerRejected(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,
@@ -772,8 +787,8 @@ export class DealersService {
 
   /** Approved dealers keep buyer access but are no longer private sellers. */
   async promoteOwnerToDealer(owner: User, dealer: Dealer): Promise<void> {
-    let user = await this.usersService.addRole(owner, 'dealer');
-    user = await this.usersService.removeRole(user, 'seller');
+    const user = await this.usersService.addRole(owner, 'dealer');
+    await this.usersService.removeRole(user, 'seller');
     await this.attachOrphanListings(dealer);
   }
 

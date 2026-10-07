@@ -41,10 +41,11 @@ export class ConversationsController {
   async get(
     @CurrentUser() user: User,
     @Param('id') id: string,
+    @Query('before') before?: string,
   ): Promise<ApiSuccess<unknown>> {
     return {
       success: true,
-      data: await this.conversations.getForUser(user.id, id),
+      data: await this.conversations.getForUser(user.id, id, before),
     };
   }
 

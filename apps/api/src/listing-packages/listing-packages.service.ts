@@ -12,7 +12,7 @@ import type {
   UpdateListingPackageInput,
   UpdateListingPostSettingsInput,
 } from '@throttlelk/validation';
-import { In, QueryFailedError, Repository } from 'typeorm';
+import { In, Repository, type EntityManager } from 'typeorm';
 import { assertEmailVerified } from '../common/email-verified';
 import { Dealer } from '../dealers/dealer.entity';
 import { Listing } from '../listings/listing.entity';
@@ -32,12 +32,6 @@ import {
 import { ListingPostSettings } from './listing-post-settings.entity';
 
 const SETTINGS_ID = 1;
-
-function isUniqueViolation(err: unknown): boolean {
-  if (!(err instanceof QueryFailedError)) return false;
-  const driver = err.driverError as { code?: string } | undefined;
-  return driver?.code === '23505' || (err as { code?: string }).code === '23505';
-}
 
 @Injectable()
 export class ListingPackagesService {
@@ -64,7 +58,9 @@ export class ListingPackagesService {
   ) {}
 
   async getSettings(): Promise<ListingPostSettings> {
-    const existing = await this.settings.findOne({ where: { id: SETTINGS_ID } });
+    const existing = await this.settings.findOne({
+      where: { id: SETTINGS_ID },
+    });
     if (existing) return existing;
     return this.settings.save(
       this.settings.create({
@@ -99,7 +95,9 @@ export class ListingPackagesService {
     });
   }
 
-  async createPackage(input: CreateListingPackageInput): Promise<ListingPackage> {
+  async createPackage(
+    input: CreateListingPackageInput,
+  ): Promise<ListingPackage> {
     return this.packages.save(
       this.packages.create({
         audience: input.audience,
@@ -121,12 +119,16 @@ export class ListingPackagesService {
     if (!row) {
       throw new NotFoundException({
         success: false,
-        error: { code: 'PACKAGE_NOT_FOUND', message: 'Listing package not found' },
+        error: {
+          code: 'PACKAGE_NOT_FOUND',
+          message: 'Listing package not found',
+        },
       });
     }
     if (input.audience != null) row.audience = input.audience;
     if (input.name != null) row.name = input.name;
-    if (input.description !== undefined) row.description = input.description ?? null;
+    if (input.description !== undefined)
+      row.description = input.description ?? null;
     if (input.priceLkr != null) row.priceLkr = input.priceLkr;
     if (input.listingCount != null) row.listingCount = input.listingCount;
     if (input.sortOrder != null) row.sortOrder = input.sortOrder;
@@ -137,8 +139,12 @@ export class ListingPackagesService {
   async summary(userId: string) {
     const settings = await this.getSettings();
     const [dealer, partsDealer] = await Promise.all([
-      this.dealers.findOne({ where: { ownerUserId: userId, status: 'active' } }),
-      this.partsDealers.findOne({ where: { ownerUserId: userId, status: 'active' } }),
+      this.dealers.findOne({
+        where: { ownerUserId: userId, status: 'active' },
+      }),
+      this.partsDealers.findOne({
+        where: { ownerUserId: userId, status: 'active' },
+      }),
     ]);
     const isDealer = Boolean(dealer);
     const bikeAudience = bikeQuotaAudience(isDealer);
@@ -147,9 +153,7 @@ export class ListingPackagesService {
       isPartsDealer: Boolean(partsDealer),
       dealerFreeListings: settings.dealerFreeListings,
       bike: await this.view(userId, bikeAudience, settings),
-      parts: partsDealer
-        ? await this.view(userId, 'parts', settings)
-        : null,
+      parts: partsDealer ? await this.view(userId, 'parts', settings) : null,
     };
   }
 
@@ -159,7 +163,10 @@ export class ListingPackagesService {
   }
 
   /** Charges one bike listing. A normal user who is out of free listings must apply as a dealer. */
-  async consumeBike(userId: string, options?: { existingListing?: boolean }): Promise<void> {
+  async consumeBike(
+    userId: string,
+    options?: { existingListing?: boolean },
+  ): Promise<void> {
     const existingListing = options?.existingListing !== false;
     const dealer = await this.dealers.findOne({
       where: { ownerUserId: userId, status: 'active' },
@@ -175,7 +182,10 @@ export class ListingPackagesService {
     await this.consumeParts(userId, { existingListing: false });
   }
 
-  async consumeParts(userId: string, options?: { existingListing?: boolean }): Promise<void> {
+  async consumeParts(
+    userId: string,
+    options?: { existingListing?: boolean },
+  ): Promise<void> {
     await this.consumePaidAudience(
       userId,
       'parts',
@@ -216,7 +226,8 @@ export class ListingPackagesService {
           success: false,
           error: {
             code: 'PARTS_DEALER_NOT_ACTIVE',
-            message: 'An approved parts shop is required to buy part listing packages',
+            message:
+              'An approved parts shop is required to buy part listing packages',
           },
         });
       }
@@ -301,7 +312,9 @@ export class ListingPackagesService {
     return `${this.payhere.webUrl()}${page}?quota=${quota}`;
   }
 
-  async handlePayHereNotify(body: Record<string, string | undefined>): Promise<string> {
+  async handlePayHereNotify(
+    body: Record<string, string | undefined>,
+  ): Promise<string> {
     const merchantId = body.merchant_id ?? '';
     const orderId = body.order_id ?? '';
     const payhereAmount = body.payhere_amount ?? '';
@@ -312,7 +325,9 @@ export class ListingPackagesService {
 
     const configuredMerchant = this.payhere.requireMerchantId();
     if (merchantId !== configuredMerchant) {
-      this.logger.warn(`PayHere listing notify merchant mismatch for order ${orderId}`);
+      this.logger.warn(
+        `PayHere listing notify merchant mismatch for order ${orderId}`,
+      );
       return 'OK';
     }
     const valid = this.payhere.verifyNotifyHash({
@@ -324,65 +339,68 @@ export class ListingPackagesService {
       md5sig,
     });
     if (!valid) {
-      this.logger.warn(`PayHere listing notify invalid hash for order ${orderId}`);
-      return 'OK';
-    }
-
-    const order = await this.orders.findOne({ where: { payhereOrderId: orderId } });
-    if (!order) {
-      this.logger.warn(`PayHere listing notify unknown order ${orderId}`);
-      return 'OK';
-    }
-    if (order.status === 'paid' && statusCode !== '-3') return 'OK';
-    if (order.status === 'chargedback') return 'OK';
-
-    if (statusCode === '2') {
-      const expectedAmount = this.payhere.formatAmount(order.chargedPriceLkr);
-      const expectedCurrency = this.payhere.currency();
-      if (
-        payhereAmount !== expectedAmount ||
-        payhereCurrency.toUpperCase() !== expectedCurrency
-      ) {
-        order.status = 'failed';
-        await this.orders.save(order);
-        return 'OK';
-      }
-      const paid = await this.orders
-        .createQueryBuilder()
-        .update()
-        .set({
-          status: 'paid',
-          paidAt: new Date(),
-          ...(paymentId ? { payherePaymentId: paymentId } : {}),
-        })
-        .where('id = :id AND status = :status', { id: order.id, status: 'pending' })
-        .execute();
-      if (!paid.affected) return 'OK';
-      await this.addPurchased(
-        order.sellerId,
-        order.audience === 'parts' ? 'parts' : 'dealer',
-        order.listingCount,
+      this.logger.warn(
+        `PayHere listing notify invalid hash for order ${orderId}`,
       );
       return 'OK';
     }
 
-    if (statusCode === '-3') {
-      if (order.status === 'paid') {
+    return this.orders.manager.transaction(async (manager) => {
+      const orders = manager.getRepository(ListingPostOrder);
+      const order = await orders.findOne({
+        where: { payhereOrderId: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!order) {
+        this.logger.warn(`PayHere listing notify unknown order ${orderId}`);
+        return 'OK';
+      }
+      if (order.status === 'paid' && statusCode !== '-3') return 'OK';
+      if (order.status === 'chargedback') return 'OK';
+
+      if (statusCode === '2') {
+        const expectedAmount = this.payhere.formatAmount(order.chargedPriceLkr);
+        const expectedCurrency = this.payhere.currency();
+        if (
+          payhereAmount !== expectedAmount ||
+          payhereCurrency.toUpperCase() !== expectedCurrency
+        ) {
+          order.status = 'failed';
+          await orders.save(order);
+          return 'OK';
+        }
+        order.status = 'paid';
+        order.paidAt = new Date();
+        if (paymentId) order.payherePaymentId = paymentId;
         await this.addPurchased(
           order.sellerId,
           order.audience === 'parts' ? 'parts' : 'dealer',
-          -order.listingCount,
+          order.listingCount,
+          manager,
         );
+        await orders.save(order);
+        return 'OK';
       }
-      order.status = 'chargedback';
-      await this.orders.save(order);
+
+      if (statusCode === '-3') {
+        if (order.status === 'paid') {
+          await this.addPurchased(
+            order.sellerId,
+            order.audience === 'parts' ? 'parts' : 'dealer',
+            -order.listingCount,
+            manager,
+          );
+        }
+        order.status = 'chargedback';
+        await orders.save(order);
+        return 'OK';
+      }
+      if (statusCode === '-1' || statusCode === '-2') {
+        order.status = 'failed';
+        await orders.save(order);
+      }
       return 'OK';
-    }
-    if (statusCode === '-1' || statusCode === '-2') {
-      order.status = 'failed';
-      await this.orders.save(order);
-    }
-    return 'OK';
+    });
   }
 
   private async consumePaidAudience(
@@ -391,16 +409,23 @@ export class ListingPackagesService {
     packageAudience: PackageAudience,
     existingListing: boolean,
   ) {
-    const view = await this.view(userId, quotaAudience, await this.getSettings());
+    const view = await this.view(
+      userId,
+      quotaAudience,
+      await this.getSettings(),
+    );
     const allowance = view.free + view.purchased;
-    const blocked = existingListing ? view.used > allowance : view.used >= allowance;
+    const blocked = existingListing
+      ? view.used > allowance
+      : view.used >= allowance;
     if (blocked) {
       const packages = await this.listPublic(packageAudience);
       throw new BadRequestException({
         success: false,
         error: {
           code: 'LISTING_PACKAGE_REQUIRED',
-          message: 'Listing quota is used up. Choose a package to add more listings.',
+          message:
+            'Listing quota is used up. Choose a package to add more listings.',
           details: {
             audience: packageAudience,
             free: view.free,
@@ -423,13 +448,16 @@ export class ListingPackagesService {
     const settings = await this.getSettings();
     const view = await this.view(userId, audience, settings);
     const allowance = view.free + view.purchased;
-    const blocked = existingListing ? view.used > allowance : view.used >= allowance;
+    const blocked = existingListing
+      ? view.used > allowance
+      : view.used >= allowance;
     if (blocked) {
       throw new BadRequestException({
         success: false,
         error: {
           code: 'APPLY_DEALER',
-          message: 'Free listings are used up. Apply as a dealer for more free listings.',
+          message:
+            'Free listings are used up. Apply as a dealer for more free listings.',
           details: {
             dealerFreeListings: settings.dealerFreeListings,
             used: view.used,
@@ -441,7 +469,11 @@ export class ListingPackagesService {
     await this.ensureUsed(userId, audience, view.used);
   }
 
-  private async view(userId: string, audience: QuotaAudience, settings: ListingPostSettings) {
+  private async view(
+    userId: string,
+    audience: QuotaAudience,
+    settings: ListingPostSettings,
+  ) {
     const row = await this.quotas.findOne({ where: { userId, audience } });
     const free = freeListingsFor(audience, settings);
     const purchased = row?.purchased ?? 0;
@@ -457,7 +489,10 @@ export class ListingPackagesService {
   }
 
   /** Listings already saved count against the quota, including ones created before quotas existed. */
-  private async placedCount(userId: string, audience: QuotaAudience): Promise<number> {
+  private async placedCount(
+    userId: string,
+    audience: QuotaAudience,
+  ): Promise<number> {
     if (audience === 'parts') {
       const shops = await this.partsDealers.find({
         where: { ownerUserId: userId },
@@ -471,32 +506,33 @@ export class ListingPackagesService {
     return this.listings.count({ where: { sellerId: userId } });
   }
 
-  private async quotaRow(userId: string, audience: QuotaAudience): Promise<ListingQuota> {
-    const existing = await this.quotas.findOne({ where: { userId, audience } });
-    if (existing) return existing;
-    try {
-      return await this.quotas.save(
-        this.quotas.create({ userId, audience, purchased: 0, used: 0 }),
-      );
-    } catch (err) {
-      if (!isUniqueViolation(err)) throw err;
-      const again = await this.quotas.findOne({ where: { userId, audience } });
-      if (!again) throw err;
-      return again;
-    }
+  private async ensureUsed(
+    userId: string,
+    audience: QuotaAudience,
+    used: number,
+  ) {
+    await this.quotas.query(
+      `INSERT INTO listing_quotas (user_id, audience, purchased, used)
+      VALUES ($1, $2, 0, $3::int)
+      ON CONFLICT (user_id, audience) DO UPDATE
+      SET used = GREATEST(listing_quotas.used, $3::int), updated_at = NOW()`,
+      [userId, audience, used],
+    );
   }
 
-  private async ensureUsed(userId: string, audience: QuotaAudience, used: number) {
-    const row = await this.quotaRow(userId, audience);
-    if (row.used >= used) return;
-    row.used = used;
-    await this.quotas.save(row);
-  }
-
-  private async addPurchased(userId: string, audience: QuotaAudience, count: number) {
-    const row = await this.quotaRow(userId, audience);
-    row.purchased = Math.max(0, row.purchased + count);
-    await this.quotas.save(row);
+  private async addPurchased(
+    userId: string,
+    audience: QuotaAudience,
+    count: number,
+    manager: EntityManager,
+  ) {
+    await manager.query(
+      `INSERT INTO listing_quotas (user_id, audience, purchased, used)
+      VALUES ($1, $2, GREATEST(0, $3::int), 0)
+      ON CONFLICT (user_id, audience) DO UPDATE
+      SET purchased = GREATEST(0, listing_quotas.purchased + $3::int), updated_at = NOW()`,
+      [userId, audience, count],
+    );
   }
 
   private toPublicPackage(pkg: ListingPackage) {

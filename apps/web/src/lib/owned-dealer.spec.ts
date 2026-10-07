@@ -1,3 +1,5 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 import {
   ownedDealerHref,
   ownedDealerManageHref,
@@ -54,3 +56,11 @@ describe('ownedDealerManageHref', () => {
     );
   });
 });
+
+function expect(value: unknown) {
+  return {
+    toBe: (expected: unknown) => assert.strictEqual(value, expected),
+    toEqual: (expected: unknown) => assert.deepStrictEqual(value, expected),
+    toBeNull: () => assert.strictEqual(value, null),
+  };
+}

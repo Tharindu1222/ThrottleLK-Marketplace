@@ -258,6 +258,15 @@ const en: Dict = {
   noActiveShowroom: 'No active showroom yet.',
   noActiveShowroomHint:
     'Once your dealer application is approved, you can manage your showroom here.',
+  noPartsShowroom: 'No parts shop yet.',
+  noPartsShowroomHint:
+    'Your bike showroom is separate. Apply as a parts dealer to manage parts here.',
+  partsShowroomPending: 'Parts shop application is in review.',
+  partsShowroomPendingHint:
+    'You can manage the parts showroom after it is approved.',
+  noPartsPerformance: 'No parts performance yet.',
+  noPartsPerformanceHint:
+    'Parts stats appear after you have an approved parts shop. Bike performance stays on the bike view.',
   showroomShopInfo: 'Shop info',
   showroomContact: 'Contact',
   showroomLocation: 'Location',
@@ -331,6 +340,7 @@ const en: Dict = {
   viewShort: 'View',
   markSoldShort: 'Sold',
   backToInbox: 'Back to inbox',
+  loadOlderMessages: 'Load older messages',
   photoComingSoon: 'Photo coming soon',
   galleryPrev: 'Previous photo',
   galleryNext: 'Next photo',
@@ -987,6 +997,7 @@ const si: Dict = {
   statusRejected: 'ප්‍රතික්ෂේපිත',
   statusSold: 'විකුණා ඇත',
   viewListing: 'ලැයිස්තුව බලන්න',
+  loadOlderMessages: 'පරණ පණිවිඩ පෙන්වන්න',
   viewShort: 'බලන්න',
   markSoldShort: 'විකුණුවා',
   editListing: 'සංස්කරණය',
@@ -1043,10 +1054,10 @@ const si: Dict = {
   profile: 'පැතිකඩ',
   accountDetails: 'ගිණුම් විස්තර',
   accountDetailsHint: 'නම, ඊමේල්, දුරකථනය සහ මුරපදය.',
-  dealerShowroom: 'ඩීලර් showroom',
+  dealerShowroom: 'ඩීලර් ශෝරූම්',
   dealerShowroomHint:
     'ඔබේ ප්‍රසිද්ධ showroom සඳහා කවරය, සම්බන්ධතා, ස්ථානය සහ සමාජ මාධ්‍ය කළමනාකරණය කරන්න.',
-  partsShowroom: 'පාට්ස් showroom',
+  partsShowroom: 'පාට්ස් ශෝරූම්',
   partsPerformance: 'පාට්ස් කාර්යසාධනය',
   partsListings: 'පාට්ස් ලැයිස්තු',
   becomePartsDealer: 'පාට්ස් ඩීලර් වන්න',
@@ -1103,9 +1114,18 @@ const si: Dict = {
   coverFocusHorizontal: 'තිරස්',
   coverFocusVertical: 'සිරස්',
   saveCoverFraming: 'Framing සුරකින්න',
-  noActiveShowroom: 'සක්‍රීය showroom එකක් නැත.',
+  noActiveShowroom: 'සක්‍රීය ශෝරූම් එකක් නැත.',
   noActiveShowroomHint:
-    'ඔබේ ඩීලර් අයදුම්පත අනුමත වූ පසු මෙහි showroom එක කළමනාකරණය කළ හැක.',
+    'ඔබේ ඩීලර් අයදුම්පත අනුමත වූ පසු මෙහි ශෝරූම් එක කළමනාකරණය කළ හැක.',
+  noPartsShowroom: 'තවම පාට්ස් වෙළඳසැලක් නැත.',
+  noPartsShowroomHint:
+    'බයික් ශෝරූම් එක වෙනමයි. පාට්ස් කළමනාකරණයට පාට්ස් ඩීලර් ලෙස අයදුම් කරන්න.',
+  partsShowroomPending: 'පාට්ස් වෙළඳසැලේ අයදුම්පත සමාලෝචනයේ ඇත.',
+  partsShowroomPendingHint:
+    'අනුමත වූ පසු පාට්ස් ශෝරූම් එක කළමනාකරණය කළ හැක.',
+  noPartsPerformance: 'තවම පාට්ස් කාර්යසාධනයක් නැත.',
+  noPartsPerformanceHint:
+    'අනුමත පාට්ස් වෙළඳසැලක් ඇති විට පාට්ස් සංඛ්‍යාලේඛන පෙනේ. බයික් කාර්යසාධනය බයික් දසුනේ තියෙනවා.',
   showroomShopInfo: 'වෙළඳසැල් තොරතුරු',
   showroomContact: 'සම්බන්ධතා',
   showroomLocation: 'ස්ථානය',
@@ -1404,6 +1424,8 @@ const si: Dict = {
   inboxFilterUnread: 'නොකියවූ',
   inboxFilters: 'Inbox පෙරහන්',
   inboxNoUnread: 'නොකියවූ අයිතම නැත.',
+  messages: 'පණිවිඩ',
+  notifications: 'දැනුම්දීම්',
   viewAllNotifications: 'සියල්ල බලන්න',
   viewAllMessages: 'සියල්ල බලන්න',
   openInbox: 'Inbox එක විවෘත කරන්න',
@@ -1415,6 +1437,8 @@ const si: Dict = {
   fuel: 'ඉන්ධන',
   transmission: 'ගියර්',
   description: 'විස්තරය',
+  email: 'ඊමේල්',
+  password: 'මුරපදය',
   phone: 'දුරකථනය',
   modelFilter: 'මාදිලිය',
   categoryFilter: 'කාණ්ඩය',

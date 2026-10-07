@@ -65,7 +65,7 @@ export function LocaleChrome({
         {showBreadcrumbs ? <SiteBreadcrumbs locale={locale} /> : null}
         <div
           id="main-content"
-          className={`${isDealerApply ? '' : 'flex min-w-0 flex-1 flex-col'} max-w-full`}
+          className={`${isDealerApply ? '' : 'flex min-w-0 flex-1 flex-col'} relative z-0 max-w-full`}
           style={
             showTray
               ? { paddingBottom: 'max(5rem, var(--compare-tray-offset, 0px))' }

@@ -1,4 +1,10 @@
 import {
+  isPublicBike,
+  isPublicPart,
+  publicBikeSql,
+  publicPartSql,
+} from '../common/public-listing';
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -12,6 +18,7 @@ import {
   MoreThan,
   QueryFailedError,
   Repository,
+  type EntityManager,
 } from 'typeorm';
 import type {
   AdminPlaceHomepageInput,
@@ -49,11 +56,7 @@ import {
 } from './promo-monetize';
 import { PromoRequest } from './promo-request.entity';
 import { PromoSettings } from './promo-settings.entity';
-import {
-  addUtcDays,
-  buildPreviewIds,
-  interleaveIds,
-} from './promotions.util';
+import { addUtcDays, buildPreviewIds, interleaveIds } from './promotions.util';
 
 const PREVIEW_LIMIT = 8;
 
@@ -73,7 +76,9 @@ function defaultsForTier(tier: PromoTier) {
 function isUniqueViolation(err: unknown): boolean {
   if (!(err instanceof QueryFailedError)) return false;
   const driver = err.driverError as { code?: string } | undefined;
-  return driver?.code === '23505' || (err as { code?: string }).code === '23505';
+  return (
+    driver?.code === '23505' || (err as { code?: string }).code === '23505'
+  );
 }
 
 @Injectable()
@@ -151,7 +156,10 @@ export class PromotionsService {
         partListingId ?? null,
       );
     }
-    const pending = await this.findPending(listingId ?? null, partListingId ?? null);
+    const pending = await this.findPending(
+      listingId ?? null,
+      partListingId ?? null,
+    );
     const live = await this.findLive(listingId ?? null, partListingId ?? null);
     const latest = await this.requests.findOne({
       where: listingId ? { listingId, sellerId } : { partListingId, sellerId },
@@ -160,7 +168,8 @@ export class PromotionsService {
     const payhereRetryable =
       pending?.sellerId === sellerId &&
       pending.paymentProvider === 'payhere' &&
-      (pending.paymentStatus === 'unpaid' || pending.paymentStatus === 'failed');
+      (pending.paymentStatus === 'unpaid' ||
+        pending.paymentStatus === 'failed');
     return {
       pending: pending
         ? {
@@ -215,7 +224,12 @@ export class PromotionsService {
     const subjectType: PromoSubjectType = input.listingId ? 'bike' : 'part';
     const listingId = input.listingId ?? null;
     const partListingId = input.partListingId ?? null;
-    await this.assertOwnedActive(seller.id, subjectType, listingId, partListingId);
+    await this.assertOwnedActive(
+      seller.id,
+      subjectType,
+      listingId,
+      partListingId,
+    );
 
     const pkg = await this.packages.findOne({ where: { id: input.packageId } });
     if (!pkg || !pkg.isActive || pkg.kind !== subjectType) {
@@ -274,22 +288,58 @@ export class PromotionsService {
 
     let saved: PromoRequest;
     try {
-      if (existingPending) {
-        existingPending.packageId = pkg.id;
-        existingPending.payhereOrderId = orderId;
-        existingPending.paymentStatus = 'unpaid';
-        existingPending.paymentProvider = 'payhere';
-        existingPending.bankAccountId = null;
-        existingPending.slipStorageKey = null;
-        existingPending.slipContentType = null;
-        existingPending.slipOriginalName = null;
-        existingPending.payherePaymentId = null;
-        existingPending.paidAt = null;
-        existingPending.chargedPriceLkr = pkg.priceLkr;
-        saved = await this.requests.save(existingPending);
-      } else {
-        saved = await this.requests.save(
-          this.requests.create({
+      saved = await this.dataSource.transaction(async (manager) => {
+        // Serialize checkout replacement against both other checkouts and callbacks.
+        const subjectRepo = listingId
+          ? manager.getRepository(Listing)
+          : manager.getRepository(PartListing);
+        await subjectRepo.findOne({
+          where: { id: (listingId ?? partListingId)! },
+          lock: { mode: 'pessimistic_write' },
+        });
+        const repo = manager.getRepository(PromoRequest);
+        const pending = await repo.findOne({
+          where: listingId
+            ? { listingId, status: 'pending' }
+            : { partListingId: partListingId!, status: 'pending' },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (
+          await this.findLive(
+            listingId,
+            partListingId,
+            manager.getRepository(HomepagePlacement),
+          )
+        ) {
+          throw new BadRequestException({
+            success: false,
+            error: {
+              code: 'ALREADY_LIVE',
+              message: 'This listing is already on the homepage',
+            },
+          });
+        }
+        if (pending) {
+          if (
+            pending.sellerId !== seller.id ||
+            pending.paymentProvider !== 'payhere' ||
+            !['unpaid', 'failed'].includes(pending.paymentStatus)
+          ) {
+            throw new BadRequestException({
+              success: false,
+              error: {
+                code: 'REQUEST_PENDING',
+                message: 'A homepage request is already pending',
+              },
+            });
+          }
+          pending.status = 'rejected';
+          pending.rejectionReason =
+            'Replaced by a new checkout. Payments for this order require reconciliation.';
+          await repo.save(pending);
+        }
+        return repo.save(
+          repo.create({
             sellerId: seller.id,
             subjectType,
             listingId,
@@ -304,9 +354,17 @@ export class PromotionsService {
             paymentStatus: 'unpaid',
             status: 'pending',
             chargedPriceLkr: pkg.priceLkr,
+            packageSnapshot: {
+              name: pkg.name,
+              durationDays: pkg.durationDays,
+              tier: pkg.tier,
+              surfaces: pkg.surfaces,
+              priority: pkg.priority,
+              currency,
+            },
           }),
         );
-      }
+      });
     } catch (err) {
       if (isUniqueViolation(err)) {
         throw new BadRequestException({
@@ -397,7 +455,7 @@ export class PromotionsService {
             error: { code: 'NOT_PENDING', message: 'Request is not pending' },
           });
         }
-        await this.assertStillActive(request);
+        await this.assertStillActive(request, manager);
 
         const live = await this.findLive(
           request.listingId,
@@ -417,9 +475,9 @@ export class PromotionsService {
         const startsAt = new Date();
         const placementEndsAt = addUtcDays(
           startsAt,
-          request.package.durationDays,
+          request.packageSnapshot?.durationDays ?? request.package.durationDays,
         );
-        const pkg = request.package;
+        const pkg = request.packageSnapshot ?? request.package;
         const tier: PromoTier = pkg.tier ?? 'featured';
         const tierDefaults = defaultsForTier(tier);
         await manager.getRepository(HomepagePlacement).save(
@@ -491,7 +549,6 @@ export class PromotionsService {
     const statusCode = String(body.status_code ?? '');
     const md5sig = body.md5sig ?? '';
     const paymentId = body.payment_id ?? undefined;
-    const custom1 = body.custom_1 ?? undefined;
 
     const configuredMerchant = this.payhere.requireMerchantId();
     if (merchantId !== configuredMerchant) {
@@ -512,75 +569,81 @@ export class PromotionsService {
       return 'OK';
     }
 
-    const request =
-      (await this.requests.findOne({
+    await this.dataSource.transaction(async (manager) => {
+      const requests = manager.getRepository(PromoRequest);
+      const request = await requests.findOne({
         where: { payhereOrderId: orderId },
-        relations: ['package'],
-      })) ??
-      (custom1
-        ? await this.requests.findOne({
-            where: { id: custom1 },
-            relations: ['package'],
-          })
-        : null);
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    if (!request) {
-      this.logger.warn(`PayHere notify unknown order ${orderId}`);
-      return 'OK';
-    }
-
-    if (statusCode === '-3') {
-      if (request.paymentStatus !== 'chargedback') {
-        request.paymentStatus = 'chargedback';
-        await this.requests.save(request);
-        const placement = await this.placements.findOne({
-          where: { requestId: request.id },
-        });
-        if (placement && placement.endsAt.getTime() > Date.now()) {
-          placement.endsAt = new Date();
-          await this.placements.save(placement);
-          this.bustPublicPromo();
-        }
-      }
-      return 'OK';
-    }
-
-    if (request.status === 'approved' || request.paymentStatus === 'paid') {
-      return 'OK';
-    }
-
-    if (statusCode === '2') {
-      const expectedAmount = this.payhere.formatAmount(
-        request.package?.priceLkr ?? 0,
-      );
-      const expectedCurrency = this.payhere.currency();
-      if (
-        payhereAmount !== expectedAmount ||
-        payhereCurrency.toUpperCase() !== expectedCurrency
-      ) {
-        this.logger.warn(
-          `PayHere notify amount/currency mismatch for order ${orderId}`,
-        );
-        request.paymentStatus = 'failed';
-        await this.requests.save(request);
+      if (!request) {
+        this.logger.warn(`PayHere notify unknown order ${orderId}`);
         return 'OK';
       }
-      request.paymentStatus = 'paid';
-      request.paidAt = new Date();
-      if (request.chargedPriceLkr == null && request.package) {
-        request.chargedPriceLkr = request.package.priceLkr;
+      if (
+        request.paymentProvider !== 'payhere' ||
+        request.payhereOrderId !== orderId ||
+        request.paymentStatus === 'chargedback'
+      )
+        return 'OK';
+
+      if (statusCode === '-3') {
+        request.paymentStatus = 'chargedback';
+        await requests.save(request);
+        const placement = await manager
+          .getRepository(HomepagePlacement)
+          .findOne({
+            where: { requestId: request.id },
+          });
+        if (placement && placement.endsAt.getTime() > Date.now()) {
+          placement.endsAt = new Date();
+          await manager.getRepository(HomepagePlacement).save(placement);
+          this.bustPublicPromo();
+        }
+        return 'OK';
       }
-      if (paymentId) request.payherePaymentId = paymentId;
-      await this.requests.save(request);
-      this.cache.invalidateDashboard();
+
+      if (request.status === 'approved' || request.paymentStatus === 'paid') {
+        return 'OK';
+      }
+
+      if (statusCode === '2') {
+        const expectedAmount = this.payhere.formatAmount(
+          request.chargedPriceLkr ?? 0,
+        );
+        const expectedCurrency =
+          request.packageSnapshot?.currency ?? this.payhere.currency();
+        if (
+          payhereAmount !== expectedAmount ||
+          payhereCurrency.toUpperCase() !== expectedCurrency
+        ) {
+          this.logger.warn(
+            `PayHere notify amount/currency mismatch for order ${orderId}`,
+          );
+          request.paymentStatus = 'failed';
+          await requests.save(request);
+          return 'OK';
+        }
+        request.paymentStatus = 'paid';
+        request.paidAt = new Date();
+        if (request.chargedPriceLkr == null && request.package) {
+          request.chargedPriceLkr = request.package.priceLkr;
+        }
+        if (paymentId) request.payherePaymentId = paymentId;
+        await requests.save(request);
+        this.cache.invalidateDashboard();
+        return 'OK';
+      }
+
+      if (statusCode === '-1' || statusCode === '-2') {
+        request.paymentStatus = 'failed';
+        await requests.save(request);
+      }
+
       return 'OK';
-    }
-
-    if (statusCode === '-1' || statusCode === '-2') {
-      request.paymentStatus = 'failed';
-      await this.requests.save(request);
-    }
-
+    });
+    this.cache.invalidateDashboard();
+    this.bustPublicPromo();
     return 'OK';
   }
 
@@ -589,7 +652,10 @@ export class PromotionsService {
     if (!trimmed) {
       throw new BadRequestException({
         success: false,
-        error: { code: 'REASON_REQUIRED', message: 'Rejection reason is required' },
+        error: {
+          code: 'REASON_REQUIRED',
+          message: 'Rejection reason is required',
+        },
       });
     }
     const request = await this.requests.findOne({
@@ -609,7 +675,8 @@ export class PromotionsService {
     request.reviewedAt = new Date();
     const saved = await this.requests.save(request);
     await this.notifications.promoRejected(request.sellerId, {
-      title: request.listing?.title ?? request.partListing?.title ?? 'Your listing',
+      title:
+        request.listing?.title ?? request.partListing?.title ?? 'Your listing',
       reason: trimmed,
       listingId: request.listingId,
       partListingId: request.partListingId,
@@ -696,7 +763,8 @@ export class PromotionsService {
       order: { startsAt: 'DESC' },
     });
     return rows.map((row) => {
-      const listing = row.subjectType === 'part' ? row.partListing : row.listing;
+      const listing =
+        row.subjectType === 'part' ? row.partListing : row.listing;
       return {
         id: row.id,
         subjectType: row.subjectType,
@@ -706,7 +774,8 @@ export class PromotionsService {
         endsAt: row.endsAt.toISOString(),
         title: listing?.title || 'Listing',
         slug: listing?.slug ?? null,
-        kind: row.subjectType === 'part' ? (row.partListing?.kind ?? null) : null,
+        kind:
+          row.subjectType === 'part' ? (row.partListing?.kind ?? null) : null,
         coverImageUrl: this.coverFromImages(listing?.images),
       };
     });
@@ -827,6 +896,9 @@ export class PromotionsService {
         'partListing.status',
       ])
       .where('p.endsAt > :now', { now })
+      .andWhere(
+        `((${publicBikeSql('listing')}) OR (${publicPartSql('partListing')}))`,
+      )
       .andWhere(`p.surfaces @> :homeSurface::jsonb`, {
         homeSurface: JSON.stringify(['home']),
       })
@@ -835,12 +907,15 @@ export class PromotionsService {
       .take(200)
       .getMany();
     const bikeFeatured = live
-      .filter((row) => row.subjectType === 'bike' && row.listing?.status === 'active')
+      .filter(
+        (row) => row.subjectType === 'bike' && row.listing?.status === 'active',
+      )
       .map((row) => row.listingId)
       .filter((id): id is string => Boolean(id));
     const partFeatured = live
       .filter(
-        (row) => row.subjectType === 'part' && row.partListing?.status === 'active',
+        (row) =>
+          row.subjectType === 'part' && row.partListing?.status === 'active',
       )
       .map((row) => row.partListingId)
       .filter((id): id is string => Boolean(id));
@@ -908,9 +983,12 @@ export class PromotionsService {
     surface: PromoSurface,
     kind: PromoSubjectType,
     limit: number,
+    filters?: { categoryId?: string; partKind?: string },
   ) {
     const capped = Math.min(Math.max(limit, 1), 24);
-    const cacheKey = `promo:live:${surface}:${kind}:${capped}`;
+    const categoryId = filters?.categoryId || '';
+    const partKind = filters?.partKind || '';
+    const cacheKey = `promo:live:${surface}:${kind}:${capped}:${categoryId}:${partKind}`;
     const cached =
       typeof this.cache.get === 'function'
         ? await this.cache.get<
@@ -918,7 +996,10 @@ export class PromotionsService {
           >(cacheKey)
         : null;
     if (cached) return cached;
-    const fresh = await this.loadLiveForSurface(surface, kind, capped);
+    const fresh = await this.loadLiveForSurface(surface, kind, capped, {
+      categoryId: categoryId || undefined,
+      partKind: partKind || undefined,
+    });
     if (typeof this.cache.set === 'function') {
       await this.cache.set(cacheKey, fresh, 20);
     }
@@ -929,9 +1010,10 @@ export class PromotionsService {
     surface: PromoSurface,
     kind: PromoSubjectType,
     capped: number,
+    filters?: { categoryId?: string; partKind?: string },
   ) {
     const now = new Date();
-    const live = await this.placements
+    const qb = this.placements
       .createQueryBuilder('p')
       .leftJoin('p.listing', 'listing')
       .leftJoin('p.partListing', 'partListing')
@@ -949,18 +1031,38 @@ export class PromotionsService {
         'partListing.status',
       ])
       .where('p.endsAt > :now', { now })
+      .andWhere(
+        `((${publicBikeSql('listing')}) OR (${publicPartSql('partListing')}))`,
+      )
       .andWhere('p.subjectType = :kind', { kind })
       .andWhere(`p.surfaces @> :surface::jsonb`, {
         surface: JSON.stringify([surface]),
-      })
+      });
+    if (kind === 'bike' && filters?.categoryId) {
+      qb.andWhere('listing.categoryId = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+    if (kind === 'part' && filters?.partKind) {
+      qb.andWhere('partListing.kind = :partKind', {
+        partKind: filters.partKind,
+      });
+    }
+    const live = await qb
       .orderBy('p.priority', 'DESC')
       .addOrderBy('p.startsAt', 'DESC')
       .take(200)
       .getMany();
 
     if (kind === 'bike') {
+      const seen = new Set<string>();
       const rows = live
-        .filter((row) => row.listing?.status === 'active')
+        .filter((row) => {
+          if (row.listing?.status !== 'active' || !row.listingId) return false;
+          if (seen.has(row.listingId)) return false;
+          seen.add(row.listingId);
+          return true;
+        })
         .slice(0, capped);
       const ids = rows
         .map((row) => row.listingId)
@@ -976,8 +1078,16 @@ export class PromotionsService {
       }));
     }
 
+    const seen = new Set<string>();
     const rows = live
-      .filter((row) => row.partListing?.status === 'active')
+      .filter((row) => {
+        if (row.partListing?.status !== 'active' || !row.partListingId) {
+          return false;
+        }
+        if (seen.has(row.partListingId)) return false;
+        seen.add(row.partListingId);
+        return true;
+      })
       .slice(0, capped);
     const ids = rows
       .map((row) => row.partListingId)
@@ -1003,7 +1113,8 @@ export class PromotionsService {
         success: false,
         error: {
           code: 'PACKAGE_EXISTS',
-          message: 'Bikes and parts each already have this package. Edit it instead of adding another.',
+          message:
+            'Bikes and parts each already have this package. Edit it instead of adding another.',
         },
       });
     }
@@ -1056,7 +1167,9 @@ export class PromotionsService {
   }
 
   async listBanksAdmin() {
-    return this.accounts.find({ order: { isDefault: 'DESC', createdAt: 'DESC' } });
+    return this.accounts.find({
+      order: { isDefault: 'DESC', createdAt: 'DESC' },
+    });
   }
 
   async updateSettings(input: UpdatePromoSettingsInput) {
@@ -1125,7 +1238,12 @@ export class PromotionsService {
   }
 
   private coverFromImages(
-    images?: { imageUrl: string; thumbnailUrl?: string | null; isCover?: boolean; sortOrder?: number }[],
+    images?: {
+      imageUrl: string;
+      thumbnailUrl?: string | null;
+      isCover?: boolean;
+      sortOrder?: number;
+    }[],
   ) {
     if (!images?.length) return null;
     const sorted = [...images].sort((a, b) => {
@@ -1165,6 +1283,7 @@ export class PromotionsService {
     if (!row) return null;
     const request = row.request ?? null;
     const pkg = request?.package ?? null;
+    const snapshot = request?.packageSnapshot ?? pkg;
     return {
       id: row.id,
       tier: row.tier,
@@ -1173,10 +1292,10 @@ export class PromotionsService {
       package: pkg
         ? {
             id: pkg.id,
-            name: pkg.name,
-            tier: pkg.tier,
-            durationDays: pkg.durationDays,
-            priceLkr: pkg.priceLkr,
+            name: snapshot?.name ?? pkg.name,
+            tier: snapshot?.tier ?? pkg.tier,
+            durationDays: snapshot?.durationDays ?? pkg.durationDays,
+            priceLkr: request?.chargedPriceLkr ?? pkg.priceLkr,
           }
         : null,
       paidAt: request?.paidAt ? request.paidAt.toISOString() : null,
@@ -1184,7 +1303,10 @@ export class PromotionsService {
     };
   }
 
-  private async findPending(listingId: string | null, partListingId: string | null) {
+  private async findPending(
+    listingId: string | null,
+    partListingId: string | null,
+  ) {
     if (listingId) {
       return this.requests.findOne({
         where: { listingId, status: 'pending' },
@@ -1223,7 +1345,10 @@ export class PromotionsService {
     partListingId: string | null,
   ) {
     if (subjectType === 'bike') {
-      const listing = await this.listings.findOne({ where: { id: listingId! } });
+      const listing = await this.listings.findOne({
+        where: { id: listingId! },
+        relations: ['seller', 'dealer', 'dealer.owner'],
+      });
       if (!listing) this.notFound('Listing');
       if (listing.sellerId !== sellerId) {
         throw new ForbiddenException({
@@ -1231,7 +1356,7 @@ export class PromotionsService {
           error: { code: 'FORBIDDEN', message: 'Not your listing' },
         });
       }
-      if (listing.status !== 'active') {
+      if (listing.status !== 'active' || !isPublicBike(listing)) {
         throw new BadRequestException({
           success: false,
           error: {
@@ -1244,7 +1369,7 @@ export class PromotionsService {
     }
     const listing = await this.partListings.findOne({
       where: { id: partListingId! },
-      relations: ['partsDealer'],
+      relations: ['partsDealer', 'partsDealer.owner'],
     });
     if (!listing) this.notFound('Part listing');
     if (listing.partsDealer?.ownerUserId !== sellerId) {
@@ -1253,7 +1378,7 @@ export class PromotionsService {
         error: { code: 'FORBIDDEN', message: 'Not your listing' },
       });
     }
-    if (listing.status !== 'active') {
+    if (!isPublicPart(listing)) {
       throw new BadRequestException({
         success: false,
         error: {
@@ -1264,16 +1389,22 @@ export class PromotionsService {
     }
   }
 
-  private async assertStillActive(input: {
-    subjectType: PromoSubjectType;
-    listingId: string | null;
-    partListingId: string | null;
-  }) {
+  private async assertStillActive(
+    input: {
+      subjectType: PromoSubjectType;
+      listingId: string | null;
+      partListingId: string | null;
+    },
+    manager?: EntityManager,
+  ) {
     if (input.subjectType === 'bike') {
-      const listing = await this.listings.findOne({
+      const listing = await (
+        manager?.getRepository(Listing) ?? this.listings
+      ).findOne({
         where: { id: input.listingId! },
+        relations: ['seller', 'dealer', 'dealer.owner'],
       });
-      if (!listing || listing.status !== 'active') {
+      if (!listing || listing.status !== 'active' || !isPublicBike(listing)) {
         throw new BadRequestException({
           success: false,
           error: {
@@ -1284,10 +1415,13 @@ export class PromotionsService {
       }
       return;
     }
-    const listing = await this.partListings.findOne({
+    const listing = await (
+      manager?.getRepository(PartListing) ?? this.partListings
+    ).findOne({
       where: { id: input.partListingId! },
+      relations: ['partsDealer', 'partsDealer.owner'],
     });
-    if (!listing || listing.status !== 'active') {
+    if (!listing || !isPublicPart(listing)) {
       throw new BadRequestException({
         success: false,
         error: {

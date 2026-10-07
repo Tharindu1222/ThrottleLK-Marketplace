@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   clearSession,
   getAccessToken,
@@ -221,6 +221,7 @@ function SidebarAvatar({ user }: { user: AuthUser | null }) {
 export function AccountSidebar({ locale }: { locale: Locale }) {
   const pathname = usePathname() || '';
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [messageUnread, setMessageUnread] = useState(0);
   const [notificationUnread, setNotificationUnread] = useState(0);
 
@@ -238,8 +239,12 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
     setNotificationUnread(notif.count ?? 0);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setUser(getStoredUser());
+    setAuthReady(true);
+  }, []);
+
+  useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
 
@@ -300,6 +305,39 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
   const displayName = user
     ? `${user.firstName} ${user.lastName}`.trim()
     : t(locale, 'accountNav');
+
+  if (!authReady) {
+    return (
+      <aside
+        data-account-nav="grouped"
+        aria-busy="true"
+        className="flex w-full min-w-0 flex-col gap-3 px-4 pt-4 lg:sticky lg:top-[4.25rem] lg:h-[calc(100svh-4.25rem)] lg:w-[260px] lg:shrink-0 lg:gap-0 lg:self-start lg:px-0 lg:pt-0 xl:w-[280px]"
+      >
+        <div className="flex w-full min-w-0 gap-2 overflow-hidden pb-1 lg:hidden">
+          <div className="h-11 w-28 animate-pulse rounded-full bg-black/10" />
+          <div className="h-11 w-28 animate-pulse rounded-full bg-black/10" />
+          <div className="h-11 w-28 animate-pulse rounded-full bg-black/10" />
+        </div>
+        <div className="hidden min-h-0 flex-1 flex-col overflow-hidden border-r border-black/10 bg-white lg:flex">
+          <div className="flex items-center gap-3 border-b border-black/15 px-4 py-4">
+            <div className="h-11 w-11 animate-pulse rounded-full bg-black/10" />
+            <div className="space-y-2">
+              <div className="h-4 w-28 animate-pulse rounded bg-black/10" />
+              <div className="h-3 w-36 animate-pulse rounded bg-black/10" />
+            </div>
+          </div>
+          <div className="space-y-2 px-4 py-4">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div
+                key={index}
+                className="h-9 animate-pulse rounded bg-black/[0.06]"
+              />
+            ))}
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside

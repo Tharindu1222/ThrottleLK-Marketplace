@@ -198,6 +198,7 @@ export default async function BikePartsPage({
             kind="part"
             limit={6}
             variant="browse"
+            partKind={filterState.kind}
           />
           <p className="mb-4 text-sm text-muted">
             {total === 1

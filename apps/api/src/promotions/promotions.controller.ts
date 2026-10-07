@@ -48,6 +48,8 @@ export class PromotionsController {
     @Query('surface') surface?: string,
     @Query('kind') kind?: string,
     @Query('limit') limitRaw?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('partKind') partKind?: string,
   ): Promise<ApiSuccess<unknown>> {
     if (surface !== 'browse' && surface !== 'detail') {
       throw new BadRequestException({
@@ -61,9 +63,16 @@ export class PromotionsController {
     const k = kind === 'part' ? 'part' : 'bike';
     const parsed = Number.parseInt(limitRaw ?? '8', 10);
     const limit = Number.isFinite(parsed) ? parsed : 8;
+    const partKindFilter =
+      partKind === 'spare' || partKind === 'modified' || partKind === 'accessory'
+        ? partKind
+        : undefined;
     return {
       success: true,
-      data: await this.promotions.listLiveForSurface(surface, k, limit),
+      data: await this.promotions.listLiveForSurface(surface, k, limit, {
+        categoryId: categoryId || undefined,
+        partKind: partKindFilter,
+      }),
     };
   }
 

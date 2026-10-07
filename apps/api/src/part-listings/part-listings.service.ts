@@ -1,3 +1,4 @@
+import { isPublicPart, publicPartSql } from '../common/public-listing';
 import {
   BadRequestException,
   Injectable,
@@ -15,6 +16,7 @@ import type {
 } from '@throttlelk/validation';
 import type { ListingStatus, PartListingKind } from '@throttlelk/types';
 import { In, Repository, type SelectQueryBuilder } from 'typeorm';
+import { changedKeys } from '../common/changed-keys';
 import {
   browseCacheKey,
   readBrowseCache,
@@ -26,14 +28,8 @@ import { preferredCoverUrl } from '../common/image-variants';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { slugify } from '../common/slugify';
 import { expireActiveRows } from '../listings/expire-stale';
-import {
-  computeExpiresAt,
-  isPubliclyListed,
-} from '../listings/listing-expiry';
-import {
-  escapeLikePattern,
-  searchTokens,
-} from '../listings/listings.service';
+import { computeExpiresAt, isPubliclyListed } from '../listings/listing-expiry';
+import { escapeLikePattern, searchTokens } from '../listings/listings.service';
 import { Listing } from '../listings/listing.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PartsDealersService } from '../parts-dealers/parts-dealers.service';
@@ -134,12 +130,12 @@ export class PartListingsService {
     const { fitments, ...fields } = input;
     if (fitments) await this.validateFitments(fitments);
 
-    if (!['draft', 'rejected', 'paused', 'pending_review', 'expired'].includes(listing.status)) {
-      if (listing.status === 'active') {
-        const keys = (Object.keys(fields) as (keyof typeof fields)[]).filter(
-          (k) => fields[k] !== undefined,
-        );
-        const fitmentsChanged = fitments !== undefined;
+    if (!['draft', 'rejected', 'pending_review'].includes(listing.status)) {
+      if (['active', 'paused', 'expired'].includes(listing.status)) {
+        const keys = changedKeys(listing, fields);
+        const fitmentsChanged =
+          fitments !== undefined &&
+          (await this.fitmentsDiffer(listing.id, fitments));
         if (keys.length === 0 && !fitmentsChanged) {
           return this.getOwnedDetail(owner.id, listing.id);
         }
@@ -278,11 +274,7 @@ export class PartListingsService {
     return { id: listing.id, deleted: true };
   }
 
-  async markSold(
-    owner: User,
-    id: string,
-    input: MarkSoldInput,
-  ): Promise<any> {
+  async markSold(owner: User, id: string, input: MarkSoldInput): Promise<any> {
     const listing = await this.getOwned(owner.id, id);
     if (!['active', 'paused'].includes(listing.status)) {
       throw new BadRequestException({
@@ -322,7 +314,14 @@ export class PartListingsService {
     });
     const [rows, total] = await this.partListings.findAndCount({
       where: { partsDealerId: dealer.id },
-      relations: ['category', 'district', 'city', 'partsDealer', 'fitments'],
+      relations: [
+        'category',
+        'district',
+        'city',
+        'partsDealer',
+        'partsDealer.owner',
+        'fitments',
+      ],
       order: { updatedAt: 'DESC' },
       skip,
       take: limit,
@@ -373,13 +372,14 @@ export class PartListingsService {
       meta: ReturnType<typeof paginationMeta>;
     }>(this.cache, cacheKey);
     if (cached) return cached;
-    const idQb = this.partListings
-      .createQueryBuilder('l')
-      .select('l.id', 'id');
+    const idQb = this.partListings.createQueryBuilder('l').select('l.id', 'id');
     this.applyPublicListFilters(idQb, filters);
     this.applyPublicListSort(idQb, filters.sort);
     const total = await idQb.getCount();
-    const idRows = await idQb.skip(skip).take(limit).getRawMany<{ id: string }>();
+    const idRows = await idQb
+      .skip(skip)
+      .take(limit)
+      .getRawMany<{ id: string }>();
     const ids = idRows.map((row) => row.id).filter(Boolean);
     if (ids.length === 0) {
       const empty = { items: [], meta: paginationMeta(total, page, limit) };
@@ -434,7 +434,9 @@ export class PartListingsService {
     const ordered = ids
       .map((id) => byId.get(id))
       .filter((row): row is PartListing => Boolean(row));
-    const covers = await this.coverUrlsByListingId(ordered.map((row) => row.id));
+    const covers = await this.coverUrlsByListingId(
+      ordered.map((row) => row.id),
+    );
     const verifiedIds = await this.partsDealersService.activeVerifiedIds(
       ordered.map((row) => row.partsDealerId),
     );
@@ -485,6 +487,7 @@ export class PartListingsService {
         'district',
         'city',
         'partsDealer',
+        'partsDealer.owner',
         'fitments',
         'fitments.brand',
         'fitments.model',
@@ -503,7 +506,7 @@ export class PartListingsService {
     const dealer = listing.partsDealer;
     const isOwner = viewer?.id && dealer?.ownerUserId === viewer.id;
     const isAdmin = viewer?.roles?.some((r) => r.name === 'admin');
-    if (listing.status !== 'active' && !isOwner && !isAdmin) {
+    if (!isPublicPart(listing) && !isOwner && !isAdmin) {
       throw new NotFoundException({
         success: false,
         error: {
@@ -564,8 +567,9 @@ export class PartListingsService {
   async contact(id: string, input: ContactListingInput) {
     const listing = await this.partListings.findOne({
       where: { id, status: 'active' as ListingStatus },
+      relations: ['partsDealer', 'partsDealer.owner'],
     });
-    if (!listing) {
+    if (!listing || !isPublicPart(listing)) {
       throw new NotFoundException({
         success: false,
         error: {
@@ -676,6 +680,7 @@ export class PartListingsService {
         'partsDealer.slug',
       ])
       .where('l.status = :status', { status: 'active' })
+      .andWhere(publicPartSql('l'))
       .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
         now: new Date(),
       });
@@ -697,8 +702,8 @@ export class PartListingsService {
         )`,
         { brandId: bike.brandId, modelId: bike.modelId },
       )
-      .addSelect(
-        `(CASE
+        .addSelect(
+          `(CASE
           WHEN EXISTS (
             SELECT 1 FROM part_listing_fitments fx
             WHERE fx.part_listing_id = l.id
@@ -718,11 +723,11 @@ export class PartListingsService {
           ) THEN 2
           ELSE 3
         END)`,
-        'fit_rank',
-      )
-      .orderBy('fit_rank', 'ASC')
-      .addOrderBy('l.publishedAt', 'DESC', 'NULLS LAST')
-      .take(limit);
+          'fit_rank',
+        )
+        .orderBy('fit_rank', 'ASC')
+        .addOrderBy('l.publishedAt', 'DESC', 'NULLS LAST')
+        .take(limit);
       if (kind) qb.andWhere('l.kind = :kind', { kind });
     }
 
@@ -749,6 +754,7 @@ export class PartListingsService {
       limit: paging?.limit,
       defaultLimit: 50,
       maxLimit: 100,
+      maxPage: Number.MAX_SAFE_INTEGER,
     });
     const where: { status: ListingStatus; kind?: PartListingKind } = {
       status: 'active',
@@ -756,13 +762,16 @@ export class PartListingsService {
     if (kind === 'spare' || kind === 'modified' || kind === 'accessory') {
       where.kind = kind;
     }
-    const [rows, total] = await this.partListings.findAndCount({
-      where,
-      select: ['id', 'slug', 'kind', 'updatedAt'],
-      order: { updatedAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const qb = this.partListings
+      .createQueryBuilder('l')
+      .select(['l.id', 'l.slug', 'l.kind', 'l.updatedAt'])
+      .where(publicPartSql('l'))
+      .orderBy('l.updatedAt', 'DESC')
+      .addOrderBy('l.id', 'ASC')
+      .skip(skip)
+      .take(limit);
+    if (where.kind) qb.andWhere('l.kind = :kind', { kind: where.kind });
+    const [rows, total] = await qb.getManyAndCount();
     return {
       items: rows.map((row) => ({
         slug: row.slug,
@@ -832,6 +841,7 @@ export class PartListingsService {
       where: { id },
       relations: [
         'partsDealer',
+        'partsDealer.owner',
         'category',
         'district',
         'city',
@@ -893,7 +903,8 @@ export class PartListingsService {
 
   async adminUpdate(id: string, input: AdminUpdatePartListingInput) {
     const listing = await this.getById(id);
-    const { fitments, status, partsDealerId, rejectionReason, ...fields } = input;
+    const { fitments, status, partsDealerId, rejectionReason, ...fields } =
+      input;
     if (fitments) {
       await this.validateFitments(fitments);
       await this.replaceFitments(listing.id, fitments);
@@ -1100,16 +1111,19 @@ export class PartListingsService {
   }
 
   async expireStale(now = new Date()) {
-    const { expired, backfilled } = await expireActiveRows({
-      query: (sql, params) => this.partListings.query(sql, params),
-      table: 'part_listings',
-      lockKey: 710_002,
-      now,
-    });
+    const { expired, backfilled } = await this.partListings.manager.transaction(
+      (manager) =>
+        expireActiveRows({
+          query: (sql, params) => manager.query(sql, params),
+          table: 'part_listings',
+          lockKey: 710_002,
+          now,
+        }),
+    );
     for (const row of expired) {
       const listing = await this.partListings.findOne({
         where: { id: row.id },
-        relations: ['partsDealer'],
+        relations: ['partsDealer', 'partsDealer.owner'],
       });
       const ownerUserId = listing?.partsDealer?.ownerUserId;
       if (!listing || !ownerUserId) continue;
@@ -1137,9 +1151,16 @@ export class PartListingsService {
 
   async browseCardsByIds(ids: string[]) {
     if (ids.length === 0) return [];
-    const rows = await this.partListings.find({
+    const candidates = await this.partListings.find({
       where: { id: In(ids), status: 'active' as ListingStatus },
-      relations: ['category', 'district', 'city', 'partsDealer', 'fitments'],
+      relations: [
+        'category',
+        'district',
+        'city',
+        'partsDealer',
+        'partsDealer.owner',
+        'fitments',
+      ],
       select: {
         id: true,
         slug: true,
@@ -1158,10 +1179,19 @@ export class PartListingsService {
         category: { id: true, name: true },
         district: { id: true, name: true },
         city: { id: true, name: true },
-        partsDealer: { id: true, name: true, slug: true },
+        status: true,
+        expiresAt: true,
+        partsDealer: {
+          id: true,
+          name: true,
+          slug: true,
+          status: true,
+          owner: { id: true, status: true },
+        },
         fitments: { id: true, brandId: true, modelId: true },
       },
     });
+    const rows = candidates.filter(isPublicPart);
     const byId = new Map(rows.map((row) => [row.id, row]));
     const covers = await this.coverUrlsByListingId(ids);
     const verifiedIds = await this.partsDealersService.activeVerifiedIds(
@@ -1195,10 +1225,12 @@ export class PartListingsService {
       partsDealerId?: string;
     },
   ) {
-    qb.where('l.status = :status', { status: 'active' }).andWhere(
-      '(l.expires_at IS NULL OR l.expires_at > :now)',
-      { now: new Date() },
-    );
+    qb.where('l.status = :status', { status: 'active' })
+      .andWhere(publicPartSql('l'))
+      .andWhere(publicPartSql('l'))
+      .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
+        now: new Date(),
+      });
     if (filters.kind) {
       qb.andWhere('l.kind = :kind', { kind: filters.kind });
     }
@@ -1426,6 +1458,18 @@ export class PartListingsService {
     }
   }
 
+  private async fitmentsDiffer(
+    partListingId: string,
+    next: { brandId: string; modelId?: string | null }[],
+  ) {
+    const current = await this.fitments.find({ where: { partListingId } });
+    const key = (row: { brandId: string; modelId?: string | null }) =>
+      `${row.brandId}:${row.modelId ?? ''}`;
+    const left = current.map(key).sort().join('|');
+    const right = next.map(key).sort().join('|');
+    return left !== right;
+  }
+
   private async replaceFitments(
     partListingId: string,
     fitments: { brandId: string; modelId?: string | null }[],
@@ -1457,9 +1501,9 @@ export class PartListingsService {
       where: isUuid
         ? [{ id: idOrSlug }, { slug: idOrSlug }]
         : { slug: idOrSlug },
-      relations: ['partsDealer'],
+      relations: ['partsDealer', 'partsDealer.owner'],
     });
-    if (!listing || listing.status !== 'active') return null;
+    if (!listing || !isPublicPart(listing)) return null;
     return {
       id: listing.id,
       ownerUserId: listing.partsDealer?.ownerUserId ?? null,
@@ -1496,5 +1540,6 @@ export class PartListingsService {
 
   private bumpDashboard() {
     void this.cache.invalidateDashboard();
+    void this.cache.invalidatePublicListings?.();
   }
 }

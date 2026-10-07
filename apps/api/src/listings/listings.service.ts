@@ -1,3 +1,4 @@
+import { isPublicBike, publicBikeSql } from '../common/public-listing';
 import {
   BadRequestException,
   ForbiddenException,
@@ -14,6 +15,7 @@ import type {
 } from '@throttlelk/validation';
 import type { ListingStatus } from '@throttlelk/types';
 import { In, Repository } from 'typeorm';
+import { changedKeys } from '../common/changed-keys';
 import {
   browseCacheKey,
   readBrowseCache,
@@ -109,8 +111,12 @@ export class ListingsService {
     input: UpdateListingInput,
   ): Promise<Listing> {
     const listing = await this.getOwned(seller.id, id);
-    const { costPriceLkr, purchaseDate, dealerId: _dealerId, ...listingFields } =
-      input;
+    const {
+      costPriceLkr,
+      purchaseDate,
+      dealerId: _dealerId,
+      ...listingFields
+    } = input;
     if (
       listingFields.brandId ||
       listingFields.modelId ||
@@ -127,14 +133,14 @@ export class ListingsService {
       });
     }
     if (listing.dealerId) {
-      if (costPriceLkr !== undefined) listing.costPriceLkr = costPriceLkr ?? null;
-      if (purchaseDate !== undefined) listing.purchaseDate = purchaseDate ?? null;
+      if (costPriceLkr !== undefined)
+        listing.costPriceLkr = costPriceLkr ?? null;
+      if (purchaseDate !== undefined)
+        listing.purchaseDate = purchaseDate ?? null;
     }
-    if (!['draft', 'rejected', 'paused', 'pending_review'].includes(listing.status)) {
-      if (listing.status === 'active') {
-        const keys = (
-          Object.keys(listingFields) as (keyof typeof listingFields)[]
-        ).filter((k) => listingFields[k] !== undefined);
+    if (!['draft', 'rejected', 'pending_review'].includes(listing.status)) {
+      if (['active', 'paused', 'expired'].includes(listing.status)) {
+        const keys = changedKeys(listing, listingFields);
         if (keys.length === 0) {
           const saved = await this.listings.save(listing);
           await this.syncInventory(saved, seller.id);
@@ -222,7 +228,10 @@ export class ListingsService {
     if (listing.status !== 'active') {
       throw new BadRequestException({
         success: false,
-        error: { code: 'INVALID_STATUS', message: 'Only active listings can be paused' },
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Only active listings can be paused',
+        },
       });
     }
     listing.status = 'paused';
@@ -263,7 +272,10 @@ export class ListingsService {
     if (!['active', 'paused'].includes(listing.status)) {
       throw new BadRequestException({
         success: false,
-        error: { code: 'INVALID_STATUS', message: 'Cannot mark sold from this status' },
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Cannot mark sold from this status',
+        },
       });
     }
     listing.status = 'sold';
@@ -332,9 +344,7 @@ export class ListingsService {
     return {
       items: rows.map((row) => ({
         ...this.toBrowseCard(row, covers.get(row.id) ?? null, {
-          dealerVerified: row.dealerId
-            ? verifiedIds.has(row.dealerId)
-            : false,
+          dealerVerified: row.dealerId ? verifiedIds.has(row.dealerId) : false,
         }),
         status: row.status,
         rejectionReason: row.rejectionReason,
@@ -347,8 +357,9 @@ export class ListingsService {
   async createInquiry(listingId: string, input: ContactListingInput) {
     const listing = await this.listings.findOne({
       where: { id: listingId },
+      relations: ['seller', 'dealer', 'dealer.owner'],
     });
-    if (!listing || !isPubliclyListed(listing.status, listing.expiresAt)) {
+    if (!listing || !isPublicBike(listing)) {
       throw new NotFoundException({
         success: false,
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
@@ -362,11 +373,19 @@ export class ListingsService {
       message: input.message,
     });
     const saved = await this.inquiries.save(inquiry);
-    void this.notifications.listingInquiry(listing.sellerId, {
-      id: listing.id,
-      title: listing.title,
-      slug: listing.slug,
-    }, input.buyerName);
+    void this.notifications.listingInquiry(
+      listing.sellerId,
+      {
+        id: listing.id,
+        title: listing.title,
+        slug: listing.slug,
+      },
+      {
+        name: input.buyerName,
+        phone: input.buyerPhone,
+        email: input.buyerEmail,
+      },
+    );
     return saved;
   }
 
@@ -444,17 +463,24 @@ export class ListingsService {
         'city.name',
       ])
       .where('l.status = :status', { status: 'active' })
+      .andWhere(publicBikeSql('l'))
       .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', {
         now: new Date(),
       });
 
-    if (filters.brandId) qb.andWhere('l.brand_id = :brandId', { brandId: filters.brandId });
-    if (filters.modelId) qb.andWhere('l.model_id = :modelId', { modelId: filters.modelId });
+    if (filters.brandId)
+      qb.andWhere('l.brand_id = :brandId', { brandId: filters.brandId });
+    if (filters.modelId)
+      qb.andWhere('l.model_id = :modelId', { modelId: filters.modelId });
     if (filters.categoryId) {
-      qb.andWhere('l.category_id = :categoryId', { categoryId: filters.categoryId });
+      qb.andWhere('l.category_id = :categoryId', {
+        categoryId: filters.categoryId,
+      });
     }
     if (filters.districtId) {
-      qb.andWhere('l.district_id = :districtId', { districtId: filters.districtId });
+      qb.andWhere('l.district_id = :districtId', {
+        districtId: filters.districtId,
+      });
     }
     if (filters.cityId) {
       qb.andWhere('l.city_id = :cityId', { cityId: filters.cityId });
@@ -468,10 +494,14 @@ export class ListingsService {
       });
     }
     if (filters.minMileage != null) {
-      qb.andWhere('l.mileage >= :minMileage', { minMileage: filters.minMileage });
+      qb.andWhere('l.mileage >= :minMileage', {
+        minMileage: filters.minMileage,
+      });
     }
     if (filters.maxMileage != null) {
-      qb.andWhere('l.mileage <= :maxMileage', { maxMileage: filters.maxMileage });
+      qb.andWhere('l.mileage <= :maxMileage', {
+        maxMileage: filters.maxMileage,
+      });
     }
     if (filters.minEngineCc != null) {
       qb.andWhere('l.engine_cc >= :minEngineCc', {
@@ -515,10 +545,14 @@ export class ListingsService {
       qb.andWhere('l.price_lkr <= :maxPrice', { maxPrice: filters.maxPrice });
     }
     if (filters.minYear != null) {
-      qb.andWhere('l.manufacture_year >= :minYear', { minYear: filters.minYear });
+      qb.andWhere('l.manufacture_year >= :minYear', {
+        minYear: filters.minYear,
+      });
     }
     if (filters.maxYear != null) {
-      qb.andWhere('l.manufacture_year <= :maxYear', { maxYear: filters.maxYear });
+      qb.andWhere('l.manufacture_year <= :maxYear', {
+        maxYear: filters.maxYear,
+      });
     }
     if (filters.minRegistrationYear != null) {
       qb.andWhere('l.registration_year >= :minRegistrationYear', {
@@ -584,9 +618,7 @@ export class ListingsService {
     const result = {
       items: rows.map((row) =>
         this.toBrowseCard(row, covers.get(row.id) ?? null, {
-          dealerVerified: row.dealerId
-            ? verifiedIds.has(row.dealerId)
-            : false,
+          dealerVerified: row.dealerId ? verifiedIds.has(row.dealerId) : false,
         }),
       ),
       meta: paginationMeta(total, page, limit),
@@ -601,8 +633,20 @@ export class ListingsService {
         idOrSlug,
       );
     const listing = await this.listings.findOne({
-      where: isUuid ? [{ id: idOrSlug }, { slug: idOrSlug }] : { slug: idOrSlug },
-      relations: ['images', 'brand', 'model', 'category', 'district', 'city'],
+      where: isUuid
+        ? [{ id: idOrSlug }, { slug: idOrSlug }]
+        : { slug: idOrSlug },
+      relations: [
+        'images',
+        'brand',
+        'model',
+        'category',
+        'district',
+        'city',
+        'seller',
+        'dealer',
+        'dealer.owner',
+      ],
     });
     if (!listing) {
       throw new NotFoundException({
@@ -612,7 +656,7 @@ export class ListingsService {
     }
     const isOwner = viewer?.id === listing.sellerId;
     const isAdmin = viewer?.roles?.some((r) => r.name === 'admin');
-    const publiclyVisible = isPubliclyListed(listing.status, listing.expiresAt);
+    const publiclyVisible = isPublicBike(listing);
     if (!publiclyVisible && !isOwner && !isAdmin) {
       throw new NotFoundException({
         success: false,
@@ -642,6 +686,8 @@ export class ListingsService {
       soldPriceLkr: _soldPriceLkr,
       phoneClickCount: _phoneClickCount,
       whatsappClickCount: _whatsappClickCount,
+      dealer: _dealer,
+      seller: _seller,
       ...safeListing
     } = this.withCover(listing);
 
@@ -723,10 +769,12 @@ export class ListingsService {
         idOrSlug,
       );
     const listing = await this.listings.findOne({
-      where: isUuid ? [{ id: idOrSlug }, { slug: idOrSlug }] : { slug: idOrSlug },
-      select: ['id', 'sellerId', 'status', 'expiresAt'],
+      where: isUuid
+        ? [{ id: idOrSlug }, { slug: idOrSlug }]
+        : { slug: idOrSlug },
+      relations: ['seller', 'dealer', 'dealer.owner'],
     });
-    if (!listing || !isPubliclyListed(listing.status, listing.expiresAt)) {
+    if (!listing || !isPublicBike(listing)) {
       return null;
     }
     return listing;
@@ -800,7 +848,7 @@ export class ListingsService {
   private daysInStock(listing: Listing, asOf = new Date()): number {
     const start = listing.purchaseDate
       ? new Date(listing.purchaseDate)
-      : listing.publishedAt ?? listing.createdAt;
+      : (listing.publishedAt ?? listing.createdAt);
     if (!start || Number.isNaN(new Date(start).getTime())) {
       return 0;
     }
@@ -830,9 +878,17 @@ export class ListingsService {
 
   async browseCardsByIds(ids: string[]) {
     if (ids.length === 0) return [];
-    const rows = await this.listings.find({
+    const candidates = await this.listings.find({
       where: { id: In(ids), status: 'active' as ListingStatus },
-      relations: ['brand', 'model', 'district', 'city'],
+      relations: [
+        'brand',
+        'model',
+        'district',
+        'city',
+        'seller',
+        'dealer',
+        'dealer.owner',
+      ],
       select: {
         id: true,
         slug: true,
@@ -847,12 +903,17 @@ export class ListingsService {
         publishedAt: true,
         createdAt: true,
         viewCount: true,
+        status: true,
+        expiresAt: true,
+        seller: { id: true, status: true },
+        dealer: { id: true, status: true, owner: { id: true, status: true } },
         brand: { id: true, name: true },
         model: { id: true, name: true },
         district: { id: true, name: true },
         city: { id: true, name: true },
       },
     });
+    const rows = candidates.filter(isPublicBike);
     const byId = new Map(rows.map((row) => [row.id, row]));
     const covers = await this.coverUrlsByListingId(ids);
     const verifiedIds = await this.dealersService.activeVerifiedIds(
@@ -903,7 +964,8 @@ export class ListingsService {
       sellerType: listing.dealerId ? 'dealer' : 'private',
       dealerVerified: extras?.dealerVerified ?? false,
       coverImageUrl: covered,
-      listedAt: (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
+      listedAt:
+        (listing.publishedAt ?? listing.createdAt)?.toISOString() ?? null,
       viewCount: listing.viewCount ?? 0,
     };
   }
@@ -965,6 +1027,7 @@ export class ListingsService {
 
   private bumpDashboard() {
     void this.cache.invalidateDashboard();
+    void this.cache.invalidatePublicListings?.();
   }
 
   async listSeoSlugs(paging?: {
@@ -976,14 +1039,17 @@ export class ListingsService {
       limit: paging?.limit,
       defaultLimit: 50,
       maxLimit: 100,
+      maxPage: Number.MAX_SAFE_INTEGER,
     });
-    const [rows, total] = await this.listings.findAndCount({
-      where: { status: 'active' as ListingStatus },
-      select: ['id', 'slug', 'sellerId', 'updatedAt'],
-      order: { updatedAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const qb = this.listings
+      .createQueryBuilder('l')
+      .select(['l.id', 'l.slug', 'l.sellerId', 'l.updatedAt'])
+      .where(publicBikeSql('l'))
+      .orderBy('l.updatedAt', 'DESC')
+      .addOrderBy('l.id', 'ASC')
+      .skip(skip)
+      .take(limit);
+    const [rows, total] = await qb.getManyAndCount();
     return {
       items: rows.map((row) => ({
         slug: row.slug,
@@ -1135,7 +1201,15 @@ export class ListingsService {
   async adminGet(id: string) {
     const listing = await this.listings.findOne({
       where: { id },
-      relations: ['brand', 'model', 'district', 'city', 'seller', 'images', 'category'],
+      relations: [
+        'brand',
+        'model',
+        'district',
+        'city',
+        'seller',
+        'images',
+        'category',
+      ],
     });
     if (!listing) {
       throw new NotFoundException({
@@ -1153,10 +1227,12 @@ export class ListingsService {
     };
   }
 
-  async adminCreate(input: {
-    sellerId: string;
-    status?: ListingStatus;
-  } & CreateListingInput): Promise<Listing> {
+  async adminCreate(
+    input: {
+      sellerId: string;
+      status?: ListingStatus;
+    } & CreateListingInput,
+  ): Promise<Listing> {
     const seller = await this.usersService.findByIdOrThrow(input.sellerId);
     await this.taxonomy?.assertListingTaxonomy(input);
     const dealerId = await this.resolveListingDealerId(seller, input.dealerId);
@@ -1303,7 +1379,10 @@ export class ListingsService {
     if (listing.status !== 'pending_review') {
       throw new BadRequestException({
         success: false,
-        error: { code: 'INVALID_STATUS', message: 'Listing is not pending review' },
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Listing is not pending review',
+        },
       });
     }
     this.markActive(listing);
@@ -1337,12 +1416,15 @@ export class ListingsService {
   }
 
   async expireStale(now = new Date()) {
-    const { expired, backfilled } = await expireActiveRows({
-      query: (sql, params) => this.listings.query(sql, params),
-      table: 'listings',
-      lockKey: 710_001,
-      now,
-    });
+    const { expired, backfilled } = await this.listings.manager.transaction(
+      (manager) =>
+        expireActiveRows({
+          query: (sql, params) => manager.query(sql, params),
+          table: 'listings',
+          lockKey: 710_001,
+          now,
+        }),
+    );
     for (const listing of expired) {
       void this.notifications.listingExpired(listing.sellerId, {
         id: listing.id,
@@ -1370,7 +1452,10 @@ export class ListingsService {
     if (listing.status !== 'pending_review') {
       throw new BadRequestException({
         success: false,
-        error: { code: 'INVALID_STATUS', message: 'Listing is not pending review' },
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Listing is not pending review',
+        },
       });
     }
     listing.status = 'rejected';
@@ -1433,9 +1518,7 @@ export class ListingsService {
     const names = seller.roles?.map((role) => role.name) ?? [];
     if (
       names.length > 0 &&
-      !names.some((name) =>
-        ['seller', 'dealer', 'admin'].includes(name),
-      )
+      !names.some((name) => ['seller', 'dealer', 'admin'].includes(name))
     ) {
       throw new ForbiddenException({
         success: false,
@@ -1448,7 +1531,10 @@ export class ListingsService {
   }
 
   private async duplicateSignalsForPage(listings: Listing[]) {
-    const grouped = new Map<string, Awaited<ReturnType<ListingsService['duplicateSignals']>>>();
+    const grouped = new Map<
+      string,
+      Awaited<ReturnType<ListingsService['duplicateSignals']>>
+    >();
     for (const listing of listings) grouped.set(listing.id, []);
     if (listings.length === 0) return grouped;
 
@@ -1576,7 +1662,8 @@ export class ListingsService {
     seller: User,
     requested?: string | null,
   ): Promise<string | null> {
-    const isDealer = seller.roles?.some((role) => role.name === 'dealer') ?? false;
+    const isDealer =
+      seller.roles?.some((role) => role.name === 'dealer') ?? false;
     if (isDealer) {
       if (requested) {
         await this.dealersService.assertOwnedActiveDealer(seller.id, requested);

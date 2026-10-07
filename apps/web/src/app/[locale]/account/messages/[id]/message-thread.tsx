@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
@@ -33,6 +40,7 @@ type Thread = {
   partKind?: string | null;
   role: 'buyer' | 'seller';
   counterpart: Counterpart | null;
+  hasOlder?: boolean;
   messages: Message[];
 };
 
@@ -96,14 +104,45 @@ export function MessageThread({
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const pendingScrollAdjust = useRef<number | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   const load = useCallback(
-    async (access: string) => {
+    async (access: string, before?: string) => {
       const data = await apiGet<Thread>(
         `/api/v1/conversations/${conversationId}`,
-        { token: access },
+        {
+          token: access,
+          searchParams: before ? { before } : undefined,
+        },
       );
-      setThread(data);
+      setThread((current) => {
+        if (before && current) {
+          const seen = new Set(current.messages.map((message) => message.id));
+          const older = data.messages.filter((message) => !seen.has(message.id));
+          return {
+            ...current,
+            hasOlder: data.hasOlder,
+            messages: [...older, ...current.messages],
+          };
+        }
+        if (current && current.messages.length > data.messages.length) {
+          const freshIds = new Set(data.messages.map((message) => message.id));
+          const oldestFresh = data.messages[0]?.createdAt;
+          const kept = current.messages.filter(
+            (message) =>
+              !freshIds.has(message.id) &&
+              oldestFresh != null &&
+              message.createdAt < oldestFresh,
+          );
+          return {
+            ...data,
+            hasOlder: current.hasOlder || data.hasOlder,
+            messages: [...kept, ...data.messages],
+          };
+        }
+        return data;
+      });
     },
     [conversationId],
   );
@@ -121,9 +160,37 @@ export function MessageThread({
     return () => window.clearInterval(timer);
   }, [load]);
 
+  const newestId = thread?.messages[thread.messages.length - 1]?.id;
+  const oldestId = thread?.messages[0]?.id;
+
   useEffect(() => {
+    if (pendingScrollAdjust.current != null) return;
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [thread?.messages.length]);
+  }, [newestId]);
+
+  useLayoutEffect(() => {
+    const previousHeight = pendingScrollAdjust.current;
+    if (previousHeight == null) return;
+    pendingScrollAdjust.current = null;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    scroller.scrollTop += scroller.scrollHeight - previousHeight;
+  }, [oldestId]);
+
+  async function onLoadOlder() {
+    if (!token || !thread?.messages[0] || loadingOlder) return;
+    const scroller = scrollerRef.current;
+    pendingScrollAdjust.current = scroller?.scrollHeight ?? 0;
+    setLoadingOlder(true);
+    try {
+      await load(token, thread.messages[0].id);
+    } catch (err) {
+      pendingScrollAdjust.current = null;
+      setError(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   async function onReply(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -231,6 +298,18 @@ export function MessageThread({
         ref={scrollerRef}
         className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain bg-[#f7f7f7] px-3 py-4 sm:px-4"
       >
+        {thread.hasOlder ? (
+          <div className="flex justify-center pb-2">
+            <button
+              type="button"
+              onClick={() => void onLoadOlder()}
+              disabled={loadingOlder}
+              className="min-h-11 rounded-full border border-black/10 bg-white px-4 text-xs font-medium text-foreground transition hover:border-accent/40 hover:text-accent disabled:opacity-60"
+            >
+              {loadingOlder ? t(locale, 'sending') : t(locale, 'loadOlderMessages')}
+            </button>
+          </div>
+        ) : null}
         {thread.messages.map((m) => (
           <div
             key={m.id}

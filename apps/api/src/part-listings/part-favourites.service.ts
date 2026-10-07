@@ -1,3 +1,4 @@
+import { isPublicPart, publicPartSql } from '../common/public-listing';
 import {
   ConflictException,
   Injectable,
@@ -63,7 +64,7 @@ export class PartFavouritesService {
       .leftJoinAndSelect('listing.district', 'district')
       .leftJoinAndSelect('listing.city', 'city')
       .where('f.userId = :userId', { userId })
-      .andWhere('listing.status = :status', { status: 'active' })
+      .andWhere(publicPartSql('listing'))
       .orderBy('f.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
@@ -135,8 +136,9 @@ export class PartFavouritesService {
   async add(userId: string, partListingId: string) {
     const listing = await this.partListings.findOne({
       where: { id: partListingId, status: 'active' },
+      relations: ['partsDealer', 'partsDealer.owner'],
     });
-    if (!listing) {
+    if (!listing || !isPublicPart(listing)) {
       throw new NotFoundException({
         success: false,
         error: {

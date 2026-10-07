@@ -1,0 +1,127 @@
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+const CORE_TABLES = [
+  'auth_tokens',
+  'bike_models',
+  'brands',
+  'categories',
+  'cities',
+  'conversation_messages',
+  'conversations',
+  'dealer_images',
+  'dealers',
+  'districts',
+  'favourites',
+  'listing_images',
+  'listing_inquiries',
+  'listings',
+  'notifications',
+  'refresh_sessions',
+  'reports',
+  'roles',
+  'saved_searches',
+  'user_roles',
+  'users',
+];
+
+/** Frozen baseline for tables that predate the incremental migration chain. */
+export class InitialMarketplace1726500000000 implements MigrationInterface {
+  async up(runner: QueryRunner): Promise<void> {
+    const present: boolean[] = [];
+    for (const name of CORE_TABLES) present.push(await runner.hasTable(name));
+    if (present.every(Boolean)) return; // Adopt an existing synchronized schema.
+    if (present.some(Boolean))
+      throw new Error(
+        'Incomplete core schema: restore the missing tables before adopting the baseline',
+      );
+    const statements = [
+      'CREATE TABLE "roles" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "name" character varying(40) NOT NULL, CONSTRAINT "UQ_648e3f5447f725579d7d4ffdfb7" UNIQUE ("name"), CONSTRAINT "PK_c1433d71a4838793a49dcad46ab" PRIMARY KEY ("id"))',
+      'CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "first_name" character varying(80) NOT NULL, "last_name" character varying(80) NOT NULL, "email" character varying NOT NULL, "phone" character varying(20), "avatar_url" text, "avatar_storage_key" character varying(512), "password_hash" character varying, "google_sub" character varying(255), "status" character varying NOT NULL DEFAULT \'active\', "email_verified_at" TIMESTAMP WITH TIME ZONE, "phone_verified_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_68b61ba0fb359b93b517cf1073d" UNIQUE ("google_sub"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))',
+      'CREATE TABLE "categories" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "name" character varying(80) NOT NULL, "slug" character varying(100) NOT NULL, "cover_storage_key" character varying(500), "cover_image_url" character varying(1000), CONSTRAINT "UQ_420d9f679d41281f282f5bc7d09" UNIQUE ("slug"), CONSTRAINT "PK_24dbc6126a28ff948da33e97d3b" PRIMARY KEY ("id"))',
+      'CREATE TABLE "bike_models" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "brand_id" uuid NOT NULL, "name" character varying(120) NOT NULL, "slug" character varying(140) NOT NULL, "aliases" jsonb NOT NULL DEFAULT \'[]\', "default_category" character varying(80), "default_engine_cc" integer, "fuel_type" character varying(40), "model_status" character varying(40) NOT NULL DEFAULT \'REVIEW_REQUIRED\', "market_origins" jsonb NOT NULL DEFAULT \'[]\', "is_current" boolean, "category_id" uuid, "status" character varying NOT NULL DEFAULT \'active\', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_cbe0c483cc7c646e2f7f3ea32b3" UNIQUE ("brand_id", "slug"), CONSTRAINT "PK_9d81564057944ca02e04dcc7bdf" PRIMARY KEY ("id"))',
+      'CREATE TABLE "brands" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "name" character varying(80) NOT NULL, "slug" character varying(100) NOT NULL, "aliases" jsonb NOT NULL DEFAULT \'[]\', "logo_url" character varying(1000), "logo_storage_key" character varying(500), "status" character varying NOT NULL DEFAULT \'active\', "sort_order" integer NOT NULL DEFAULT \'0\', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_b15428f362be2200922952dc268" UNIQUE ("slug"), CONSTRAINT "PK_b0c437120b624da1034a81fc561" PRIMARY KEY ("id"))',
+      'CREATE TABLE "cities" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "district_id" uuid NOT NULL, "name" character varying(80) NOT NULL, "slug" character varying(120) NOT NULL, CONSTRAINT "PK_4762ffb6e5d198cfec5606bc11e" PRIMARY KEY ("id"))',
+      'CREATE TABLE "districts" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "name" character varying(80) NOT NULL, "slug" character varying(100) NOT NULL, CONSTRAINT "UQ_d5f02510e946296ac6e48637845" UNIQUE ("slug"), CONSTRAINT "PK_972a72ff4e3bea5c7f43a2b98af" PRIMARY KEY ("id"))',
+      'CREATE TABLE "dealer_images" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "dealer_id" uuid NOT NULL, "storage_key" character varying NOT NULL, "image_url" character varying NOT NULL, "thumbnail_url" character varying, "sort_order" integer NOT NULL DEFAULT \'0\', "is_cover" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_c5d427c13422ab9a3d0860b133c" PRIMARY KEY ("id"))',
+      'CREATE TABLE "dealers" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "owner_user_id" uuid NOT NULL, "name" character varying(120) NOT NULL, "slug" character varying(140) NOT NULL, "description" text, "phone" character varying(20) NOT NULL, "whatsapp" character varying(20), "email" character varying, "website" character varying, "address" character varying(300), "latitude" double precision, "longitude" double precision, "facebook_url" character varying(500), "tiktok_url" character varying(500), "cover_focus_x" double precision NOT NULL DEFAULT \'50\', "cover_focus_y" double precision NOT NULL DEFAULT \'50\', "district_id" uuid NOT NULL, "city_id" uuid NOT NULL, "status" character varying(40) NOT NULL DEFAULT \'pending\', "rejection_reason" text, "verified_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_3cbe0038d82f3da614172731220" UNIQUE ("slug"), CONSTRAINT "PK_4d0d8be9eac6e1822ad16d21194" PRIMARY KEY ("id"))',
+      'CREATE TABLE "listing_images" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "listing_id" uuid NOT NULL, "storage_key" character varying NOT NULL, "image_url" character varying NOT NULL, "thumbnail_url" character varying, "sort_order" integer NOT NULL DEFAULT \'0\', "is_cover" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_2abb5c9d795f27dbc4b10ced9dc" PRIMARY KEY ("id"))',
+      'CREATE TABLE "listings" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "seller_id" uuid NOT NULL, "dealer_id" uuid, "brand_id" uuid NOT NULL, "model_id" uuid NOT NULL, "category_id" uuid NOT NULL, "title" character varying(160) NOT NULL, "slug" character varying(200) NOT NULL, "description" text NOT NULL, "price_lkr" integer NOT NULL, "negotiable" boolean NOT NULL DEFAULT true, "manufacture_year" integer NOT NULL, "registration_year" integer, "engine_cc" integer, "mileage" integer, "fuel_type" character varying(40) NOT NULL, "transmission" character varying(40) NOT NULL, "condition" character varying(40) NOT NULL, "colour" character varying(60), "phone" character varying(20), "whatsapp" character varying(20), "district_id" uuid NOT NULL, "city_id" uuid NOT NULL, "status" character varying(40) NOT NULL DEFAULT \'draft\', "rejection_reason" text, "view_count" integer NOT NULL DEFAULT \'0\', "cost_price_lkr" integer, "purchase_date" date, "sold_price_lkr" integer, "phone_click_count" integer NOT NULL DEFAULT \'0\', "whatsapp_click_count" integer NOT NULL DEFAULT \'0\', "published_at" TIMESTAMP WITH TIME ZONE, "expires_at" TIMESTAMP WITH TIME ZONE, "quota_charged" boolean NOT NULL DEFAULT false, "sold_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_23a9f6b054ab6ba43132dfec40c" UNIQUE ("slug"), CONSTRAINT "PK_520ecac6c99ec90bcf5a603cdcb" PRIMARY KEY ("id"))',
+      'CREATE TABLE "reports" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "listing_id" uuid, "reported_by_user_id" uuid, "reason" character varying(40) NOT NULL, "description" text NOT NULL, "status" character varying(40) NOT NULL DEFAULT \'open\', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_d9013193989303580053c0b5ef6" PRIMARY KEY ("id"))',
+      'CREATE TABLE "saved_searches" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "user_id" uuid NOT NULL, "name" character varying(120) NOT NULL, "query_json" jsonb NOT NULL, "notifications_enabled" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_d9a53c71ccc5cf66dcdc5b33dfe" PRIMARY KEY ("id"))',
+      'CREATE TABLE "notifications" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "user_id" character varying NOT NULL, "type" character varying(64) NOT NULL, "title" character varying(200) NOT NULL, "message" text NOT NULL, "data_json" jsonb, "read_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id"))',
+      'CREATE TABLE "listing_inquiries" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "listing_id" uuid NOT NULL, "buyer_name" character varying(120) NOT NULL, "buyer_phone" character varying(20) NOT NULL, "buyer_email" character varying, "message" text NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_eb71d027aabe35905e7698db54e" PRIMARY KEY ("id"))',
+      'CREATE TABLE "favourites" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "user_id" uuid NOT NULL, "listing_id" uuid NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_b52f8b318b4ba31f6be16467e25" UNIQUE ("user_id", "listing_id"), CONSTRAINT "PK_173e5d5cc35490bf1de2d2d3739" PRIMARY KEY ("id"))',
+      'CREATE TABLE "refresh_sessions" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "user_id" character varying NOT NULL, "token_hash" character varying NOT NULL, "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL, "revoked_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_d76f5941d821678137ef15d9651" UNIQUE ("token_hash"), CONSTRAINT "PK_9190032f6967b7971dca07d69f3" PRIMARY KEY ("id"))',
+      'CREATE TABLE "auth_tokens" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "user_id" character varying NOT NULL, "type" character varying(32) NOT NULL, "token_hash" character varying NOT NULL, "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL, "used_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_3a94cfa1eada85ac2bf6f3016b7" UNIQUE ("token_hash"), CONSTRAINT "PK_41e9ddfbb32da18c4e85e45c2fd" PRIMARY KEY ("id"))',
+      'CREATE TABLE "conversations" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "listing_id" uuid, "buyer_user_id" uuid NOT NULL, "seller_user_id" uuid NOT NULL, "last_message_at" TIMESTAMP WITH TIME ZONE, "buyer_last_read_at" TIMESTAMP WITH TIME ZONE, "seller_last_read_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_ee34f4f7ced4ec8681f26bf04ef" PRIMARY KEY ("id"))',
+      'CREATE TABLE "conversation_messages" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "conversation_id" uuid NOT NULL, "sender_user_id" uuid NOT NULL, "body" text NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_113248f25c4c0a7c179b3f5a609" PRIMARY KEY ("id"))',
+      'CREATE TABLE "user_roles" ("user_id" uuid NOT NULL, "role_id" uuid NOT NULL, CONSTRAINT "PK_23ed6f04fe43066df08379fd034" PRIMARY KEY ("user_id", "role_id"))',
+      'CREATE INDEX "IDX_users_status_created_at" ON "users" ("status", "created_at") ',
+      'CREATE INDEX "IDX_8c1917bbb4cf54d487f75adc3e" ON "bike_models" ("brand_id", "name") ',
+      'CREATE INDEX "IDX_5efb079635b28a5e0fa8e4377e" ON "bike_models" ("brand_id", "status") ',
+      'ALTER TABLE "bike_models" ADD CONSTRAINT "FK_5d9fb4d1b7befcacc78abbe352e" FOREIGN KEY ("brand_id") REFERENCES "brands"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'ALTER TABLE "bike_models" ADD CONSTRAINT "FK_71b5de5748f047d71f4095041a4" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_brands_status_name" ON "brands" ("status", "name") ',
+      'CREATE INDEX "IDX_cities_district_id" ON "cities" ("district_id") ',
+      'ALTER TABLE "cities" ADD CONSTRAINT "FK_170e96ae23943e35c2725378f0a" FOREIGN KEY ("district_id") REFERENCES "districts"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'ALTER TABLE "dealer_images" ADD CONSTRAINT "FK_cb3fc3ff606ce5184923ef4f727" FOREIGN KEY ("dealer_id") REFERENCES "dealers"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_dealers_owner_user_id" ON "dealers" ("owner_user_id") ',
+      'CREATE INDEX "IDX_dealers_status_name" ON "dealers" ("status", "name") ',
+      'ALTER TABLE "dealers" ADD CONSTRAINT "FK_990c0943c1257ca2a64fb756de1" FOREIGN KEY ("owner_user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "dealers" ADD CONSTRAINT "FK_f983b49b719ea55f623056f8bd1" FOREIGN KEY ("district_id") REFERENCES "districts"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "dealers" ADD CONSTRAINT "FK_33f2b274364f17aded872538982" FOREIGN KEY ("city_id") REFERENCES "cities"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_listing_images_listing_sort" ON "listing_images" ("listing_id", "sort_order") ',
+      'ALTER TABLE "listing_images" ADD CONSTRAINT "FK_94041359df3c1b14c4420808d16" FOREIGN KEY ("listing_id") REFERENCES "listings"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_listings_city_id" ON "listings" ("city_id") ',
+      'CREATE INDEX "IDX_listings_model_id" ON "listings" ("model_id") ',
+      'CREATE INDEX "IDX_listings_dealer_id" ON "listings" ("dealer_id") ',
+      'CREATE INDEX "IDX_listings_seller_updated_at" ON "listings" ("seller_id", "updated_at") ',
+      'CREATE INDEX "IDX_listings_status_price_lkr" ON "listings" ("status", "price_lkr") ',
+      'CREATE INDEX "IDX_listings_status_category_id" ON "listings" ("status", "category_id") ',
+      'CREATE INDEX "IDX_listings_status_district_id" ON "listings" ("status", "district_id") ',
+      'CREATE INDEX "IDX_listings_status_brand_id" ON "listings" ("status", "brand_id") ',
+      'CREATE INDEX "IDX_listings_status_published_at" ON "listings" ("status", "published_at") ',
+      'ALTER TABLE "listings" ADD CONSTRAINT "FK_6d2846ee6b337ce5225c8c7286b" FOREIGN KEY ("seller_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "listings" ADD CONSTRAINT "FK_e44ba75e78f6b7b44da7c7dfcdf" FOREIGN KEY ("dealer_id") REFERENCES "dealers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "listings" ADD CONSTRAINT "FK_a67c8500fbe904a7e812232bc1f" FOREIGN KEY ("brand_id") REFERENCES "brands"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "listings" ADD CONSTRAINT "FK_da58ca4acc902c2e7c8dd175a11" FOREIGN KEY ("model_id") REFERENCES "bike_models"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "listings" ADD CONSTRAINT "FK_9315deed3e8f6d9171c23131418" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "listings" ADD CONSTRAINT "FK_51dc8fdcd18b7a14b255e6a3b8d" FOREIGN KEY ("district_id") REFERENCES "districts"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'ALTER TABLE "listings" ADD CONSTRAINT "FK_e9524c012874c1d1163321f9bf8" FOREIGN KEY ("city_id") REFERENCES "cities"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_reports_listing_id" ON "reports" ("listing_id") ',
+      'CREATE INDEX "IDX_reports_status_created_at" ON "reports" ("status", "created_at") ',
+      'ALTER TABLE "reports" ADD CONSTRAINT "FK_d1cdc1ed639c70f2ec0bc33e166" FOREIGN KEY ("listing_id") REFERENCES "listings"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'ALTER TABLE "reports" ADD CONSTRAINT "FK_aaa5c0f462753f0045822327bfb" FOREIGN KEY ("reported_by_user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_saved_searches_user_id" ON "saved_searches" ("user_id") ',
+      'ALTER TABLE "saved_searches" ADD CONSTRAINT "FK_8f01d13ac8e7b451d244674274f" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_notifications_user_created" ON "notifications" ("user_id") ',
+      'CREATE INDEX "IDX_listing_inquiries_listing_id" ON "listing_inquiries" ("listing_id") ',
+      'ALTER TABLE "listing_inquiries" ADD CONSTRAINT "FK_ae9e4550863b0683e90a8dadd60" FOREIGN KEY ("listing_id") REFERENCES "listings"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_favourites_listing_id" ON "favourites" ("listing_id") ',
+      'ALTER TABLE "favourites" ADD CONSTRAINT "FK_ffb0866c42b7ff4d6e5131f3dcc" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'ALTER TABLE "favourites" ADD CONSTRAINT "FK_fb7a4f3bc6b6767a71f67a477b8" FOREIGN KEY ("listing_id") REFERENCES "listings"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_a7ab4fd82c654c85b9de53d971" ON "refresh_sessions" ("user_id") ',
+      'CREATE INDEX "IDX_9691367d446cd8b18f462c191b" ON "auth_tokens" ("user_id") ',
+      'CREATE INDEX "IDX_conversations_seller_last_message" ON "conversations" ("seller_user_id", "last_message_at") ',
+      'CREATE INDEX "IDX_conversations_buyer_last_message" ON "conversations" ("buyer_user_id", "last_message_at") ',
+      'CREATE UNIQUE INDEX "UQ_conversations_listing_buyer" ON "conversations" ("listing_id", "buyer_user_id") WHERE "listing_id" IS NOT NULL',
+      'ALTER TABLE "conversations" ADD CONSTRAINT "FK_c14948d6807e84b810dd4bed949" FOREIGN KEY ("listing_id") REFERENCES "listings"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'ALTER TABLE "conversations" ADD CONSTRAINT "FK_0db812fbb33bba14b7ad94c30d4" FOREIGN KEY ("buyer_user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'ALTER TABLE "conversations" ADD CONSTRAINT "FK_aea110ea322b6e431e144b820a4" FOREIGN KEY ("seller_user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_conversation_messages_thread" ON "conversation_messages" ("conversation_id", "created_at") ',
+      'ALTER TABLE "conversation_messages" ADD CONSTRAINT "FK_8e166abf2dd2ee28670e53e6803" FOREIGN KEY ("conversation_id") REFERENCES "conversations"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'ALTER TABLE "conversation_messages" ADD CONSTRAINT "FK_da71cc2d8f6f3a97681548b83eb" FOREIGN KEY ("sender_user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION',
+      'CREATE INDEX "IDX_87b8888186ca9769c960e92687" ON "user_roles" ("user_id") ',
+      'CREATE INDEX "IDX_b23c65e50a758245a33ee35fda" ON "user_roles" ("role_id") ',
+      'ALTER TABLE "user_roles" ADD CONSTRAINT "FK_87b8888186ca9769c960e926870" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE',
+      'ALTER TABLE "user_roles" ADD CONSTRAINT "FK_b23c65e50a758245a33ee35fda1" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION',
+    ];
+    for (const statement of statements) await runner.query(statement);
+  }
+
+  async down(): Promise<void> {
+    throw new Error(
+      'The marketplace baseline cannot be reverted; restore a database backup instead',
+    );
+  }
+}

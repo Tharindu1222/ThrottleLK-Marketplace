@@ -72,7 +72,7 @@ export function AuthShell({
   return (
     <main
       ref={stageRef}
-      className="relative isolate min-h-[calc(100vh-4.25rem)] overflow-x-hidden bg-[#f4f4f4] lg:overflow-hidden"
+      className="relative isolate z-0 min-h-[calc(100vh-4.25rem)] overflow-x-hidden bg-[#f4f4f4]"
     >
       {/* Phone: red / gray / white bars, no headline or bike */}
       <div

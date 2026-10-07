@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import type { Role } from '../users/role.entity';
 import type { User } from '../users/user.entity';
 import type { PartsDealer } from './parts-dealer.entity';

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   clearSession,
   getAccessToken,
@@ -10,7 +10,7 @@ import {
   saveSession,
   type AuthUser,
 } from '@/lib/auth';
-import { apiGet, apiSend } from '@/lib/api';
+import { apiGet, apiSend, ApiRequestError } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
 import { loginHref } from '@/lib/login-href';
 import { AuthRequiredLink } from './auth-required-link';
@@ -66,11 +66,17 @@ export function SiteHeader({
   const pathname = usePathname();
   const signInHref = loginHref(locale, pathname);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const isDealer = Boolean(user?.roles?.includes('dealer'));
   const isPartsDealer = Boolean(user?.roles?.includes('parts_dealer'));
+
+  useLayoutEffect(() => {
+    setUser(getStoredUser());
+    setAuthReady(true);
+  }, []);
 
   useEffect(() => {
     const stored = getStoredUser();
@@ -92,18 +98,11 @@ export function SiteHeader({
           },
         });
       })
-      .catch(() => {
-        void apiSend<{ user: AuthUser }>('/api/v1/auth/refresh', { body: {} })
-          .then((data) => {
-            setUser(data.user);
-            saveSession({ user: data.user });
-          })
-          .catch(() => {
-            if (!stored) {
-              clearSession();
-              setUser(null);
-            }
-          });
+      .catch((error) => {
+        if (error instanceof ApiRequestError && error.status === 401) {
+          clearSession();
+          setUser(null);
+        }
       });
   }, []);
 
@@ -178,8 +177,8 @@ export function SiteHeader({
       <div
         className={
           dark
-            ? 'fixed inset-x-0 top-0 z-40 max-w-full border-b border-white/10 bg-black'
-            : 'fixed inset-x-0 top-0 z-40 max-w-full border-b border-black/10 bg-background/95'
+            ? 'fixed inset-x-0 top-0 z-50 max-w-full border-b border-white/10 bg-black'
+            : 'fixed inset-x-0 top-0 z-50 isolate max-w-full border-b border-black/10 bg-background'
         }
       >
       <div className="mx-auto flex h-16 min-w-0 max-w-7xl items-center gap-3 px-4 sm:h-[4.25rem] md:gap-4 md:px-6">
@@ -206,7 +205,12 @@ export function SiteHeader({
         <div className={`ml-auto hidden items-center gap-1 md:flex ${iconWrapClass}`}>
           <LanguageSwitcher locale={locale} />
           <CompareNavIcon locale={locale} />
-          {user ? (
+          {!authReady ? (
+            <span
+              className="inline-block h-11 w-11 animate-pulse rounded-full bg-black/10"
+              aria-hidden
+            />
+          ) : user ? (
             <>
               <MessagesNavIcon locale={locale} />
               <NotificationsBell locale={locale} />
@@ -397,14 +401,24 @@ export function SiteHeader({
             <div className={`my-1 flex max-w-full flex-wrap items-center gap-1 border-y py-1 ${mobileRuleClass} ${iconWrapClass}`}>
               <LanguageSwitcher locale={locale} />
               <CompareNavIcon locale={locale} />
-              {user ? (
+              {!authReady ? (
+                <span
+                  className="inline-block h-11 w-24 animate-pulse rounded-full bg-black/10"
+                  aria-hidden
+                />
+              ) : user ? (
                 <>
                   <MessagesNavIcon locale={locale} />
                   <NotificationsBell locale={locale} />
                 </>
               ) : null}
             </div>
-            {user ? (
+            {!authReady ? (
+              <div className="space-y-2 py-2" aria-busy="true">
+                <div className="h-10 animate-pulse rounded bg-black/10" />
+                <div className="h-10 animate-pulse rounded bg-black/10" />
+              </div>
+            ) : user ? (
               <>
                 <div className="flex min-w-0 items-center gap-3 py-2">
                   <AccountAvatar user={user} size="md" />

@@ -348,7 +348,7 @@ describe('PartListingsService.listPublic', () => {
 
     const existsSql = idQb.andWhere.mock.calls
       .map(([sql]) => String(sql))
-      .find((sql) => sql.includes('EXISTS'));
+      .find((sql) => sql.includes('part_listing_fitments'));
     expect(existsSql).toMatch(/part_listing_fitments/);
     expect(idQb.innerJoin).not.toHaveBeenCalled();
     expect(idQb.skip).toHaveBeenCalledWith(10);

@@ -1,12 +1,15 @@
+import { CacheService } from '../common/cache.service';
+import { isPublicPart } from '../common/public-listing';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { assertSafeImageFile } from '../common/image-bytes';
 import {
   deletePublicMarketplaceImage,
@@ -17,7 +20,6 @@ import { User } from '../users/user.entity';
 import { PartsDealer } from '../parts-dealers/parts-dealer.entity';
 import { PartListingImage } from './part-listing-image.entity';
 import { PartListing } from './part-listing.entity';
-import { isPubliclyListed } from '../listings/listing-expiry';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 export const MAX_PART_LISTING_IMAGES = 5;
@@ -32,6 +34,7 @@ export class PartListingImagesService {
     @InjectRepository(PartsDealer)
     private readonly partsDealers: Repository<PartsDealer>,
     private readonly storage: StorageService,
+    @Optional() private readonly cache?: CacheService,
   ) {}
 
   async listForListing(partListingId: string, viewer?: User | null) {
@@ -44,7 +47,9 @@ export class PartListingImagesService {
 
   async upload(owner: User, partListingId: string, file?: Express.Multer.File) {
     await this.getOwnedListing(owner.id, partListingId);
-    return this.uploadFile(partListingId, file);
+    const result = await this.uploadFile(partListingId, file);
+    await this.reviewOwnerChanges(partListingId);
+    return result;
   }
 
   async uploadAsAdmin(partListingId: string, file?: Express.Multer.File) {
@@ -54,12 +59,22 @@ export class PartListingImagesService {
 
   async remove(owner: User, partListingId: string, imageId: string) {
     await this.getOwnedListing(owner.id, partListingId);
-    return this.removeImage(partListingId, imageId);
+    const result = await this.removeImage(partListingId, imageId);
+    await this.reviewOwnerChanges(partListingId);
+    return result;
   }
 
   async removeAsAdmin(partListingId: string, imageId: string) {
     await this.getListingOrThrow(partListingId);
     return this.removeImage(partListingId, imageId);
+  }
+
+  private async reviewOwnerChanges(partListingId: string) {
+    await this.partListings.update(
+      { id: partListingId, status: In(['active', 'paused', 'expired']) },
+      { status: 'pending_review', publishedAt: null, rejectionReason: null },
+    );
+    await this.cache?.invalidatePublicListings();
   }
 
   private async uploadFile(partListingId: string, file?: Express.Multer.File) {
@@ -138,6 +153,7 @@ export class PartListingImagesService {
   private async getListingOrThrow(partListingId: string) {
     const listing = await this.partListings.findOne({
       where: { id: partListingId },
+      relations: ['partsDealer', 'partsDealer.owner'],
     });
     if (!listing) {
       throw new NotFoundException({
@@ -162,6 +178,15 @@ export class PartListingImagesService {
         error: { code: 'FORBIDDEN', message: 'Not your listing' },
       });
     }
+    if (listing.status === 'sold') {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Sold listings cannot have their photos changed',
+        },
+      });
+    }
     return listing;
   }
 
@@ -171,8 +196,10 @@ export class PartListingImagesService {
       where: { id: listing.partsDealerId },
     });
     const isOwner = Boolean(dealer && viewer?.id === dealer.ownerUserId);
-    const isAdmin = Boolean(viewer?.roles?.some((role) => role.name === 'admin'));
-    if (!isPubliclyListed(listing.status, null) && !isOwner && !isAdmin) {
+    const isAdmin = Boolean(
+      viewer?.roles?.some((role) => role.name === 'admin'),
+    );
+    if (!isPublicPart(listing) && !isOwner && !isAdmin) {
       throw new NotFoundException({
         success: false,
         error: {

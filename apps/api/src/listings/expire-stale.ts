@@ -20,6 +20,7 @@ const TABLES = {
   part_listings: 'part_listings',
 } as const;
 
+/** query must be bound to one EntityManager transaction for the lock's lifetime. */
 export async function expireActiveRows(input: {
   query: RowQuery;
   table: keyof typeof TABLES;
@@ -31,7 +32,7 @@ export async function expireActiveRows(input: {
 }> {
   const now = input.now ?? new Date();
   const lockRows = (await input.query(
-    `SELECT pg_try_advisory_lock($1) AS locked`,
+    `SELECT pg_try_advisory_xact_lock($1) AS locked`,
     [input.lockKey],
   )) as Array<{ locked?: boolean | string }>;
   const locked = lockRows?.[0]?.locked;
@@ -40,42 +41,38 @@ export async function expireActiveRows(input: {
   }
 
   const table = TABLES[input.table];
-  try {
-    const backfilled = updateRows<{ id: string }>(
-      await input.query(
-        `UPDATE ${table}
-         SET expires_at = COALESCE(published_at, created_at, $2) + ($1 * INTERVAL '1 day')
-         WHERE status = 'active' AND expires_at IS NULL
-         RETURNING id`,
-        [listingActiveDays(), now],
-      ),
-    );
-    const sellerSelect =
-      input.table === 'listings' ? `, seller_id AS "sellerId"` : '';
-    const expired = updateRows<{
-      id: string;
-      sellerId?: string;
-      title: string;
-      slug: string;
-    }>(
-      await input.query(
-        `UPDATE ${table}
-         SET status = 'expired'
-         WHERE status = 'active' AND expires_at <= $1
-         RETURNING id${sellerSelect}, title, slug`,
-        [now],
-      ),
-    ).map((row) => ({
-      id: row.id,
-      title: row.title,
-      slug: row.slug,
-      sellerId: row.sellerId ?? '',
-    }));
-    return {
-      expired,
-      backfilled: backfilled.length,
-    };
-  } finally {
-    await input.query(`SELECT pg_advisory_unlock($1)`, [input.lockKey]);
-  }
+  const backfilled = updateRows<{ id: string }>(
+    await input.query(
+      `UPDATE ${table}
+       SET expires_at = COALESCE(published_at, created_at, $2) + ($1 * INTERVAL '1 day')
+       WHERE status = 'active' AND expires_at IS NULL
+       RETURNING id`,
+      [listingActiveDays(), now],
+    ),
+  );
+  const sellerSelect =
+    input.table === 'listings' ? `, seller_id AS "sellerId"` : '';
+  const expired = updateRows<{
+    id: string;
+    sellerId?: string;
+    title: string;
+    slug: string;
+  }>(
+    await input.query(
+      `UPDATE ${table}
+       SET status = 'expired'
+       WHERE status = 'active' AND expires_at <= $1
+       RETURNING id${sellerSelect}, title, slug`,
+      [now],
+    ),
+  ).map((row) => ({
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    sellerId: row.sellerId ?? '',
+  }));
+  return {
+    expired,
+    backfilled: backfilled.length,
+  };
 }

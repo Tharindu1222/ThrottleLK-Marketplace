@@ -105,7 +105,25 @@ export class InventoryService {
       item.costPriceLkr = input.costPriceLkr ?? null;
     if (input.askingPriceLkr !== undefined)
       item.askingPriceLkr = input.askingPriceLkr ?? null;
-    await this.items.save(item);
+    await this.items.manager.transaction(async (manager) => {
+      await manager.getRepository(DealerInventoryItem).save(item);
+      if (
+        item.listingId &&
+        (input.costPriceLkr !== undefined || input.purchaseDate !== undefined)
+      ) {
+        await manager.getRepository(Listing).update(
+          { id: item.listingId, sellerId: owner.id },
+          {
+            ...(input.costPriceLkr !== undefined
+              ? { costPriceLkr: item.costPriceLkr }
+              : {}),
+            ...(input.purchaseDate !== undefined
+              ? { purchaseDate: item.purchaseDate }
+              : {}),
+          },
+        );
+      }
+    });
     return this.toDto(await this.reload(id));
   }
 
@@ -221,7 +239,8 @@ export class InventoryService {
           success: false,
           error: {
             code: 'EXPIRES_REQUIRED',
-            message: 'expiresAt (YYYY-MM-DD) is required for this document type',
+            message:
+              'expiresAt (YYYY-MM-DD) is required for this document type',
           },
         });
       }
@@ -289,15 +308,13 @@ export class InventoryService {
     const file = await this.storage.getObject(doc.storageKey);
     return {
       ...file,
-      filename: doc.fileName.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80) || 'document',
+      filename:
+        doc.fileName.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80) ||
+        'document',
     };
   }
 
-  async deleteDocument(
-    owner: User,
-    id: string,
-    type: InventoryDocumentType,
-  ) {
+  async deleteDocument(owner: User, id: string, type: InventoryDocumentType) {
     const item = await this.getOwnedItem(owner.id, id);
     const doc = await this.documents.findOne({
       where: { inventoryItemId: item.id, type },
@@ -333,12 +350,8 @@ export class InventoryService {
     if (listing.brand?.name) item.brandName = listing.brand.name;
     if (listing.model?.name) item.modelName = listing.model.name;
     if (listing.manufactureYear) item.manufactureYear = listing.manufactureYear;
-    if (listing.costPriceLkr != null && item.costPriceLkr == null) {
-      item.costPriceLkr = listing.costPriceLkr;
-    }
-    if (listing.purchaseDate && !item.purchaseDate) {
-      item.purchaseDate = listing.purchaseDate;
-    }
+    item.costPriceLkr = listing.costPriceLkr ?? null;
+    item.purchaseDate = listing.purchaseDate ?? null;
     if (listing.status === 'sold') {
       item.soldAt = listing.soldAt ?? item.soldAt ?? new Date();
       item.soldPriceLkr =
@@ -383,7 +396,10 @@ export class InventoryService {
     if (!item || item.ownerUserId !== ownerUserId) {
       throw new NotFoundException({
         success: false,
-        error: { code: 'INVENTORY_NOT_FOUND', message: 'Inventory item not found' },
+        error: {
+          code: 'INVENTORY_NOT_FOUND',
+          message: 'Inventory item not found',
+        },
       });
     }
     return item;
@@ -397,7 +413,10 @@ export class InventoryService {
     if (!row) {
       throw new NotFoundException({
         success: false,
-        error: { code: 'INVENTORY_NOT_FOUND', message: 'Inventory item not found' },
+        error: {
+          code: 'INVENTORY_NOT_FOUND',
+          message: 'Inventory item not found',
+        },
       });
     }
     return row;
@@ -417,10 +436,13 @@ export class InventoryService {
 
   private marginFields(item: DealerInventoryItem, asking: number | null) {
     if (item.costPriceLkr == null) {
-      return { marginLkr: null as number | null, marginPercent: null as number | null };
+      return {
+        marginLkr: null as number | null,
+        marginPercent: null as number | null,
+      };
     }
     const sell =
-      item.soldPriceLkr != null ? item.soldPriceLkr : asking ?? null;
+      item.soldPriceLkr != null ? item.soldPriceLkr : (asking ?? null);
     if (sell == null) {
       return { marginLkr: null, marginPercent: null };
     }
@@ -445,8 +467,7 @@ export class InventoryService {
 
   private toDto(item: DealerInventoryItem) {
     const listing = item.listing ?? null;
-    const asking =
-      listing?.priceLkr ?? item.askingPriceLkr ?? null;
+    const asking = listing?.priceLkr ?? item.askingPriceLkr ?? null;
     const status: string = listing
       ? listing.status
       : item.soldAt
@@ -469,7 +490,9 @@ export class InventoryService {
         };
       }
       const status =
-        type === 'ownership_cr' ? ('ok' as const) : this.expiryStatus(doc.expiresAt);
+        type === 'ownership_cr'
+          ? ('ok' as const)
+          : this.expiryStatus(doc.expiresAt);
       return {
         type,
         present: true as const,
@@ -482,7 +505,8 @@ export class InventoryService {
 
     const worstDoc = documents.reduce<DocExpiryStatus>((acc, d) => {
       if (d.status === 'expired') return 'expired';
-      if (d.status === 'expiring_soon' && acc !== 'expired') return 'expiring_soon';
+      if (d.status === 'expiring_soon' && acc !== 'expired')
+        return 'expiring_soon';
       if (d.status === 'missing' && acc === 'ok') return 'missing';
       return acc;
     }, 'ok');
@@ -492,8 +516,7 @@ export class InventoryService {
       title: item.title,
       brandName: item.brandName ?? listing?.brand?.name ?? null,
       modelName: item.modelName ?? listing?.model?.name ?? null,
-      manufactureYear:
-        item.manufactureYear ?? listing?.manufactureYear ?? null,
+      manufactureYear: item.manufactureYear ?? listing?.manufactureYear ?? null,
       purchaseDate: item.purchaseDate,
       costPriceLkr: item.costPriceLkr,
       askingPriceLkr: asking,

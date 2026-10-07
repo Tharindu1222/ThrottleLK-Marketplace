@@ -91,6 +91,7 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [dealer, setDealer] = useState<DealerShop | null | undefined>(undefined);
+  const [partsPending, setPartsPending] = useState(false);
   const [image, setImage] = useState<DealerImage | null>(null);
   const [districts, setDistricts] = useState<Option[]>([]);
   const [cities, setCities] = useState<Option[]>([]);
@@ -175,6 +176,7 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
     const access = getAccessToken();
     setToken(access);
     if (!access) {
+      setPartsPending(false);
       setDealer(null);
       return;
     }
@@ -187,15 +189,23 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
         setDistricts(districtsList);
         const active = shops.find((shop) => shop.status === 'active') ?? null;
         if (active) {
+          setPartsPending(false);
           applyDealer(active);
           await loadImages(access, active.id);
         } else {
+          setPartsPending(
+            shops.some(
+              (shop) =>
+                shop.status === 'pending' || shop.status === 'pending_review',
+            ),
+          );
           setDealer(null);
         }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : t(locale, 'failedToLoadImages'),
         );
+        setPartsPending(false);
         setDealer(null);
       }
     })();
@@ -516,17 +526,25 @@ export function PartsShowroomClient({ locale }: { locale: Locale }) {
     return (
       <section className={`${cardClass} max-w-xl p-5 sm:p-6`}>
         <p className="text-lg font-bold tracking-tight text-foreground">
-          {t(locale, 'noActiveShowroom')}
+          {t(
+            locale,
+            partsPending ? 'partsShowroomPending' : 'noPartsShowroom',
+          )}
         </p>
         <p className="mt-2 text-sm text-muted">
-          {t(locale, 'noActiveShowroomHint')}
+          {t(
+            locale,
+            partsPending ? 'partsShowroomPendingHint' : 'noPartsShowroomHint',
+          )}
         </p>
-        <Link
-          href={`/${locale}/parts-dealers/apply`}
-          className={`mt-5 ${ctaClass}`}
-        >
-          {t(locale, 'dealerApply')}
-        </Link>
+        {partsPending ? null : (
+          <Link
+            href={`/${locale}/parts-dealers/apply`}
+            className={`mt-5 ${ctaClass}`}
+          >
+            {t(locale, 'becomePartsDealer')}
+          </Link>
+        )}
       </section>
     );
   }

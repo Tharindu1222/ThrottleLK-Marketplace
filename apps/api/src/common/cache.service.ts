@@ -4,6 +4,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
+import type RedisClient from 'ioredis';
 
 type MemoryEntry = { value: string; expiresAt: number };
 
@@ -22,8 +23,7 @@ const KEYS = {
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly log = new Logger(CacheService.name);
   private readonly memory = new Map<string, MemoryEntry>();
-  private redis: { get(k: string): Promise<string | null>; set(k: string, v: string, ...args: unknown[]): Promise<unknown>; del(...k: string[]): Promise<unknown>; quit(): Promise<unknown>; on(ev: string, fn: (e: Error) => void): void } | null =
-    null;
+  private redis: RedisClient | null = null;
 
   readonly keys = KEYS;
 
@@ -62,9 +62,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      const raw = this.redis
-        ? await this.redis.get(key)
-        : this.memoryGet(key);
+      const raw = this.redis ? await this.redis.get(key) : this.memoryGet(key);
       if (!raw) return null;
       return JSON.parse(raw) as T;
     } catch (err) {
@@ -118,6 +116,46 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   invalidateDashboard() {
     return this.del(KEYS.dashboard);
+  }
+
+  async invalidatePublicListings(): Promise<void> {
+    const patterns = [
+      'browse:*',
+      'promo:live:*',
+      'home:marketplace-preview',
+      'dealers:map',
+      'parts-dealers:map',
+    ];
+    for (const key of this.memory.keys()) {
+      if (
+        key.startsWith('browse:') ||
+        key.startsWith('promo:live:') ||
+        key === 'home:marketplace-preview' ||
+        key.endsWith('dealers:map')
+      )
+        this.memory.delete(key);
+    }
+    if (!this.redis) return;
+    try {
+      for (const pattern of patterns) {
+        let cursor = '0';
+        do {
+          const result = await this.redis.scan(
+            cursor,
+            'MATCH',
+            pattern,
+            'COUNT',
+            '200',
+          );
+          cursor = result[0];
+          if (result[1].length) await this.redis.del(...result[1]);
+        } while (cursor !== '0');
+      }
+    } catch (err) {
+      this.log.warn(
+        `Public cache invalidation failed: ${err instanceof Error ? err.message : 'error'}`,
+      );
+    }
   }
 
   private memoryGet(key: string): string | null {

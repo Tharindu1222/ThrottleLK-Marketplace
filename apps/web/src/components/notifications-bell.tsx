@@ -77,8 +77,11 @@ export function notificationHref(
   ) {
     return `/${locale}/account/listings/${data.listingId}/promote`;
   }
-  if (n.type === 'listing_inquiry') {
-    return `/${locale}/account/messages`;
+  if (n.type === 'listing_inquiry' && data?.slug) {
+    return `/${locale}/bikes/${data.slug}`;
+  }
+  if (n.type === 'listing_inquiry' && data?.listingId) {
+    return `/${locale}/account/listings/${data.listingId}/edit`;
   }
   if (!data) return null;
   if (data.conversationId) {

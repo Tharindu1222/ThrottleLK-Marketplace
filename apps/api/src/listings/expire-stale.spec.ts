@@ -8,7 +8,7 @@ describe('expireActiveRows', () => {
       lockKey: 1,
       query: async (statement) => {
         sql.push(statement);
-        if (statement.includes('pg_try_advisory_lock')) return [{ locked: true }];
+        if (statement.includes('pg_try_advisory_xact_lock')) return [{ locked: true }];
         if (statement.includes('RETURNING')) {
           return [
             [{ id: 'listing-1', sellerId: 'seller-1', title: 'Honda', slug: 'honda' }],
@@ -34,7 +34,7 @@ describe('expireActiveRows', () => {
       lockKey: 2,
       query: async (statement) => {
         sql.push(statement);
-        if (statement.includes('pg_try_advisory_lock')) return [{ locked: true }];
+        if (statement.includes('pg_try_advisory_xact_lock')) return [{ locked: true }];
         if (statement.includes('RETURNING')) {
           return [[{ id: 'part-1', title: 'Pads' }], 1];
         }

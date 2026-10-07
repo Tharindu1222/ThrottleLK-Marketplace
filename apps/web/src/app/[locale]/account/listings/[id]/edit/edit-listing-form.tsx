@@ -104,10 +104,7 @@ function Field({
 }) {
   return (
     <div className="min-w-0">
-      <label
-        htmlFor={htmlFor}
-        className="mb-1.5 block text-sm text-muted"
-      >
+      <label htmlFor={htmlFor} className="mb-1.5 block text-sm text-muted">
         {label}
         {optional ? (
           <span className="ml-1.5 font-normal text-muted/80">
@@ -257,7 +254,10 @@ export function EditListingForm({
   if (!token) {
     return (
       <p className="mt-6 text-muted">
-        <Link href={loginHref(locale, pathname)} className="text-accent underline">
+        <Link
+          href={loginHref(locale, pathname)}
+          className="text-accent underline"
+        >
           {t(locale, 'login')}
         </Link>
       </p>
@@ -320,16 +320,19 @@ export function EditListingForm({
             description: String(form.get('description')),
             priceLkr: Number(form.get('priceLkr')),
             manufactureYear: nextYear,
-            engineCc: Number(form.get('engineCc') || 0) || undefined,
-            mileage: Number(form.get('mileage') || 0) || undefined,
+            engineCc: form.get('engineCc')
+              ? Number(form.get('engineCc'))
+              : null,
+            mileage: Number(form.get('mileage')),
             fuelType: String(form.get('fuelType')),
             transmission: String(form.get('transmission')),
             condition: String(form.get('condition')),
             phone: String(form.get('phone') || '') || undefined,
-            whatsapp: String(form.get('whatsapp') || '').trim() || undefined,
-            colour: String(form.get('colour') || '').trim() || undefined,
-            registrationYear:
-              Number(form.get('registrationYear') || 0) || undefined,
+            whatsapp: String(form.get('whatsapp') || '').trim() || null,
+            colour: String(form.get('colour') || '').trim() || null,
+            registrationYear: form.get('registrationYear')
+              ? Number(form.get('registrationYear'))
+              : null,
             negotiable: form.get('negotiable') === 'true',
             ...(listing.dealerId
               ? {
@@ -346,9 +349,7 @@ export function EditListingForm({
         },
       );
       setListing(updated);
-      setSaveResult(
-        updated.status === 'pending_review' ? 'review' : 'updated',
-      );
+      setSaveResult(updated.status === 'pending_review' ? 'review' : 'updated');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed');
     } finally {
@@ -404,10 +405,7 @@ export function EditListingForm({
       ) : null}
 
       <form onSubmit={onSubmit} className="grid min-w-0 gap-5 xl:grid-cols-2">
-        <Section
-          className="xl:col-span-2"
-          title={t(locale, 'sellStepDetails')}
-        >
+        <Section className="xl:col-span-2" title={t(locale, 'sellStepDetails')}>
           <div className="grid min-w-0 gap-4 xl:grid-cols-[1fr_16rem] xl:items-start">
             <Field
               label={t(locale, 'description')}
@@ -425,10 +423,7 @@ export function EditListingForm({
               />
             </Field>
             <div className="grid gap-4">
-              <Field
-                label={t(locale, 'priceLkr')}
-                htmlFor={`${uid}-price`}
-              >
+              <Field label={t(locale, 'priceLkr')} htmlFor={`${uid}-price`}>
                 <input
                   id={`${uid}-price`}
                   name="priceLkr"
@@ -484,14 +479,9 @@ export function EditListingForm({
           </div>
         </Section>
 
-        <Section
-          title={t(locale, 'sellStepBike')}
-        >
+        <Section title={t(locale, 'sellStepBike')}>
           <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-            <Field
-              label={t(locale, 'brandFilter')}
-              htmlFor={`${uid}-brand`}
-            >
+            <Field label={t(locale, 'brandFilter')} htmlFor={`${uid}-brand`}>
               <select
                 id={`${uid}-brand`}
                 name="brandId"
@@ -511,10 +501,7 @@ export function EditListingForm({
                 ))}
               </select>
             </Field>
-            <Field
-              label={t(locale, 'modelFilter')}
-              htmlFor={`${uid}-model`}
-            >
+            <Field label={t(locale, 'modelFilter')} htmlFor={`${uid}-model`}>
               <select
                 id={`${uid}-model`}
                 name="modelId"
@@ -557,14 +544,9 @@ export function EditListingForm({
           </Field>
         </Section>
 
-        <Section
-          title={t(locale, 'sellStepSpecs')}
-        >
+        <Section title={t(locale, 'sellStepSpecs')}>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field
-              label={t(locale, 'manufactureYear')}
-              htmlFor={`${uid}-year`}
-            >
+            <Field label={t(locale, 'manufactureYear')} htmlFor={`${uid}-year`}>
               <input
                 id={`${uid}-year`}
                 name="manufactureYear"
@@ -573,7 +555,9 @@ export function EditListingForm({
                 min={1970}
                 max={2100}
                 value={manufactureYear || listing.manufactureYear}
-                onChange={(e) => setManufactureYear(Number(e.target.value) || 0)}
+                onChange={(e) =>
+                  setManufactureYear(Number(e.target.value) || 0)
+                }
                 className={fieldClass}
               />
             </Field>
@@ -609,10 +593,7 @@ export function EditListingForm({
             </Field>
           </div>
           <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field
-              label={t(locale, 'fuelType')}
-              htmlFor={`${uid}-fuel`}
-            >
+            <Field label={t(locale, 'fuelType')} htmlFor={`${uid}-fuel`}>
               <select
                 id={`${uid}-fuel`}
                 name="fuelType"
@@ -627,10 +608,7 @@ export function EditListingForm({
                 <option value="other">{t(locale, 'fuelOther')}</option>
               </select>
             </Field>
-            <Field
-              label={t(locale, 'transmission')}
-              htmlFor={`${uid}-trans`}
-            >
+            <Field label={t(locale, 'transmission')} htmlFor={`${uid}-trans`}>
               <select
                 id={`${uid}-trans`}
                 name="transmission"
@@ -644,10 +622,7 @@ export function EditListingForm({
                 <option value="other">{t(locale, 'transOther')}</option>
               </select>
             </Field>
-            <Field
-              label={t(locale, 'condition')}
-              htmlFor={`${uid}-condition`}
-            >
+            <Field label={t(locale, 'condition')} htmlFor={`${uid}-condition`}>
               <select
                 id={`${uid}-condition`}
                 name="condition"
@@ -693,10 +668,7 @@ export function EditListingForm({
                 ))}
               </select>
             </Field>
-            <Field
-              label={t(locale, 'city')}
-              htmlFor={`${uid}-city`}
-            >
+            <Field label={t(locale, 'city')} htmlFor={`${uid}-city`}>
               <select
                 id={`${uid}-city`}
                 name="cityId"
@@ -833,7 +805,10 @@ export function EditListingForm({
             >
               {t(locale, 'changesSaved')}
             </p>
-            <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-muted">
+            <p
+              id={descriptionId}
+              className="mt-2 text-sm leading-relaxed text-muted"
+            >
               {saveResult === 'review'
                 ? t(locale, 'adSubmittedHint')
                 : t(locale, 'listingUpdated')}

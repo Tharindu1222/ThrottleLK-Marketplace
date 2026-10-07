@@ -75,7 +75,12 @@ export const createListingSchema = z.object({
   purchaseDate: optionalIsoDate,
 });
 
-export const updateListingSchema = createListingSchema.partial();
+export const updateListingSchema = createListingSchema.partial().extend({
+  registrationYear: createListingSchema.shape.registrationYear.nullable(),
+  engineCc: createListingSchema.shape.engineCc.nullable(),
+  colour: createListingSchema.shape.colour.nullable(),
+  whatsapp: createListingSchema.shape.whatsapp.nullable(),
+});
 
 export const markSoldSchema = z.object({
   soldPriceLkr: z.number().int().positive(),

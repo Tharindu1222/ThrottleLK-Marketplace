@@ -30,7 +30,9 @@ export function CategoryCoverManager({ search = '' }: { search?: string }) {
     setToken(access);
     if (!access) return;
     void load(access).catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load categories'),
+      setError(
+        err instanceof Error ? err.message : 'Failed to load categories',
+      ),
     );
   }, []);
 
@@ -42,6 +44,7 @@ export function CategoryCoverManager({ search = '' }: { search?: string }) {
     : categories;
 
   async function uploadCover(categoryId: string, file: File) {
+    if (!token) return;
     setBusyId(categoryId);
     setError(null);
     try {

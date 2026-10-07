@@ -20,6 +20,8 @@ export async function PromotedListingsRail({
   limit = 8,
   excludeId,
   variant = 'browse',
+  categoryId,
+  partKind,
 }: {
   locale: Locale;
   surface: PromotedSurface;
@@ -29,6 +31,10 @@ export async function PromotedListingsRail({
   excludeId?: string;
   /** browse = scrolling strip; detail = small static cards */
   variant?: 'browse' | 'detail';
+  /** Bike category page — only promote ads in this category. */
+  categoryId?: string;
+  /** Spare, modified, or accessory browse tab. */
+  partKind?: string;
 }) {
   const cards =
     kind === 'bike'
@@ -37,6 +43,7 @@ export async function PromotedListingsRail({
             surface,
             kind: 'bike',
             limit: String(limit),
+            ...(categoryId ? { categoryId } : {}),
           },
         }).catch(() => [] as PromotedBikeCard[])
       : await apiGet<PromotedPartCard[]>('/api/v1/promotions/live', {
@@ -44,6 +51,7 @@ export async function PromotedListingsRail({
             surface,
             kind: 'part',
             limit: String(limit),
+            ...(partKind ? { partKind } : {}),
           },
         }).catch(() => [] as PromotedPartCard[]);
 

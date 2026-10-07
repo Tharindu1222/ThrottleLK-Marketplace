@@ -42,9 +42,13 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
   const bothShops = canBike && canParts;
   const stock: PerformanceStock = bothShops
     ? (queryStock ?? 'bike')
-    : canParts
+    : queryStock === 'parts' && !canParts
       ? 'parts'
-      : 'bike';
+      : queryStock === 'bike' && !canBike
+        ? 'bike'
+        : canParts
+          ? 'parts'
+          : 'bike';
 
   function selectStock(next: PerformanceStock) {
     const path = `/${locale}/account/performance`;
@@ -65,7 +69,10 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
   useEffect(() => {
     if (!ready || !token) return;
     if (canBike && canParts) return;
-    if (!searchParams.get('stock')) return;
+    const requested = searchParams.get('stock');
+    if (!requested) return;
+    if (requested === 'parts' && !canParts) return;
+    if ((requested === 'bike' || requested === 'bikes') && !canBike) return;
     router.replace(`/${locale}/account/performance`, { scroll: false });
   }, [canBike, canParts, locale, ready, router, searchParams, token]);
 
@@ -128,6 +135,13 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
     })();
   }, [range, ready, stock]);
 
+  const sessionUser = ready ? getStoredUser() : null;
+  const missingRole =
+    sessionUser != null &&
+    (stock === 'bike'
+      ? !sessionUser.roles?.includes('dealer')
+      : !sessionUser.roles?.includes('parts_dealer'));
+
   if (!ready) return null;
 
   if (!token) {
@@ -143,7 +157,7 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
     );
   }
 
-  if (forbidden) {
+  if (forbidden || missingRole) {
     const applyHref =
       stock === 'parts'
         ? `/${locale}/parts-dealers/apply`
@@ -157,9 +171,19 @@ export function PerformanceClient({ locale }: { locale: Locale }) {
         ) : null}
         <section className={`${cardClass} max-w-xl p-5 sm:p-6`}>
           <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-foreground">
-            {t(locale, 'noActiveShowroom')}
+            {t(
+              locale,
+              stock === 'parts' ? 'noPartsPerformance' : 'noActiveShowroom',
+            )}
           </p>
-          <p className="mt-2 text-sm text-muted">{t(locale, 'noActiveShowroomHint')}</p>
+          <p className="mt-2 text-sm text-muted">
+            {t(
+              locale,
+              stock === 'parts'
+                ? 'noPartsPerformanceHint'
+                : 'noActiveShowroomHint',
+            )}
+          </p>
           <Link
             href={applyHref}
             className="mt-5 inline-flex rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent/90"

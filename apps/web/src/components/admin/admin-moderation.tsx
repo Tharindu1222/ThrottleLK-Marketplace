@@ -48,7 +48,14 @@ function ReviewDetails({
   imageUrls?: string[];
 }) {
   const extras = (imageUrls ?? []).filter(Boolean);
-  if (!description && !location && !phone && !email && !address && extras.length < 2) {
+  if (
+    !description &&
+    !location &&
+    !phone &&
+    !email &&
+    !address &&
+    extras.length < 2
+  ) {
     return null;
   }
   return (
@@ -56,8 +63,12 @@ function ReviewDetails({
       {location ? (
         <p className="text-[var(--admin-text)]">Location: {location}</p>
       ) : null}
-      {phone ? <p className="text-[var(--admin-text)]">Phone: {phone}</p> : null}
-      {email ? <p className="text-[var(--admin-text)]">Email: {email}</p> : null}
+      {phone ? (
+        <p className="text-[var(--admin-text)]">Phone: {phone}</p>
+      ) : null}
+      {email ? (
+        <p className="text-[var(--admin-text)]">Email: {email}</p>
+      ) : null}
       {address ? (
         <p className="text-[var(--admin-text)]">Address: {address}</p>
       ) : null}
@@ -137,13 +148,7 @@ function DuplicateSignals({ listing }: { listing: PendingListing }) {
   );
 }
 
-function CoverThumb({
-  url,
-  title,
-}: {
-  url?: string | null;
-  title: string;
-}) {
+function CoverThumb({ url, title }: { url?: string | null; title: string }) {
   return (
     <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-[var(--admin-surface)] ring-1 ring-[var(--admin-border)] sm:h-20 sm:w-28">
       {url ? (
@@ -441,6 +446,7 @@ export function AdminModeration({
   ]);
 
   if (!token) return null;
+  const access = token;
 
   const queuesEmpty =
     pending.length === 0 &&
@@ -488,7 +494,7 @@ export function AdminModeration({
     try {
       await action();
       setStatusMsg(label);
-      await load(token);
+      await load(access);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Action failed');
     } finally {
@@ -653,7 +659,7 @@ export function AdminModeration({
                           () =>
                             apiSend(
                               `/api/v1/admin/listings/${listing.id}/approve`,
-                              { token },
+                              { token: access },
                             ),
                         )
                       }
@@ -697,7 +703,7 @@ export function AdminModeration({
                         () =>
                           apiSend(
                             `/api/v1/admin/listings/${listing.id}/reject`,
-                            { token, body: { reason } },
+                            { token: access, body: { reason } },
                           ),
                         `Rejected “${listing.title}”`,
                       )
@@ -753,8 +759,7 @@ export function AdminModeration({
                         {listing.kind}
                       </p>
                       <p className="mt-1 text-sm text-[var(--admin-text)]">
-                        Shop:{' '}
-                        {listing.partsDealer?.name ?? 'Unknown shop'}
+                        Shop: {listing.partsDealer?.name ?? 'Unknown shop'}
                       </p>
                       {listing.updatedAt ? (
                         <p className="text-xs text-[var(--admin-faint)]">
@@ -798,7 +803,7 @@ export function AdminModeration({
                           () =>
                             apiSend(
                               `/api/v1/admin/part-listings/${listing.id}/approve`,
-                              { token },
+                              { token: access },
                             ),
                         )
                       }
@@ -842,7 +847,7 @@ export function AdminModeration({
                         () =>
                           apiSend(
                             `/api/v1/admin/part-listings/${listing.id}/reject`,
-                            { token, body: { reason: partReason } },
+                            { token: access, body: { reason: partReason } },
                           ),
                         `Rejected “${listing.title}”`,
                       )
@@ -937,7 +942,8 @@ export function AdminModeration({
                         void runAction(
                           dealer.id,
                           `Approved “${dealer.name}”`,
-                          () => apiSend(approvePath(dealer.id), { token }),
+                          () =>
+                            apiSend(approvePath(dealer.id), { token: access }),
                         )
                       }
                     >
@@ -979,7 +985,7 @@ export function AdminModeration({
                         },
                         () =>
                           apiSend(rejectPath(dealer.id), {
-                            token,
+                            token: access,
                             body: { reason: rejectReason },
                           }),
                         `Rejected “${dealer.name}”`,

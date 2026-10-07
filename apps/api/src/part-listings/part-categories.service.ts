@@ -61,9 +61,7 @@ export class PartCategoriesService {
     const parentId = input.parentId ?? null;
     if (parentId) await this.getById(parentId);
     const slugBase = parentId
-      ? slugify(
-          `${(await this.getById(parentId)).name}-${input.name}`,
-        )
+      ? slugify(`${(await this.getById(parentId)).name}-${input.name}`)
       : slugify(input.name);
     const slug = await this.allocateUniqueSlug(slugBase || input.name);
     return this.categories.save(
@@ -76,33 +74,46 @@ export class PartCategoriesService {
   }
 
   async update(id: string, input: UpdatePartCategoryInput) {
-    const category = await this.getById(id);
-    if (input.parentId !== undefined) {
-      if (input.parentId === id) {
-        throw new BadRequestException({
-          success: false,
-          error: {
-            code: 'INVALID_PARENT',
-            message: 'Category cannot be its own parent',
-          },
-        });
-      }
-      if (input.parentId) await this.getById(input.parentId);
-      category.parentId = input.parentId;
-    }
-    if (input.name) {
-      category.name = input.name;
-      const slugBase = category.parentId
-        ? slugify(
-            `${(await this.getById(category.parentId)).name}-${input.name}`,
-          )
-        : slugify(input.name);
-      category.slug = await this.allocateUniqueSlug(
-        slugBase || input.name,
-        category.id,
+    return this.categories.manager.transaction(async (manager) => {
+      await manager.query(
+        'LOCK TABLE part_categories IN SHARE ROW EXCLUSIVE MODE',
       );
-    }
-    return this.categories.save(category);
+      const repository = manager.getRepository(PartCategory);
+      const category = await this.getById(id, repository);
+      if (input.parentId !== undefined) {
+        const seen = new Set([id]);
+        let ancestorId = input.parentId;
+        while (ancestorId) {
+          if (seen.has(ancestorId)) {
+            throw new BadRequestException({
+              success: false,
+              error: {
+                code: 'INVALID_PARENT',
+                message: 'Category parent must not create a cycle',
+              },
+            });
+          }
+          seen.add(ancestorId);
+          ancestorId = (await this.getById(ancestorId, repository)).parentId;
+        }
+        if (input.parentId) await this.getById(input.parentId, repository);
+        category.parentId = input.parentId;
+      }
+      if (input.name) {
+        category.name = input.name;
+        const slugBase = category.parentId
+          ? slugify(
+              `${(await this.getById(category.parentId, repository)).name}-${input.name}`,
+            )
+          : slugify(input.name);
+        category.slug = await this.allocateUniqueSlug(
+          slugBase || input.name,
+          category.id,
+          repository,
+        );
+      }
+      return repository.save(category);
+    });
   }
 
   async remove(id: string) {
@@ -135,8 +146,8 @@ export class PartCategoriesService {
     return { id, deleted: true as const };
   }
 
-  async getById(id: string) {
-    const category = await this.categories.findOne({ where: { id } });
+  async getById(id: string, repository = this.categories) {
+    const category = await repository.findOne({ where: { id } });
     if (!category) {
       throw new NotFoundException({
         success: false,
@@ -149,12 +160,16 @@ export class PartCategoriesService {
     return category;
   }
 
-  private async allocateUniqueSlug(nameOrSlug: string, excludeId?: string) {
+  private async allocateUniqueSlug(
+    nameOrSlug: string,
+    excludeId?: string,
+    repository = this.categories,
+  ) {
     const base = slugify(nameOrSlug) || 'part-category';
     let candidate = base;
     let n = 1;
     for (;;) {
-      const existing = await this.categories.findOne({
+      const existing = await repository.findOne({
         where: { slug: candidate },
         select: ['id'],
       });

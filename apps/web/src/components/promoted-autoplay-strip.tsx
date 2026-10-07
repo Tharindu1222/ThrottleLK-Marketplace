@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { MarketplaceImage } from '@/components/marketplace-image';
 import type { BrowseListingCard } from '@/components/listing-card';
 import type { BrowsePartCard } from '@/components/part-card';
-import { t, type Locale } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
 import { partListingBase } from '@/lib/part-kind';
 import { composeListingTitle } from '@/lib/listing-title';
 import { promoCardBadgeLabel } from '@/lib/promo-tier';
@@ -56,14 +55,6 @@ function toCards(
     imageUrl: part.coverImageUrl,
     badge: promoCardBadgeLabel(locale, part.tier, part.isTop),
   }));
-}
-
-function fillSequence(cards: StripCard[]) {
-  if (cards.length === 0) return [];
-  const minWidth = 1200;
-  const slot = 192 + 12;
-  const repeat = Math.max(1, Math.ceil(minWidth / (cards.length * slot)));
-  return Array.from({ length: repeat }, () => cards).flat();
 }
 
 function PromoChip({
@@ -162,24 +153,8 @@ export function PromotedAutoplayStrip({
   parts?: BrowsePartCard[];
 }) {
   const cards = toCards(locale, bikes, parts);
-  const [reduced, setReduced] = useState(false);
-  const [userPaused, setUserPaused] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const sync = () => setReduced(mq.matches);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
 
   if (cards.length === 0) return null;
-
-  const sequence = reduced ? cards : fillSequence(cards);
-  const pauseLabel = userPaused
-    ? t(locale, 'promoStripPlay')
-    : t(locale, 'promoStripPause');
-  const duration = `${Math.max(24, sequence.length * 5)}s`;
 
   return (
     <section
@@ -199,54 +174,13 @@ export function PromotedAutoplayStrip({
             {heading}
           </h2>
         </div>
-        {reduced ? null : (
-          <button
-            type="button"
-            onClick={() => setUserPaused((value) => !value)}
-            className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-full border border-black/10 bg-white px-4 text-xs font-medium text-foreground transition hover:border-accent/40 hover:text-accent"
-          >
-            {userPaused ? (
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-                <path d="M8 5.5v13l11-6.5-11-6.5z" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-                <path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z" />
-              </svg>
-            )}
-            {pauseLabel}
-          </button>
-        )}
       </div>
 
-      <div className="promo-strip-scroller mt-4 w-full min-w-0 max-w-full touch-pan-x overflow-x-auto overscroll-x-contain px-4 pb-1">
-        <div
-          className="promo-strip-track flex w-max"
-          data-paused={userPaused ? 'true' : 'false'}
-          style={{ ['--promo-strip-duration' as string]: duration }}
-        >
-          <ul className="flex shrink-0 gap-3 pr-3">
-            {sequence.map((card, index) => (
-              <PromoChip
-                key={`${card.id}-${index}`}
-                card={card}
-                hidden={!reduced && index >= cards.length}
-              />
-            ))}
-          </ul>
-          {reduced ? null : (
-            <ul className="flex shrink-0 gap-3 pr-3" aria-hidden>
-              {sequence.map((card, index) => (
-                <PromoChip
-                  key={`loop-${card.id}-${index}`}
-                  card={card}
-                  hidden
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+      <ul className="mt-4 flex w-full min-w-0 gap-3 overflow-x-auto overscroll-x-contain pb-1">
+        {cards.map((card) => (
+          <PromoChip key={card.id} card={card} />
+        ))}
+      </ul>
     </section>
   );
 }

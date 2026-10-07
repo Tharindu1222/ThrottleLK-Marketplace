@@ -1,3 +1,4 @@
+import { isPublicBike, publicBikeSql } from '../common/public-listing';
 import {
   ConflictException,
   Injectable,
@@ -91,7 +92,7 @@ export class FavouritesService {
         'city.name',
       ])
       .where('f.userId = :userId', { userId })
-      .andWhere('listing.status = :status', { status: 'active' })
+      .andWhere(publicBikeSql('listing'))
       .orderBy('f.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
@@ -172,8 +173,9 @@ export class FavouritesService {
   async add(userId: string, listingId: string) {
     const listing = await this.listings.findOne({
       where: { id: listingId, status: 'active' },
+      relations: ['seller', 'dealer', 'dealer.owner'],
     });
-    if (!listing) {
+    if (!listing || !isPublicBike(listing)) {
       throw new NotFoundException({
         success: false,
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },

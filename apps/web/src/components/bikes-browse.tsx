@@ -146,6 +146,7 @@ export async function BikesBrowse({
             kind="bike"
             limit={6}
             variant="browse"
+            categoryId={filterState.categoryId}
           />
           <p className="mb-4 text-sm text-muted">
             {total === 1

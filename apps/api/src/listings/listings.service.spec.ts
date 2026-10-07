@@ -13,7 +13,7 @@ function makeService(
     findActiveOwned?: jest.Mock;
   },
 ) {
-  const row = { ...listing } as Listing;
+  const row = { seller: { id: seller.id, status: 'active' }, dealer: listing.dealerId ? { id: listing.dealerId, status: 'active', owner: { status: 'active' } } : null, ...listing } as Listing;
   const listingsRepo = {
     findOne: jest.fn(async () => row),
     save: jest.fn(async (saved: Listing) => saved),
@@ -104,7 +104,7 @@ describe('ListingsService admin review notifications', () => {
       priceLkr: 3900000,
     });
 
-    await service.update(seller, row.id, { title: 'BMW Motorrad S 1000 R 2026' });
+    await service.update(seller, row.id, { description: 'Updated description for admin review' });
 
     expect(notifications.listingPendingReview).toHaveBeenCalledWith({
       id: 'listing-1',
@@ -161,6 +161,8 @@ describe('ListingsService.listPending', () => {
       },
     };
     const listingsQb = {
+      leftJoin: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
@@ -212,6 +214,7 @@ describe('ListingsService.listPending', () => {
       id: 'seller-1',
       firstName: 'Nimal',
       lastName: 'Perera',
+      email: 'nimal@example.com',
     });
     expect(row.seller).not.toHaveProperty('passwordHash');
     expect(row.updatedAt).toEqual(submittedAt);
@@ -241,6 +244,8 @@ describe('ListingsService.listAllAdmin', () => {
       },
     };
     const listingsQb = {
+      leftJoin: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
@@ -779,6 +784,8 @@ describe('ListingsService.getPublicOrOwned inventory privacy', () => {
     id: 'listing-1',
     sellerId: 'seller-1',
     dealerId: 'dealer-1',
+    seller: { id: 'seller-1', status: 'active' },
+    dealer: { id: 'dealer-1', status: 'active', owner: { status: 'active' } },
     slug: 'honda-dio',
     title: 'Honda Dio',
     priceLkr: 550000,
@@ -1036,12 +1043,13 @@ describe('ListingsService launch hardening', () => {
     });
     const listingsRepo = {
       query: jest.fn(async (sql: string) => {
-        if (sql.includes('pg_try_advisory_lock')) return [{ locked: true }];
+        if (sql.includes('pg_try_advisory_xact_lock')) return [{ locked: true }];
         if (sql.includes('pg_advisory_unlock')) return [];
         if (sql.includes('expires_at IS NULL')) return [[{ id: 'backfill-1' }], 1];
         return [[{ id: 'listing-1', sellerId: seller.id, title: 'Honda Dio' }], 1];
       }),
     };
+    Object.assign(listingsRepo, { manager: { transaction: (cb: (m: unknown) => unknown) => cb({ query: listingsRepo.query }) } });
     Object.assign(service as never, { listings: listingsRepo });
 
     const result = await service.expireStale(new Date('2026-03-01T00:00:00.000Z'));
@@ -1051,5 +1059,21 @@ describe('ListingsService launch hardening', () => {
       id: 'listing-1',
       title: 'Honda Dio',
     });
+  });
+});
+
+describe('approved listing edits', () => {
+  it.each(['paused', 'expired'] as const)('requires review after a material edit to %s', async (status) => {
+    const { service, row } = makeService({ id: 'bike', sellerId: seller.id, status, title: 'Old title' });
+    await service.update(seller, row.id, { title: 'New title' });
+    expect(row.status).toBe('pending_review');
+    await expect(service.resume(seller, row.id)).rejects.toThrow(BadRequestException);
+    await expect(service.renew(seller, row.id)).rejects.toThrow(BadRequestException);
+  });
+  it('preserves active status on a no-op edit', async () => {
+    const { service, row, notifications } = makeService({ id: 'bike', sellerId: seller.id, status: 'active', title: 'Same title' });
+    await service.update(seller, row.id, { title: 'Same title' });
+    expect(row.status).toBe('active');
+    expect(notifications.listingPendingReview).not.toHaveBeenCalled();
   });
 });

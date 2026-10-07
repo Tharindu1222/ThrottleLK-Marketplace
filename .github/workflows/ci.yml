@@ -36,6 +36,16 @@ jobs:
 
   build-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: qa_local_only
+          POSTGRES_DB: throttlelk_qa
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -48,6 +58,11 @@ jobs:
       - run: npm run test -w @throttlelk/validation
       - run: npm run build -w @throttlelk/api
       - run: npm run test -w @throttlelk/api
+      - name: Database regressions
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:qa_local_only@127.0.0.1:5432/throttlelk_qa
+        run: npm run test:integration -w @throttlelk/api
+      - run: npm run test -w @throttlelk/web
       - name: Build web
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001

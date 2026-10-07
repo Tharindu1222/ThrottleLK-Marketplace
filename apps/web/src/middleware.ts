@@ -12,10 +12,12 @@ function localeFromPath(pathname: string): (typeof locales)[number] {
   );
 }
 
-function hasAccessCookie(request: NextRequest): boolean {
+function hasSessionCookie(request: NextRequest): boolean {
   return Boolean(
     request.cookies.get('__Host-tlk_access')?.value ||
-      request.cookies.get('tlk_access')?.value,
+      request.cookies.get('tlk_access')?.value ||
+      request.cookies.get('__Host-tlk_refresh')?.value ||
+      request.cookies.get('tlk_refresh')?.value,
   );
 }
 
@@ -51,7 +53,7 @@ export function middleware(request: NextRequest) {
   const isAccount =
     pathname === `/${locale}/account` ||
     pathname.startsWith(`/${locale}/account/`);
-  if (isAccount && !hasAccessCookie(request)) {
+  if (isAccount && !hasSessionCookie(request)) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.search = '';

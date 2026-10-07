@@ -125,16 +125,23 @@ export class NotificationsService {
   async listingInquiry(
     sellerId: string,
     listing: { id: string; title: string; slug: string },
-    buyerName: string,
+    buyer: { name: string; phone: string; email?: string | null },
   ) {
+    const contact = [buyer.phone, buyer.email].filter(Boolean).join(' · ');
+    const who = contact ? `${buyer.name} (${contact})` : buyer.name;
     return this.notifyUser({
       userId: sellerId,
       type: 'listing_inquiry',
       title: 'New listing enquiry',
-      message: `${buyerName} sent a message about "${listing.title}".`,
-      data: { listingId: listing.id, slug: listing.slug },
+      message: `${who} sent a message about "${listing.title}".`,
+      data: {
+        listingId: listing.id,
+        slug: listing.slug,
+        buyerPhone: buyer.phone,
+        buyerEmail: buyer.email ?? null,
+      },
       emailSubject: 'New ThrottleLK listing enquiry',
-      emailHtml: `<p>${escapeHtml(buyerName)} asked about <strong>${escapeHtml(listing.title)}</strong>.</p><p>Open your ThrottleLK messages or listing dashboard to reply.</p>`,
+      emailHtml: `<p>${escapeHtml(who)} asked about <strong>${escapeHtml(listing.title)}</strong>.</p>`,
     });
   }
 

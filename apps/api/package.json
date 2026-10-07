@@ -13,6 +13,7 @@
     "migration:revert": "typeorm-ts-node-commonjs -d src/data-source.ts migration:revert",
     "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings=0",
     "test": "jest",
+    "test:integration": "node --test scripts/qa-regression.cjs",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
@@ -56,6 +57,9 @@
     "@types/node": "^22.13.10",
     "@types/passport-jwt": "^4.0.1",
     "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.71.1",
+    "@typescript-eslint/parser": "^8.71.1",
+    "eslint": "^9.39.5",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",

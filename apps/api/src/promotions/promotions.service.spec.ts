@@ -83,7 +83,7 @@ function makeService(overrides?: {
     findOne: jest.fn(async (_query?: unknown) => bank),
   };
   const listings = {
-    findOne: jest.fn(async (_query?: unknown) => listing),
+    findOne: jest.fn(async (_query?: unknown) => ({ seller: { status: 'active' }, ...listing })),
   };
   const partListings = {
     findOne: jest.fn(async (_query?: unknown) => overrides?.partListing ?? null),
@@ -154,6 +154,8 @@ function makeService(overrides?: {
             };
           }
           if (name === 'HomepagePlacement') return placements;
+          if (name === 'Listing') return listings;
+          if (name === 'PartListing') return partListings;
           return {
             findOne: jest.fn(),
             save: jest.fn(),
@@ -253,7 +255,9 @@ describe('PromotionsService.createCheckout', () => {
       paymentStatus: string;
     };
     expect(saved.id).toBe('req-old');
-    expect(saved.packageId).toBe('pkg-1');
+    expect(saved.packageId).toBe('pkg-old');
+    expect((saved as unknown as { status: string }).status).toBe('rejected');
+    expect(requests.save).toHaveBeenLastCalledWith(expect.objectContaining({ packageId: 'pkg-1', status: 'pending' }));
     expect(saved.paymentStatus).toBe('unpaid');
   });
 });
@@ -272,6 +276,7 @@ describe('PromotionsService.handlePayHereNotify', () => {
       paymentProvider: 'payhere',
       paymentStatus: 'unpaid',
       payhereOrderId: 'promo_abc',
+      chargedPriceLkr: 2500,
       package: {
         durationDays: 7,
         priceLkr: 2500,
@@ -346,7 +351,9 @@ describe('PromotionsService.handlePayHereNotify', () => {
       status: 'pending',
       paymentStatus: 'unpaid',
       payhereOrderId: 'promo_abc',
+      chargedPriceLkr: 2500,
       package: { priceLkr: 2500 },
+      paymentProvider: 'payhere',
     };
     requests.findOne.mockResolvedValue(pendingRow as never);
     payhere.verifyNotifyHash.mockReturnValue(true);
@@ -374,6 +381,7 @@ describe('PromotionsService.handlePayHereNotify', () => {
       status: 'approved',
       paymentStatus: 'paid',
       payhereOrderId: 'promo_abc',
+      paymentProvider: 'payhere',
     } as never);
     payhere.verifyNotifyHash.mockReturnValue(true);
     const result = await service.handlePayHereNotify({
@@ -451,6 +459,7 @@ describe('PromotionsService.approve', () => {
       id: 'listing-1',
       sellerId: seller.id,
       status: 'sold',
+      seller: { status: 'active' },
     });
     await expect(service.approve(admin, 'req-1')).rejects.toBeInstanceOf(
       BadRequestException,

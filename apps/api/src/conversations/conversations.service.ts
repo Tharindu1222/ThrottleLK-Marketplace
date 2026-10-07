@@ -1,3 +1,4 @@
+import { isPublicBike, isPublicPart } from '../common/public-listing';
 import {
   BadRequestException,
   ForbiddenException,
@@ -73,8 +74,9 @@ export class ConversationsService {
   ) {
     const listing = await this.listings.findOne({
       where: { id: listingId, status: 'active' },
+      relations: ['seller', 'dealer', 'dealer.owner'],
     });
-    if (!listing) {
+    if (!listing || !isPublicBike(listing)) {
       throw new NotFoundException({
         success: false,
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },
@@ -115,9 +117,9 @@ export class ConversationsService {
   ) {
     const listing = await this.partListings.findOne({
       where: { id: partListingId, status: 'active' },
-      relations: ['partsDealer'],
+      relations: ['partsDealer', 'partsDealer.owner'],
     });
-    if (!listing) {
+    if (!listing || !isPublicPart(listing)) {
       throw new NotFoundException({
         success: false,
         error: {
@@ -193,7 +195,9 @@ export class ConversationsService {
         'partListing.slug',
         'partListing.kind',
       ])
-      .where('c.buyerUserId = :userId OR c.sellerUserId = :userId', { userId })
+      .where('(c.buyerUserId = :userId OR c.sellerUserId = :userId)', {
+        userId,
+      })
       .orderBy('c.lastMessageAt', 'DESC', 'NULLS LAST')
       .addOrderBy('c.createdAt', 'DESC');
     if (paging?.listingId) {
@@ -248,7 +252,8 @@ export class ConversationsService {
           sellerUserId: c.sellerUserId,
           lastMessageAt: c.lastMessageAt,
           createdAt: c.createdAt,
-          role: c.buyerUserId === userId ? ('buyer' as const) : ('seller' as const),
+          role:
+            c.buyerUserId === userId ? ('buyer' as const) : ('seller' as const),
           counterpart: this.toContactCard(users.get(counterpartId) ?? null),
           lastMessagePreview: last?.body?.slice(0, 140) ?? null,
           lastMessageMine: last ? last.senderUserId === userId : false,
@@ -259,7 +264,7 @@ export class ConversationsService {
     };
   }
 
-  async getForUser(userId: string, id: string) {
+  async getForUser(userId: string, id: string, before?: string) {
     const conversation = await this.conversations.findOne({
       where: { id },
       relations: ['listing', 'partListing'],
@@ -272,11 +277,23 @@ export class ConversationsService {
     }
     this.assertParticipant(conversation, userId);
     await this.markRead(conversation, userId);
-    const messages = await this.messages.find({
-      where: { conversationId: id },
-      order: { createdAt: 'ASC' },
-      take: 200,
-    });
+    const pageSize = 200;
+    const qb = this.messages
+      .createQueryBuilder('m')
+      .where('m.conversationId = :id', { id })
+      .orderBy('m.createdAt', 'DESC')
+      .take(pageSize + 1);
+    if (before) {
+      const cursor = await this.messages.findOne({
+        where: { id: before, conversationId: id },
+      });
+      if (cursor) {
+        qb.andWhere('m.createdAt < :cursor', { cursor: cursor.createdAt });
+      }
+    }
+    const rows = await qb.getMany();
+    const hasOlder = rows.length > pageSize;
+    const messages = rows.slice(0, pageSize).reverse();
     const counterpartId =
       conversation.buyerUserId === userId
         ? conversation.sellerUserId
@@ -296,6 +313,7 @@ export class ConversationsService {
           ? ('buyer' as const)
           : ('seller' as const),
       counterpart: this.toContactCard(counterpartUser),
+      hasOlder,
       messages: messages.map((m) => ({
         id: m.id,
         senderUserId: m.senderUserId,
@@ -396,9 +414,7 @@ export class ConversationsService {
 
   private isUnread(
     conversation: Conversation,
-    last:
-      | { senderUserId: string; createdAt: Date }
-      | undefined,
+    last: { senderUserId: string; createdAt: Date } | undefined,
     userId: string,
   ) {
     if (!last || last.senderUserId === userId) return false;

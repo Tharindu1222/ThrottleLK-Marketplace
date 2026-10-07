@@ -1,4 +1,9 @@
-import type { ApiSuccess, ApiErrorBody, PaginationMeta } from '@throttlelk/types';
+import type {
+  ApiSuccess,
+  ApiErrorBody,
+  PaginationMeta,
+} from '@throttlelk/types';
+import { refreshBrowserSession } from './session-refresh';
 
 /**
  * Browser uses same-origin `/api/v1` so HttpOnly cookies are included.
@@ -104,7 +109,10 @@ function throwApiError(
   throw new ApiRequestError(status, body);
 }
 
-async function parseJson<T>(path: string, res: Response): Promise<ApiSuccess<T>> {
+async function parseJson<T>(
+  path: string,
+  res: Response,
+): Promise<ApiSuccess<T>> {
   const json = (await res.json()) as ApiSuccess<T> | ApiErrorBody;
   if (!res.ok || !('success' in json) || !json.success) {
     throwApiError(path, res.status, json as ApiErrorBody);
@@ -127,6 +135,25 @@ async function authorizedHeaders(
 }
 
 const PUBLIC_REVALIDATE_SECONDS = 30;
+
+async function fetchWithSession(
+  path: string,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const response = await fetch(url, init);
+  if (
+    response.status !== 401 ||
+    typeof window === 'undefined' ||
+    path.includes('/auth/') ||
+    new URL(url, window.location.origin).origin !== window.location.origin
+  )
+    return response;
+  if (!(await refreshBrowserSession())) return response;
+  const headers = new Headers(init.headers);
+  headers.delete('Authorization');
+  return fetch(url, { ...init, headers });
+}
 
 function readInit(token?: string): RequestInit {
   if (typeof window !== 'undefined' || token) {
@@ -158,10 +185,14 @@ export async function apiGet<T>(
   path: string,
   init?: { token?: string; searchParams?: Record<string, string | undefined> },
 ): Promise<T> {
-  const res = await fetch(requestUrl(path, init?.searchParams), {
-    headers: await authorizedHeaders(init?.token),
-    ...readInit(init?.token),
-  });
+  const res = await fetchWithSession(
+    path,
+    requestUrl(path, init?.searchParams),
+    {
+      headers: await authorizedHeaders(init?.token),
+      ...readInit(init?.token),
+    },
+  );
   const json = await parseJson<T>(path, res);
   return json.data;
 }
@@ -170,10 +201,14 @@ export async function apiGetWithMeta<T>(
   path: string,
   init?: { token?: string; searchParams?: Record<string, string | undefined> },
 ): Promise<{ data: T; meta?: PaginationMeta }> {
-  const res = await fetch(requestUrl(path, init?.searchParams), {
-    headers: await authorizedHeaders(init?.token),
-    ...readInit(init?.token),
-  });
+  const res = await fetchWithSession(
+    path,
+    requestUrl(path, init?.searchParams),
+    {
+      headers: await authorizedHeaders(init?.token),
+      ...readInit(init?.token),
+    },
+  );
   const json = await parseJson<T>(path, res);
   return { data: json.data, meta: json.meta as PaginationMeta | undefined };
 }
@@ -186,7 +221,7 @@ export async function apiSend<T>(
     token?: string;
   },
 ): Promise<T> {
-  const res = await fetch(requestUrl(path), {
+  const res = await fetchWithSession(path, requestUrl(path), {
     method: options.method ?? 'POST',
     headers: await authorizedHeaders(options.token, {
       'Content-Type': 'application/json',
@@ -212,7 +247,7 @@ export async function apiUpload<T>(
       form.append(key, value);
     }
   }
-  const res = await fetch(requestUrl(path), {
+  const res = await fetchWithSession(path, requestUrl(path), {
     method: 'POST',
     headers: await authorizedHeaders(token),
     body: form,
@@ -224,7 +259,7 @@ export async function apiUpload<T>(
 }
 
 export async function apiBlob(path: string, token: string): Promise<Blob> {
-  const res = await fetch(requestUrl(path), {
+  const res = await fetchWithSession(path, requestUrl(path), {
     headers: await authorizedHeaders(token),
     cache: 'no-store',
     credentials: 'include',

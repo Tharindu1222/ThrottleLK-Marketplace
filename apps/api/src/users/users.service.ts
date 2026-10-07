@@ -145,6 +145,7 @@ export class UsersService {
     if (input.status === 'suspended' || input.password) {
       await this.revokeRefreshSessions(user.id);
     }
+    await this.cache.invalidatePublicListings?.();
     return this.toPublic(saved);
   }
 
@@ -339,10 +340,7 @@ export class UsersService {
 
     if (input.newPassword) {
       const currentHash = await this.loadPasswordHash(user.id);
-      const ok = await bcrypt.compare(
-        input.currentPassword ?? '',
-        currentHash,
-      );
+      const ok = await bcrypt.compare(input.currentPassword ?? '', currentHash);
       if (!ok) {
         throw new BadRequestException({
           success: false,
@@ -455,7 +453,7 @@ export class UsersService {
     if (paging?.q?.trim()) {
       const q = `%${paging.q.trim().toLowerCase()}%`;
       qb.andWhere(
-        '(LOWER(user.email) LIKE :q OR LOWER(user.firstName) LIKE :q OR LOWER(user.lastName) LIKE :q OR LOWER(COALESCE(user.phone, \'\')) LIKE :q)',
+        "(LOWER(user.email) LIKE :q OR LOWER(user.firstName) LIKE :q OR LOWER(user.lastName) LIKE :q OR LOWER(COALESCE(user.phone, '')) LIKE :q)",
         { q },
       );
     }
@@ -480,6 +478,7 @@ export class UsersService {
     if (status === 'suspended') {
       await this.revokeRefreshSessions(userId);
     }
+    await this.cache.invalidatePublicListings?.();
     return this.toPublic(saved);
   }
 

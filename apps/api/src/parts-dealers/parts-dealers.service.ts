@@ -59,7 +59,10 @@ export class PartsDealersService {
     private readonly cache: CacheService,
   ) {}
 
-  async create(owner: User, input: CreatePartsDealerInput): Promise<PartsDealer> {
+  async create(
+    owner: User,
+    input: CreatePartsDealerInput,
+  ): Promise<PartsDealer> {
     assertEmailVerified(owner, 'applying as a parts dealer');
     if (owner.roles.some((role) => role.name === 'parts_dealer')) {
       throw new BadRequestException({
@@ -102,6 +105,7 @@ export class PartsDealersService {
       rejected.rejectionReason = null;
       const saved = await this.partsDealers.save(rejected);
       void this.cache.invalidateDashboard();
+      await this.cache.invalidatePublicListings?.();
       void this.notifications.partsDealerPendingReview({
         id: saved.id,
         name: saved.name,
@@ -126,6 +130,7 @@ export class PartsDealersService {
     });
     const saved = await this.partsDealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     void this.notifications.partsDealerPendingReview({
       id: saved.id,
       name: saved.name,
@@ -252,6 +257,9 @@ export class PartsDealersService {
       .leftJoinAndSelect('d.district', 'district')
       .leftJoinAndSelect('d.city', 'city')
       .where('d.status = :status', { status: 'active' })
+      .andWhere(
+        "EXISTS (SELECT 1 FROM users u WHERE u.id = d.owner_user_id AND u.status = 'active')",
+      )
       .orderBy('d.name', 'ASC');
     if (paging?.q?.trim()) {
       const q = `%${paging.q.trim().toLowerCase()}%`;
@@ -272,9 +280,10 @@ export class PartsDealersService {
   async listForMap() {
     const cacheKey = 'parts-dealers:map';
     if (typeof this.cache.get === 'function') {
-      const cached = await this.cache.get<
-        Awaited<ReturnType<PartsDealersService['loadMapPins']>>
-      >(cacheKey);
+      const cached =
+        await this.cache.get<
+          Awaited<ReturnType<PartsDealersService['loadMapPins']>>
+        >(cacheKey);
       if (cached) return cached;
     }
     const pins = await this.loadMapPins();
@@ -302,6 +311,9 @@ export class PartsDealersService {
         'city.name',
       ])
       .where('d.status = :status', { status: 'active' })
+      .andWhere(
+        "EXISTS (SELECT 1 FROM users u WHERE u.id = d.owner_user_id AND u.status = 'active')",
+      )
       .orderBy('d.name', 'ASC')
       .getMany();
 
@@ -335,14 +347,19 @@ export class PartsDealersService {
       limit: paging?.limit,
       defaultLimit: 50,
       maxLimit: 100,
+      maxPage: Number.MAX_SAFE_INTEGER,
     });
-    const [rows, total] = await this.partsDealers.findAndCount({
-      where: { status: 'active' },
-      select: ['id', 'slug'],
-      order: { name: 'ASC' },
-      skip,
-      take: limit,
-    });
+    const qb = this.partsDealers
+      .createQueryBuilder('d')
+      .select(['d.id', 'd.slug'])
+      .where(
+        "EXISTS (SELECT 1 FROM users u WHERE u.id = d.owner_user_id AND u.status = 'active') AND d.status = 'active'",
+      )
+      .orderBy('d.name', 'ASC')
+      .addOrderBy('d.id', 'ASC')
+      .skip(skip)
+      .take(limit);
+    const [rows, total] = await qb.getManyAndCount();
     return {
       items: rows.map((row) => ({ slug: row.slug })),
       meta: paginationMeta(total, page, limit),
@@ -455,16 +472,14 @@ export class PartsDealersService {
     this.applyVerification(dealer, status, input.verified);
     const saved = await this.partsDealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     if (status === 'active') {
       await this.promoteOwnerToPartsDealer(owner);
     }
     return this.adminGet(saved.id);
   }
 
-  async adminUpdate(
-    id: string,
-    input: AdminUpdatePartsDealerInput,
-  ) {
+  async adminUpdate(id: string, input: AdminUpdatePartsDealerInput) {
     const dealer = await this.getById(id);
     const prevStatus = dealer.status;
 
@@ -487,6 +502,7 @@ export class PartsDealersService {
     const saved = await this.partsDealers.save(dealer);
     if (input.status && input.status !== prevStatus) {
       void this.cache.invalidateDashboard();
+      await this.cache.invalidatePublicListings?.();
     }
 
     if (input.status === 'active' && prevStatus !== 'active') {
@@ -520,7 +536,7 @@ export class PartsDealersService {
       where: { slug, status: 'active' },
       relations: ['images', 'district', 'city', 'owner'],
     });
-    if (!dealer) {
+    if (!dealer || dealer.owner?.status !== 'active') {
       throw new NotFoundException({
         success: false,
         error: {
@@ -622,6 +638,7 @@ export class PartsDealersService {
     dealer.status = 'active';
     await this.partsDealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     const owner = await this.usersService.findByIdOrThrow(dealer.ownerUserId);
     await this.promoteOwnerToPartsDealer(owner);
     void this.notifications.partsDealerApproved(dealer.ownerUserId, {
@@ -648,6 +665,7 @@ export class PartsDealersService {
     dealer.verifiedAt = null;
     await this.partsDealers.save(dealer);
     void this.cache.invalidateDashboard();
+    await this.cache.invalidatePublicListings?.();
     void this.notifications.partsDealerRejected(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,

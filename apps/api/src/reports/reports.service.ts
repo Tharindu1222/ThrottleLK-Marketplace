@@ -90,14 +90,16 @@ export class ReportsService {
     if (paging?.q?.trim()) {
       const q = `%${paging.q.trim().toLowerCase()}%`;
       qb.andWhere(
-        '(LOWER(r.reason) LIKE :q OR LOWER(r.description) LIKE :q OR LOWER(COALESCE(r.listingId, \'\')) LIKE :q OR LOWER(COALESCE(r.partListingId, \'\')) LIKE :q OR LOWER(listing.title) LIKE :q OR LOWER(partListing.title) LIKE :q)',
+        "(LOWER(r.reason) LIKE :q OR LOWER(r.description) LIKE :q OR LOWER(COALESCE(CAST(r.listingId AS text), '')) LIKE :q OR LOWER(COALESCE(CAST(r.partListingId AS text), '')) LIKE :q OR LOWER(listing.title) LIKE :q OR LOWER(partListing.title) LIKE :q)",
         { q },
       );
     }
     qb.skip(skip).take(limit);
     const [rows, total] = await qb.getManyAndCount();
 
-    const listingIds = rows.map((row) => row.listingId).filter((id): id is string => Boolean(id));
+    const listingIds = rows
+      .map((row) => row.listingId)
+      .filter((id): id is string => Boolean(id));
     const partIds = rows
       .map((row) => row.partListingId)
       .filter((id): id is string => Boolean(id));
@@ -106,7 +108,12 @@ export class ReportsService {
     if (listingIds.length > 0) {
       const images = await this.listingImages
         .createQueryBuilder('img')
-        .select(['img.listingId', 'img.imageUrl', 'img.sortOrder', 'img.isCover'])
+        .select([
+          'img.listingId',
+          'img.imageUrl',
+          'img.sortOrder',
+          'img.isCover',
+        ])
         .where('img.listingId IN (:...ids)', { ids: listingIds })
         .orderBy('img.isCover', 'DESC')
         .addOrderBy('img.sortOrder', 'ASC')
@@ -120,7 +127,12 @@ export class ReportsService {
     if (partIds.length > 0) {
       const images = await this.partImages
         .createQueryBuilder('img')
-        .select(['img.partListingId', 'img.imageUrl', 'img.sortOrder', 'img.isCover'])
+        .select([
+          'img.partListingId',
+          'img.imageUrl',
+          'img.sortOrder',
+          'img.isCover',
+        ])
         .where('img.partListingId IN (:...ids)', { ids: partIds })
         .orderBy('img.isCover', 'DESC')
         .addOrderBy('img.sortOrder', 'ASC')
@@ -182,7 +194,10 @@ export class ReportsService {
           reason,
         );
       } else if (report.listingId) {
-        await this.listingsService.takeDownForModeration(report.listingId, reason);
+        await this.listingsService.takeDownForModeration(
+          report.listingId,
+          reason,
+        );
       }
       report.status = 'actioned';
     } else if (action === 'warn_seller') {

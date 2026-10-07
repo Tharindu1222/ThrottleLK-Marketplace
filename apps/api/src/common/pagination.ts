@@ -12,10 +12,11 @@ export function parsePageLimit(input: {
   limit?: string | number;
   defaultLimit?: number;
   maxLimit?: number;
+  maxPage?: number;
 }): { page: number; limit: number; skip: number } {
   const defaultLimit = input.defaultLimit ?? 20;
   const maxLimit = input.maxLimit ?? 100;
-  const maxPage = 200;
+  const maxPage = input.maxPage ?? 200;
   const rawPage = Number(input.page ?? 1);
   const rawLimit = Number(input.limit ?? defaultLimit);
   const page =

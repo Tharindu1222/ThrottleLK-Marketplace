@@ -1,12 +1,15 @@
+import { CacheService } from '../common/cache.service';
+import { isPublicBike } from '../common/public-listing';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { assertSafeImageFile } from '../common/image-bytes';
 import {
   deletePublicMarketplaceImage,
@@ -16,7 +19,6 @@ import { StorageService } from '../storage/storage.service';
 import { User } from '../users/user.entity';
 import { ListingImage } from './listing-image.entity';
 import { Listing } from './listing.entity';
-import { isPubliclyListed } from './listing-expiry';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 export const MAX_LISTING_IMAGES = 5;
@@ -28,6 +30,7 @@ export class ListingImagesService {
     private readonly images: Repository<ListingImage>,
     @InjectRepository(Listing) private readonly listings: Repository<Listing>,
     private readonly storage: StorageService,
+    @Optional() private readonly cache?: CacheService,
   ) {}
 
   async listForListing(listingId: string, viewer?: User | null) {
@@ -40,7 +43,9 @@ export class ListingImagesService {
 
   async upload(owner: User, listingId: string, file?: Express.Multer.File) {
     await this.getOwnedListing(owner.id, listingId);
-    return this.uploadFile(listingId, file);
+    const result = await this.uploadFile(listingId, file);
+    await this.reviewOwnerChanges(listingId);
+    return result;
   }
 
   async uploadAsAdmin(listingId: string, file?: Express.Multer.File) {
@@ -50,12 +55,22 @@ export class ListingImagesService {
 
   async remove(owner: User, listingId: string, imageId: string) {
     await this.getOwnedListing(owner.id, listingId);
-    return this.removeImage(listingId, imageId);
+    const result = await this.removeImage(listingId, imageId);
+    await this.reviewOwnerChanges(listingId);
+    return result;
   }
 
   async removeAsAdmin(listingId: string, imageId: string) {
     await this.getListingOrThrow(listingId);
     return this.removeImage(listingId, imageId);
+  }
+
+  private async reviewOwnerChanges(listingId: string) {
+    await this.listings.update(
+      { id: listingId, status: In(['active', 'paused', 'expired']) },
+      { status: 'pending_review', publishedAt: null, rejectionReason: null },
+    );
+    await this.cache?.invalidatePublicListings();
   }
 
   private async uploadFile(listingId: string, file?: Express.Multer.File) {
@@ -99,12 +114,6 @@ export class ListingImagesService {
       isCover: count === 0,
     });
     const saved = await this.images.save(image);
-    const listing = await this.getListingOrThrow(listingId);
-    if (listing.status === 'active' || listing.status === 'sold') {
-      listing.status = 'pending_review';
-      listing.publishedAt = null;
-      await this.listings.save(listing);
-    }
     return saved;
   }
 
@@ -140,7 +149,10 @@ export class ListingImagesService {
   }
 
   private async getListingOrThrow(listingId: string) {
-    const listing = await this.listings.findOne({ where: { id: listingId } });
+    const listing = await this.listings.findOne({
+      where: { id: listingId },
+      relations: ['seller', 'dealer', 'dealer.owner'],
+    });
     if (!listing) {
       throw new NotFoundException({
         success: false,
@@ -158,14 +170,25 @@ export class ListingImagesService {
         error: { code: 'FORBIDDEN', message: 'Not your listing' },
       });
     }
+    if (listing.status === 'sold') {
+      throw new BadRequestException({
+        success: false,
+        error: {
+          code: 'INVALID_STATUS',
+          message: 'Sold listings cannot have their photos changed',
+        },
+      });
+    }
     return listing;
   }
 
   private async assertCanView(listingId: string, viewer?: User | null) {
     const listing = await this.getListingOrThrow(listingId);
     const isOwner = viewer?.id === listing.sellerId;
-    const isAdmin = Boolean(viewer?.roles?.some((role) => role.name === 'admin'));
-    if (!isPubliclyListed(listing.status, listing.expiresAt) && !isOwner && !isAdmin) {
+    const isAdmin = Boolean(
+      viewer?.roles?.some((role) => role.name === 'admin'),
+    );
+    if (!isPublicBike(listing) && !isOwner && !isAdmin) {
       throw new NotFoundException({
         success: false,
         error: { code: 'LISTING_NOT_FOUND', message: 'Listing not found' },

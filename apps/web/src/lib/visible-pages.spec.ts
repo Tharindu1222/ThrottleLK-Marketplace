@@ -1,3 +1,5 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 import { visiblePageNumbers, pageRange } from './visible-pages';
 
 describe('visiblePageNumbers', () => {
@@ -25,3 +27,11 @@ describe('pageRange', () => {
     expect(pageRange(3, 20, 327)).toEqual({ from: 41, to: 60 });
   });
 });
+
+function expect(value: unknown) {
+  return {
+    toBe: (expected: unknown) => assert.strictEqual(value, expected),
+    toEqual: (expected: unknown) => assert.deepStrictEqual(value, expected),
+    toBeNull: () => assert.strictEqual(value, null),
+  };
+}
