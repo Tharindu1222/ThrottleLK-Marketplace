@@ -4,6 +4,8 @@ export type UserRole = 'buyer' | 'seller' | 'dealer' | 'parts_dealer' | 'admin';
 
 export type PartListingKind = 'spare' | 'modified' | 'accessory';
 
+export type RegistrationStatus = 'registered' | 'unregistered';
+
 export type ListingStatus =
   | 'draft'
   | 'pending_review'

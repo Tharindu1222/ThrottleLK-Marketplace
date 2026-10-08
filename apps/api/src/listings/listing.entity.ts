@@ -1,4 +1,4 @@
-import type { ListingStatus } from '@throttlelk/types';
+import type { ListingStatus, RegistrationStatus } from '@throttlelk/types';
 import {
   Column,
   CreateDateColumn,
@@ -89,6 +89,14 @@ export class Listing {
 
   @Column({ name: 'registration_year', type: 'int', nullable: true })
   registrationYear!: number | null;
+
+  @Column({
+    name: 'registration_status',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
+  registrationStatus!: RegistrationStatus | null;
 
   @Column({ name: 'engine_cc', type: 'int', nullable: true })
   engineCc!: number | null;

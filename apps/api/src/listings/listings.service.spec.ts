@@ -366,6 +366,71 @@ const createInput = {
   condition: 'used',
 };
 
+describe('ListingsService registration status', () => {
+  const privateSeller = {
+    ...seller,
+    roles: [{ name: 'seller' }],
+  } as User;
+
+  it.each(['registered', 'unregistered'] as const)(
+    'persists %s without inventing a registration year',
+    async (registrationStatus) => {
+      const { service } = makeService({});
+      const saved = await service.create(privateSeller, {
+        ...createInput,
+        registrationStatus,
+      } as never);
+      expect(saved.registrationStatus).toBe(registrationStatus);
+      expect(saved.registrationYear).toBeNull();
+    },
+  );
+
+  it('preserves private inventory values when registration is updated from the listing form', async () => {
+    const { service, row } = makeService({
+      id: 'listing-1',
+      sellerId: seller.id,
+      dealerId: 'dealer-1',
+      status: 'draft',
+      registrationYear: 2020,
+      registrationStatus: 'registered',
+      costPriceLkr: 350000,
+      purchaseDate: '2020-01-15',
+    });
+    const saved = await service.update(seller, row.id, {
+      registrationStatus: 'unregistered',
+    });
+    expect(saved.registrationStatus).toBe('unregistered');
+    expect(saved.registrationYear).toBeNull();
+    expect(saved.costPriceLkr).toBe(350000);
+    expect(saved.purchaseDate).toBe('2020-01-15');
+    await service.update(seller, row.id, { registrationStatus: 'registered' });
+    expect(saved.registrationStatus).toBe('registered');
+    expect(saved.registrationYear).toBeNull();
+  });
+
+  it('continues to accept legacy registration years', async () => {
+    const { service } = makeService({});
+    const saved = await service.create(privateSeller, {
+      ...createInput,
+      registrationYear: 2020,
+    } as never);
+    expect(saved.registrationYear).toBe(2020);
+    expect(saved.registrationStatus).toBe('registered');
+  });
+
+  it('preserves a known registration year on status edits and supports legacy year PATCH requests', async () => {
+    const { service, row } = makeService({
+      id: 'listing-1', sellerId: seller.id, status: 'draft', registrationYear: 2020,
+    });
+    await service.update(seller, row.id, { registrationStatus: 'registered' });
+    expect(row.registrationYear).toBe(2020);
+    await service.update(seller, row.id, { registrationStatus: 'unregistered' });
+    await service.update(seller, row.id, { registrationYear: 2021 });
+    expect(row.registrationStatus).toBe('registered');
+    expect(row.registrationYear).toBe(2021);
+  });
+});
+
 describe('ListingsService.create dealer conversion', () => {
   it('rejects listing create when email is not verified', async () => {
     const unverified = {

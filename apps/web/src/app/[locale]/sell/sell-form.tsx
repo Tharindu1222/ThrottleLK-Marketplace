@@ -39,15 +39,13 @@ type FormState = {
   transmission: string;
   mileage: string;
   priceLkr: string;
-  purchaseDate: string;
-  costPriceLkr: string;
   districtId: string;
   cityId: string;
   description: string;
   phone: string;
   whatsapp: string;
   colour: string;
-  registrationYear: string;
+  registrationStatus: string;
   negotiable: boolean;
   dealerId: string;
 };
@@ -288,15 +286,13 @@ const emptyForm: FormState = {
   transmission: 'manual',
   mileage: '',
   priceLkr: '',
-  purchaseDate: '',
-  costPriceLkr: '',
   districtId: '',
   cityId: '',
   description: '',
   phone: '',
   whatsapp: '',
   colour: '',
-  registrationYear: '',
+  registrationStatus: '',
   negotiable: true,
   dealerId: '',
 };
@@ -498,7 +494,6 @@ export function SellForm({ locale }: { locale: Locale }) {
   }
 
   function listingBody() {
-    const cost = Number(form.costPriceLkr);
     return {
       brandId: form.brandId,
       modelId: form.modelId,
@@ -521,21 +516,8 @@ export function SellForm({ locale }: { locale: Locale }) {
       phone: form.phone.trim(),
       whatsapp: form.whatsapp.trim() || undefined,
       colour: form.colour.trim() || undefined,
-      registrationYear: form.registrationYear
-        ? Number(form.registrationYear)
-        : undefined,
+      registrationStatus: form.registrationStatus || undefined,
       dealerId: form.dealerId || undefined,
-      ...(form.dealerId
-        ? {
-            costPriceLkr:
-              form.costPriceLkr !== '' && Number.isInteger(cost) && cost > 0
-                ? cost
-                : null,
-            purchaseDate: /^\d{4}-\d{2}-\d{2}$/.test(form.purchaseDate)
-              ? form.purchaseDate
-              : null,
-          }
-        : {}),
     };
   }
 
@@ -959,43 +941,6 @@ export function SellForm({ locale }: { locale: Locale }) {
                     </p>
                   ) : null}
                 </div>
-                {dealers.length > 0 ? (
-                  <>
-                    <div>
-                      <label className={labelClass} htmlFor="purchaseDate">
-                        {t(locale, 'inventoryPurchaseDate')}
-                      </label>
-                      <input
-                        id="purchaseDate"
-                        type="date"
-                        className={fieldClass}
-                        value={form.purchaseDate}
-                        onChange={(e) =>
-                          setField('purchaseDate', e.target.value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass} htmlFor="costPriceLkr">
-                        {t(locale, 'inventoryCostPrice')}
-                      </label>
-                      <input
-                        id="costPriceLkr"
-                        type="number"
-                        min={1}
-                        step={1}
-                        className={fieldClass}
-                        value={form.costPriceLkr}
-                        onChange={(e) =>
-                          setField('costPriceLkr', e.target.value)
-                        }
-                      />
-                    </div>
-                    <p className="sm:col-span-2 text-xs text-muted">
-                      {t(locale, 'inventoryPrivateHint')}
-                    </p>
-                  </>
-                ) : null}
                 {autoTitle ? (
                   <p className="sm:col-span-2 text-sm text-muted">
                     {t(locale, 'titleWillBe')}{' '}
@@ -1115,16 +1060,29 @@ export function SellForm({ locale }: { locale: Locale }) {
                     />
                   </div>
                   <div>
-                    <label className={labelClass} htmlFor="registrationYear">
-                      {t(locale, 'registrationYear')}
+                    <label className={labelClass} htmlFor="registrationStatus">
+                      {t(locale, 'registrationStatus')}
                     </label>
-                    <input
-                      id="registrationYear"
-                      inputMode="numeric"
-                      className={fieldClass}
-                      value={form.registrationYear}
-                      onChange={(e) => setField('registrationYear', e.target.value)}
-                    />
+                    <SelectShell>
+                      <select
+                        id="registrationStatus"
+                        className={fieldClass}
+                        value={form.registrationStatus || ''}
+                        onChange={(e) =>
+                          setField('registrationStatus', e.target.value)
+                        }
+                      >
+                        <option value="">
+                          {t(locale, 'selectRegistrationStatus')}
+                        </option>
+                        <option value="registered">
+                          {t(locale, 'registrationRegistered')}
+                        </option>
+                        <option value="unregistered">
+                          {t(locale, 'registrationUnregistered')}
+                        </option>
+                      </select>
+                    </SelectShell>
                   </div>
                 </div>
                 <label className="flex items-center gap-2 text-sm">

@@ -87,7 +87,13 @@ export class ListingsService {
       priceLkr: input.priceLkr,
       negotiable: input.negotiable ?? true,
       manufactureYear: input.manufactureYear,
-      registrationYear: input.registrationYear ?? null,
+      registrationYear:
+        input.registrationStatus === 'unregistered'
+          ? null
+          : (input.registrationYear ?? null),
+      registrationStatus:
+        input.registrationStatus ??
+        (input.registrationYear != null ? 'registered' : null),
       engineCc: input.engineCc ?? null,
       mileage: input.mileage ?? null,
       fuelType: input.fuelType,
@@ -117,6 +123,14 @@ export class ListingsService {
       dealerId: _dealerId,
       ...listingFields
     } = input;
+    if (listingFields.registrationStatus === 'unregistered') {
+      listingFields.registrationYear = null;
+    } else if (
+      listingFields.registrationStatus === undefined &&
+      listingFields.registrationYear != null
+    ) {
+      listingFields.registrationStatus = 'registered';
+    }
     if (
       listingFields.brandId ||
       listingFields.modelId ||
@@ -1253,7 +1267,13 @@ export class ListingsService {
       priceLkr: input.priceLkr,
       negotiable: input.negotiable ?? true,
       manufactureYear: input.manufactureYear,
-      registrationYear: input.registrationYear ?? null,
+      registrationYear:
+        input.registrationStatus === 'unregistered'
+          ? null
+          : (input.registrationYear ?? null),
+      registrationStatus:
+        input.registrationStatus ??
+        (input.registrationYear != null ? 'registered' : null),
       engineCc: input.engineCc ?? null,
       mileage: input.mileage ?? null,
       fuelType: input.fuelType,
@@ -1295,6 +1315,7 @@ export class ListingsService {
       negotiable,
       manufactureYear,
       registrationYear,
+      registrationStatus,
       engineCc,
       mileage,
       fuelType,
@@ -1319,6 +1340,13 @@ export class ListingsService {
     if (manufactureYear != null) listing.manufactureYear = manufactureYear;
     if (registrationYear !== undefined) {
       listing.registrationYear = registrationYear ?? null;
+      if (registrationYear != null && registrationStatus === undefined) {
+        listing.registrationStatus = 'registered';
+      }
+    }
+    if (registrationStatus !== undefined) {
+      listing.registrationStatus = registrationStatus;
+      if (registrationStatus === 'unregistered') listing.registrationYear = null;
     }
     if (engineCc !== undefined) listing.engineCc = engineCc ?? null;
     if (mileage !== undefined) listing.mileage = mileage ?? null;

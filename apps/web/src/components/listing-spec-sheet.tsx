@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { RegistrationStatus } from '@throttlelk/types';
 import { t, type Locale } from '@/lib/i18n';
 import {
   listingConditionLabel,
@@ -14,6 +15,7 @@ export type ListingSpecs = {
   cityName?: string | null;
   manufactureYear: number;
   registrationYear?: number | null;
+  registrationStatus?: RegistrationStatus | null;
   mileage: number | null;
   engineCc: number | null;
   fuelType: string;
@@ -228,10 +230,22 @@ export function ListingSpecSheet({
   );
   push('year', icons.year, t(locale, 'year'), String(listing.manufactureYear));
   push(
-    'registered',
+    'registrationStatus',
+    icons.year,
+    t(locale, 'registrationStatus'),
+    listing.registrationStatus === 'unregistered'
+      ? t(locale, 'registrationUnregistered')
+      : listing.registrationStatus === 'registered' ||
+          listing.registrationYear != null
+        ? t(locale, 'registrationRegistered')
+        : null,
+  );
+  push(
+    'registrationYear',
     icons.year,
     t(locale, 'registrationYear'),
-    listing.registrationYear != null
+    listing.registrationStatus !== 'unregistered' &&
+      listing.registrationYear != null
       ? String(listing.registrationYear)
       : null,
   );

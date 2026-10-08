@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { RegistrationStatus } from '@throttlelk/types';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   FormEvent,
@@ -41,10 +42,9 @@ type ListingDetail = {
   whatsapp?: string | null;
   colour?: string | null;
   registrationYear?: number | null;
+  registrationStatus?: RegistrationStatus | null;
   negotiable?: boolean;
   dealerId: string | null;
-  costPriceLkr?: number | null;
-  purchaseDate?: string | null;
   status: string;
 };
 
@@ -301,9 +301,6 @@ export function EditListingForm({
     });
     const title =
       composedTitle.length >= 5 ? composedTitle : `${composedTitle} bike`;
-    const costRaw = String(form.get('costPriceLkr') ?? '');
-    const purchaseRaw = String(form.get('purchaseDate') ?? '');
-    const cost = Number(costRaw);
     try {
       const updated = await apiSend<ListingDetail>(
         `/api/v1/listings/${listingId}`,
@@ -330,21 +327,9 @@ export function EditListingForm({
             phone: String(form.get('phone') || '') || undefined,
             whatsapp: String(form.get('whatsapp') || '').trim() || null,
             colour: String(form.get('colour') || '').trim() || null,
-            registrationYear: form.get('registrationYear')
-              ? Number(form.get('registrationYear'))
-              : null,
+            registrationStatus:
+              String(form.get('registrationStatus') || '') || undefined,
             negotiable: form.get('negotiable') === 'true',
-            ...(listing.dealerId
-              ? {
-                  costPriceLkr:
-                    costRaw !== '' && Number.isInteger(cost) && cost > 0
-                      ? cost
-                      : null,
-                  purchaseDate: /^\d{4}-\d{2}-\d{2}$/.test(purchaseRaw)
-                    ? purchaseRaw
-                    : null,
-                }
-              : {}),
           },
         },
       );
@@ -434,47 +419,6 @@ export function EditListingForm({
                   className={fieldClass}
                 />
               </Field>
-              {listing.dealerId ? (
-                <>
-                  <Field
-                    label={t(locale, 'inventoryPurchaseDate')}
-                    htmlFor={`${uid}-purchaseDate`}
-                    optional
-                    optionalLabel={optionalLabel}
-                  >
-                    <input
-                      id={`${uid}-purchaseDate`}
-                      name="purchaseDate"
-                      type="date"
-                      defaultValue={
-                        listing.purchaseDate
-                          ? String(listing.purchaseDate).slice(0, 10)
-                          : ''
-                      }
-                      className={fieldClass}
-                    />
-                  </Field>
-                  <Field
-                    label={t(locale, 'inventoryCostPrice')}
-                    htmlFor={`${uid}-costPrice`}
-                    optional
-                    optionalLabel={optionalLabel}
-                  >
-                    <input
-                      id={`${uid}-costPrice`}
-                      name="costPriceLkr"
-                      type="number"
-                      min={1}
-                      step={1}
-                      defaultValue={listing.costPriceLkr ?? undefined}
-                      className={fieldClass}
-                    />
-                  </Field>
-                  <p className="text-xs text-muted">
-                    {t(locale, 'inventoryPrivateHint')}
-                  </p>
-                </>
-              ) : null}
             </div>
           </div>
         </Section>
@@ -728,18 +672,30 @@ export function EditListingForm({
               />
             </Field>
             <Field
-              label={t(locale, 'registrationYear')}
-              htmlFor={`${uid}-regYear`}
+              label={t(locale, 'registrationStatus')}
+              htmlFor={`${uid}-registrationStatus`}
               optional
               optionalLabel={optionalLabel}
             >
-              <input
-                id={`${uid}-regYear`}
-                name="registrationYear"
-                inputMode="numeric"
-                defaultValue={listing.registrationYear ?? ''}
+              <select
+                id={`${uid}-registrationStatus`}
+                name="registrationStatus"
+                defaultValue={
+                  listing.registrationStatus ??
+                  (listing.registrationYear != null ? 'registered' : '')
+                }
                 className={fieldClass}
-              />
+              >
+                <option value="">
+                  {t(locale, 'selectRegistrationStatus')}
+                </option>
+                <option value="registered">
+                  {t(locale, 'registrationRegistered')}
+                </option>
+                <option value="unregistered">
+                  {t(locale, 'registrationUnregistered')}
+                </option>
+              </select>
             </Field>
             <label className="flex items-center gap-2 text-sm">
               <input

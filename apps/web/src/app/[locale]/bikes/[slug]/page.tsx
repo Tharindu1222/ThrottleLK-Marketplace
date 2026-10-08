@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { RegistrationStatus } from '@throttlelk/types';
 import Link from 'next/link';
 import { cache } from 'react';
 import { cookies } from 'next/headers';
@@ -39,6 +40,7 @@ type Listing = {
   priceLkr: number;
   manufactureYear: number;
   registrationYear?: number | null;
+  registrationStatus?: RegistrationStatus | null;
   mileage: number | null;
   engineCc: number | null;
   fuelType: string;
