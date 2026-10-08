@@ -11,11 +11,21 @@ export class EmailService {
 
   constructor(private readonly config: ConfigService) {}
 
-  async send(to: string, subject: string, html: string): Promise<void> {
+  sender(): string {
+    return (
+      this.config.get<string>('EMAIL_FROM')?.trim() ||
+      'ThrottleLK <onboarding@resend.dev>'
+    );
+  }
+
+  async send(
+    to: string,
+    subject: string,
+    html: string,
+    options?: { idempotencyKey?: string; sender?: string },
+  ): Promise<void> {
     const apiKey = this.config.get<string>('RESEND_API_KEY')?.trim();
-    const from =
-      this.config.get<string>('EMAIL_FROM') ??
-      'ThrottleLK <onboarding@resend.dev>';
+    const from = options?.sender ?? this.sender();
     const production =
       (this.config.get<string>('NODE_ENV') ?? process.env.NODE_ENV) ===
       'production';
@@ -39,21 +49,22 @@ export class EmailService {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        ...(options?.idempotencyKey
+          ? { 'Idempotency-Key': options.idempotencyKey }
+          : {}),
       },
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({ from, to: [to], subject, html }),
     });
     if (!res.ok) {
-      const body = await res.text();
-      this.logger.warn(`Resend failed ${res.status}: ${body}`);
-      if (production) {
-        throw new ServiceUnavailableException({
-          success: false,
-          error: {
-            code: 'EMAIL_SEND_FAILED',
-            message: 'Could not send email',
-          },
-        });
-      }
+      this.logger.warn(`Resend failed status=${res.status}`);
+      throw new ServiceUnavailableException({
+        success: false,
+        error: {
+          code: 'EMAIL_SEND_FAILED',
+          message: 'Could not send email',
+        },
+      });
     }
   }
 }

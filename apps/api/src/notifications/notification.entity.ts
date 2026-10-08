@@ -15,6 +15,13 @@ export class Notification {
   @Column({ name: 'user_id' })
   userId!: string;
 
+  @Index('IDX_notifications_event_key', { unique: true })
+  @Column({ name: 'event_key', type: 'varchar', length: 255, nullable: true, select: false })
+  eventKey!: string | null;
+
+  @Column({ name: 'in_app_enabled', default: true, select: false })
+  inAppEnabled!: boolean;
+
   @Column({ length: 64 })
   type!: string;
 

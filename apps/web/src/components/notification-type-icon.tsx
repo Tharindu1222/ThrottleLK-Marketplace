@@ -14,7 +14,7 @@ function groupForType(type: string): IconGroup {
   if (
     type.endsWith('_rejected') ||
     type.includes('warning') ||
-    type.includes('expired')
+    type.includes('expir')
   ) {
     return 'alert';
   }

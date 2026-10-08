@@ -115,6 +115,11 @@ const PartCategoriesService = load(
   'PartCategoriesService',
 );
 const CacheService = load('common/cache.service', 'CacheService');
+const Notification = load('notifications/notification.entity', 'Notification');
+const NotificationEmail = load('notifications/notification-email.entity', 'NotificationEmail');
+const NotificationsService = load('notifications/notifications.service', 'NotificationsService');
+const NotificationDeliveryService = load('notifications/notification-delivery.service', 'NotificationDeliveryService');
+const UsersService = load('users/users.service', 'UsersService');
 const schema = 'qa_' + randomUUID().replaceAll('-', '');
 let db,
   bootstrap,
@@ -798,4 +803,181 @@ test('QA-21: SEO pagination advances beyond page 200', async () => {
   const result = await bikes.listSeoSlugs({ page: 201, limit: 100 });
   assert.equal(result.meta.page, 201);
   assert.equal(result.items.length, 0);
+});
+
+function notificationServices(email = { sender: () => 'QA <alerts@example.test>', send: async () => {} }) {
+  const users = { findByIdOrThrow: (id) => repo(User).findOneByOrFail({ id }) };
+  return {
+    alerts: new NotificationsService(repo(Notification), users, email),
+    worker: () => new NotificationDeliveryService(repo(NotificationEmail), users, email, { get: () => 'false' }),
+  };
+}
+
+test('Notifications: concurrent retries persist one alert and one email; ownership and unread pagination hold', async () => {
+  const { alerts } = notificationServices();
+  const input = { userId: buyer.id, type: 'new_message', title: 'QA message', message: 'Hello', eventKey: 'qa-duplicate' };
+  const results = await Promise.all(Array.from({ length: 4 }, () => alerts.notifyUser(input)));
+  assert.equal(new Set(results.map((row) => row.id)).size, 1);
+  assert.equal(await repo(NotificationEmail).countBy({ notificationId: results[0].id }), 1);
+  assert.equal(await alerts.markRead(seller.id, results[0].id), null);
+  assert.equal(await alerts.unreadCount(buyer.id), 1);
+  const publicRow = (await alerts.listForUser(buyer.id)).items[0];
+  assert.equal(publicRow.eventKey, undefined);
+  assert.equal(publicRow.inAppEnabled, undefined);
+  for (let i = 0; i < 24; i++) await alerts.notifyUser({ ...input, eventKey: `qa-page-${i}` });
+  const page = await alerts.listForUser(buyer.id, { unread: '1', page: 2 });
+  assert.equal(page.items.length, 5);
+  assert.equal(page.meta.total, 25);
+  assert.equal(page.meta.totalPages, 2);
+  await alerts.markAllRead(buyer.id);
+  assert.equal(await alerts.unreadCount(buyer.id), 0);
+  // Keep subsequent worker tests focused on their own deliveries.
+  await repo(NotificationEmail).update({ userId: buyer.id }, { status: 'skipped' });
+});
+
+test('Notifications: promotion and queue failures roll back together; approval/rejection retries deduplicate', async () => {
+  const { alerts } = notificationServices();
+  const original = promos.notifications;
+  promos.notifications = alerts;
+  try {
+    const b = await bike();
+    const pkg = await save(PromoPackage, { kind: 'bike', name: 'QA Boost', durationDays: 7, priceLkr: 1000, tier: 'boost', surfaces: ['browse', 'detail'], priority: 10, isActive: true });
+    const request = await save(PromoRequest, { sellerId: seller.id, subjectType: 'bike', listingId: b.id, packageId: pkg.id, paymentProvider: 'bank', paymentStatus: 'paid', status: 'pending' });
+    await db.query(`CREATE FUNCTION qa_fail_notification_email() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Injected queue failure'; END $$`);
+    await db.query(`CREATE TRIGGER qa_fail_notification_email BEFORE INSERT ON notification_emails FOR EACH ROW EXECUTE FUNCTION qa_fail_notification_email()`);
+    try {
+      await assert.rejects(promos.approve({ id: seller.id }, request.id));
+      assert.equal((await repo(PromoRequest).findOneByOrFail({ id: request.id })).status, 'pending');
+      assert.equal(await repo(HomepagePlacement).countBy({ requestId: request.id }), 0);
+      assert.equal(await repo(Notification).countBy({ eventKey: `promo-approved:${request.id}` }), 0);
+    } finally {
+      await db.query(`DROP TRIGGER qa_fail_notification_email ON notification_emails`);
+      await db.query(`DROP FUNCTION qa_fail_notification_email()`);
+    }
+    await Promise.all([promos.approve({ id: seller.id }, request.id), promos.approve({ id: seller.id }, request.id)]);
+    assert.equal(await repo(HomepagePlacement).countBy({ requestId: request.id }), 1);
+    const alert = await repo(Notification).findOneByOrFail({ eventKey: `promo-approved:${request.id}` });
+    assert.ok(!alert.message.includes('homepage'));
+    assert.equal(await repo(NotificationEmail).countBy({ notificationId: alert.id }), 1);
+    const rejected = await save(PromoRequest, { sellerId: seller.id, subjectType: 'bike', listingId: b.id, packageId: pkg.id, status: 'pending' });
+    await Promise.all([promos.reject({ id: seller.id }, rejected.id, 'Receipt mismatch'), promos.reject({ id: seller.id }, rejected.id, 'Receipt mismatch')]);
+    assert.equal(await repo(Notification).countBy({ eventKey: `promo-rejected:${rejected.id}` }), 1);
+    await assert.rejects(promos.reject({ id: seller.id }, rejected.id, 'Different reason'));
+  } finally {
+    promos.notifications = original;
+    await repo(NotificationEmail).update({ userId: seller.id }, { status: 'skipped' });
+  }
+});
+
+test('Notifications: failed emails retry after restart with stable provider identity; workers claim once', async () => {
+  const calls = [];
+  let fail = true;
+  const email = { sender: () => 'QA <alerts@example.test>', send: async (...args) => { calls.push(args); if (fail) throw new Error('Injected provider failure'); } };
+  const { alerts, worker } = notificationServices(email);
+  const row = await alerts.notifyUser({ userId: buyer.id, type: 'new_message', title: 'Retry', message: 'Queue retry', eventKey: 'qa-worker-retry' });
+  await worker().runOnce();
+  let job = await repo(NotificationEmail).findOneByOrFail({ notificationId: row.id });
+  assert.equal(job.status, 'pending'); assert.equal(job.attempts, 1);
+  assert.ok(job.availableAt.getTime() > Date.now());
+  await repo(NotificationEmail).update(job.id, { availableAt: new Date(0) });
+  fail = false;
+  await Promise.all([worker().runOnce(), worker().runOnce()]);
+  job = await repo(NotificationEmail).findOneByOrFail({ id: job.id });
+  assert.equal(job.status, 'sent'); assert.equal(job.attempts, 2);
+  assert.equal(job.subject, null); assert.equal(job.html, null);
+  assert.deepEqual(calls[0], calls[1]); assert.equal(calls.length, 2);
+  assert.equal(calls[1][3].idempotencyKey, `notification/${row.id}`);
+
+  const interrupted = await alerts.notifyUser({ userId: buyer.id, type: 'new_message', title: 'Interrupted', message: 'Lease recovery', eventKey: 'qa-worker-lease' });
+  await repo(NotificationEmail).update({ notificationId: interrupted.id }, { status: 'sending', attempts: 1, lockedUntil: new Date(0), leaseToken: randomUUID() });
+  await worker().runOnce();
+  assert.equal((await repo(NotificationEmail).findOneByOrFail({ notificationId: interrupted.id })).status, 'sent');
+});
+
+test('Notifications: preference updates merge concurrently and queued mail respects later opt-outs', async () => {
+  const userService = new UsersService(repo(User), null, null, null, null, null, cache);
+  const calls = [];
+  const { alerts, worker } = notificationServices({ sender: () => 'QA <alerts@example.test>', send: async (...args) => calls.push(args) });
+  const queued = await alerts.notifyUser({ userId: buyer.id, type: 'new_message', title: 'Opt-out', message: 'Queued before preference change', eventKey: 'qa-optout' });
+  const staleProfile = await repo(User).findOneByOrFail({ id: buyer.id });
+  await Promise.all([userService.updateNotificationPreferences(buyer, { email: false }), userService.updateNotificationPreferences(buyer, { listings: false })]);
+  staleProfile.firstName = 'QA edited';
+  await repo(User).save(staleProfile);
+  const preferences = userService.notificationPreferences(await repo(User).findOneByOrFail({ id: buyer.id }));
+  assert.equal(preferences.email, false); assert.equal(preferences.listings, false); assert.equal(preferences.messages, true);
+  assert.equal((await userService.updateNotificationPreferences(buyer, { inApp: false })).inApp, false);
+  await worker().runOnce();
+  assert.equal(calls.length, 0);
+  assert.equal((await repo(NotificationEmail).findOneByOrFail({ notificationId: queued.id })).status, 'skipped');
+  const suppressed = await alerts.listingApproved(buyer.id, { id: randomUUID(), title: 'Suppressed', slug: 'suppressed' });
+  assert.equal(await repo(NotificationEmail).countBy({ notificationId: suppressed.id }), 0);
+  assert.ok(!(await alerts.listForUser(buyer.id)).items.some((row) => row.id === suppressed.id));
+  await db.query('UPDATE users SET notification_preferences = $1::jsonb WHERE id = $2', ['{}', buyer.id]);
+});
+
+test('Notifications: expiring reminders target public listings and deduplicate until renewal', async () => {
+  const { alerts } = notificationServices();
+  const originalBikes = bikes.notifications;
+  const originalParts = parts.notifications;
+  bikes.notifications = alerts; parts.notifications = alerts;
+  try {
+    const now = new Date();
+    const active = await bike({ expiresAt: new Date(now.getTime() + 2 * 86400000) });
+    const paused = await bike({ status: 'paused' });
+    const distant = await bike({ expiresAt: new Date(now.getTime() + 5 * 86400000) });
+    const p = await part({ kind: 'modified' });
+    await bikes.sendExpiringReminders(now); await parts.sendExpiringReminders(now);
+    await bikes.sendExpiringReminders(now); await parts.sendExpiringReminders(now);
+    const key = `expiring:${active.id}:${active.expiresAt.toISOString()}`;
+    assert.equal(await repo(Notification).countBy({ eventKey: key }), 1);
+    assert.equal(await repo(Notification).countBy({ eventKey: `expiring:${paused.id}:${paused.expiresAt.toISOString()}` }), 0);
+    assert.equal(await repo(Notification).countBy({ eventKey: `expiring:${distant.id}:${distant.expiresAt.toISOString()}` }), 0);
+    const partAlert = await repo(Notification).findOneByOrFail({ eventKey: `expiring:${p.id}:${p.expiresAt.toISOString()}` });
+    assert.equal(partAlert.type, 'part_listing_expiring_soon'); assert.equal(partAlert.dataJson.partListingId, p.id); assert.equal(partAlert.dataJson.kind, 'modified');
+    const renewed = new Date(now.getTime() + 86400000);
+    await repo(Listing).update(active.id, { expiresAt: renewed });
+    await bikes.sendExpiringReminders(now);
+    assert.equal(await repo(Notification).countBy({ eventKey: `expiring:${active.id}:${renewed.toISOString()}` }), 1);
+  } finally { bikes.notifications = originalBikes; parts.notifications = originalParts; }
+});
+
+test('Notifications: exhausted, old, and changed-recipient deliveries are not sent', async () => {
+  await repo(NotificationEmail).update({ status: 'pending' }, { status: 'skipped' });
+  let sends = 0;
+  const { alerts, worker } = notificationServices({ sender: () => 'QA <alerts@example.test>', send: async () => { sends++; } });
+  const create = (key) => alerts.notifyUser({ userId: buyer.id, type: 'new_message', title: key, message: 'Delivery boundary', eventKey: key });
+  const exhausted = await create('qa-exhausted');
+  const old = await create('qa-old');
+  const changed = await create('qa-changed-recipient');
+  await repo(NotificationEmail).update({ notificationId: exhausted.id }, { attempts: 8 });
+  await repo(NotificationEmail).update({ notificationId: old.id }, { createdAt: new Date(Date.now() - 24 * 3600000) });
+  await repo(NotificationEmail).update({ notificationId: changed.id }, { recipient: 'outdated@example.test' });
+  await worker().runOnce();
+  assert.equal(sends, 0);
+  for (const row of [exhausted, old]) assert.equal((await repo(NotificationEmail).findOneByOrFail({ notificationId: row.id })).status, 'failed');
+  assert.equal((await repo(NotificationEmail).findOneByOrFail({ notificationId: changed.id })).status, 'skipped');
+});
+
+test('Notifications: migration rollback/upgrade preserves alerts and repairs historical part-warning links', async () => {
+  const p = await part({ kind: 'accessory' });
+  const b = await bike();
+  const readAt = new Date('2026-10-01T00:00:00Z');
+  const legacyPart = await save(Notification, { userId: seller.id, type: 'listing_warning', title: 'Warning', message: 'Historical part warning', readAt, dataJson: { listingId: p.id, slug: p.slug, reason: 'Fix description' } });
+  const bikeAlert = await save(Notification, { userId: seller.id, type: 'listing_warning', title: 'Warning', message: 'Historical bike warning', dataJson: { listingId: b.id, slug: b.slug } });
+  const count = await repo(Notification).count();
+  const Migration = load('migrations/1728900000000-AddNotificationDelivery', 'AddNotificationDelivery1728900000000');
+  const runner = db.createQueryRunner();
+  try {
+    await runner.connect();
+    await new Migration().down(runner);
+    await new Migration().up(runner);
+  } finally { await runner.release(); }
+  const fixed = await repo(Notification).findOneByOrFail({ id: legacyPart.id });
+  assert.equal(fixed.type, 'part_listing_warning');
+  assert.equal(fixed.dataJson.partListingId, p.id); assert.equal(fixed.dataJson.kind, 'accessory');
+  assert.equal(fixed.dataJson.reason, 'Fix description'); assert.equal(fixed.dataJson.listingId, undefined);
+  assert.equal(fixed.readAt.toISOString(), readAt.toISOString());
+  assert.equal((await repo(Notification).findOneByOrFail({ id: bikeAlert.id })).type, 'listing_warning');
+  assert.equal(await repo(Notification).count(), count);
+  assert.equal(await repo(NotificationEmail).count(), 0); // Historical mail is never replayed.
 });

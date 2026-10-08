@@ -13,7 +13,9 @@ import type {
   AdminUpdateUserInput,
   RegisterInput,
   UpdateProfileInput,
+  UpdateNotificationPreferencesInput,
 } from '@throttlelk/validation';
+import { DEFAULT_NOTIFICATION_PREFERENCES } from '@throttlelk/types';
 import { Listing } from '../listings/listing.entity';
 import { CacheService } from '../common/cache.service';
 import { assertSafeImageFile } from '../common/image-bytes';
@@ -245,6 +247,7 @@ export class UsersService {
         'user.avatarUrl',
         'user.avatarStorageKey',
         'user.status',
+        'user.notificationPreferences',
         'user.emailVerifiedAt',
         'user.phoneVerifiedAt',
         'user.createdAt',
@@ -300,8 +303,32 @@ export class UsersService {
       roles: (user.roles ?? []).map((r) => r.name),
       status: user.status,
       emailVerifiedAt: user.emailVerifiedAt,
+      notificationPreferences: this.notificationPreferences(user),
       createdAt: user.createdAt,
     };
+  }
+
+  notificationPreferences(user: User) {
+    return { ...DEFAULT_NOTIFICATION_PREFERENCES, ...user.notificationPreferences };
+  }
+
+  async updateNotificationPreferences(
+    user: User,
+    input: UpdateNotificationPreferencesInput,
+  ) {
+    // Update this column only: avoid overwriting concurrent profile/password changes.
+    const rows = (await this.users.query(
+      `WITH updated AS (UPDATE users SET notification_preferences = notification_preferences || $1::jsonb
+      WHERE id = $2 RETURNING notification_preferences) SELECT * FROM updated`,
+      [JSON.stringify(input), user.id],
+    )) as Array<{ notification_preferences: User['notificationPreferences'] }>;
+    if (!rows[0]) {
+      throw new NotFoundException({
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: 'User not found' },
+      });
+    }
+    return { ...DEFAULT_NOTIFICATION_PREFERENCES, ...rows[0].notification_preferences };
   }
 
   /** Public seller card — no email/phone. */

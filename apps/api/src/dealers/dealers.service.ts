@@ -1,3 +1,4 @@
+import { dispatchNotification } from '../common/dispatch-notification';
 import {
   BadRequestException,
   ForbiddenException,
@@ -101,11 +102,11 @@ export class DealersService {
       const saved = await this.dealers.save(rejected);
       void this.cache.invalidateDashboard();
       await this.cache.invalidatePublicListings?.();
-      void this.notifications.dealerPendingReview({
+      dispatchNotification(() => this.notifications.dealerPendingReview({
         id: saved.id,
         name: saved.name,
         slug: saved.slug,
-      });
+      }));
       return saved;
     }
     const slug = await this.allocateUniqueSlug(input.name);
@@ -126,11 +127,11 @@ export class DealersService {
     const saved = await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
     await this.cache.invalidatePublicListings?.();
-    void this.notifications.dealerPendingReview({
+    dispatchNotification(() => this.notifications.dealerPendingReview({
       id: saved.id,
       name: saved.name,
       slug: saved.slug,
-    });
+    }));
     return saved;
   }
 
@@ -617,11 +618,11 @@ export class DealersService {
     await this.cache.invalidatePublicListings?.();
     const owner = await this.usersService.findByIdOrThrow(dealer.ownerUserId);
     await this.promoteOwnerToDealer(owner, dealer);
-    void this.notifications.dealerApproved(dealer.ownerUserId, {
+    dispatchNotification(() => this.notifications.dealerApproved(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,
       slug: dealer.slug,
-    });
+    }));
     return dealer;
   }
 
@@ -639,11 +640,11 @@ export class DealersService {
     await this.dealers.save(dealer);
     void this.cache.invalidateDashboard();
     await this.cache.invalidatePublicListings?.();
-    void this.notifications.dealerRejected(dealer.ownerUserId, {
+    dispatchNotification(() => this.notifications.dealerRejected(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,
       reason,
-    });
+    }));
     return dealer;
   }
 

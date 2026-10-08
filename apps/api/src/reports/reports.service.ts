@@ -215,12 +215,13 @@ export class ReportsService {
           })
           .then((row) => row?.partsDealer);
         if (dealer) {
-          await this.notifications.listingWarning(
+          await this.notifications.partListingWarning(
             dealer.ownerUserId,
             {
               id: part.id,
               title: part.title,
               slug: part.slug,
+              kind: part.kind,
             },
             message,
           );

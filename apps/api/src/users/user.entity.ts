@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Role } from './role.entity';
+import type { NotificationPreferences } from '@throttlelk/types';
 
 @Entity('users')
 @Index('IDX_users_status_created_at', ['status', 'createdAt'])
@@ -49,6 +50,10 @@ export class User {
 
   @Column({ default: 'active' })
   status!: string;
+
+  // Settings use the atomic update in UsersService; ordinary profile saves must not overwrite them.
+  @Column({ name: 'notification_preferences', type: 'jsonb', update: false, default: () => "'{}'::jsonb" })
+  notificationPreferences!: Partial<NotificationPreferences>;
 
   @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
   emailVerifiedAt!: Date | null;

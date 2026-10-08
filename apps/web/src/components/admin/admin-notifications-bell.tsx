@@ -10,9 +10,9 @@ import {
 } from '@/components/notifications-bell';
 import { apiGet, apiSend } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
+import { watchNotifications } from '@/lib/notification-events';
 import type { Locale } from '@/lib/i18n';
 
-const POLL_MS = 30_000;
 
 export function AdminNotificationsBell({ locale }: { locale: Locale }) {
   const router = useRouter();
@@ -23,28 +23,48 @@ export function AdminNotificationsBell({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const sequence = useRef(0);
 
   const refresh = useCallback(async (access: string) => {
+    const request = ++sequence.current;
     const [list, count] = await Promise.all([
       apiGet<AppNotification[]>('/api/v1/notifications', { token: access }),
       apiGet<{ count: number }>('/api/v1/notifications/unread-count', {
         token: access,
       }),
     ]);
+    if (request !== sequence.current) return;
+    setError(null);
     setItems(list.slice(0, 8));
     setUnread(count.count);
   }, []);
 
   useEffect(() => {
-    const access = getAccessToken();
-    setToken(access);
-    if (!access) return;
-    void refresh(access).catch(() => undefined);
-    const id = window.setInterval(() => {
-      void refresh(access).catch(() => undefined);
-    }, POLL_MS);
-    return () => window.clearInterval(id);
+    const update = () => {
+      const access = getAccessToken();
+      setToken(access);
+      if (access) void refresh(access).catch(() => undefined);
+      else { sequence.current++; setUnread(0); setItems([]); }
+    };
+    update();
+    return watchNotifications(update);
   }, [refresh]);
+
+  async function markRead(n: AppNotification) {
+    if (n.readAt || !token) return;
+    await apiSend(`/api/v1/notifications/${n.id}/read`, { method: 'PATCH', token });
+  }
+
+  async function openNotification(n: AppNotification) {
+    try {
+      await markRead(n);
+      setOpen(false);
+      const href = notificationHref(locale, n);
+      if (href) router.push(href);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not mark notification read');
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -158,18 +178,7 @@ export function AdminNotificationsBell({ locale }: { locale: Locale }) {
                     <button
                       type="button"
                       className="w-full text-left"
-                      onClick={() => {
-                        setOpen(false);
-                        if (!n.readAt) {
-                          void apiSend(`/api/v1/notifications/${n.id}/read`, {
-                            method: 'PATCH',
-                            token,
-                          })
-                            .then(() => refresh(token))
-                            .catch(() => undefined);
-                        }
-                        if (href) router.push(href);
-                      }}
+                      onClick={() => void openNotification(n)}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-medium text-[var(--admin-text)]">
@@ -187,7 +196,14 @@ export function AdminNotificationsBell({ locale }: { locale: Locale }) {
                       <Link
                         href={href}
                         className="mt-2 inline-block text-xs text-[var(--admin-accent-2)] underline"
-                        onClick={() => setOpen(false)}
+                        onClick={(event) => {
+                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                            void markRead(n).catch(() => undefined);
+                            return;
+                          }
+                          event.preventDefault();
+                          void openNotification(n);
+                        }}
                       >
                         {n.type === 'listing_pending_review'
                           ? 'Review listing'

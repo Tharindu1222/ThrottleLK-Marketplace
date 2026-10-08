@@ -1,3 +1,4 @@
+import { dispatchNotification } from '../common/dispatch-notification';
 import { isPublicPart, publicPartSql } from '../common/public-listing';
 import {
   BadRequestException,
@@ -155,12 +156,12 @@ export class PartListingsService {
         await this.partListings.save(listing);
         if (fitments) await this.replaceFitments(listing.id, fitments);
         this.bumpDashboard();
-        void this.notifications.partListingPendingReview({
+        dispatchNotification(() => this.notifications.partListingPendingReview({
           id: listing.id,
           title: listing.title,
           slug: listing.slug,
           kind: listing.kind,
-        });
+        }));
         return this.getOwnedDetail(owner.id, listing.id);
       }
       throw new BadRequestException({
@@ -198,12 +199,12 @@ export class PartListingsService {
     listing.rejectionReason = null;
     const saved = await this.partListings.save(listing);
     this.bumpDashboard();
-    void this.notifications.partListingPendingReview({
+    dispatchNotification(() => this.notifications.partListingPendingReview({
       id: saved.id,
       title: saved.title,
       slug: saved.slug,
       kind: saved.kind,
-    });
+    }));
     return this.getOwnedDetail(owner.id, saved.id);
   }
 
@@ -891,12 +892,12 @@ export class PartListingsService {
     await this.replaceFitments(saved.id, input.fitments);
     this.bumpDashboard();
     if (status === 'pending_review') {
-      void this.notifications.partListingPendingReview({
+      dispatchNotification(() => this.notifications.partListingPendingReview({
         id: saved.id,
         title: saved.title,
         slug: saved.slug,
         kind: saved.kind,
-      });
+      }));
     }
     return this.adminGet(saved.id);
   }
@@ -939,7 +940,7 @@ export class PartListingsService {
           const dealer = await this.partsDealersService.adminGet(
             listing.partsDealerId,
           );
-          void this.notifications.partListingRejected(
+          dispatchNotification(() => this.notifications.partListingRejected(
             dealer.ownerUserId,
             {
               id: listing.id,
@@ -948,7 +949,7 @@ export class PartListingsService {
               kind: listing.kind,
             },
             reason,
-          );
+          ));
         }
       } else {
         listing.rejectionReason = null;
@@ -1043,12 +1044,12 @@ export class PartListingsService {
     const saved = await this.partListings.save(listing);
     this.bumpDashboard();
     const dealer = await this.partsDealersService.adminGet(saved.partsDealerId);
-    void this.notifications.partListingApproved(dealer.ownerUserId, {
+    dispatchNotification(() => this.notifications.partListingApproved(dealer.ownerUserId, {
       id: saved.id,
       title: saved.title,
       slug: saved.slug,
       kind: saved.kind,
-    });
+    }));
     return saved;
   }
 
@@ -1068,7 +1069,7 @@ export class PartListingsService {
     const saved = await this.partListings.save(listing);
     this.bumpDashboard();
     const dealer = await this.partsDealersService.adminGet(saved.partsDealerId);
-    void this.notifications.partListingRejected(
+    dispatchNotification(() => this.notifications.partListingRejected(
       dealer.ownerUserId,
       {
         id: saved.id,
@@ -1077,7 +1078,7 @@ export class PartListingsService {
         kind: saved.kind,
       },
       reason,
-    );
+    ));
     return saved;
   }
 
@@ -1097,7 +1098,7 @@ export class PartListingsService {
     const saved = await this.partListings.save(listing);
     this.bumpDashboard();
     const dealer = await this.partsDealersService.adminGet(saved.partsDealerId);
-    void this.notifications.partListingRejected(
+    dispatchNotification(() => this.notifications.partListingRejected(
       dealer.ownerUserId,
       {
         id: saved.id,
@@ -1106,7 +1107,7 @@ export class PartListingsService {
         kind: saved.kind,
       },
       reason,
-    );
+    ));
     return saved;
   }
 
@@ -1127,15 +1128,37 @@ export class PartListingsService {
       });
       const ownerUserId = listing?.partsDealer?.ownerUserId;
       if (!listing || !ownerUserId) continue;
-      void this.notifications.partListingExpired(ownerUserId, {
+      dispatchNotification(() => this.notifications.partListingExpired(ownerUserId, {
         id: listing.id,
         title: listing.title,
         slug: listing.slug,
         kind: listing.kind,
-      });
+      }));
     }
     if (expired.length) this.bumpDashboard();
     return { expired: expired.length, backfilled };
+  }
+
+  async sendExpiringReminders(now = new Date()) {
+    const soon = new Date(now.getTime() + 3 * 86_400_000);
+    let after: string | null = null;
+    for (;;) {
+      const query = this.partListings.createQueryBuilder('l')
+        .leftJoinAndSelect('l.partsDealer', 'shop')
+        .where(publicPartSql('l'))
+        .andWhere('l.expires_at > :now AND l.expires_at <= :soon', { now, soon })
+        .orderBy('l.id', 'ASC').take(100);
+      if (after) query.andWhere('l.id > :after', { after });
+      const rows = await query.getMany();
+      for (const listing of rows) {
+        if (!listing.expiresAt) continue;
+        await this.notifications.listingExpiringSoon(listing.partsDealer.ownerUserId, {
+          id: listing.id, title: listing.title, slug: listing.slug, kind: listing.kind, expiresAt: listing.expiresAt,
+        });
+      }
+      if (rows.length < 100) return;
+      after = rows[rows.length - 1].id;
+    }
   }
 
   async purgeOldViewEvents(now = new Date()) {

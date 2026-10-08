@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   clearSession,
   getAccessToken,
@@ -12,13 +12,13 @@ import {
 } from '@/lib/auth';
 import { apiGet, apiSend } from '@/lib/api';
 import { t, type Locale } from '@/lib/i18n';
+import { watchNotifications } from '@/lib/notification-events';
 import {
   flattenAccountNav,
   visibleAccountNavSections,
   type AccountNavItemDef,
 } from '@/lib/account-nav';
 
-const POLL_MS = 120_000;
 
 type ConversationRow = { unread?: boolean };
 
@@ -224,8 +224,10 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
   const [authReady, setAuthReady] = useState(false);
   const [messageUnread, setMessageUnread] = useState(0);
   const [notificationUnread, setNotificationUnread] = useState(0);
+  const countSequence = useRef(0);
 
   const refreshCounts = useCallback(async (token: string) => {
+    const request = ++countSequence.current;
     const [conversations, notif] = await Promise.all([
       apiGet<ConversationRow[]>('/api/v1/conversations', {
         token,
@@ -235,6 +237,7 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
         token,
       }),
     ]);
+    if (request !== countSequence.current) return;
     setMessageUnread(conversations.filter((c) => c.unread).length);
     setNotificationUnread(notif.count ?? 0);
   }, []);
@@ -246,21 +249,20 @@ export function AccountSidebar({ locale }: { locale: Locale }) {
 
   useEffect(() => {
     const token = getAccessToken();
-    if (!token) return;
-
-    void apiGet<AuthUser>('/api/v1/users/me', { token })
+    if (token) void apiGet<AuthUser>('/api/v1/users/me', { token })
       .then((me) => {
         setUser(me);
         saveSession({ user: me });
       })
       .catch(() => undefined);
 
-    void refreshCounts(token).catch(() => undefined);
-    const id = window.setInterval(() => {
-      if (document.visibilityState !== 'visible') return;
-      void refreshCounts(token).catch(() => undefined);
-    }, POLL_MS);
-    return () => window.clearInterval(id);
+    const refresh = () => {
+      const access = getAccessToken();
+      if (access) void refreshCounts(access).catch(() => undefined);
+      else { countSequence.current++; setMessageUnread(0); setNotificationUnread(0); }
+    };
+    refresh();
+    return watchNotifications(refresh);
   }, [refreshCounts]);
 
   const isDealer = Boolean(user?.roles?.includes('dealer'));

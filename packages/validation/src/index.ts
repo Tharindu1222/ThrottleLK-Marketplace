@@ -386,6 +386,18 @@ export const createSavedSearchSchema = z.object({
   notificationsEnabled: z.boolean().optional().default(false),
 });
 
+export const notificationPreferencesSchema = z.object({
+  email: z.boolean().optional(),
+  inApp: z.boolean().optional(),
+  messages: z.boolean().optional(),
+  listings: z.boolean().optional(),
+  shops: z.boolean().optional(),
+  promotions: z.boolean().optional(),
+  savedSearches: z.boolean().optional(),
+}).strict();
+
+export type UpdateNotificationPreferencesInput = z.infer<typeof notificationPreferencesSchema>;
+
 export const updateSavedSearchSchema = z.object({
   name: z.string().min(2).max(120).optional(),
   query: savedSearchQuerySchema.optional(),

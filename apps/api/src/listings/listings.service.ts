@@ -1,3 +1,4 @@
+import { dispatchNotification } from '../common/dispatch-notification';
 import { isPublicBike, publicBikeSql } from '../common/public-listing';
 import {
   BadRequestException,
@@ -171,12 +172,12 @@ export class ListingsService {
           }
           const saved = await this.listings.save(listing);
           await this.syncInventory(saved, seller.id);
-          if (listingFields.priceLkr < oldPrice) {
-            void this.notifyFavouritesPriceDrop(
+          if (listingFields.priceLkr < oldPrice && saved.status === 'active') {
+            dispatchNotification(() => this.notifyFavouritesPriceDrop(
               saved,
               oldPrice,
-              listingFields.priceLkr,
-            );
+              saved.priceLkr,
+            ));
           }
           return saved;
         }
@@ -187,11 +188,11 @@ export class ListingsService {
         const saved = await this.listings.save(listing);
         await this.syncInventory(saved, seller.id);
         this.bumpDashboard();
-        void this.notifications.listingPendingReview({
+        dispatchNotification(() => this.notifications.listingPendingReview({
           id: saved.id,
           title: saved.title,
           slug: saved.slug,
-        });
+        }));
         return saved;
       }
       throw new BadRequestException({
@@ -229,11 +230,11 @@ export class ListingsService {
     listing.rejectionReason = null;
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
-    void this.notifications.listingPendingReview({
+    dispatchNotification(() => this.notifications.listingPendingReview({
       id: saved.id,
       title: saved.title,
       slug: saved.slug,
-    });
+    }));
     return saved;
   }
 
@@ -387,7 +388,7 @@ export class ListingsService {
       message: input.message,
     });
     const saved = await this.inquiries.save(inquiry);
-    void this.notifications.listingInquiry(
+    dispatchNotification(() => this.notifications.listingInquiry(
       listing.sellerId,
       {
         id: listing.id,
@@ -399,7 +400,7 @@ export class ListingsService {
         phone: input.buyerPhone,
         email: input.buyerEmail,
       },
-    );
+    ));
     return saved;
   }
 
@@ -1379,11 +1380,11 @@ export class ListingsService {
         }
         if (reason.length >= 5) {
           listing.rejectionReason = reason;
-          void this.notifications.listingRejected(
+          dispatchNotification(() => this.notifications.listingRejected(
             listing.sellerId,
             { id: listing.id, title: listing.title, slug: listing.slug },
             reason,
-          );
+          ));
         }
       } else {
         listing.rejectionReason = null;
@@ -1416,11 +1417,11 @@ export class ListingsService {
     this.markActive(listing);
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
-    void this.notifications.listingApproved(saved.sellerId, {
+    dispatchNotification(() => this.notifications.listingApproved(saved.sellerId, {
       id: saved.id,
       title: saved.title,
       slug: saved.slug,
-    });
+    }));
     this.queueSavedSearchMatches(saved);
     return saved;
   }
@@ -1454,14 +1455,35 @@ export class ListingsService {
         }),
     );
     for (const listing of expired) {
-      void this.notifications.listingExpired(listing.sellerId, {
+      dispatchNotification(() => this.notifications.listingExpired(listing.sellerId, {
         id: listing.id,
         title: listing.title,
         slug: listing.slug,
-      });
+      }));
     }
     if (expired.length) this.bumpDashboard();
     return { expired: expired.length, backfilled };
+  }
+
+  async sendExpiringReminders(now = new Date()) {
+    const soon = new Date(now.getTime() + 3 * 86_400_000);
+    let after: string | null = null;
+    for (;;) {
+      const query = this.listings.createQueryBuilder('l')
+        .where(publicBikeSql('l'))
+        .andWhere('l.expires_at > :now AND l.expires_at <= :soon', { now, soon })
+        .orderBy('l.id', 'ASC').take(100);
+      if (after) query.andWhere('l.id > :after', { after });
+      const rows = await query.getMany();
+      for (const listing of rows) {
+        if (!listing.expiresAt) continue;
+        await this.notifications.listingExpiringSoon(listing.sellerId, {
+          id: listing.id, title: listing.title, slug: listing.slug, expiresAt: listing.expiresAt,
+        });
+      }
+      if (rows.length < 100) return;
+      after = rows[rows.length - 1].id;
+    }
   }
 
   async purgeOldViewEvents(now = new Date()) {
@@ -1490,11 +1512,11 @@ export class ListingsService {
     listing.rejectionReason = reason;
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
-    void this.notifications.listingRejected(
+    dispatchNotification(() => this.notifications.listingRejected(
       saved.sellerId,
       { id: saved.id, title: saved.title, slug: saved.slug },
       reason,
-    );
+    ));
     return saved;
   }
 
@@ -1514,11 +1536,11 @@ export class ListingsService {
     listing.rejectionReason = reason;
     const saved = await this.listings.save(listing);
     this.bumpDashboard();
-    void this.notifications.listingRejected(
+    dispatchNotification(() => this.notifications.listingRejected(
       saved.sellerId,
       { id: saved.id, title: saved.title, slug: saved.slug },
       reason,
-    );
+    ));
     return saved;
   }
 
@@ -1527,6 +1549,10 @@ export class ListingsService {
     oldPrice: number,
     newPrice: number,
   ) {
+    const visible = await this.listings.findOne({
+      where: { id: listing.id }, relations: ['seller', 'dealer', 'dealer.owner'],
+    });
+    if (!visible || visible.status !== 'active' || !isPublicBike(visible)) return;
     const userIds = await this.favourites.userIdsForListing(listing.id);
     await Promise.all(
       userIds

@@ -1,4 +1,18 @@
-import { Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  notificationPreferencesSchema,
+  type UpdateNotificationPreferencesInput,
+} from '@throttlelk/validation';
+import { ZodValidationPipe } from '../common/zod-validation.pipe';
+import { UsersService } from '../users/users.service';
 import type { ApiSuccess } from '@throttlelk/types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -9,7 +23,28 @@ import { NotificationsService } from './notifications.service';
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
-  constructor(private readonly notifications: NotificationsService) {}
+  constructor(
+    private readonly notifications: NotificationsService,
+    private readonly users: UsersService,
+  ) {}
+
+  @Get('preferences')
+  preferences(@CurrentUser() user: User): ApiSuccess<unknown> {
+    return { success: true, data: this.users.notificationPreferences(user) };
+  }
+
+  @RateLimit('write')
+  @Patch('preferences')
+  async updatePreferences(
+    @CurrentUser() user: User,
+    @Body(new ZodValidationPipe(notificationPreferencesSchema))
+    input: UpdateNotificationPreferencesInput,
+  ): Promise<ApiSuccess<unknown>> {
+    return {
+      success: true,
+      data: await this.users.updateNotificationPreferences(user, input),
+    };
+  }
 
   @Get()
   async list(

@@ -1,11 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Repository, type EntityManager } from 'typeorm';
+import { randomUUID } from 'node:crypto';
 import { paginationMeta, parsePageLimit } from '../common/pagination';
 import { UsersService } from '../users/users.service';
 import { EmailService } from './email.service';
 import { Notification } from './notification.entity';
 import { escapeHtml } from '../common/html-escape';
+import { User } from '../users/user.entity';
+import { NotificationEmail } from './notification-email.entity';
+import { notificationChannels } from './notification-policy';
+
+export type NotificationInput = {
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  emailSubject?: string;
+  emailHtml?: string;
+  eventKey?: string;
+};
 
 @Injectable()
 export class NotificationsService {
@@ -35,9 +50,10 @@ export class NotificationsService {
     const [rows, total] = await this.notifications.findAndCount({
       where: {
         userId,
+        inAppEnabled: true,
         ...(paging?.unread === '1' ? { readAt: IsNull() } : {}),
       },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: 'DESC', id: 'DESC' },
       skip,
       take: limit,
     });
@@ -46,12 +62,14 @@ export class NotificationsService {
 
   async unreadCount(userId: string) {
     return this.notifications.count({
-      where: { userId, readAt: IsNull() },
+      where: { userId, inAppEnabled: true, readAt: IsNull() },
     });
   }
 
   async markRead(userId: string, id: string) {
-    const row = await this.notifications.findOne({ where: { id, userId } });
+    const row = await this.notifications.findOne({
+      where: { id, userId, inAppEnabled: true },
+    });
     if (!row) return null;
     if (!row.readAt) {
       row.readAt = new Date();
@@ -67,50 +85,81 @@ export class NotificationsService {
       .set({ readAt: () => 'NOW()' })
       .where('user_id = :userId', { userId })
       .andWhere('read_at IS NULL')
+      .andWhere('in_app_enabled = true')
       .execute();
     return { ok: true };
   }
 
-  async notifyUser(input: {
-    userId: string;
-    type: string;
-    title: string;
-    message: string;
-    data?: Record<string, unknown>;
-    emailSubject?: string;
-    emailHtml?: string;
-  }) {
-    const row = await this.notifications.save(
-      this.notifications.create({
-        userId: input.userId,
-        type: input.type,
-        title: input.title,
-        message: input.message,
-        dataJson: input.data ?? null,
-      }),
-    );
-
-    void this.users
-      .findByIdOrThrow(input.userId)
-      .then((user) =>
-        this.email.send(
-          user.email,
-          input.emailSubject ?? input.title,
-          input.emailHtml ?? `<p>${escapeHtml(input.message)}</p>`,
-        ),
-      )
-      .catch((err: unknown) => {
-        this.logger.warn(
-          `Notification email failed userId=${input.userId} type=${input.type}: ${
-            err instanceof Error ? err.message : String(err)
-          }`,
+  async notifyUser(input: NotificationInput, manager?: EntityManager) {
+    const id = randomUUID();
+    const eventKey = input.eventKey ?? id;
+    const persist = async (transaction: EntityManager) => {
+      const user = manager
+        ? await transaction
+            .getRepository(User)
+            .findOne({ where: { id: input.userId } })
+        : await this.users.findByIdOrThrow(input.userId);
+      if (!user) throw new Error('Notification recipient not found');
+      const channels = notificationChannels(
+        input.type,
+        user.notificationPreferences,
+      );
+      const active = !user.status || user.status === 'active';
+      const repo = transaction.getRepository(Notification);
+      await repo
+        .createQueryBuilder()
+        .insert()
+        .into(Notification)
+        .values({
+          id,
+          eventKey,
+          userId: input.userId,
+          type: input.type,
+          title: input.title,
+          message: input.message,
+          dataJson: () => 'CAST(:notificationData AS jsonb)',
+          inAppEnabled: active && channels.inApp,
+        })
+        .setParameter('notificationData', JSON.stringify(input.data ?? null))
+        .orIgnore()
+        .execute();
+      const row = await repo.findOneByOrFail({ eventKey });
+      if (row.id !== id) return row; // A retry must not enqueue another email.
+      if (active && channels.email) {
+        const deliveries = transaction.getRepository(NotificationEmail);
+        await deliveries.save(
+          deliveries.create({
+            notificationId: id,
+            userId: input.userId,
+            type: input.type,
+            recipient: user.email,
+            sender: this.email.sender(),
+            subject: input.emailSubject ?? input.title,
+            html: input.emailHtml ?? `<p>${escapeHtml(input.message)}</p>`,
+          }),
         );
-      });
-
-    return row;
+      }
+      return row;
+    };
+    // An explicit transaction belongs to the business operation; let failures roll it back.
+    if (manager) return persist(manager);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.notifications.manager.transaction(persist);
+      } catch (error) {
+        if (attempt >= 2) throw error;
+        this.logger.warn(
+          `Retrying notification persistence type=${input.type}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 100 * 2 ** attempt));
+      }
+    }
   }
 
-  async listingApproved(sellerId: string, listing: { id: string; title: string; slug: string }) {
+  async listingApproved(
+    sellerId: string,
+    listing: { id: string; title: string; slug: string },
+  ) {
     return this.notifyUser({
       userId: sellerId,
       type: 'listing_approved',
@@ -177,7 +226,30 @@ export class NotificationsService {
     });
   }
 
-  async dealerApproved(ownerUserId: string, dealer: { id: string; name: string; slug: string }) {
+  async partListingWarning(
+    userId: string,
+    listing: { id: string; title: string; slug: string; kind: string },
+    reason: string,
+  ) {
+    return this.notifyUser({
+      userId,
+      type: 'part_listing_warning',
+      title: 'Part listing warning',
+      message: `"${listing.title}": ${reason}`,
+      data: {
+        partListingId: listing.id,
+        slug: listing.slug,
+        kind: listing.kind,
+        reason,
+      },
+      emailHtml: `<p>Please review <strong>${escapeHtml(listing.title)}</strong>.</p><p>${escapeHtml(reason)}</p>`,
+    });
+  }
+
+  async dealerApproved(
+    ownerUserId: string,
+    dealer: { id: string; name: string; slug: string },
+  ) {
     return this.notifyUser({
       userId: ownerUserId,
       type: 'dealer_approved',
@@ -276,7 +348,11 @@ export class NotificationsService {
     );
   }
 
-  async dealerPendingReview(dealer: { id: string; name: string; slug: string }) {
+  async dealerPendingReview(dealer: {
+    id: string;
+    name: string;
+    slug: string;
+  }) {
     const adminIds = await this.users.findActiveAdminIds();
     await Promise.all(
       adminIds.map((userId) =>
@@ -406,26 +482,43 @@ export class NotificationsService {
       endsAt: Date;
       listingId: string | null;
       partListingId: string | null;
+      requestId?: string;
+      tier?: string;
+      surfaces?: string[];
     },
+    manager?: EntityManager,
   ) {
     const until = listing.endsAt.toLocaleDateString('en-LK', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
+      timeZone: 'Asia/Colombo',
     });
-    return this.notifyUser({
-      userId,
-      type: 'promo_approved',
-      title: 'Homepage ad approved',
-      message: `"${listing.title}" is on the homepage until ${until}.`,
-      data: {
-        listingId: listing.listingId,
-        partListingId: listing.partListingId,
-        endsAt: listing.endsAt.toISOString(),
+    const surfaces = listing.surfaces ?? ['home', 'browse', 'detail'];
+    const placement = surfaces.includes('home')
+      ? 'the homepage'
+      : 'bike and parts browsing pages';
+    return this.notifyUser(
+      {
+        userId,
+        type: 'promo_approved',
+        title: 'Promotion approved',
+        message: `"${listing.title}" is promoted on ${placement} until ${until}.`,
+        eventKey: listing.requestId
+          ? `promo-approved:${listing.requestId}`
+          : undefined,
+        data: {
+          listingId: listing.listingId,
+          partListingId: listing.partListingId,
+          endsAt: listing.endsAt.toISOString(),
+          tier: listing.tier,
+          surfaces,
+        },
+        emailSubject: 'Your ThrottleLK promotion is approved',
+        emailHtml: `<p><strong>${escapeHtml(listing.title)}</strong> is promoted on ${placement} until ${until}.</p>`,
       },
-      emailSubject: 'Your listing is on the ThrottleLK homepage',
-      emailHtml: `<p><strong>${escapeHtml(listing.title)}</strong> is on the homepage until ${until}.</p>`,
-    });
+      manager,
+    );
   }
 
   async promoRejected(
@@ -435,21 +528,29 @@ export class NotificationsService {
       reason: string;
       listingId: string | null;
       partListingId: string | null;
+      requestId?: string;
     },
+    manager?: EntityManager,
   ) {
-    return this.notifyUser({
-      userId,
-      type: 'promo_rejected',
-      title: 'Homepage ad request rejected',
-      message: `"${listing.title}" was rejected: ${listing.reason}`,
-      data: {
-        listingId: listing.listingId,
-        partListingId: listing.partListingId,
-        reason: listing.reason,
+    return this.notifyUser(
+      {
+        userId,
+        type: 'promo_rejected',
+        title: 'Promotion request rejected',
+        message: `"${listing.title}" was rejected: ${listing.reason}`,
+        eventKey: listing.requestId
+          ? `promo-rejected:${listing.requestId}`
+          : undefined,
+        data: {
+          listingId: listing.listingId,
+          partListingId: listing.partListingId,
+          reason: listing.reason,
+        },
+        emailSubject: 'ThrottleLK promotion request rejected',
+        emailHtml: `<p>Your promotion request for <strong>${escapeHtml(listing.title)}</strong> was rejected.</p><p>Reason: ${escapeHtml(listing.reason)}</p>`,
       },
-      emailSubject: 'ThrottleLK homepage request rejected',
-      emailHtml: `<p>Your homepage request for <strong>${escapeHtml(listing.title)}</strong> was rejected.</p><p>Reason: ${escapeHtml(listing.reason)}</p>`,
-    });
+      manager,
+    );
   }
 
   async savedSearchMatch(
@@ -483,6 +584,35 @@ export class NotificationsService {
       data: { listingId: listing.id, slug: listing.slug },
       emailSubject: 'Your ThrottleLK listing expired',
       emailHtml: `<p>Your listing <strong>${escapeHtml(listing.title)}</strong> expired and was removed from public search. Renew it from your account to publish again.</p>`,
+    });
+  }
+
+  async listingExpiringSoon(
+    userId: string,
+    listing: {
+      id: string;
+      title: string;
+      slug: string;
+      expiresAt: Date;
+      kind?: string;
+    },
+  ) {
+    const part = Boolean(listing.kind);
+    const until = listing.expiresAt.toLocaleDateString('en-LK', {
+      timeZone: 'Asia/Colombo',
+    });
+    return this.notifyUser({
+      userId,
+      type: part ? 'part_listing_expiring_soon' : 'listing_expiring_soon',
+      title: 'Listing expires soon',
+      message: `"${listing.title}" expires on ${until}. Review it in your account.`,
+      eventKey: `expiring:${listing.id}:${listing.expiresAt.toISOString()}`,
+      data: {
+        [part ? 'partListingId' : 'listingId']: listing.id,
+        slug: listing.slug,
+        kind: listing.kind,
+        expiresAt: listing.expiresAt.toISOString(),
+      },
     });
   }
 

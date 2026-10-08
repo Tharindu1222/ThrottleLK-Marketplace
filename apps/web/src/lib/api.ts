@@ -4,6 +4,7 @@ import type {
   PaginationMeta,
 } from '@throttlelk/types';
 import { refreshBrowserSession } from './session-refresh';
+import { notifyNotificationsChanged } from './notification-events';
 
 /**
  * Browser uses same-origin `/api/v1` so HttpOnly cookies are included.
@@ -231,6 +232,9 @@ export async function apiSend<T>(
     credentials: 'include',
   });
   const json = await parseJson<T>(path, res);
+  if (path.startsWith('/api/v1/notifications/') && options.method === 'PATCH') {
+    notifyNotificationsChanged();
+  }
   return json.data;
 }
 

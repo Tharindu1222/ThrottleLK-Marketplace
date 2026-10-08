@@ -416,7 +416,7 @@ export class PromotionsService {
     requestId: string,
     opts?: { paymentId?: string; reviewedById?: string },
   ) {
-    const { saved, title, endsAt, alreadyActive } =
+    const saved =
       await this.dataSource.transaction(async (manager) => {
         // Lock only promo_requests — Postgres forbids FOR UPDATE on nullable LEFT JOIN sides.
         const locked = await manager
@@ -438,15 +438,19 @@ export class PromotionsService {
           (request.paymentStatus === 'paid' ||
             request.paymentProvider === 'bank')
         ) {
-          return {
-            saved: request,
-            title:
-              request.listing?.title ??
-              request.partListing?.title ??
-              'Your listing',
-            endsAt: null as Date | null,
-            alreadyActive: true,
-          };
+          const placement = await manager.getRepository(HomepagePlacement).findOne({ where: { requestId } });
+          if (placement && placement.endsAt > new Date()) {
+            await this.notifications.promoApproved(request.sellerId, {
+              requestId,
+              title: request.listing?.title ?? request.partListing?.title ?? 'Your listing',
+              endsAt: placement.endsAt,
+              listingId: request.listingId,
+              partListingId: request.partListingId,
+              tier: placement.tier,
+              surfaces: placement.surfaces,
+            }, manager);
+          }
+          return request;
         }
 
         if (request.status !== 'pending') {
@@ -513,27 +517,20 @@ export class PromotionsService {
         }
         request.rejectionReason = null;
         const row = await manager.getRepository(PromoRequest).save(request);
-        return {
-          saved: row,
-          title:
-            request.listing?.title ??
-            request.partListing?.title ??
-            'Your listing',
+        await this.notifications.promoApproved(row.sellerId, {
+          requestId,
+          title: request.listing?.title ?? request.partListing?.title ?? 'Your listing',
           endsAt: placementEndsAt,
-          alreadyActive: false,
-        };
+          listingId: row.listingId,
+          partListingId: row.partListingId,
+          tier,
+          surfaces: pkg.surfaces?.length ? pkg.surfaces : tierDefaults.surfaces,
+        }, manager);
+        return row;
       });
 
-    if (!alreadyActive && endsAt) {
-      await this.notifications.promoApproved(saved.sellerId, {
-        title,
-        endsAt,
-        listingId: saved.listingId,
-        partListingId: saved.partListingId,
-      });
-      this.cache.invalidateDashboard();
-      this.bustPublicPromo();
-    }
+    this.cache.invalidateDashboard();
+    this.bustPublicPromo();
     return saved;
   }
 
@@ -658,28 +655,40 @@ export class PromotionsService {
         },
       });
     }
-    const request = await this.requests.findOne({
-      where: { id: requestId },
-      relations: ['listing', 'partListing'],
-    });
-    if (!request) this.notFound('Request');
-    if (request.status !== 'pending') {
-      throw new BadRequestException({
-        success: false,
-        error: { code: 'NOT_PENDING', message: 'Request is not pending' },
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const requests = manager.getRepository(PromoRequest);
+      await requests
+        .createQueryBuilder('r')
+        .setLock('pessimistic_write')
+        .where('r.id = :id', { id: requestId })
+        .getOne();
+      const request = await requests.findOne({
+        where: { id: requestId },
+        relations: ['listing', 'partListing'],
       });
-    }
-    request.status = 'rejected';
-    request.rejectionReason = trimmed;
-    request.reviewedById = admin.id;
-    request.reviewedAt = new Date();
-    const saved = await this.requests.save(request);
-    await this.notifications.promoRejected(request.sellerId, {
-      title:
-        request.listing?.title ?? request.partListing?.title ?? 'Your listing',
-      reason: trimmed,
-      listingId: request.listingId,
-      partListingId: request.partListingId,
+      if (!request) this.notFound('Request');
+      const repeatedRejection = request.status === 'rejected' && request.rejectionReason === trimmed;
+      if (request.status !== 'pending' && !repeatedRejection) {
+        throw new BadRequestException({
+          success: false,
+          error: { code: 'NOT_PENDING', message: 'Request is not pending' },
+        });
+      }
+      if (!repeatedRejection) {
+        request.status = 'rejected';
+        request.rejectionReason = trimmed;
+        request.reviewedById = admin.id;
+        request.reviewedAt = new Date();
+        await requests.save(request);
+      }
+      await this.notifications.promoRejected(request.sellerId, {
+        title: request.listing?.title ?? request.partListing?.title ?? 'Your listing',
+        reason: trimmed,
+        listingId: request.listingId,
+        partListingId: request.partListingId,
+        requestId,
+      }, manager);
+      return request;
     });
     this.cache.invalidateDashboard();
     return saved;

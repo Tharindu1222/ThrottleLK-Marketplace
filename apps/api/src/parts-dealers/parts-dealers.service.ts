@@ -1,3 +1,4 @@
+import { dispatchNotification } from '../common/dispatch-notification';
 import {
   BadRequestException,
   ForbiddenException,
@@ -106,11 +107,11 @@ export class PartsDealersService {
       const saved = await this.partsDealers.save(rejected);
       void this.cache.invalidateDashboard();
       await this.cache.invalidatePublicListings?.();
-      void this.notifications.partsDealerPendingReview({
+      dispatchNotification(() => this.notifications.partsDealerPendingReview({
         id: saved.id,
         name: saved.name,
         slug: saved.slug,
-      });
+      }));
       return saved;
     }
     const slug = await this.allocateUniqueSlug(input.name);
@@ -131,11 +132,11 @@ export class PartsDealersService {
     const saved = await this.partsDealers.save(dealer);
     void this.cache.invalidateDashboard();
     await this.cache.invalidatePublicListings?.();
-    void this.notifications.partsDealerPendingReview({
+    dispatchNotification(() => this.notifications.partsDealerPendingReview({
       id: saved.id,
       name: saved.name,
       slug: saved.slug,
-    });
+    }));
     return saved;
   }
 
@@ -641,11 +642,11 @@ export class PartsDealersService {
     await this.cache.invalidatePublicListings?.();
     const owner = await this.usersService.findByIdOrThrow(dealer.ownerUserId);
     await this.promoteOwnerToPartsDealer(owner);
-    void this.notifications.partsDealerApproved(dealer.ownerUserId, {
+    dispatchNotification(() => this.notifications.partsDealerApproved(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,
       slug: dealer.slug,
-    });
+    }));
     return dealer;
   }
 
@@ -666,11 +667,11 @@ export class PartsDealersService {
     await this.partsDealers.save(dealer);
     void this.cache.invalidateDashboard();
     await this.cache.invalidatePublicListings?.();
-    void this.notifications.partsDealerRejected(dealer.ownerUserId, {
+    dispatchNotification(() => this.notifications.partsDealerRejected(dealer.ownerUserId, {
       id: dealer.id,
       name: dealer.name,
       reason,
-    });
+    }));
     return dealer;
   }
 

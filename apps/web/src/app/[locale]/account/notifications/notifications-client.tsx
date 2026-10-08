@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   InboxEmpty,
   InboxSkeleton,
@@ -17,7 +17,8 @@ import {
   type AppNotification,
 } from '@/components/notifications-bell';
 import { Pagination } from '@/components/pagination';
-import { apiGetWithMeta, apiSend } from '@/lib/api';
+import { apiGet, apiGetWithMeta, apiSend } from '@/lib/api';
+import { watchNotifications } from '@/lib/notification-events';
 import { getAccessToken } from '@/lib/auth';
 import { t, type Locale } from '@/lib/i18n';
 import { clampedPage, emptyMeta } from '@/lib/pagination';
@@ -35,53 +36,75 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<InboxFilter>('all');
   const [unreadTotal, setUnreadTotal] = useState(0);
+  const sequence = useRef(0);
 
-  async function load(access: string, pageNum = page, nextFilter = filter) {
-    setLoading(true);
-    try {
-      const { data, meta: nextMeta } = await apiGetWithMeta<AppNotification[]>(
-        '/api/v1/notifications',
-        {
-          token: access,
-          searchParams: {
-            page: String(pageNum),
-            limit: '20',
-            ...(nextFilter === 'unread' ? { unread: '1' } : {}),
-          },
-        },
-      );
-      const unreadPage = await apiGetWithMeta<AppNotification[]>(
-        '/api/v1/notifications',
-        {
-          token: access,
-          searchParams: { page: '1', limit: '1', unread: '1' },
-        },
-      );
-      setUnreadTotal(unreadPage.meta?.total ?? 0);
-      const clamp = clampedPage(nextMeta, data.length);
-      if (clamp != null && clamp !== pageNum) {
-        goTo(clamp);
-        return;
+  const load = useCallback(
+    async (
+      access: string,
+      pageNum = page,
+      nextFilter = filter,
+      foreground = true,
+    ) => {
+      const request = ++sequence.current;
+      if (foreground) {
+        setLoading(true);
+        setError(null);
       }
-      setItems(data);
-      if (nextMeta) setMeta(nextMeta);
-    } finally {
-      setLoading(false);
-    }
-  }
+      try {
+        const [{ data, meta: nextMeta }, count] = await Promise.all([
+          apiGetWithMeta<AppNotification[]>('/api/v1/notifications', {
+            token: access,
+            searchParams: {
+              page: String(pageNum),
+              limit: '20',
+              ...(nextFilter === 'unread' ? { unread: '1' } : {}),
+            },
+          }),
+          apiGet<{ count: number }>('/api/v1/notifications/unread-count', {
+            token: access,
+          }),
+        ]);
+        if (request !== sequence.current) return;
+        setError(null);
+        setUnreadTotal(count.count);
+        const clamp = clampedPage(nextMeta, data.length);
+        if (clamp != null && clamp !== pageNum) {
+          goTo(clamp);
+          return;
+        }
+        setItems(data);
+        if (nextMeta) setMeta(nextMeta);
+      } catch (err) {
+        if (request === sequence.current)
+          setError(err instanceof Error ? err.message : 'Failed');
+      } finally {
+        if (request === sequence.current) setLoading(false);
+      }
+    },
+    [page, filter, goTo],
+  );
 
   useEffect(() => {
-    const access = getAccessToken();
-    setToken(access);
-    if (!access) {
-      setLoading(false);
-      return;
-    }
-    void load(access, page, filter).catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed'),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filter]);
+    const requests = sequence;
+    const refresh = (foreground = false) => {
+      const access = getAccessToken();
+      setToken(access);
+      if (!access) {
+        sequence.current++;
+        setLoading(false);
+        setItems([]);
+        setUnreadTotal(0);
+        return;
+      }
+      void load(access, page, filter, foreground);
+    };
+    refresh(true);
+    const stop = watchNotifications(refresh);
+    return () => {
+      stop();
+      requests.current++;
+    };
+  }, [page, filter, load]);
 
   function onFilterChange(next: InboxFilter) {
     setFilter(next);
@@ -111,8 +134,13 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
           token: token!,
         });
         await load(token!, page);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Could not mark notification read',
+        );
+        return;
       }
     }
     const href = notificationHref(locale, n);
@@ -150,7 +178,11 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
         }
       />
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
+      ) : null}
 
       {loading ? (
         <InboxSkeleton />
@@ -223,23 +255,21 @@ export function NotificationsClient({ locale }: { locale: Locale }) {
         </div>
       )}
 
-      {filter === 'all' ? (
-        <Pagination
-          page={meta.page}
-          totalPages={meta.totalPages}
-          hasPreviousPage={meta.hasPreviousPage}
-          hasNextPage={meta.hasNextPage}
-          total={meta.total}
-          limit={meta.limit}
-          ariaLabel={t(locale, 'pagination')}
-          previousLabel={t(locale, 'pagePrev')}
-          nextLabel={t(locale, 'pageNext')}
-          pageOfTemplate={t(locale, 'pageOf')}
-          showingTemplate={t(locale, 'showingRange')}
-          disabled={loading}
-          onPage={goTo}
-        />
-      ) : null}
+      <Pagination
+        page={meta.page}
+        totalPages={meta.totalPages}
+        hasPreviousPage={meta.hasPreviousPage}
+        hasNextPage={meta.hasNextPage}
+        total={meta.total}
+        limit={meta.limit}
+        ariaLabel={t(locale, 'pagination')}
+        previousLabel={t(locale, 'pagePrev')}
+        nextLabel={t(locale, 'pageNext')}
+        pageOfTemplate={t(locale, 'pageOf')}
+        showingTemplate={t(locale, 'showingRange')}
+        disabled={loading}
+        onPage={goTo}
+      />
     </div>
   );
 }

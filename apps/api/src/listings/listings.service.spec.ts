@@ -11,6 +11,7 @@ function makeService(
   extras?: {
     dealerId?: string | null;
     findActiveOwned?: jest.Mock;
+    favouriteUserIds?: string[];
   },
 ) {
   const row = { seller: { id: seller.id, status: 'active' }, dealer: listing.dealerId ? { id: listing.dealerId, status: 'active', owner: { status: 'active' } } : null, ...listing } as Listing;
@@ -53,7 +54,7 @@ function makeService(
     dealersService as never,
     notifications as never,
     {
-      userIdsForListing: jest.fn(async () => []),
+      userIdsForListing: jest.fn(async () => extras?.favouriteUserIds ?? []),
       countsByListingIds: jest.fn(async () => new Map<string, number>()),
     } as never,
     {} as never,
@@ -140,6 +141,31 @@ describe('ListingsService admin review notifications', () => {
     await service.update(seller, row.id, { title: 'Honda CBR updated' });
 
     expect(notifications.listingPendingReview).not.toHaveBeenCalled();
+  });
+});
+
+describe('ListingsService price-drop notifications', () => {
+  const fixture = { id: 'bike-1', sellerId: seller.id, title: 'Honda', slug: 'honda', priceLkr: 500000 };
+  it.each(['paused', 'expired'] as const)('does not alert buyers for a %s listing', async (status) => {
+    const { service, notifications } = makeService({ ...fixture, status }, { favouriteUserIds: ['buyer-1'] });
+    await service.update(seller, fixture.id, { priceLkr: 450000 });
+    await new Promise(setImmediate);
+    expect(notifications.priceDrop).not.toHaveBeenCalled();
+  });
+  it('alerts buyers for a public listing and excludes its seller', async () => {
+    const { service, notifications, listingsRepo } = makeService({ ...fixture, status: 'active' }, { favouriteUserIds: ['buyer-1', seller.id] });
+    await service.update(seller, fixture.id, { priceLkr: 450000 });
+    await new Promise(setImmediate);
+    expect(listingsRepo.findOne).toHaveBeenCalledWith(expect.objectContaining({ relations: ['seller', 'dealer', 'dealer.owner'] }));
+    expect(notifications.priceDrop).toHaveBeenCalledTimes(1);
+    expect(notifications.priceDrop).toHaveBeenCalledWith('buyer-1', { id: fixture.id, title: 'Honda', slug: 'honda' }, 500000, 450000);
+  });
+  it('suppresses alerts when the seller becomes suspended', async () => {
+    const { service, notifications, row } = makeService({ ...fixture, status: 'active' }, { favouriteUserIds: ['buyer-1'] });
+    row.seller.status = 'suspended';
+    await service.update(seller, fixture.id, { priceLkr: 450000 });
+    await new Promise(setImmediate);
+    expect(notifications.priceDrop).not.toHaveBeenCalled();
   });
 });
 

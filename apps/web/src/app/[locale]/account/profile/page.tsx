@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { isLocale, t, type Locale } from '@/lib/i18n';
 import { ProfileForm } from './profile-details-form';
+import { NotificationPreferences } from '@/components/notification-preferences';
 
 export default async function ProfilePage({
   params,
@@ -24,6 +25,7 @@ export default async function ProfilePage({
       </p>
       <div className="mt-8">
         <ProfileForm locale={locale} />
+        <NotificationPreferences locale={locale} />
       </div>
     </div>
   );

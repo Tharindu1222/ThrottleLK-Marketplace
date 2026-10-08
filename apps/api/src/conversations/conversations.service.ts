@@ -1,3 +1,4 @@
+import { dispatchNotification } from '../common/dispatch-notification';
 import { isPublicBike, isPublicPart } from '../common/public-listing';
 import {
   BadRequestException,
@@ -393,12 +394,12 @@ export class ConversationsService {
         ? conversation.sellerUserId
         : conversation.buyerUserId;
     const subject = this.subjectFields(conversation);
-    void this.notifications.newMessage(recipientId, {
+    dispatchNotification(() => this.notifications.newMessage(recipientId, {
       conversationId: conversation.id,
       listingTitle: subject.listingTitle,
       preview: body,
       fromBuyer: senderUserId === conversation.buyerUserId,
-    });
+    }));
 
     return {
       conversationId: conversation.id,
